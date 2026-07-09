@@ -80,6 +80,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
             key={documentId}
             onSelection={handleSelection}
             onDelete={() => {}}
+            utilsRef={() => {}}
           />
         )}
       </PdfLoader>
