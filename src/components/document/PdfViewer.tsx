@@ -200,25 +200,40 @@ interface PdfViewerProps {
 }
 
 export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
-  const { items: storeItems, addItem, removeItem } = useAnnotationStore()
+  const storeItems = useAnnotationStore((s) => s.items)
+  const addItem = useAnnotationStore((s) => s.addItem)
+  const removeItem = useAnnotationStore((s) => s.removeItem)
   const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() =>
     storeItems.map(annotationToHighlight),
   )
 
-  // Sync from store -> component state whenever store items change
+  // Sync from store -> component state whenever store items change.
+  // Also triggers when store items identity changes (after delete/add).
   useEffect(() => {
     setHighlights(storeItems.map(annotationToHighlight))
   }, [storeItems])
 
   /**
    * When user finishes a text/area selection, create a new highlight:
-   * 1. Save to Electron backend via IPC
-   * 2. Add to Zustand store (which triggers re-render via storeItems)
+   * 1. Convert the selection to an AnnotationItem and persist to backend
+   * 2. Update the local highlights state immediately (before store reacts)
+   * 3. Add to Zustand store for RightPanel/LeftPanel to pick up
+   *
+   * We do NOT call selection.makeGhostHighlight() because that creates a
+   * temporary ghost overlay that blocks interaction with the permanent
+   * highlight underneath. Instead we update the highlights array directly
+   * and let the library's useEffect + renderHighlightLayers pick it up.
    */
   const handleSelection = useCallback(
     (selection: PdfSelection) => {
       const id = crypto.randomUUID()
-      const ghost = selection.makeGhostHighlight()
+      // Build the ghost object WITHOUT calling makeGhostHighlight (which
+      // would modify library internal state and block the permanent highlight).
+      const ghost: GhostHighlight = {
+        type: "text",
+        content: selection.content,
+        position: selection.position,
+      }
       const item = selectionToAnnotation(id, documentId, ghost)
 
       // Persist to Electron backend (embedData as JSON string)
@@ -231,8 +246,15 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
         embedData: JSON.stringify(item.embedData),
       })
 
-      // Add to Zustand store — this will trigger a re-sync into <PdfViewer>
+      // Update highlights immediately so the library renders the new
+      // highlight without needing a second render cycle.
+      setHighlights((prev) => [...prev, annotationToHighlight(item)])
+      // Add to Zustand store for sidebar panels
       addItem(item)
+
+      // Clear the text selection so the user doesn't see blue highlights
+      // lingering on the selected text.
+      window.getSelection()?.removeAllRanges()
     },
     [documentId, addItem],
   )
@@ -289,7 +311,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   )
 }
 
-/** Wraps PdfHighlighter, syncing pdfDocument and goToPage to the shared store via effects. */
+/** Wraps PdfHighlighter, syncing PDF state to the shared store. */
 function PdfHighlighterWrapper({
   pdfDocument,
   documentId,
@@ -306,11 +328,31 @@ function PdfHighlighterWrapper({
   const setPdfDocument = usePdfViewerStore((s) => s.setPdfDocument)
   const setGoToPage = usePdfViewerStore((s) => s.setGoToPage)
   const setCurrentPage = usePdfViewerStore((s) => s.setCurrentPage)
+  const setPdfScale = usePdfViewerStore((s) => s.setPdfScale)
+  const setFitWidth = usePdfViewerStore((s) => s.setFitWidth)
+  const setSetViewerScale = usePdfViewerStore((s) => s.setSetViewerScale)
+  const pdfScale = usePdfViewerStore((s) => s.pdfScale)
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
     setPdfDocument(pdfDocument)
   }, [pdfDocument, setPdfDocument])
+
+  // Example pattern: pdfScaleValue is always numeric (or undefined = auto).
+  // 0 means "not yet set" → omit prop so library defaults to "auto".
+  // After any zoom, pdfScale holds a real number and gets passed as prop;
+  // the library's proximity check (< 0.5% diff) skips re-apply on re-renders.
+  const pdfScaleValue = pdfScale > 0 ? pdfScale : undefined
+
+  const handleZoomChange = useCallback(
+    (scale: number) => {
+      // User manually zoomed (ctrl+wheel etc.) — store the numeric value
+      setPdfScale(Math.round(scale * 100) / 100)
+      // User overrode whatever preset was active
+      setFitWidth(false)
+    },
+    [setPdfScale, setFitWidth],
+  )
 
   return (
     <PdfHighlighter
@@ -320,8 +362,16 @@ function PdfHighlighterWrapper({
       onSelection={onSelection}
       utilsRef={(utils: PdfHighlighterUtils) => {
         setGoToPage((pageNumber: number) => utils.goToPage(pageNumber))
+        // Capture a raw scale setter so FitWidthButton/Settings can call
+        // viewer.currentScaleValue = "page-width" directly.
+        setSetViewerScale((value: string) => {
+          const viewer = utils.getViewer()
+          if (viewer) viewer.currentScaleValue = value
+        })
       }}
       onPageChange={(page: number) => setCurrentPage(page)}
+      onZoomChange={handleZoomChange}
+      pdfScaleValue={pdfScaleValue}
       style={{ height: "100%" }}
     >
       <SiltflowHighlightContainer deleteHighlight={deleteHighlight} />

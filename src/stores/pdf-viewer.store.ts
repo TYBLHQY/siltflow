@@ -4,18 +4,35 @@ import type { PDFDocumentProxy } from "pdfjs-dist"
 interface PdfViewerState {
   /** The current PDF document proxy (null when none loaded) */
   pdfDocument: PDFDocumentProxy | null
-  /** Set the PDF document proxy (called from PdfViewer) */
   setPdfDocument: (doc: PDFDocumentProxy | null) => void
 
-  /** Navigate to a specific page (1-indexed) */
+  /** Navigate to a specific page */
   goToPage: ((pageNumber: number) => void) | null
-  /** Set the goToPage callback (called from PdfViewer via utilsRef) */
   setGoToPage: (fn: ((pageNumber: number) => void) | null) => void
 
   /** Current visible page (1-indexed) */
   currentPage: number
-  /** Set current page */
   setCurrentPage: (page: number) => void
+
+  /**
+   * Numeric PDF scale / zoom.  0 means "auto" (no user zoom applied yet).
+   * Always stored as a number so the library's proximity check can skip
+   * re-applying on highlight-caused re-renders.
+   */
+  pdfScale: number
+  setPdfScale: (v: number) => void
+
+  /** Whether fit-to-width mode is active */
+  fitWidth: boolean
+  setFitWidth: (v: boolean) => void
+
+  /**
+   * Direct setter for the PDF viewer's currentScaleValue.
+   * Captured once from utilsRef so FitWidthButton / Settings can bypass
+   * the prop-based pdfScaleValue (which is always numeric).
+   */
+  setViewerScale: ((value: string) => void) | null
+  setSetViewerScale: (fn: ((value: string) => void) | null) => void
 }
 
 export const usePdfViewerStore = create<PdfViewerState>((set) => ({
@@ -27,4 +44,13 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 
   currentPage: 1,
   setCurrentPage: (page) => set({ currentPage: page }),
+
+  pdfScale: 0,
+  setPdfScale: (v) => set({ pdfScale: v }),
+
+  fitWidth: false,
+  setFitWidth: (v) => set({ fitWidth: v }),
+
+  setViewerScale: null,
+  setSetViewerScale: (fn) => set({ setViewerScale: fn }),
 }))
