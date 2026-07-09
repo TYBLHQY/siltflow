@@ -11,6 +11,9 @@ export default defineConfig({
       '@': path.join(__dirname, 'src'),
     },
   },
+  optimizeDeps: {
+    exclude: ['pdfjs-dist'],
+  },
   plugins: [
     tailwindcss(),
     react(),
