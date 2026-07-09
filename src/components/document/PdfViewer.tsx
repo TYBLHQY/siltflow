@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from "react"
-import { PdfLoader, PdfHighlighter, Highlight } from "react-pdf-highlighter"
+import { PdfLoader, PdfHighlighter, Highlight, Popup } from "react-pdf-highlighter"
 import type { IHighlight, NewHighlight, ScaledPosition, Content } from "react-pdf-highlighter"
 import { Trash2 } from "lucide-react"
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
@@ -15,6 +15,7 @@ interface PdfViewerProps {
 export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   const scrollViewerTo = useRef<(highlight: IHighlight) => void>(() => {})
   const { items: storeItems, setItems, addItem, removeItem, queueDelete } = useAnnotationStore()
+  const [renderKey, setRenderKey] = useState(0)
 
   // Convert store items → IHighlight[] for PdfHighlighter
   const [highlights, setHighlights] = useState<IHighlight[]>(() =>
@@ -23,6 +24,8 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
 
   useEffect(() => {
     setHighlights(storeItems.map(toHighlight))
+    // Force re-render on highlight changes
+    setRenderKey((k) => k + 1)
   }, [storeItems])
 
   // New highlight created from text selection
@@ -97,6 +100,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
           <PdfHighlighter
             pdfDocument={pdfDocument}
             highlights={highlights}
+            key={documentId}
             onSelectionFinished={handleSelectionFinished}
             highlightTransform={(
               highlight,
@@ -107,20 +111,26 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
               _screenshot,
               _isScrolledTo,
             ) => (
-              <div className="group relative">
+              <Popup
+                key={_index}
+                onMouseOver={(content) => _setTip(highlight, () => content)}
+                popupContent={
+                  <button
+                    className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded shadow hover:opacity-90 transition-opacity"
+                    onClick={() => handleDelete(highlight.id)}
+                    type="button"
+                  >
+                    Delete
+                  </button>
+                }
+                onMouseOut={_hideTip}
+              >
                 <Highlight
                   position={highlight.position}
                   comment={highlight.comment || { text: "", emoji: "" }}
                   isScrolledTo={_isScrolledTo}
                 />
-                <button
-                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                  onClick={() => handleDelete(highlight.id)}
-                  type="button"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
+              </Popup>
             )}
             scrollRef={(scrollTo) => {
               scrollViewerTo.current = scrollTo
