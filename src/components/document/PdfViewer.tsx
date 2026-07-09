@@ -1,10 +1,11 @@
-import { forwardRef, useCallback, useRef, useImperativeHandle } from "react"
+import { forwardRef, useRef, useImperativeHandle } from "react"
 import { PDFViewer } from "@embedpdf/react-pdf-viewer"
 import type { PDFViewerRef, AnnotationTransferItem } from "@embedpdf/react-pdf-viewer"
 
 export interface PdfViewerHandle {
   saveAnnotations: () => Promise<AnnotationTransferItem[]>
   loadAnnotations: (items: AnnotationTransferItem[]) => Promise<void>
+  deleteAnnotation: (pageIndex: number, annotationId: string) => Promise<void>
 }
 
 interface PdfViewerProps {
@@ -45,6 +46,18 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
           // silent
         }
       },
+      deleteAnnotation: async (pageIndex: number, annotationId: string) => {
+        try {
+          const registry = await viewerRef.current?.registry
+          if (!registry) return
+          const annPlugin = registry.getPlugin<any>("annotation")
+          if (!annPlugin?.provides) return
+          const api = annPlugin.provides()
+          api.deleteAnnotation(pageIndex, annotationId)
+        } catch {
+          // silent
+        }
+      },
     }))
 
     return (
@@ -53,12 +66,6 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
           ref={viewerRef}
           config={{
             src,
-            documentManager: {
-              onDocumentLoaded: (docId: string) => {
-                // Document loaded, ready for annotation restore
-                console.log("Document loaded:", docId)
-              },
-            },
           }}
           style={{ width: "100%", height: "100%" }}
         />

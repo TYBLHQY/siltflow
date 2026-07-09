@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from "react"
 import { BookOpen } from "lucide-react"
 import { PdfViewer, type PdfViewerHandle } from "@/components/document/PdfViewer"
+import { useAnnotationStore } from "@/stores/annotation.store"
 
 interface CenterPanelProps {
   documentPath?: string | null
@@ -10,22 +11,45 @@ interface CenterPanelProps {
 export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
   const pdfRef = useRef<PdfViewerHandle>(null)
   const prevDocRef = useRef<string | null>(null)
+  const setItems = useAnnotationStore((s) => s.setItems)
+
+  // Convert TransferItem from embedPDF to our AnnotationItem format
+  const syncAnnotationsToStore = useCallback(async () => {
+    if (!documentId) return
+    const items = await pdfRef.current?.saveAnnotations()
+    if (items) {
+      setItems(
+        items.map((item) => ({
+          id: item.annotation.id,
+          documentId: documentId!,
+          type: item.annotation.type || "highlight",
+          text: (item.annotation as any).text || "",
+          pageNumber: item.annotation.page || 0,
+          embedData: item,
+        }))
+      )
+    }
+  }, [documentId, setItems])
 
   const saveCurrentAnnotations = useCallback(async () => {
     if (!prevDocRef.current) return
     try {
       const items = await pdfRef.current?.saveAnnotations()
       if (items && items.length > 0) {
-        // Save to DB
+        // Delete old annotations for this doc, then insert fresh
         for (const item of items) {
-          await window.siltflow.annotations.save({
-            id: item.annotation.id,
-            documentId: prevDocRef.current,
-            type: item.annotation.type || "highlight",
-            text: "",
-            pageNumber: 0,
-            embedData: JSON.stringify(item),
-          })
+          const existing = await window.siltflow.annotations.list(prevDocRef.current)
+          const found = existing?.find((a: any) => a.id === item.annotation.id)
+          if (!found) {
+            await window.siltflow.annotations.save({
+              id: item.annotation.id,
+              documentId: prevDocRef.current,
+              type: item.annotation.type || "highlight",
+              text: (item.annotation as any).text || "",
+              pageNumber: item.annotation.page || 0,
+              embedData: JSON.stringify(item),
+            })
+          }
         }
       }
     } catch (err) {
@@ -40,19 +64,20 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
       if (saved && saved.length > 0) {
         const items = saved.map((a: any) => JSON.parse(a.embedData))
         await pdfRef.current?.loadAnnotations(items)
+        setItems(saved)
+      } else {
+        setItems([])
       }
     } catch (err) {
       console.error("Failed to load annotations:", err)
     }
-  }, [documentId])
+  }, [documentId, setItems])
 
   // Handle document switching
   useEffect(() => {
     if (documentId && documentId !== prevDocRef.current) {
-      // Save previous document's annotations first
       saveCurrentAnnotations().then(() => {
         prevDocRef.current = documentId
-        // Load new document's annotations
         loadAnnotations()
       })
     } else if (documentId) {
@@ -60,15 +85,15 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
       loadAnnotations()
     } else {
       prevDocRef.current = null
+      setItems([])
     }
 
     return () => {
-      // Save on unmount (document switch)
       if (prevDocRef.current) {
         saveCurrentAnnotations()
       }
     }
-  }, [documentId, saveCurrentAnnotations, loadAnnotations])
+  }, [documentId, saveCurrentAnnotations, loadAnnotations, setItems])
 
   if (!documentPath) {
     return (
