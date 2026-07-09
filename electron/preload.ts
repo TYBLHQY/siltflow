@@ -1,24 +1,22 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
-// --------- Expose some API to the Renderer process ---------
-contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
-  },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
-  },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
-  },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
-  },
+export interface SiltflowAPI {
+  // Vault
+  vaultGetPath: () => Promise<string>
+  vaultSelect: () => Promise<string>
+  vaultSetPath: (vaultPath: string) => Promise<string>
 
-  // You can expose other APTs you need here.
-  // ...
-})
+  // Documents
+  selectPdf: () => Promise<{ filePath: string; fileName: string } | null>
+  loadFile: (filePath: string) => Promise<ArrayBuffer>
+}
+
+const api: SiltflowAPI = {
+  vaultGetPath: () => ipcRenderer.invoke('vault:getPath'),
+  vaultSelect: () => ipcRenderer.invoke('vault:select'),
+  vaultSetPath: (vaultPath: string) => ipcRenderer.invoke('vault:setPath', vaultPath),
+  selectPdf: () => ipcRenderer.invoke('dialog:selectPdf'),
+  loadFile: (filePath: string) => ipcRenderer.invoke('file:load', filePath),
+}
+
+contextBridge.exposeInMainWorld('siltflow', api)
