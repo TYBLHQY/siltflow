@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from "react"
-import { PdfLoader, PdfHighlighter, Highlight, Popup } from "react-pdf-highlighter"
+import { PdfLoader, PdfHighlighter, Highlight } from "react-pdf-highlighter"
 import type { IHighlight, NewHighlight, ScaledPosition, Content } from "react-pdf-highlighter"
 import { Trash2 } from "lucide-react"
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
@@ -111,26 +111,27 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
               _screenshot,
               _isScrolledTo,
             ) => (
-              <Popup
+              <Highlight
                 key={_index}
-                onMouseOver={(content) => _setTip(highlight, () => content)}
-                popupContent={
-                  <button
-                    className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded shadow hover:opacity-90 transition-opacity"
-                    onClick={() => handleDelete(highlight.id)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
+                position={highlight.position}
+                comment={highlight.comment || { text: "", emoji: "" }}
+                isScrolledTo={_isScrolledTo}
+                onMouseOver={() =>
+                  _setTip(highlight, () => (
+                    <button
+                      className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded shadow hover:opacity-90"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(highlight.id)
+                      }}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                  ))
                 }
                 onMouseOut={_hideTip}
-              >
-                <Highlight
-                  position={highlight.position}
-                  comment={highlight.comment || { text: "", emoji: "" }}
-                  isScrolledTo={_isScrolledTo}
-                />
-              </Popup>
+              />
             )}
             scrollRef={(scrollTo) => {
               scrollViewerTo.current = scrollTo
