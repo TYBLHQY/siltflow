@@ -137,7 +137,7 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
           {documentPath.split("/").pop()?.split("\\").pop()}
         </h1>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-visible">
         <PdfViewer
           ref={pdfRef}
           className="h-full w-full"

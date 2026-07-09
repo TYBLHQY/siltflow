@@ -17,7 +17,7 @@ export function ThreeColumnLayout() {
   if (!loaded) return null
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="h-screen w-screen">
       <ResizablePanelGroup
         direction="horizontal"
         className="h-full"
@@ -33,7 +33,10 @@ export function ThreeColumnLayout() {
 
         <ResizableHandle withHandle />
 
-        <ResizablePanel defaultSize={layout?.[1] ?? 50} minSize={30}>
+        <ResizablePanel
+          defaultSize={layout?.[1] ?? 50}
+          minSize={30}
+        >
           <CenterPanel
             documentPath={currentDocument?.filePath}
             documentId={currentDocument?.id}
