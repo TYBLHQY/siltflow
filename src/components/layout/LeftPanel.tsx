@@ -1,17 +1,38 @@
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { FileText, Plus } from "lucide-react"
+import { FileText, Plus, Loader2 } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
 
 export function LeftPanel() {
-  const { documents, currentDocument, setCurrentDocument, addDocument } =
-    useDocumentStore()
+  const {
+    documents,
+    currentDocument,
+    setCurrentDocument,
+    addDocument,
+    loadFromDb,
+    loading,
+  } = useDocumentStore()
+
+  // Load documents from DB on mount
+  useEffect(() => {
+    loadFromDb()
+  }, [loadFromDb])
 
   const handleImport = async () => {
     try {
       const result = await window.siltflow.selectPdf()
       if (!result) return
+
+      // Save to database
+      await window.siltflow.documents.save({
+        id: result.id,
+        title: result.title,
+        fileName: result.fileName,
+        filePath: result.filePath,
+      })
+
       addDocument({
         id: result.id,
         title: result.title,
@@ -36,7 +57,11 @@ export function LeftPanel() {
         </Button>
       </div>
       <ScrollArea className="flex-1 p-2">
-        {documents.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : documents.length === 0 ? (
           <div className="flex flex-col items-center gap-1 py-8 text-muted-foreground">
             <FileText className="h-6 w-6" />
             <p className="text-xs">No documents yet</p>
