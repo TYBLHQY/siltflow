@@ -34,7 +34,10 @@ export function ThreeColumnLayout() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={layout?.[1] ?? 50} minSize={30}>
-          <CenterPanel documentPath={currentDocument?.filePath} />
+          <CenterPanel
+            documentPath={currentDocument?.filePath}
+            documentId={currentDocument?.id}
+          />
         </ResizablePanel>
 
         <ResizableHandle withHandle />
