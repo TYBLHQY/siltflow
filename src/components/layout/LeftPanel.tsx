@@ -13,8 +13,8 @@ export function LeftPanel() {
       const result = await window.siltflow.selectPdf()
       if (!result) return
       addDocument({
-        id: crypto.randomUUID(),
-        title: result.fileName,
+        id: result.id,
+        title: result.title,
         filePath: result.filePath,
       })
     } catch (err) {
@@ -24,18 +24,17 @@ export function LeftPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between p-3">
+      <div className="flex h-10 items-center justify-between border-b px-3">
         <h2 className="text-sm font-semibold text-muted-foreground">Documents</h2>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-6 w-6"
           onClick={handleImport}
         >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-      <Separator />
       <ScrollArea className="flex-1 p-2">
         {documents.length === 0 ? (
           <div className="flex flex-col items-center gap-1 py-8 text-muted-foreground">

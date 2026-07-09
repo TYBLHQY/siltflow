@@ -9,7 +9,7 @@ export function CenterPanel({ documentPath }: CenterPanelProps) {
   if (!documentPath) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex items-center border-b px-4 py-2">
+        <div className="flex h-10 items-center border-b px-3">
           <h1 className="text-sm font-medium">Siltflow</h1>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -24,7 +24,7 @@ export function CenterPanel({ documentPath }: CenterPanelProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b px-4 py-2">
+      <div className="flex h-10 items-center border-b px-3">
         <h1 className="text-sm font-medium truncate">
           {documentPath.split("/").pop()?.split("\\").pop()}
         </h1>

@@ -5,10 +5,9 @@ import { Highlighter, MessageSquare } from "lucide-react"
 export function RightPanel() {
   return (
     <div className="flex h-full flex-col">
-      <div className="p-3">
+      <div className="flex h-10 items-center border-b px-3">
         <h2 className="text-sm font-semibold text-muted-foreground">Annotations</h2>
       </div>
-      <Separator />
       <ScrollArea className="flex-1 p-2">
         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
           <Highlighter className="h-8 w-8 mb-2" />

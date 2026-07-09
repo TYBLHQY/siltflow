@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -21,31 +22,51 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 // ── Vault Management ──────────────────────────────────────────────
-const APP_CONFIG_DIR = app.getPath('userData')
-const APP_CONFIG_PATH = path.join(APP_CONFIG_DIR, 'config.json')
+const VAULT_CONFIG_DIR = app.getPath('userData')
+const VAULT_POINTER_PATH = path.join(VAULT_CONFIG_DIR, 'vault-path.json')
 
-interface AppConfig {
-  vaultPath: string
-}
+const SILTFLOW_DIR = '.siltflow'
 
-function readConfig(): AppConfig {
+function getVaultPath(): string {
   try {
-    return JSON.parse(fs.readFileSync(APP_CONFIG_PATH, 'utf-8'))
+    const data = JSON.parse(fs.readFileSync(VAULT_POINTER_PATH, 'utf-8'))
+    if (data.vaultPath && fs.existsSync(data.vaultPath)) {
+      return data.vaultPath
+    }
+  } catch {}
+  return ''
+}
+
+function setVaultPath(vaultPath: string) {
+  if (!fs.existsSync(VAULT_CONFIG_DIR)) {
+    fs.mkdirSync(VAULT_CONFIG_DIR, { recursive: true })
+  }
+  fs.writeFileSync(VAULT_POINTER_PATH, JSON.stringify({ vaultPath }, null, 2))
+}
+
+function vaultConfigPath(vaultPath: string): string {
+  return path.join(vaultPath, SILTFLOW_DIR, 'config.json')
+}
+
+function readVaultConfig(vaultPath: string): Record<string, unknown> {
+  try {
+    return JSON.parse(fs.readFileSync(vaultConfigPath(vaultPath), 'utf-8'))
   } catch {
-    return { vaultPath: '' }
+    return {}
   }
 }
 
-function writeConfig(config: AppConfig) {
-  if (!fs.existsSync(APP_CONFIG_DIR)) {
-    fs.mkdirSync(APP_CONFIG_DIR, { recursive: true })
+function writeVaultConfig(vaultPath: string, config: Record<string, unknown>) {
+  const p = vaultConfigPath(vaultPath)
+  if (!fs.existsSync(path.dirname(p))) {
+    fs.mkdirSync(path.dirname(p), { recursive: true })
   }
-  fs.writeFileSync(APP_CONFIG_PATH, JSON.stringify(config, null, 2))
+  fs.writeFileSync(p, JSON.stringify(config, null, 2))
 }
 
 function ensureVaultStructure(vaultPath: string) {
   const dirs = [
-    path.join(vaultPath, '.siltflow'),
+    path.join(vaultPath, SILTFLOW_DIR),
     path.join(vaultPath, 'documents'),
   ]
   for (const dir of dirs) {
@@ -53,14 +74,6 @@ function ensureVaultStructure(vaultPath: string) {
       fs.mkdirSync(dir, { recursive: true })
     }
   }
-}
-
-function getVaultPath(): string {
-  const config = readConfig()
-  if (config.vaultPath && fs.existsSync(config.vaultPath)) {
-    return config.vaultPath
-  }
-  return ''
 }
 
 // ── Window Management ─────────────────────────────────────────────
@@ -131,14 +144,27 @@ ipcMain.handle('vault:select', async () => {
   if (result.canceled || result.filePaths.length === 0) return ''
   const vaultPath = result.filePaths[0]
   ensureVaultStructure(vaultPath)
-  writeConfig({ vaultPath })
+  setVaultPath(vaultPath)
   return vaultPath
 })
 
 ipcMain.handle('vault:setPath', (_event, vaultPath: string) => {
   ensureVaultStructure(vaultPath)
-  writeConfig({ vaultPath })
+  setVaultPath(vaultPath)
   return vaultPath
+})
+
+// Vault config (all user config lives in vault/.siltflow/config.json)
+ipcMain.handle('vault:config:get', () => {
+  const vault = getVaultPath()
+  if (!vault) return {}
+  return readVaultConfig(vault)
+})
+
+ipcMain.handle('vault:config:set', (_event, config: Record<string, unknown>) => {
+  const vault = getVaultPath()
+  if (!vault) return
+  writeVaultConfig(vault, config)
 })
 
 // Document import
@@ -156,9 +182,19 @@ ipcMain.handle('dialog:selectPdf', async () => {
 
   const srcPath = result.filePaths[0]
   const fileName = path.basename(srcPath)
-  const dest = path.join(vaultPath, 'documents', fileName)
+  const docId = crypto.randomUUID()
+  const docDir = path.join(vaultPath, 'documents', docId)
+  const dest = path.join(docDir, fileName)
+
+  fs.mkdirSync(docDir, { recursive: true })
   fs.copyFileSync(srcPath, dest)
-  return { filePath: `siltflow://documents/${fileName}`, fileName }
+
+  return {
+    id: docId,
+    fileName,
+    filePath: `siltflow://documents/${docId}/${fileName}`,
+    title: fileName.replace(/\.pdf$/i, ''),
+  }
 })
 
 // Custom protocol → serve files from vault
