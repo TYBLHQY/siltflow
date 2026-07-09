@@ -1,10 +1,6 @@
-import { useCallback, useState, useEffect } from "react"
-import { PdfLoader, PdfHighlighter, TextHighlight } from "react-pdf-highlighter-plus"
-import type { Highlight, Tip, PdfSelection, ScaledPosition, Content } from "react-pdf-highlighter-plus"
+import { PdfLoader, PdfHighlighter } from "react-pdf-highlighter-plus"
+import type { Highlight, PdfSelection } from "react-pdf-highlighter-plus"
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
-
-const PDFJS_VERSION = "4.10.38"
-const PDF_WORKER_SRC = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.mjs`
 
 interface PdfViewerProps {
   src: string
@@ -64,18 +60,17 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   return (
     <div className={className}>
       <PdfLoader
-        url={src}
-        workerSrc={PDF_WORKER_SRC}
-        beforeLoad={
+        document={src}
+        beforeLoad={() => (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             Loading PDF...
           </div>
-        }
-        errorMessage={
+        )}
+        errorMessage={() => (
           <div className="flex items-center justify-center h-full text-destructive text-sm">
             Failed to load PDF
           </div>
-        }
+        )}
       >
         {(pdfDocument) => (
           <PdfHighlighter
