@@ -273,14 +273,15 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   )
 
   // Clean up store state when documentId changes
+  // NOTE: only clean pdfDocument, NOT goToPage — the library's utilsRef only
+  // fires ONCE (guarded by an internal ref), so cleaning it in StrictMode's
+  // unmount/remount cycle would leave it null forever.
   const pdfDocumentCleanup = usePdfViewerStore((s) => s.setPdfDocument)
-  const goToPageCleanup = usePdfViewerStore((s) => s.setGoToPage)
   useEffect(() => {
     return () => {
       pdfDocumentCleanup(null)
-      goToPageCleanup(null)
     }
-  }, [documentId, pdfDocumentCleanup, goToPageCleanup])
+  }, [documentId, pdfDocumentCleanup])
 
   return (
     <div className={className}>
