@@ -12,11 +12,18 @@ interface PdfViewerProps {
   src: string
   documentId: string
   className?: string
+  onDocumentReady?: () => void
+  onAnnotationEvent?: (event: {
+    type: string
+    annotation: { id: string; type?: string; page?: number; text?: string }
+    pageIndex?: number
+  }) => void
 }
 
 export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
-  function PdfViewer({ src, documentId, className }, ref) {
+  function PdfViewer({ src, documentId, className, onDocumentReady, onAnnotationEvent }, ref) {
     const viewerRef = useRef<PDFViewerRef>(null)
+    const onReadyCalledRef = useRef(false)
 
     useImperativeHandle(ref, () => ({
       saveAnnotations: async () => {
@@ -26,8 +33,11 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
           const annPlugin = registry.getPlugin<any>("annotation")
           if (!annPlugin?.provides) return []
           const api = annPlugin.provides()
-          const items = await new Promise<AnnotationTransferItem[]>((resolve, reject) => {
-            api.exportAnnotations()?.wait?.(resolve, reject) ?? resolve([])
+          const items = await new Promise<AnnotationTransferItem[]>((resolve) => {
+            api.exportAnnotations()?.wait?.(
+              (items: AnnotationTransferItem[]) => resolve(items || []),
+              () => resolve([]),
+            )
           })
           return items
         } catch {
@@ -60,14 +70,43 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
       },
     }))
 
+    // Subscribe to annotation events once the registry is ready
+    const handleReady = (registry: any) => {
+      if (onReadyCalledRef.current) return
+      onReadyCalledRef.current = true
+
+      const annPlugin = registry.getPlugin<any>("annotation")
+      if (annPlugin?.provides) {
+        const api = annPlugin.provides()
+
+        // Subscribe to live annotation events → push to parent
+        if (onAnnotationEvent && api.onAnnotationEvent?.on) {
+          api.onAnnotationEvent.on((event: any) => {
+            onAnnotationEvent({
+              type: event.type,
+              annotation: {
+                id: event.annotation?.id,
+                type: event.annotation?.type,
+                page: event.pageIndex,
+                text: event.annotation?.text,
+              },
+              pageIndex: event.pageIndex,
+            })
+          })
+        }
+      }
+
+      // Notify parent that document is ready for operation
+      setTimeout(() => onDocumentReady?.(), 300)
+    }
+
     return (
       <div className={className}>
         <PDFViewer
           ref={viewerRef}
-          config={{
-            src,
-          }}
+          config={{ src }}
           style={{ width: "100%", height: "100%" }}
+          onReady={handleReady}
         />
       </div>
     )

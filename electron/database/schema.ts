@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 
 export const documents = sqliteTable("documents", {
   id: text("id").primaryKey(),
@@ -11,15 +11,21 @@ export const documents = sqliteTable("documents", {
   updatedAt: text("updated_at").notNull(),
 })
 
-export const annotations = sqliteTable("annotations", {
-  id: text("id").primaryKey(),
-  documentId: text("document_id")
-    .notNull()
-    .references(() => documents.id, { onDelete: "cascade" }),
-  type: text("type").notNull(), // 'highlight', 'underline', 'note'
-  text: text("text"),
-  pageNumber: integer("page_number"),
-  embedData: text("embed_data").notNull(), // JSON: AnnotationTransferItem[]
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-})
+export const annotations = sqliteTable(
+  "annotations",
+  {
+    id: text("id").notNull(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    text: text("text"),
+    pageNumber: integer("page_number"),
+    embedData: text("embed_data").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.id, table.documentId] }),
+  })
+)

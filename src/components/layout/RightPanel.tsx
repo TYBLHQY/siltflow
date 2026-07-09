@@ -52,17 +52,10 @@ interface AnnotationCardProps {
 }
 
 function AnnotationCard({ annotation }: AnnotationCardProps) {
-  const removeItem = useAnnotationStore((s) => s.removeItem)
+  const queueDelete = useAnnotationStore((s) => s.queueDelete)
 
-  const handleDelete = async () => {
-    try {
-      // Delete from viewer if it's the current document
-      // (we trigger from outside via the PDF ref)
-      await window.siltflow.annotations.delete(annotation.id)
-      removeItem(annotation.id)
-    } catch (err) {
-      console.error("Failed to delete annotation:", err)
-    }
+  const handleDelete = () => {
+    queueDelete(annotation.id, annotation.pageNumber)
   }
 
   return (

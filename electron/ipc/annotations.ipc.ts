@@ -1,6 +1,7 @@
 import { ipcMain } from "electron"
-import { getDb, schema } from "../database"
+import { getDb } from "../database"
 import { eq } from "drizzle-orm"
+import { schema } from "../database"
 
 export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:list", (_event, documentId: string) => {
@@ -13,15 +14,26 @@ export function registerAnnotationHandlers() {
       .all()
   })
 
-  ipcMain.handle("annotations:save", (_event, annotation: typeof schema.annotations.$inferInsert) => {
+  ipcMain.handle("annotations:save", (_event, annotation: any) => {
     const db = getDb()
     if (!db) return null
     const now = new Date().toISOString()
-    return db
-      .insert(schema.annotations)
-      .values({ ...annotation, createdAt: now, updatedAt: now })
-      .returning()
-      .get()
+    // Use INSERT OR REPLACE to handle duplicates
+    db.run(
+      `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        annotation.id,
+        annotation.documentId,
+        annotation.type || "highlight",
+        annotation.text || "",
+        annotation.pageNumber ?? 0,
+        annotation.embedData || "",
+        now,
+        now,
+      ]
+    )
+    return { id: annotation.id }
   })
 
   ipcMain.handle("annotations:delete", (_event, id: string) => {

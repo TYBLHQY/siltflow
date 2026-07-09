@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react"
+import { useRef, useEffect, useCallback, useState } from "react"
 import { BookOpen } from "lucide-react"
 import { PdfViewer, type PdfViewerHandle } from "@/components/document/PdfViewer"
 import { useAnnotationStore } from "@/stores/annotation.store"
@@ -10,90 +10,99 @@ interface CenterPanelProps {
 
 export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
   const pdfRef = useRef<PdfViewerHandle>(null)
-  const prevDocRef = useRef<string | null>(null)
+  const [docReady, setDocReady] = useState(false)
   const setItems = useAnnotationStore((s) => s.setItems)
+  const pendingDeletes = useAnnotationStore((s) => s.pendingDeletes)
+  const clearDeletes = useAnnotationStore((s) => s.clearDeletes)
 
-  // Convert TransferItem from embedPDF to our AnnotationItem format
-  const syncAnnotationsToStore = useCallback(async () => {
-    if (!documentId) return
-    const items = await pdfRef.current?.saveAnnotations()
-    if (items) {
-      setItems(
-        items.map((item) => ({
-          id: item.annotation.id,
-          documentId: documentId!,
-          type: item.annotation.type || "highlight",
-          text: (item.annotation as any).text || "",
-          pageNumber: item.annotation.page || 0,
-          embedData: item,
-        }))
-      )
-    }
-  }, [documentId, setItems])
+  // Live annotation events from embedPDF → save to DB immediately
+  const handleAnnotationEvent = useCallback(
+    async (event: {
+      type: string
+      annotation: { id: string; type?: string; page?: number }
+    }) => {
+      if (!documentId) return
 
-  const saveCurrentAnnotations = useCallback(async () => {
-    if (!prevDocRef.current) return
-    try {
-      const items = await pdfRef.current?.saveAnnotations()
-      if (items && items.length > 0) {
-        // Delete old annotations for this doc, then insert fresh
-        for (const item of items) {
-          const existing = await window.siltflow.annotations.list(prevDocRef.current)
-          const found = existing?.find((a: any) => a.id === item.annotation.id)
-          if (!found) {
-            await window.siltflow.annotations.save({
-              id: item.annotation.id,
-              documentId: prevDocRef.current,
-              type: item.annotation.type || "highlight",
-              text: (item.annotation as any).text || "",
-              pageNumber: item.annotation.page || 0,
-              embedData: JSON.stringify(item),
-            })
+      if (event.type === "create") {
+        // Save annotation to DB immediately
+        try {
+          const items = await pdfRef.current?.saveAnnotations()
+          if (items) {
+            const created = items.find((i) => i.annotation.id === event.annotation.id)
+            if (created) {
+              await window.siltflow.annotations.save({
+                id: created.annotation.id,
+                documentId,
+                type: created.annotation.type || event.annotation.type || "highlight",
+                text: (created.annotation as any).text || "",
+                pageNumber: created.annotation.page ?? event.annotation.page ?? 0,
+                embedData: JSON.stringify(created),
+              })
+              // Refresh the store
+              const saved = await window.siltflow.annotations.list(documentId)
+              if (saved) setItems(saved)
+            }
           }
+        } catch (err) {
+          console.error("Failed to save annotation:", err)
         }
       }
-    } catch (err) {
-      console.error("Failed to save annotations:", err)
-    }
+
+      if (event.type === "delete") {
+        // Delete from DB
+        await window.siltflow.annotations.delete(event.annotation.id)
+        const saved = await window.siltflow.annotations.list(documentId)
+        if (saved) setItems(saved)
+      }
+    },
+    [documentId, setItems]
+  )
+
+  const handleDocumentReady = useCallback(() => {
+    setDocReady(true)
   }, [])
 
-  const loadAnnotations = useCallback(async () => {
-    if (!documentId) return
-    try {
-      const saved = await window.siltflow.annotations.list(documentId)
-      if (saved && saved.length > 0) {
-        const items = saved.map((a: any) => JSON.parse(a.embedData))
-        await pdfRef.current?.loadAnnotations(items)
-        setItems(saved)
-      } else {
-        setItems([])
-      }
-    } catch (err) {
-      console.error("Failed to load annotations:", err)
-    }
-  }, [documentId, setItems])
-
-  // Handle document switching
+  // When document is ready, restore annotations from DB
   useEffect(() => {
-    if (documentId && documentId !== prevDocRef.current) {
-      saveCurrentAnnotations().then(() => {
-        prevDocRef.current = documentId
-        loadAnnotations()
-      })
-    } else if (documentId) {
-      prevDocRef.current = documentId
-      loadAnnotations()
-    } else {
-      prevDocRef.current = null
-      setItems([])
-    }
+    if (!documentId || !docReady) return
 
-    return () => {
-      if (prevDocRef.current) {
-        saveCurrentAnnotations()
+    const restore = async () => {
+      try {
+        const saved = await window.siltflow.annotations.list(documentId)
+        if (saved && saved.length > 0) {
+          const items = saved.map((a: any) => JSON.parse(a.embedData))
+          await pdfRef.current?.loadAnnotations(items)
+        }
+        setItems(saved || [])
+      } catch (err) {
+        console.error("Failed to restore annotations:", err)
       }
     }
-  }, [documentId, saveCurrentAnnotations, loadAnnotations, setItems])
+    restore()
+  }, [documentId, docReady, setItems])
+
+  // Process pending deletes from RightPanel
+  useEffect(() => {
+    pendingDeletes.forEach(async (pd) => {
+      try {
+        // Remove from embedPDF viewer
+        await pdfRef.current?.deleteAnnotation(pd.pageNumber, pd.id)
+        // Delete from DB
+        await window.siltflow.annotations.delete(pd.id)
+        // Remove from store
+        useAnnotationStore.getState().removeItem(pd.id)
+      } catch {
+        // silent
+      }
+    })
+    if (pendingDeletes.length > 0) clearDeletes()
+  }, [pendingDeletes, clearDeletes])
+
+  // Reset when document changes
+  useEffect(() => {
+    setDocReady(false)
+    if (!documentId) setItems([])
+  }, [documentId, setItems])
 
   if (!documentPath) {
     return (
@@ -124,6 +133,8 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
           className="h-full w-full"
           src={documentPath}
           documentId={documentId}
+          onDocumentReady={handleDocumentReady}
+          onAnnotationEvent={handleAnnotationEvent}
         />
       </div>
     </div>
