@@ -93,7 +93,6 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
             const selText = pendingTextRef.current
             pendingTextRef.current = ""
 
-            // Fire immediately
             onAnnotationEvent({
               type: "create",
               annotation: { id: event.annotation?.id, type: event.annotation?.type, page: event.pageIndex },
@@ -101,7 +100,6 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
               selectedText: selText || undefined,
             })
 
-            // Async fallback for direct-drag mode
             if (!selText) {
               selApi?.getSelectedText()?.wait?.(
                 (texts: string[]) => {
@@ -118,6 +116,11 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
                 () => {},
               )
             }
+          } else if (event.type === "delete") {
+            onAnnotationEvent({
+              type: "delete",
+              annotation: { id: event.annotation?.id },
+            })
           }
         })
       }
