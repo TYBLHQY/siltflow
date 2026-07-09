@@ -68,12 +68,14 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
           {documentPath.split("/").pop()?.split("\\").pop()}
         </h1>
       </div>
-      <div className="flex-1 min-h-0">
-        <PdfViewer
-          className="h-full w-full"
-          src={documentPath}
-          documentId={documentId}
-        />
+      <div className="flex-1 min-h-0 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <PdfViewer
+            className="h-full w-full"
+            src={documentPath}
+            documentId={documentId}
+          />
+        </div>
       </div>
     </div>
   )
