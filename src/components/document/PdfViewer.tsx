@@ -15,7 +15,7 @@ interface PdfViewerProps {
   onDocumentReady?: () => void
   onAnnotationEvent?: (event: {
     type: string
-    annotation: { id: string; type?: string; page?: number; text?: string }
+    annotation: { id: string; type?: string; page?: number }
     pageIndex?: number
     selectedText?: string
   }) => void
@@ -74,54 +74,51 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
       const selApi = registry?.getPlugin("selection")?.provides?.()
       const annApi = registry?.getPlugin("annotation")?.provides?.()
 
-      // Capture selected text on ANY selection change.
-      // This covers both select-then-highlight and direct-drag modes.
-      if (selApi?.onSelectionChange) {
-        selApi.onSelectionChange(() => {
-          selApi.getSelectedText()?.wait?.(
-            (texts: string[]) => {
-              if (texts?.length) {
-                pendingTextRef.current = texts.join("")
-              }
-            },
-            () => {},
-          )
-        })
+      // Capture text whenever selection changes
+      function captureText() {
+        selApi?.getSelectedText()?.wait?.(
+          (texts: string[]) => { if (texts?.length) pendingTextRef.current = texts.join("") },
+          () => {},
+        )
       }
-      // Fallback: also listen for end-of-selection
-      if (selApi?.onEndSelection) {
-        selApi.onEndSelection(() => {
-          selApi.getSelectedText()?.wait?.(
-            (texts: string[]) => {
-              if (texts?.length) {
-                pendingTextRef.current = texts.join("")
-              }
-            },
-            () => {},
-          )
-        })
-      }
+      if (selApi?.onSelectionChange) selApi.onSelectionChange(captureText)
+      if (selApi?.onEndSelection) selApi.onEndSelection(captureText)
 
+      // Subscribe to annotation events
       if (onAnnotationEvent && annApi?.onAnnotationEvent) {
         annApi.onAnnotationEvent((event: any) => {
           if (event.type === "loaded") return
 
-          let selText = ""
           if (event.type === "create") {
-            selText = pendingTextRef.current
+            const selText = pendingTextRef.current
             pendingTextRef.current = ""
-          }
 
-          onAnnotationEvent({
-            type: event.type,
-            annotation: {
-              id: event.annotation?.id,
-              type: event.annotation?.type,
-              page: event.pageIndex,
-            },
-            pageIndex: event.pageIndex,
-            selectedText: selText || undefined,
-          })
+            // Fire immediately
+            onAnnotationEvent({
+              type: "create",
+              annotation: { id: event.annotation?.id, type: event.annotation?.type, page: event.pageIndex },
+              pageIndex: event.pageIndex,
+              selectedText: selText || undefined,
+            })
+
+            // Async fallback for direct-drag mode
+            if (!selText) {
+              selApi?.getSelectedText()?.wait?.(
+                (texts: string[]) => {
+                  const text = texts?.join("") || ""
+                  if (text) {
+                    onAnnotationEvent({
+                      type: "create",
+                      annotation: { id: event.annotation?.id, type: event.annotation?.type, page: event.pageIndex },
+                      pageIndex: event.pageIndex,
+                      selectedText: text,
+                    })
+                  }
+                },
+                () => {},
+              )
+            }
+          }
         })
       }
 
@@ -132,7 +129,10 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
       <div className={className}>
         <PDFViewer
           ref={viewerRef}
-          config={{ src }}
+          config={{
+            src,
+            annotations: { deactivateToolAfterCreate: true },
+          }}
           style={{ width: "100%", height: "100%" }}
           onReady={handleReady}
         />
