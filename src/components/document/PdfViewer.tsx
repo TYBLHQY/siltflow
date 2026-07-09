@@ -1,6 +1,7 @@
 import { forwardRef, useRef, useImperativeHandle } from "react"
 import { PDFViewer } from "@embedpdf/react-pdf-viewer"
 import type { PDFViewerRef, AnnotationTransferItem } from "@embedpdf/react-pdf-viewer"
+import { usePdfApiStore } from "@/stores/pdf-api.store"
 
 export interface PdfViewerHandle {
   saveAnnotations: () => Promise<AnnotationTransferItem[]>
@@ -73,6 +74,39 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
 
       const selApi = registry?.getPlugin("selection")?.provides?.()
       const annApi = registry?.getPlugin("annotation")?.provides?.()
+      const thumbApi = registry?.getPlugin("thumbnail")?.provides?.()
+      const bmApi = registry?.getPlugin("bookmark")?.provides?.()
+      const dmApi = registry?.getPlugin("document-manager")?.provides?.()
+
+      // Register PDF APIs for left panel tabs
+      if (thumbApi) {
+        const renderThumb = (pageIdx: number, dpr: number) =>
+          new Promise<Blob | null>((resolve) => {
+            thumbApi.renderThumb(pageIdx, dpr).wait(
+              (blob: Blob) => resolve(blob),
+              () => resolve(null),
+            )
+          })
+        const doc = dmApi?.getDocument?.(documentId)
+        usePdfApiStore.getState().setThumbApi({
+          renderThumb,
+          scrollTo: (pageIdx: number) => thumbApi.scrollToThumb(pageIdx),
+          totalPages: (doc as any)?.pageCount || 0,
+        })
+      }
+      if (bmApi) {
+        usePdfApiStore.getState().setBookmarkApi({
+          getBookmarks: async () => {
+            const result = await new Promise<any[]>((resolve) => {
+              bmApi.getBookmarks().wait(
+                (data: any) => resolve(data?.bookmarks || []),
+                () => resolve([]),
+              )
+            })
+            return result
+          },
+        })
+      }
 
       // Capture text whenever selection changes
       function captureText() {
