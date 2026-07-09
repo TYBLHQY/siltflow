@@ -25,6 +25,7 @@ export function LeftPanel() {
 
   const thumbApi = usePdfApiStore((s) => s.thumbApi)
   const bookmarkApi = usePdfApiStore((s) => s.bookmarkApi)
+  const scrollApi = usePdfApiStore((s) => s.scrollApi)
 
   const [tab, setTab] = useState("documents")
 
@@ -112,40 +113,64 @@ export function LeftPanel() {
         </TabsContent>
 
         <TabsContent value="pages" className="flex-1 min-h-0 mt-0 pt-2">
-          <PagesTab thumbApi={thumbApi} />
+          <PagesTab thumbApi={thumbApi} scrollApi={scrollApi} />
         </TabsContent>
 
         <TabsContent value="outline" className="flex-1 min-h-0 mt-0 pt-2">
-          <OutlineTab bookmarkApi={bookmarkApi} />
+          <OutlineTab bookmarkApi={bookmarkApi} scrollApi={scrollApi} />
         </TabsContent>
       </Tabs>
     </div>
   )
 }
 
-function PagesTab({ thumbApi }: { thumbApi: PdfApiStore["thumbApi"] }) {
+function PagesTab({
+  thumbApi,
+  scrollApi,
+}: {
+  thumbApi: PdfApiStore["thumbApi"]
+  scrollApi: PdfApiStore["scrollApi"]
+}) {
   const [thumbs, setThumbs] = useState<{ idx: number; url: string }[]>([])
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!thumbApi) return
+    if (!thumbApi || thumbApi.totalPages === 0) return
+    let cancelled = false
+    setLoading(true)
     const load = async () => {
       const results: { idx: number; url: string }[] = []
       for (let i = 0; i < thumbApi.totalPages; i++) {
-        const blob = await thumbApi.renderThumb(i, 1)
+        if (cancelled) break
+        const blob = await thumbApi.renderThumb(i, 2)
         if (blob) results.push({ idx: i, url: URL.createObjectURL(blob) })
       }
-      setThumbs(results)
+      if (!cancelled) {
+        setThumbs(results)
+        setLoading(false)
+      }
     }
     load()
-    return () => thumbs.forEach((t) => URL.revokeObjectURL(t.url))
+    return () => {
+      cancelled = true
+      thumbs.forEach((t) => URL.revokeObjectURL(t.url))
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thumbApi?.totalPages])
 
-  if (!thumbApi) {
+  if (!thumbApi || thumbApi.totalPages === 0) {
     return (
       <div className="flex flex-col items-center gap-1 py-8 text-muted-foreground px-4">
         <LayoutTemplate className="h-6 w-6" />
         <p className="text-xs">Open a document to see pages</p>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -157,7 +182,7 @@ function PagesTab({ thumbApi }: { thumbApi: PdfApiStore["thumbApi"] }) {
           <button
             key={t.idx}
             className="w-full rounded border hover:bg-accent/30 transition-colors overflow-hidden"
-            onClick={() => thumbApi.scrollTo(t.idx)}
+            onClick={() => scrollApi?.scrollToPage(t.idx)}
           >
             <img src={t.url} alt={`Page ${t.idx + 1}`} className="w-full object-contain" />
             <div className="text-[10px] text-center text-muted-foreground py-0.5">
@@ -170,13 +195,29 @@ function PagesTab({ thumbApi }: { thumbApi: PdfApiStore["thumbApi"] }) {
   )
 }
 
-function OutlineTab({ bookmarkApi }: { bookmarkApi: PdfApiStore["bookmarkApi"] }) {
+function OutlineTab({
+  bookmarkApi,
+  scrollApi,
+}: {
+  bookmarkApi: PdfApiStore["bookmarkApi"]
+  scrollApi: PdfApiStore["scrollApi"]
+}) {
   const [items, setItems] = useState<any[]>([])
 
   useEffect(() => {
     if (!bookmarkApi) return
     bookmarkApi.getBookmarks().then(setItems)
   }, [bookmarkApi])
+
+  const navigate = useCallback(
+    (target: any) => {
+      const pageIndex = target?.destination?.pageIndex ?? target?.pageIndex
+      if (pageIndex !== undefined && scrollApi) {
+        scrollApi.scrollToPage(pageIndex)
+      }
+    },
+    [scrollApi]
+  )
 
   if (!bookmarkApi) {
     return (
@@ -200,22 +241,32 @@ function OutlineTab({ bookmarkApi }: { bookmarkApi: PdfApiStore["bookmarkApi"] }
     <ScrollArea className="h-full">
       <div className="px-2 pb-4 space-y-0.5">
         {items.map((item: any, i: number) => (
-          <OutlineItem key={i} item={item} depth={0} />
+          <OutlineItem key={i} item={item} depth={0} onNavigate={navigate} />
         ))}
       </div>
     </ScrollArea>
   )
 }
 
-function OutlineItem({ item, depth }: { item: any; depth: number }) {
+function OutlineItem({
+  item,
+  depth,
+  onNavigate,
+}: {
+  item: any
+  depth: number
+  onNavigate: (target: any) => void
+}) {
   const [expanded, setExpanded] = useState(true)
   const hasChildren = item.children?.length > 0
+  const pageIndex = item.target?.destination?.pageIndex ?? item.target?.pageIndex
 
   return (
     <div>
       <button
         className="flex items-center gap-1 w-full text-left rounded px-2 py-1 text-xs hover:bg-accent/30 transition-colors"
         style={{ paddingLeft: `${8 + depth * 12}px` }}
+        onClick={() => onNavigate(item.target)}
       >
         {hasChildren && (
           <span
@@ -226,14 +277,14 @@ function OutlineItem({ item, depth }: { item: any; depth: number }) {
           </span>
         )}
         <span className="truncate">{item.title}</span>
-        {item.page !== undefined && (
-          <span className="text-muted-foreground ml-auto tabular-nums">p.{item.page + 1}</span>
+        {pageIndex !== undefined && (
+          <span className="text-muted-foreground ml-auto tabular-nums">p.{pageIndex + 1}</span>
         )}
       </button>
       {expanded && hasChildren && (
         <div>
           {item.children.map((child: any, i: number) => (
-            <OutlineItem key={i} item={child} depth={depth + 1} />
+            <OutlineItem key={i} item={child} depth={depth + 1} onNavigate={onNavigate} />
           ))}
         </div>
       )}

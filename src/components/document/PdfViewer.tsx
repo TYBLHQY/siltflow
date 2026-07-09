@@ -22,8 +22,10 @@ interface PdfViewerProps {
   }) => void
 }
 
-export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
-  function PdfViewer({ src, documentId, className, onDocumentReady, onAnnotationEvent }, ref) {
+export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>((
+  { src, documentId, className, onDocumentReady, onAnnotationEvent },
+  ref,
+) => {
     const viewerRef = useRef<PDFViewerRef>(null)
     const readyFiredRef = useRef(false)
     const pendingTextRef = useRef("")
@@ -74,28 +76,45 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
 
       const selApi = registry?.getPlugin("selection")?.provides?.()
       const annApi = registry?.getPlugin("annotation")?.provides?.()
-      const thumbApi = registry?.getPlugin("thumbnail")?.provides?.()
-      const bmApi = registry?.getPlugin("bookmark")?.provides?.()
+      const thumbPlugin = registry?.getPlugin("thumbnail")
+      const bmPlugin = registry?.getPlugin("bookmark")
       const dmApi = registry?.getPlugin("document-manager")?.provides?.()
+      const scrollPlugin = registry?.getPlugin("scroll")
 
-      // Register PDF APIs for left panel tabs
-      if (thumbApi) {
+      // Get embedPDF's internal document ID
+      const internalDocId = dmApi?.getActiveDocumentId?.()
+
+      // Register scroll API for page navigation
+      if (scrollPlugin?.provides) {
+        const scrollApi = scrollPlugin.provides()
+        const scope = internalDocId ? scrollApi.forDocument(internalDocId) : scrollApi
+        usePdfApiStore.getState().setScrollApi({
+          scrollToPage: (pageIndex: number) => scope.scrollToPage({ pageNumber: pageIndex + 1 }),
+        })
+      }
+
+      // Register thumbnail API
+      if (thumbPlugin?.provides) {
+        const thumbApi = thumbPlugin.provides()
+        const scope = internalDocId ? thumbApi.forDocument(internalDocId) : thumbApi
         const renderThumb = (pageIdx: number, dpr: number) =>
           new Promise<Blob | null>((resolve) => {
-            thumbApi.renderThumb(pageIdx, dpr).wait(
+            scope.renderThumb(pageIdx, dpr).wait(
               (blob: Blob) => resolve(blob),
               () => resolve(null),
             )
           })
-        const doc = dmApi?.getDocument?.(documentId)
+        const doc = dmApi?.getDocument?.(internalDocId) as any
         usePdfApiStore.getState().setThumbApi({
           renderThumb,
-          scrollTo: (pageIdx: number) => thumbApi.scrollToThumb(pageIdx),
-          totalPages: (doc as any)?.pageCount || 0,
+          totalPages: doc?.pageCount || 0,
         })
       }
-      if (bmApi) {
-        usePdfApiStore.getState().setBookmarkApi({
+
+      // Register bookmark API
+      if (bmPlugin?.provides) {
+        const bmApi = bmPlugin.provides()
+        const scope = internalDocId ? bmApi.forDocument(internalDocId) : bmApi
           getBookmarks: async () => {
             const result = await new Promise<any[]>((resolve) => {
               bmApi.getBookmarks().wait(
