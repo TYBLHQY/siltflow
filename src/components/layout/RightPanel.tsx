@@ -72,7 +72,7 @@ function AnnotationCard({ annotation }: AnnotationCardProps) {
             </span>
           </div>
           <p className="text-sm leading-relaxed line-clamp-3">
-            {annotation.text || "No text content"}
+            {annotation.text || `${annotation.type} on page ${annotation.pageNumber + 1}`}
           </p>
         </div>
         <Button

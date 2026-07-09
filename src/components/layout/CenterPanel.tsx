@@ -3,6 +3,14 @@ import { BookOpen } from "lucide-react"
 import { PdfViewer, type PdfViewerHandle } from "@/components/document/PdfViewer"
 import { useAnnotationStore } from "@/stores/annotation.store"
 
+// Map numeric embedPDF annotation type to human-readable name
+const ANNO_TYPE_NAMES: Record<number, string> = {
+  1: "Note", 2: "Link", 3: "Text Box", 4: "Line",
+  5: "Square", 6: "Circle", 7: "Polygon", 8: "Polyline",
+  9: "Highlight", 10: "Underline", 11: "Squiggly", 12: "Strikethrough",
+  13: "Stamp", 14: "Caret", 15: "Ink", 28: "Redact",
+}
+
 interface CenterPanelProps {
   documentPath?: string | null
   documentId?: string | null
@@ -20,11 +28,13 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
     async (event: {
       type: string
       annotation: { id: string; type?: string; page?: number }
+      pageIndex?: number
+      selectedText?: string
     }) => {
       if (!documentId) return
 
       if (event.type === "create") {
-        // Save annotation to DB immediately
+        if (!event.selectedText) return // skip duplicate create events
         try {
           const items = await pdfRef.current?.saveAnnotations()
           if (items) {
@@ -33,9 +43,9 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
               await window.siltflow.annotations.save({
                 id: created.annotation.id,
                 documentId,
-                type: created.annotation.type || event.annotation.type || "highlight",
-                text: (created.annotation as any).text || "",
-                pageNumber: created.annotation.page ?? event.annotation.page ?? 0,
+                type: ANNO_TYPE_NAMES[created.annotation.type] || String(created.annotation.type),
+                text: event.selectedText,
+                pageNumber: created.annotation.page ?? event.pageIndex ?? 0,
                 embedData: JSON.stringify(created),
               })
               // Refresh the store

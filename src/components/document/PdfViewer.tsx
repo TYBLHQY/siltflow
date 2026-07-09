@@ -17,25 +17,26 @@ interface PdfViewerProps {
     type: string
     annotation: { id: string; type?: string; page?: number; text?: string }
     pageIndex?: number
+    selectedText?: string
   }) => void
 }
 
 export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
   function PdfViewer({ src, documentId, className, onDocumentReady, onAnnotationEvent }, ref) {
     const viewerRef = useRef<PDFViewerRef>(null)
-    const onReadyCalledRef = useRef(false)
+    const readyFiredRef = useRef(false)
+    const pendingTextRef = useRef("")
 
     useImperativeHandle(ref, () => ({
       saveAnnotations: async () => {
         try {
-          const registry = await viewerRef.current?.registry
-          if (!registry) return []
-          const annPlugin = registry.getPlugin<any>("annotation")
-          if (!annPlugin?.provides) return []
-          const api = annPlugin.provides()
+          const reg = await viewerRef.current?.registry
+          if (!reg) return []
+          const api = (reg as any).getPlugin("annotation")?.provides?.()
+          if (!api) return []
           const items = await new Promise<AnnotationTransferItem[]>((resolve) => {
-            api.exportAnnotations()?.wait?.(
-              (items: AnnotationTransferItem[]) => resolve(items || []),
+            api.exportAnnotations().wait(
+              (items: AnnotationTransferItem[]) => resolve(items ?? []),
               () => resolve([]),
             )
           })
@@ -46,57 +47,84 @@ export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>(
       },
       loadAnnotations: async (items: AnnotationTransferItem[]) => {
         try {
-          const registry = await viewerRef.current?.registry
-          if (!registry || items.length === 0) return
-          const annPlugin = registry.getPlugin<any>("annotation")
-          if (!annPlugin?.provides) return
-          const api = annPlugin.provides()
-          api.importAnnotations(items)
+          const reg = await viewerRef.current?.registry
+          if (!reg || !items.length) return
+          const api = (reg as any).getPlugin("annotation")?.provides?.()
+          api?.importAnnotations(items)
         } catch {
           // silent
         }
       },
-      deleteAnnotation: async (pageIndex: number, annotationId: string) => {
+      deleteAnnotation: async (_pageIndex: number, annotationId: string) => {
         try {
-          const registry = await viewerRef.current?.registry
-          if (!registry) return
-          const annPlugin = registry.getPlugin<any>("annotation")
-          if (!annPlugin?.provides) return
-          const api = annPlugin.provides()
-          api.deleteAnnotation(pageIndex, annotationId)
+          const reg = await viewerRef.current?.registry
+          if (!reg) return
+          const api = (reg as any).getPlugin("annotation")?.provides?.()
+          api?.deleteAnnotation?.(_pageIndex, annotationId)
         } catch {
           // silent
         }
       },
     }))
 
-    // Subscribe to annotation events once the registry is ready
     const handleReady = (registry: any) => {
-      if (onReadyCalledRef.current) return
-      onReadyCalledRef.current = true
+      if (readyFiredRef.current) return
+      readyFiredRef.current = true
 
-      const annPlugin = registry.getPlugin<any>("annotation")
-      if (annPlugin?.provides) {
-        const api = annPlugin.provides()
+      const selApi = registry?.getPlugin("selection")?.provides?.()
+      const annApi = registry?.getPlugin("annotation")?.provides?.()
 
-        // Subscribe to live annotation events → push to parent
-        if (onAnnotationEvent && api.onAnnotationEvent?.on) {
-          api.onAnnotationEvent.on((event: any) => {
-            onAnnotationEvent({
-              type: event.type,
-              annotation: {
-                id: event.annotation?.id,
-                type: event.annotation?.type,
-                page: event.pageIndex,
-                text: event.annotation?.text,
-              },
-              pageIndex: event.pageIndex,
-            })
-          })
-        }
+      // Capture selected text on ANY selection change.
+      // This covers both select-then-highlight and direct-drag modes.
+      if (selApi?.onSelectionChange) {
+        selApi.onSelectionChange(() => {
+          selApi.getSelectedText()?.wait?.(
+            (texts: string[]) => {
+              if (texts?.length) {
+                pendingTextRef.current = texts.join("")
+              }
+            },
+            () => {},
+          )
+        })
+      }
+      // Fallback: also listen for end-of-selection
+      if (selApi?.onEndSelection) {
+        selApi.onEndSelection(() => {
+          selApi.getSelectedText()?.wait?.(
+            (texts: string[]) => {
+              if (texts?.length) {
+                pendingTextRef.current = texts.join("")
+              }
+            },
+            () => {},
+          )
+        })
       }
 
-      // Notify parent that document is ready for operation
+      if (onAnnotationEvent && annApi?.onAnnotationEvent) {
+        annApi.onAnnotationEvent((event: any) => {
+          if (event.type === "loaded") return
+
+          let selText = ""
+          if (event.type === "create") {
+            selText = pendingTextRef.current
+            pendingTextRef.current = ""
+          }
+
+          onAnnotationEvent({
+            type: event.type,
+            annotation: {
+              id: event.annotation?.id,
+              type: event.annotation?.type,
+              page: event.pageIndex,
+            },
+            pageIndex: event.pageIndex,
+            selectedText: selText || undefined,
+          })
+        })
+      }
+
       setTimeout(() => onDocumentReady?.(), 300)
     }
 

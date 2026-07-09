@@ -1,7 +1,35 @@
-function createTables() {
-  if (!db) return
+import Database from "better-sqlite3"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import * as schema from "./schema"
+import fs from "node:fs"
+import path from "node:path"
 
-  db.run(`
+let db: ReturnType<typeof drizzle<typeof schema>> | null = null
+let sqlite: Database.Database | null = null
+
+export function initDatabase(vaultPath: string) {
+  const dbDir = path.join(vaultPath, ".siltflow")
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true })
+  }
+
+  sqlite = new Database(path.join(dbDir, "data.db"))
+  sqlite.pragma("journal_mode = WAL")
+  sqlite.pragma("foreign_keys = ON")
+
+  db = drizzle(sqlite, { schema })
+
+  // Create tables
+  createTables()
+
+  return db
+}
+
+function createTables() {
+  if (!sqlite) return
+
+  // Create documents table
+  sqlite.exec(`
     CREATE TABLE IF NOT EXISTS documents (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -11,12 +39,21 @@ function createTables() {
       metadata TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
-    )
+    );
+
+    CREATE TABLE IF NOT EXISTS _check (id TEXT PRIMARY KEY);
+    DROP TABLE _check;
   `)
 
-  // NOTE: annotations.id is NOT unique — embedPDF may reassign IDs.
-  // We enforce uniqueness per (id, document_id) to avoid duplicates.
-  db.run(`
+  // Drop old-style annotations table if it exists with wrong PK
+  const cols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
+  const isOldSchema = cols.length > 0 && cols.filter((c: any) => c.pk > 0).length === 1
+  if (isOldSchema) {
+    sqlite.exec("DROP TABLE annotations")
+  }
+
+  // Create annotations with composite PK
+  sqlite.exec(`
     CREATE TABLE IF NOT EXISTS annotations (
       id TEXT NOT NULL,
       document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
@@ -27,6 +64,16 @@ function createTables() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (id, document_id)
-    )
+    );
   `)
 }
+
+export function getDb() {
+  return db
+}
+
+export function getSqlite() {
+  return sqlite
+}
+
+export { schema }
