@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react"
+import { useRef, useEffect } from "react"
 import { BookOpen } from "lucide-react"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { useAnnotationStore } from "@/stores/annotation.store"
@@ -14,7 +14,6 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
   const clearDeletes = useAnnotationStore((s) => s.clearDeletes)
   const loadedDocRef = useRef<string | null>(null)
 
-  // Load annotations from DB when document changes
   useEffect(() => {
     if (!documentId) {
       setItems([])
@@ -23,7 +22,7 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
     }
     loadedDocRef.current = documentId
     window.siltflow.annotations.list(documentId).then((saved) => {
-      if (loadedDocRef.current !== documentId) return // stale
+      if (loadedDocRef.current !== documentId) return
       setItems(
         (saved || []).map((a: any) => ({
           id: a.id,
@@ -37,7 +36,6 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
     })
   }, [documentId, setItems])
 
-  // Process pending deletes (from right panel)
   useEffect(() => {
     pendingDeletes.forEach(async (pd) => {
       await window.siltflow.annotations.delete(pd.id)
@@ -68,14 +66,12 @@ export function CenterPanel({ documentPath, documentId }: CenterPanelProps) {
           {documentPath.split("/").pop()?.split("\\").pop()}
         </h1>
       </div>
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <PdfViewer
-            className="h-full w-full"
-            src={documentPath}
-            documentId={documentId}
-          />
-        </div>
+      <div className="flex-1 min-h-0 relative">
+        <PdfViewer
+          className="absolute inset-0"
+          src={documentPath}
+          documentId={documentId}
+        />
       </div>
     </div>
   )

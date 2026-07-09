@@ -103,3 +103,29 @@
     text-rendering: optimizeLegibility;
   }
 }
+
+/* Fix pdfjs-dist textLayer rendering */
+.textLayer {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 2;
+  opacity: 1;
+  mix-blend-mode: multiply;
+}
+.textLayer > :not(.PdfHighlighter__highlight-layer):not(.TextHighlight) {
+  opacity: 0.25;
+}
+.annotationLayer {
+  position: absolute;
+  top: 0;
+  z-index: 3;
+}
+/* Ensure PDF pages stack properly */
+.page {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  margin: 0 auto;
+}
