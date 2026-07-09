@@ -1,18 +1,25 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
 export interface SiltflowAPI {
-  // Vault
   vaultGetPath: () => Promise<string>
   vaultSelect: () => Promise<string>
   vaultSetPath: (vaultPath: string) => Promise<string>
-
-  // Vault config (stored in vault/.siltflow/config.json)
   vaultConfigGet: () => Promise<Record<string, unknown>>
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>
-
-  // Documents
   selectPdf: () => Promise<{ id: string; fileName: string; filePath: string; title: string } | null>
   loadFile: (filePath: string) => Promise<ArrayBuffer>
+
+  // Database
+  documents: {
+    list: () => Promise<any[]>
+    get: (id: string) => Promise<any | null>
+    save: (doc: any) => Promise<any>
+  }
+  annotations: {
+    list: (documentId: string) => Promise<any[]>
+    save: (annotation: any) => Promise<any>
+    delete: (id: string) => Promise<void>
+  }
 }
 
 const api: SiltflowAPI = {
@@ -23,6 +30,16 @@ const api: SiltflowAPI = {
   vaultConfigSet: (config) => ipcRenderer.invoke('vault:config:set', config),
   selectPdf: () => ipcRenderer.invoke('dialog:selectPdf'),
   loadFile: (filePath: string) => ipcRenderer.invoke('file:load', filePath),
+  documents: {
+    list: () => ipcRenderer.invoke('documents:list'),
+    get: (id) => ipcRenderer.invoke('documents:get', id),
+    save: (doc) => ipcRenderer.invoke('documents:save', doc),
+  },
+  annotations: {
+    list: (documentId) => ipcRenderer.invoke('annotations:list', documentId),
+    save: (annotation) => ipcRenderer.invoke('annotations:save', annotation),
+    delete: (id) => ipcRenderer.invoke('annotations:delete', id),
+  },
 }
 
 contextBridge.exposeInMainWorld('siltflow', api)

@@ -13,8 +13,10 @@
     "@embedpdf/react-pdf-viewer": "^2.14.4",
     "@radix-ui/react-scroll-area": "^1.2.14",
     "@radix-ui/react-separator": "^1.1.11",
+    "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.24.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -23,12 +25,15 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
     "@tailwindcss/vite": "^4.3.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
     "@vitejs/plugin-react": "^4.2.1",
+    "drizzle-kit": "^0.31.10",
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",
     "electron-devtools-installer": "^4.0.0",
@@ -44,6 +49,7 @@
   "main": "dist-electron/main.js",
   "pnpm": {
     "onlyBuiltDependencies": [
+      "better-sqlite3",
       "electron",
       "esbuild"
     ]

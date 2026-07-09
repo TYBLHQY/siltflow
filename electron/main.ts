@@ -5,6 +5,10 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { initDatabase } from './database'
+import { registerDocumentHandlers } from './ipc/documents.ipc'
+import { registerAnnotationHandlers } from './ipc/annotations.ipc'
+
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
   { scheme: 'siltflow', privileges: { standard: true, supportFetchAPI: true, bypassCSP: true } },
@@ -145,12 +149,18 @@ ipcMain.handle('vault:select', async () => {
   const vaultPath = result.filePaths[0]
   ensureVaultStructure(vaultPath)
   setVaultPath(vaultPath)
+  initDatabase(vaultPath)
+  registerDocumentHandlers()
+  registerAnnotationHandlers()
   return vaultPath
 })
 
 ipcMain.handle('vault:setPath', (_event, vaultPath: string) => {
   ensureVaultStructure(vaultPath)
   setVaultPath(vaultPath)
+  initDatabase(vaultPath)
+  registerDocumentHandlers()
+  registerAnnotationHandlers()
   return vaultPath
 })
 
@@ -204,6 +214,14 @@ ipcMain.handle('file:load', async (_event, filePath: string) => {
 
 // ── App Bootstrap ─────────────────────────────────────────────────
 app.whenReady().then(async () => {
+  // Initialize database if vault is set
+  const vaultPath = getVaultPath()
+  if (vaultPath) {
+    initDatabase(vaultPath)
+    registerDocumentHandlers()
+    registerAnnotationHandlers()
+  }
+
   // Register siltflow:// protocol → vault path
   protocol.handle('siltflow', (request) => {
     let relativePath = decodeURIComponent(request.url.slice('siltflow://'.length))
