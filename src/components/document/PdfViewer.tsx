@@ -1,198 +1,144 @@
-import { forwardRef, useRef, useImperativeHandle } from "react"
-import { PDFViewer } from "@embedpdf/react-pdf-viewer"
-import type { PDFViewerRef, AnnotationTransferItem } from "@embedpdf/react-pdf-viewer"
-import { usePdfApiStore } from "@/stores/pdf-api.store"
+import { useCallback, useRef, useState, useEffect } from "react"
+import { PdfLoader, PdfHighlighter, Highlight } from "react-pdf-highlighter"
+import type { IHighlight, NewHighlight, ScaledPosition, Content } from "react-pdf-highlighter"
+import { Trash2 } from "lucide-react"
+import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
 
-export interface PdfViewerHandle {
-  saveAnnotations: () => Promise<AnnotationTransferItem[]>
-  loadAnnotations: (items: AnnotationTransferItem[]) => Promise<void>
-  deleteAnnotation: (pageIndex: number, annotationId: string) => Promise<void>
-}
+const PDF_WORKER_SRC = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs`
 
 interface PdfViewerProps {
   src: string
   documentId: string
   className?: string
-  onDocumentReady?: () => void
-  onAnnotationEvent?: (event: {
-    type: string
-    annotation: { id: string; type?: string; page?: number }
-    pageIndex?: number
-    selectedText?: string
-  }) => void
 }
 
-export const PdfViewer = forwardRef<PdfViewerHandle, PdfViewerProps>((
-  { src, documentId, className, onDocumentReady, onAnnotationEvent },
-  ref,
-) => {
-    const viewerRef = useRef<PDFViewerRef>(null)
-    const readyFiredRef = useRef(false)
-    const pendingTextRef = useRef("")
+export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
+  const scrollViewerTo = useRef<(highlight: IHighlight) => void>(() => {})
+  const { items: storeItems, setItems, addItem, removeItem, queueDelete } = useAnnotationStore()
 
-    useImperativeHandle(ref, () => ({
-      saveAnnotations: async () => {
-        try {
-          const reg = await viewerRef.current?.registry
-          if (!reg) return []
-          const api = (reg as any).getPlugin("annotation")?.provides?.()
-          if (!api) return []
-          const items = await new Promise<AnnotationTransferItem[]>((resolve) => {
-            api.exportAnnotations().wait(
-              (items: AnnotationTransferItem[]) => resolve(items ?? []),
-              () => resolve([]),
-            )
-          })
-          return items
-        } catch {
-          return []
-        }
-      },
-      loadAnnotations: async (items: AnnotationTransferItem[]) => {
-        try {
-          const reg = await viewerRef.current?.registry
-          if (!reg || !items.length) return
-          const api = (reg as any).getPlugin("annotation")?.provides?.()
-          api?.importAnnotations(items)
-        } catch {
-          // silent
-        }
-      },
-      deleteAnnotation: async (_pageIndex: number, annotationId: string) => {
-        try {
-          const reg = await viewerRef.current?.registry
-          if (!reg) return
-          const api = (reg as any).getPlugin("annotation")?.provides?.()
-          api?.deleteAnnotation?.(_pageIndex, annotationId)
-        } catch {
-          // silent
-        }
-      },
-    }))
+  // Convert store items → IHighlight[] for PdfHighlighter
+  const [highlights, setHighlights] = useState<IHighlight[]>(() =>
+    storeItems.map(toHighlight),
+  )
 
-    const handleReady = (registry: any) => {
-      if (readyFiredRef.current) return
-      readyFiredRef.current = true
+  useEffect(() => {
+    setHighlights(storeItems.map(toHighlight))
+  }, [storeItems])
 
-      const selApi = registry?.getPlugin("selection")?.provides?.()
-      const annApi = registry?.getPlugin("annotation")?.provides?.()
-      const thumbPlugin = registry?.getPlugin("thumbnail")
-      const bmPlugin = registry?.getPlugin("bookmark")
-      const dmApi = registry?.getPlugin("document-manager")?.provides?.()
-      const scrollPlugin = registry?.getPlugin("scroll")
-
-      // Get embedPDF's internal document ID
-      const internalDocId = dmApi?.getActiveDocumentId?.()
-
-      // Register scroll API for page navigation
-      if (scrollPlugin?.provides) {
-        const scrollApi = scrollPlugin.provides()
-        const scope = internalDocId ? scrollApi.forDocument(internalDocId) : scrollApi
-        usePdfApiStore.getState().setScrollApi({
-          scrollToPage: (pageIndex: number) => scope.scrollToPage({ pageNumber: pageIndex + 1 }),
-        })
-      }
-
-      // Register thumbnail API
-      if (thumbPlugin?.provides) {
-        const thumbApi = thumbPlugin.provides()
-        const scope = internalDocId ? thumbApi.forDocument(internalDocId) : thumbApi
-        const renderThumb = (pageIdx: number, dpr: number) =>
-          new Promise<Blob | null>((resolve) => {
-            scope.renderThumb(pageIdx, dpr).wait(
-              (blob: Blob) => resolve(blob),
-              () => resolve(null),
-            )
-          })
-        const doc = dmApi?.getDocument?.(internalDocId) as any
-        usePdfApiStore.getState().setThumbApi({
-          renderThumb,
-          totalPages: doc?.pageCount || 0,
-        })
-      }
-
-      // Register bookmark API
-      if (bmPlugin?.provides) {
-        const bmApi = bmPlugin.provides()
-        const scope = internalDocId ? bmApi.forDocument(internalDocId) : bmApi
-          getBookmarks: async () => {
-            const result = await new Promise<any[]>((resolve) => {
-              bmApi.getBookmarks().wait(
-                (data: any) => resolve(data?.bookmarks || []),
-                () => resolve([]),
-              )
-            })
-            return result
-          },
-        })
-      }
-
-      // Capture text whenever selection changes
-      function captureText() {
-        selApi?.getSelectedText()?.wait?.(
-          (texts: string[]) => { if (texts?.length) pendingTextRef.current = texts.join("") },
-          () => {},
-        )
-      }
-      if (selApi?.onSelectionChange) selApi.onSelectionChange(captureText)
-      if (selApi?.onEndSelection) selApi.onEndSelection(captureText)
-
-      // Subscribe to annotation events
-      if (onAnnotationEvent && annApi?.onAnnotationEvent) {
-        annApi.onAnnotationEvent((event: any) => {
-          if (event.type === "loaded") return
-
-          if (event.type === "create") {
-            const selText = pendingTextRef.current
-            pendingTextRef.current = ""
-
-            onAnnotationEvent({
-              type: "create",
-              annotation: { id: event.annotation?.id, type: event.annotation?.type, page: event.pageIndex },
-              pageIndex: event.pageIndex,
-              selectedText: selText || undefined,
-            })
-
-            if (!selText) {
-              selApi?.getSelectedText()?.wait?.(
-                (texts: string[]) => {
-                  const text = texts?.join("") || ""
-                  if (text) {
-                    onAnnotationEvent({
-                      type: "create",
-                      annotation: { id: event.annotation?.id, type: event.annotation?.type, page: event.pageIndex },
-                      pageIndex: event.pageIndex,
-                      selectedText: text,
-                    })
-                  }
-                },
-                () => {},
-              )
+  // New highlight created from text selection
+  const handleSelectionFinished = useCallback(
+    (
+      position: ScaledPosition,
+      content: Content,
+      hideTipAndSelection: () => void,
+    ) => {
+      return (
+        <button
+          className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded shadow hover:bg-primary/90 transition-colors whitespace-nowrap"
+          onClick={async () => {
+            const text = content.text || ""
+            const id = crypto.randomUUID()
+            const item: AnnotationItem = {
+              id,
+              documentId,
+              type: "Highlight",
+              text,
+              pageNumber: position.pageNumber || 0,
+              embedData: { content, position },
             }
-          } else if (event.type === "delete") {
-            onAnnotationEvent({
-              type: "delete",
-              annotation: { id: event.annotation?.id },
+
+            // Save to DB
+            await window.siltflow.annotations.save({
+              id,
+              documentId,
+              type: "Highlight",
+              text,
+              pageNumber: position.pageNumber || 0,
+              embedData: JSON.stringify(item.embedData),
             })
-          }
-        })
-      }
 
-      setTimeout(() => onDocumentReady?.(), 300)
-    }
-
-    return (
-      <div className={className}>
-        <PDFViewer
-          ref={viewerRef}
-          config={{
-            src,
-            annotations: { deactivateToolAfterCreate: true },
+            addItem(item)
+            hideTipAndSelection()
           }}
-          style={{ width: "100%", height: "100%" }}
-          onReady={handleReady}
-        />
-      </div>
-    )
+          type="button"
+        >
+          Highlight
+        </button>
+      )
+    },
+    [documentId, addItem],
+  )
+
+  // Delete highlight
+  const handleDelete = useCallback(
+    async (id: string) => {
+      queueDelete(id, 0)
+    },
+    [queueDelete],
+  )
+
+  return (
+    <div className={className}>
+      <PdfLoader
+        url={src}
+        workerSrc={PDF_WORKER_SRC}
+        beforeLoad={
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+            Loading PDF...
+          </div>
+        }
+        errorMessage={
+          <div className="flex items-center justify-center h-full text-destructive text-sm">
+            Failed to load PDF
+          </div>
+        }
+      >
+        {(pdfDocument) => (
+          <PdfHighlighter
+            pdfDocument={pdfDocument}
+            highlights={highlights}
+            onSelectionFinished={handleSelectionFinished}
+            highlightTransform={(
+              highlight,
+              _index,
+              _setTip,
+              _hideTip,
+              _viewportToScaled,
+              _screenshot,
+              _isScrolledTo,
+            ) => (
+              <div className="group relative">
+                <Highlight
+                  position={highlight.position}
+                  comment={highlight.comment || { text: "", emoji: "" }}
+                  isScrolledTo={_isScrolledTo}
+                />
+                <button
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                  onClick={() => handleDelete(highlight.id)}
+                  type="button"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            scrollRef={(scrollTo) => {
+              scrollViewerTo.current = scrollTo
+            }}
+            onScrollChange={() => {}}
+          />
+        )}
+      </PdfLoader>
+    </div>
+  )
+}
+
+function toHighlight(item: AnnotationItem): IHighlight {
+  const data = item.embedData as any
+  return {
+    id: item.id,
+    content: { text: item.text },
+    position: data.position || data,
+    comment: { text: "", emoji: "" },
   }
-)
+}
