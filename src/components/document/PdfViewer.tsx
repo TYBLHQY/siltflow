@@ -1,7 +1,197 @@
-import { useState, useEffect, useCallback } from "react"
-import { PdfLoader, PdfHighlighter } from "react-pdf-highlighter-plus"
-import type { Highlight, PdfSelection } from "react-pdf-highlighter-plus"
+import { useCallback, useState, useEffect } from "react"
+import {
+  PdfLoader,
+  PdfHighlighter,
+  TextHighlight,
+  AreaHighlight,
+  FreetextHighlight,
+  DrawingHighlight,
+  ImageHighlight,
+  ShapeHighlight,
+  useHighlightContainerContext,
+} from "react-pdf-highlighter-plus"
+import type {
+  Highlight as RPHLHighlight,
+  PdfSelection,
+  GhostHighlight,
+  LTWHP,
+  PdfHighlighterUtils,
+} from "react-pdf-highlighter-plus"
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
+import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
+import type { PDFDocumentProxy } from "pdfjs-dist"
+
+// ---------------------------------------------------------------------------
+// SiltflowHighlight — our application-specific highlight extension
+// ---------------------------------------------------------------------------
+export interface SiltflowHighlight extends RPHLHighlight {
+  /** User-facing comment string. */
+  comment?: string
+  /** Text-highlight background color. */
+  highlightColor?: string
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert an AnnotationItem (from store / Electron IPC) into a SiltflowHighlight
+ * that the PdfHighlighter can render.
+ *
+ * NOTE: `position` is stored as a ScaledPosition in embedData.
+ * pageNumber in ScaledPosition is 1-indexed. We keep it as-is — always 1-indexed
+ * everywhere except in display rendering (LeftPanel/RightPanel).
+ */
+function annotationToHighlight(item: AnnotationItem): SiltflowHighlight {
+  const embed = item.embedData as AnnotationItem["embedData"]
+  return {
+    id: item.id,
+    type: (item.type as SiltflowHighlight["type"]) || "text",
+    content: embed?.content ?? { text: item.text },
+    position: embed?.position ?? {
+      boundingRect: {
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 0,
+        width: 0,
+        height: 0,
+        pageNumber: item.pageNumber,
+      },
+      rects: [],
+    },
+    comment: "",
+  }
+}
+
+/**
+ * Build an AnnotationItem from a completed selection.
+ * pageNumber is taken from the ScaledPosition (1-indexed) and stored as-is.
+ */
+function selectionToAnnotation(
+  id: string,
+  documentId: string,
+  ghost: GhostHighlight,
+): AnnotationItem {
+  const pageNumber = ghost.position.boundingRect.pageNumber ?? 1
+  return {
+    id,
+    documentId,
+    type: ghost.type || "highlight",
+    text: ghost.content?.text ?? "",
+    pageNumber,
+    embedData: {
+      position: ghost.position,
+      content: ghost.content,
+    },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SiltflowHighlightContainer
+// ---------------------------------------------------------------------------
+
+interface SiltflowHighlightContainerProps {
+  deleteHighlight(id: string): void
+}
+
+/**
+ * Renders whichever highlight component matches `highlight.type`.
+ * This is what gets passed as a child to `<PdfHighlighter>`.
+ */
+function SiltflowHighlightContainer({
+  deleteHighlight,
+}: SiltflowHighlightContainerProps) {
+  const {
+    highlight,
+    isScrolledTo,
+    highlightBindings,
+  } = useHighlightContainerContext<SiltflowHighlight>()
+
+  const handleDelete = useCallback(
+    () => deleteHighlight(highlight.id),
+    [deleteHighlight, highlight.id],
+  )
+
+  switch (highlight.type) {
+    case "text":
+      return (
+        <TextHighlight
+          key={highlight.id}
+          isScrolledTo={isScrolledTo}
+          highlight={highlight}
+          highlightColor={highlight.highlightColor}
+          onDelete={handleDelete}
+          copyText={highlight.content?.text}
+        />
+      )
+
+    case "freetext":
+      return (
+        <FreetextHighlight
+          key={highlight.id}
+          isScrolledTo={isScrolledTo}
+          highlight={highlight}
+          bounds={highlightBindings.textLayer}
+          onDelete={handleDelete}
+        />
+      )
+
+    case "image":
+      return (
+        <ImageHighlight
+          key={highlight.id}
+          isScrolledTo={isScrolledTo}
+          highlight={highlight}
+          bounds={highlightBindings.textLayer}
+          onDelete={handleDelete}
+        />
+      )
+
+    case "drawing":
+      return (
+        <DrawingHighlight
+          key={highlight.id}
+          isScrolledTo={isScrolledTo}
+          highlight={highlight}
+          bounds={highlightBindings.textLayer}
+          onDelete={handleDelete}
+        />
+      )
+
+    case "shape":
+      return (
+        <ShapeHighlight
+          key={highlight.id}
+          isScrolledTo={isScrolledTo}
+          highlight={highlight}
+          bounds={highlightBindings.textLayer}
+          onDelete={handleDelete}
+        />
+      )
+
+    default:
+      // Area highlight — default fallback
+      return (
+        <AreaHighlight
+          key={highlight.id}
+          isScrolledTo={isScrolledTo}
+          highlight={highlight}
+          highlightColor={highlight.highlightColor}
+          onChange={(_rect: LTWHP) => {
+            /* update position on resize — optional */
+          }}
+          bounds={highlightBindings.textLayer}
+          onDelete={handleDelete}
+        />
+      )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PdfViewer component
+// ---------------------------------------------------------------------------
 
 interface PdfViewerProps {
   src: string
@@ -10,53 +200,65 @@ interface PdfViewerProps {
 }
 
 export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
-  const { items: storeItems, addItem, queueDelete } = useAnnotationStore()
-
-  const [highlights, setHighlights] = useState<Highlight[]>(() =>
-    storeItems.map(toHighlight),
+  const { items: storeItems, addItem, removeItem } = useAnnotationStore()
+  const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() =>
+    storeItems.map(annotationToHighlight),
   )
 
+  // Sync from store -> component state whenever store items change
   useEffect(() => {
-    setHighlights(storeItems.map(toHighlight))
+    setHighlights(storeItems.map(annotationToHighlight))
   }, [storeItems])
 
+  /**
+   * When user finishes a text/area selection, create a new highlight:
+   * 1. Save to Electron backend via IPC
+   * 2. Add to Zustand store (which triggers re-render via storeItems)
+   */
   const handleSelection = useCallback(
     (selection: PdfSelection) => {
-      const text = selection.content?.text
-      if (!text) return
-
       const id = crypto.randomUUID()
-      const position = selection.position
+      const ghost = selection.makeGhostHighlight()
+      const item = selectionToAnnotation(id, documentId, ghost)
 
-      const item: AnnotationItem = {
-        id,
-        documentId,
-        type: "Highlight",
-        text,
-        pageNumber: position.pageNumber || 0,
-        embedData: { content: selection.content, position },
-      }
-
+      // Persist to Electron backend (embedData as JSON string)
       window.siltflow.annotations.save({
         id,
         documentId,
-        type: "Highlight",
-        text,
-        pageNumber: position.pageNumber || 0,
+        type: ghost.type || "highlight",
+        text: ghost.content?.text ?? "",
+        pageNumber: ghost.position.boundingRect.pageNumber ?? 1,
         embedData: JSON.stringify(item.embedData),
       })
+
+      // Add to Zustand store — this will trigger a re-sync into <PdfViewer>
       addItem(item)
     },
     [documentId, addItem],
   )
 
-  const handleDelete = useCallback(
-    async (highlightId: string) => {
-      await window.siltflow.annotations.delete(highlightId)
-      queueDelete(highlightId, 0)
+  /**
+   * Delete a highlight:
+   * 1. Delete from Electron backend (IPC)
+   * 2. Remove from Zustand store
+   */
+  const deleteHighlight = useCallback(
+    (id: string) => {
+      window.siltflow.annotations.delete(id)
+      removeItem(id)
     },
-    [queueDelete],
+    [removeItem],
   )
+
+  // Clean up store state when documentId changes
+  const pdfDocumentCleanup = usePdfViewerStore((s) => s.setPdfDocument)
+  const goToPageCleanup = usePdfViewerStore((s) => s.setGoToPage)
+  useEffect(() => {
+    return () => {
+      pdfDocumentCleanup(null)
+      goToPageCleanup(null)
+    }
+  }, [documentId, pdfDocumentCleanup, goToPageCleanup])
 
   return (
     <div className={className}>
@@ -74,13 +276,12 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
         )}
       >
         {(pdfDocument) => (
-          <PdfHighlighter
+          <PdfHighlighterWrapper
             pdfDocument={pdfDocument}
+            documentId={documentId}
             highlights={highlights}
-            key={documentId}
             onSelection={handleSelection}
-            onDelete={() => {}}
-            utilsRef={() => {}}
+            deleteHighlight={deleteHighlight}
           />
         )}
       </PdfLoader>
@@ -88,13 +289,42 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   )
 }
 
-function toHighlight(item: AnnotationItem): Highlight {
-  const data = item.embedData as any
-  return {
-    id: item.id,
-    type: "text",
-    content: { text: item.text },
-    position: data.position || data,
-    comment: { text: "", emoji: "" },
-  }
+/** Wraps PdfHighlighter, syncing pdfDocument and goToPage to the shared store via effects. */
+function PdfHighlighterWrapper({
+  pdfDocument,
+  documentId,
+  highlights,
+  onSelection,
+  deleteHighlight,
+}: {
+  pdfDocument: PDFDocumentProxy
+  documentId: string
+  highlights: SiltflowHighlight[]
+  onSelection: (selection: PdfSelection) => void
+  deleteHighlight: (id: string) => void
+}) {
+  const setPdfDocument = usePdfViewerStore((s) => s.setPdfDocument)
+  const setGoToPage = usePdfViewerStore((s) => s.setGoToPage)
+  const setCurrentPage = usePdfViewerStore((s) => s.setCurrentPage)
+
+  // Sync pdfDocument to store via effect
+  useEffect(() => {
+    setPdfDocument(pdfDocument)
+  }, [pdfDocument, setPdfDocument])
+
+  return (
+    <PdfHighlighter
+      pdfDocument={pdfDocument}
+      highlights={highlights}
+      key={documentId}
+      onSelection={onSelection}
+      utilsRef={(utils: PdfHighlighterUtils) => {
+        setGoToPage((pageNumber: number) => utils.goToPage(pageNumber))
+      }}
+      onPageChange={(page: number) => setCurrentPage(page)}
+      style={{ height: "100%" }}
+    >
+      <SiltflowHighlightContainer deleteHighlight={deleteHighlight} />
+    </PdfHighlighter>
+  )
 }
