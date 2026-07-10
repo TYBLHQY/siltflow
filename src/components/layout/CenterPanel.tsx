@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
