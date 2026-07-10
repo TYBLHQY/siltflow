@@ -211,8 +211,8 @@ export function LeftPanel() {
               <p className="text-xs text-center">Click Import PDF to add one</p>
             </div>
           ) : (
-            <ScrollArea className="flex-1">
-              <div className="space-y-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="space-y-0 w-full">
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
@@ -226,12 +226,12 @@ export function LeftPanel() {
                       setContextMenu({ doc, x: e.clientX, y: e.clientY })
                     }}
                   >
-                    <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="overflow-hidden text-ellipsis whitespace-nowrap">{doc.title}</span>
+                            <span className="truncate min-w-0 flex-1">{doc.title}</span>
                           </TooltipTrigger>
                           <TooltipContent side="top" align="start">
                             {doc.title}
@@ -242,7 +242,7 @@ export function LeftPanel() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           )}
           {contextMenu && (
             <div
@@ -284,8 +284,8 @@ export function LeftPanel() {
               <p className="text-xs text-center">Annotate and review cards to see per-document metrics</p>
             </div>
           ) : (
-            <ScrollArea className="flex-1">
-              <div className="space-y-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="space-y-0 w-full">
                 {docMetrics.map((m) => (
                   <div
                     key={m.documentId}
@@ -297,9 +297,9 @@ export function LeftPanel() {
                       if (doc) setCurrentDocument(doc)
                     }}
                   >
-                    <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="overflow-hidden text-ellipsis whitespace-nowrap">{m.documentTitle}</span>
+                      <span className="truncate min-w-0 flex-1">{m.documentTitle}</span>
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
