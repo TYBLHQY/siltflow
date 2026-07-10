@@ -81,53 +81,93 @@ export function AITranslateCard({
         className="text-sm mb-1"
       />
 
-      {/* TTS: read aloud */}
-      <button
-        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground mb-1"
-        onClick={(e) => {
-          e.stopPropagation()
-          if (tts.state === "playing") {
-            tts.stop()
-          } else {
-            tts.speak(item.text)
-          }
-        }}
-        title="Read aloud (Edge TTS)"
-      >
-        {tts.state === "loading" ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : tts.state === "playing" ? (
-          <Volume2 className="h-3 w-3 text-primary" />
-        ) : (
-          <Volume2 className="h-3 w-3" />
-        )}
-        {tts.state === "playing" ? "Stop" : "Listen"}
-      </button>
-
-      {/* AI state: loading / trigger / result */}
-      {ai === null && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Translating…
-        </div>
-      )}
-
-      {ai === undefined && (
+      {/* Action bar: TTS + Translate + FSRS review */}
+      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+        {/* TTS: read aloud */}
         <button
-          className="flex items-center gap-1 text-xs text-primary hover:underline py-1"
+          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+            tts.state === "playing"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
           onClick={(e) => {
             e.stopPropagation()
-            console.log("[AITranslateCard] AI Translate clicked, id:", id)
-            onTranslate(id)
+            if (tts.state === "playing") {
+              tts.stop()
+            } else {
+              tts.speak(item.text)
+            }
           }}
+          title="Read aloud (Edge TTS)"
         >
-          <Sparkles className="h-3 w-3" />
-          AI Translate
+          {tts.state === "loading" ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Volume2 className="h-3 w-3" />
+          )}
+          {tts.state === "playing" ? "Stop" : "Listen"}
         </button>
-      )}
 
+        {/* AI Translate button */}
+        {ai === undefined && (
+          <button
+            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              onTranslate(id)
+            }}
+          >
+            <Sparkles className="h-3 w-3" />
+            Translate
+          </button>
+        )}
+
+        {/* AI loading */}
+        {ai === null && (
+          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Translating…
+          </span>
+        )}
+
+        {/* FSRS review buttons (when AI result available) */}
+        {ai && (
+          <div className="flex flex-wrap items-center gap-1">
+            {GRADE_LABELS.map((g) => (
+              <button
+                key={g.grade}
+                className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${g.color}`}
+                onClick={() => handleReview(g.grade as Grade)}
+              >
+                {g.label}
+              </button>
+            ))}
+            {reviewed && (
+              <span className="text-[10px] text-muted-foreground italic self-center">✓</span>
+            )}
+            {nextReview && !reviewed && (
+              <span className={`text-[10px] self-center ${isDue ? "text-destructive" : "text-muted-foreground"}`}>
+                {formatDue(nextReview)}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* More button (when AI result available) */}
+        {ai && aiHasDetails(ai) && (
+          <button
+            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            {expanded ? "Less" : "More"}
+          </button>
+        )}
+      </div>
+
+      {/* AI result content */}
       {ai && (
-        <div className="mt-1 space-y-1.5">
+        <div className="mt-1.5 space-y-1">
           {/* Translation */}
           {ai.translations && ai.translations.length > 0 && (
             <p className="text-sm font-medium text-primary">
@@ -150,12 +190,12 @@ export function AITranslateCard({
             </p>
           )}
 
-          {/* Phonetic */}
+          {/* Phonetic (word/phrase only) */}
           {ai.phonetic && isWord && (
             <p className="text-xs text-muted-foreground/70 italic">{ai.phonetic}</p>
           )}
 
-          {/* Difficulty & tags */}
+          {/* Tags & difficulty — inline as list */}
           <div className="flex flex-wrap gap-1">
             {ai.difficulty_level && (
               <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -172,84 +212,55 @@ export function AITranslateCard({
             ))}
           </div>
 
-          {/* FSRS review buttons */}
-          <div className="flex flex-wrap gap-1">
-            {GRADE_LABELS.map((g) => (
-              <button
-                key={g.grade}
-                className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${g.color}`}
-                onClick={() => handleReview(g.grade as Grade)}
-              >
-                {g.label}
-              </button>
-            ))}
-            {reviewed && (
-              <span className="text-[10px] text-muted-foreground italic self-center">✓</span>
-            )}
-            {nextReview && !reviewed && (
-              <span className={`text-[10px] self-center ${isDue ? "text-destructive" : "text-muted-foreground"}`}>
-                {formatDue(nextReview)}
-              </span>
-            )}
-          </div>
-
-          {/* Expand for details */}
-          <button
-            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
-            {expanded ? "Less" : "More"}
-          </button>
-
+          {/* Expanded details */}
           {expanded && (
             <div className="space-y-1.5 text-xs text-muted-foreground border-t pt-1.5">
               {/* All translations */}
               {ai.translations && ai.translations.length > 1 && (
-                <div>
-                  <span className="font-medium text-foreground">Translations: </span>
-                  {ai.translations.map((t, i) => (
-                    <span key={i}>
-                      {t.target}
-                      {t.context_hint && (
-                        <span className="italic"> ({t.context_hint})</span>
-                      )}
-                      {i < ai.translations!.length - 1 ? "; " : ""}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-x-1">
+                  <span className="font-medium text-foreground shrink-0">Translations: </span>
+                  <span>
+                    {ai.translations.map((t, i) => (
+                      <span key={i}>
+                        {t.target}
+                        {t.context_hint && <span className="italic"> ({t.context_hint})</span>}
+                        {i < ai.translations!.length - 1 ? "; " : ""}
+                      </span>
+                    ))}
+                  </span>
                 </div>
               )}
 
               {/* All definitions */}
               {ai.definitions && ai.definitions.length > 1 && (
-                <div>
-                  <span className="font-medium text-foreground">Definitions: </span>
-                  {ai.definitions.map((d, i) => (
-                    <span key={i}>
-                      {d.part_of_speech && <span className="italic">({d.part_of_speech}) </span>}
-                      {d.definition_local ?? d.definition}
-                      {i < ai.definitions!.length - 1 ? "; " : ""}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-x-1">
+                  <span className="font-medium text-foreground shrink-0">Definitions: </span>
+                  <span>
+                    {ai.definitions.map((d, i) => (
+                      <span key={i}>
+                        {d.part_of_speech && <span className="italic">({d.part_of_speech}) </span>}
+                        {d.definition_local ?? d.definition}
+                        {i < ai.definitions!.length - 1 ? "; " : ""}
+                      </span>
+                    ))}
+                  </span>
                 </div>
               )}
 
               {/* Related terms */}
               {ai.related_terms && ai.related_terms.length > 0 && (
-                <div>
-                  <span className="font-medium text-foreground">Related: </span>
-                  {ai.related_terms.map((r, i) => (
-                    <span key={i}>
-                      {r.term}
-                      {r.term_local && <span> ({r.term_local})</span>}
-                      <span className="italic"> — {r.relation}</span>
-                      {i < ai.related_terms!.length - 1 ? "; " : ""}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-x-1">
+                  <span className="font-medium text-foreground shrink-0">Related: </span>
+                  <span>
+                    {ai.related_terms.map((r, i) => (
+                      <span key={i}>
+                        {r.term}
+                        {r.term_local && <span> ({r.term_local})</span>}
+                        <span className="italic"> — {r.relation}</span>
+                        {i < ai.related_terms!.length - 1 ? "; " : ""}
+                      </span>
+                    ))}
+                  </span>
                 </div>
               )}
 
@@ -257,38 +268,29 @@ export function AITranslateCard({
               {ai.usage_examples && ai.usage_examples.length > 0 && (
                 <div>
                   <span className="font-medium text-foreground">Examples: </span>
-                  {ai.usage_examples.map((ex, i) => (
-                    <p key={i} className="italic">
-                      "{ex}"
-                    </p>
-                  ))}
+                  <ul className="list-inside list-disc mt-0.5 space-y-0.5">
+                    {ai.usage_examples.map((ex, i) => (
+                      <li key={i} className="italic">{ex}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
               {ai.usage_notes && (
-                <p>
-                  <span className="font-medium text-foreground">Usage: </span>
-                  {ai.usage_notes}
-                </p>
+                <p><span className="font-medium text-foreground">Usage: </span>{ai.usage_notes}</p>
               )}
 
               {/* Sentence / passage fields */}
               {isLong && ai.grammar_notes && (
-                <p>
-                  <span className="font-medium text-foreground">Grammar: </span>
-                  {ai.grammar_notes}
-                </p>
+                <p><span className="font-medium text-foreground">Grammar: </span>{ai.grammar_notes}</p>
               )}
               {isLong && ai.gist && (
-                <p>
-                  <span className="font-medium text-foreground">Gist: </span>
-                  {ai.gist}
-                </p>
+                <p><span className="font-medium text-foreground">Gist: </span>{ai.gist}</p>
               )}
               {isLong && ai.key_terms && ai.key_terms.length > 0 && (
                 <div>
                   <span className="font-medium text-foreground">Key terms: </span>
-                  <ul className="list-disc list-inside">
+                  <ul className="list-disc list-inside mt-0.5 space-y-0.5">
                     {ai.key_terms.map((kt, i) => (
                       <li key={i}>
                         <span className="font-medium">{kt.term}</span>
@@ -304,6 +306,18 @@ export function AITranslateCard({
       )}
     </div>
   )
+}
+
+/** Check whether an AI result has expandable details. */
+function aiHasDetails(ai: NonNullable<AnnotationItem["aiResult"]>): boolean {
+  if (ai.translations && ai.translations.length > 1) return true
+  if (ai.definitions && ai.definitions.length > 1) return true
+  if (ai.related_terms && ai.related_terms.length > 0) return true
+  if (ai.usage_examples && ai.usage_examples.length > 0) return true
+  if (ai.usage_notes) return true
+  if (ai.grammar_notes || ai.gist) return true
+  if (ai.key_terms && ai.key_terms.length > 0) return true
+  return false
 }
 
 /** Format a due date as a relative string. */
