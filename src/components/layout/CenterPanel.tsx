@@ -132,7 +132,7 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Left sidebar ── */}
-        <div className="flex w-40 shrink-0 flex-col border-r p-2">
+        <div className="flex w-48 shrink-0 flex-col border-r p-2">
           <div className="flex items-center gap-2 px-2 py-3">
             <Settings className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-semibold">Settings</span>
@@ -388,6 +388,30 @@ function AIConfigContent() {
           ))}
         </div>
       </details>
+
+      {/* Default target language */}
+      <div className="mt-4 pt-4 border-t">
+        <div className="flex items-center gap-2 mb-1">
+          <label className="text-xs font-medium">Default target language</label>
+        </div>
+        <select
+          className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+          value={useAIStore.getState().defaultTargetLang}
+          onChange={(e) => useAIStore.getState().setDefaultTargetLang(e.target.value)}
+        >
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+          <option value="ko">한국어</option>
+          <option value="ru">Русский</option>
+        </select>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          Used for AI translation when no per-document override is set.
+        </p>
+      </div>
     </>
   )
 }
@@ -580,15 +604,28 @@ function useSystemFonts(): string[] {
 
 function StyleConfigContent() {
   const style = useStyleStore((s) => s.style)
-  const setFontFamily = useStyleStore((s) => s.setFontFamily)
+  const setFontFamilies = useStyleStore((s) => s.setFontFamilies)
+  const addFontFamily = useStyleStore((s) => s.addFontFamily)
+  const removeFontFamily = useStyleStore((s) => s.removeFontFamily)
   const setFontSize = useStyleStore((s) => s.setFontSize)
   const setGlobalFontSize = useStyleStore((s) => s.setGlobalFontSize)
+  const setPdfScrollbar = useStyleStore((s) => s.setPdfScrollbar)
+  const setSystemFontFamilies = useStyleStore((s) => s.setSystemFontFamilies)
+  const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily)
+  const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily)
   const reset = useStyleStore((s) => s.reset)
   const systemFonts = useSystemFonts()
   const [search, setSearch] = useState("")
+  const [showFontList, setShowFontList] = useState(false)
+  const [showSystemFontList, setShowSystemFontList] = useState(false)
+  const [search2, setSearch2] = useState("")
 
   const filtered = search
     ? systemFonts.filter((f) => f.toLowerCase().includes(search.toLowerCase()))
+    : systemFonts
+
+  const filtered2 = search2
+    ? systemFonts.filter((f) => f.toLowerCase().includes(search2.toLowerCase()))
     : systemFonts
 
   return (
@@ -599,50 +636,244 @@ function StyleConfigContent() {
       </div>
 
       <div className="space-y-5">
-        {/* Font family */}
+        {/* Font family — ordered list */}
         <div>
-          <label className="block text-xs font-medium mb-1.5">Font family</label>
-          <div className="relative mb-2">
-            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
-              placeholder="Search fonts…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="max-h-48 overflow-y-auto rounded-md border">
-            {filtered.map((font) => {
-              const isSelected = style.fontFamily === font
-              return (
-                <button
-                  key={font}
-                  className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
-                    isSelected
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-accent text-foreground"
-                  }`}
-                  onClick={() => setFontFamily(font)}
+          <label className="block text-xs font-medium mb-1.5">
+            Font family stack
+          </label>
+
+          {/* Current font list */}
+          <div className="space-y-1 mb-2">
+            {style.fontFamilies.map((f, i) => (
+              <div key={i} className="flex items-center gap-1 rounded-md border bg-background px-2 py-1">
+                <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}.</span>
+                <span
+                  className="flex-1 truncate text-xs"
+                  style={{ fontFamily: f }}
                 >
-                  <span
-                    className="flex-1 truncate"
-                    style={{ fontFamily: font }}
-                  >
-                    {font}
-                  </span>
-                  {isSelected && <span className="text-primary shrink-0">✓</span>}
+                  {f}
+                </span>
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                  onClick={() => removeFontFamily(i)}
+                  disabled={style.fontFamilies.length <= 1}
+                >
+                  ✕
                 </button>
-              )
-            })}
-            {filtered.length === 0 && (
-              <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
-                No fonts match &quot;{search}&quot;
-              </p>
-            )}
+                {i > 0 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    onClick={() => {
+                      const arr = [...style.fontFamilies]
+                      ;[arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]
+                      setFontFamilies(arr)
+                    }}
+                  >
+                    ↑
+                  </button>
+                )}
+                {i < style.fontFamilies.length - 1 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    onClick={() => {
+                      const arr = [...style.fontFamilies]
+                      ;[arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]
+                      setFontFamilies(arr)
+                    }}
+                  >
+                    ↓
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+
+          {/* Add font — button to open, search + list when open */}
+          {showFontList ? (
+            <>
+              <div className="relative mb-2">
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
+                  placeholder="Search fonts…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-40 overflow-y-auto rounded-md border">
+                {filtered.map((font) => {
+                  const isAdded = style.fontFamilies.includes(font)
+                  return (
+                    <button
+                      key={font}
+                      className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
+                        isAdded
+                          ? "text-muted-foreground cursor-default"
+                          : "hover:bg-accent text-foreground"
+                      }`}
+                      onClick={() => {
+                        if (!isAdded) {
+                          addFontFamily(font)
+                          setShowFontList(false)
+                        }
+                        setSearch("")
+                      }}
+                    >
+                      <span
+                        className="flex-1 truncate"
+                        style={{ fontFamily: font }}
+                      >
+                        {font}
+                      </span>
+                      {isAdded && <span className="text-primary shrink-0">✓</span>}
+                    </button>
+                  )
+                })}
+                {filtered.length === 0 && (
+                  <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
+                    No fonts match &quot;{search}&quot;
+                  </p>
+                )}
+              </div>
+              <button
+                className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+                onClick={() => { setShowFontList(false); setSearch("") }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              className="flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              onClick={() => setShowFontList(true)}
+            >
+              + Add font
+            </button>
+          )}
         </div>
 
-        {/* Font size */}
+      {/* System font stack for UI — same style as font family list */}
+      <div>
+        <label className="block text-xs font-medium mb-1.5">
+          System Font (UI)
+        </label>
+
+        {/* Current system font list */}
+        <div className="space-y-1 mb-2">
+          {style.systemFontFamilies.map((f, i) => (
+            <div key={i} className="flex items-center gap-1 rounded-md border bg-background px-2 py-1">
+              <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}.</span>
+              <span
+                className="flex-1 truncate text-xs"
+                style={{ fontFamily: f }}
+              >
+                {f}
+              </span>
+              <button
+                className="text-[10px] text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                onClick={() => removeSystemFontFamily(i)}
+                disabled={style.systemFontFamilies.length <= 1}
+              >
+                ✕
+              </button>
+              {i > 0 && (
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={() => {
+                    const arr = [...style.systemFontFamilies]
+                    ;[arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]
+                    setSystemFontFamilies(arr)
+                  }}
+                >
+                  ↑
+                </button>
+              )}
+              {i < style.systemFontFamilies.length - 1 && (
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={() => {
+                    const arr = [...style.systemFontFamilies]
+                    ;[arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]
+                    setSystemFontFamilies(arr)
+                  }}
+                >
+                  ↓
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add system font */}
+        {showSystemFontList ? (
+          <>
+            <div className="relative mb-2">
+              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
+                placeholder="Search fonts…"
+                value={search2}
+                onChange={(e) => setSearch2(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="max-h-40 overflow-y-auto rounded-md border">
+              {filtered2.map((font) => {
+                const isAdded = style.systemFontFamilies.includes(font)
+                return (
+                  <button
+                    key={font}
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
+                      isAdded
+                        ? "text-muted-foreground cursor-default"
+                        : "hover:bg-accent text-foreground"
+                    }`}
+                    onClick={() => {
+                      if (!isAdded) {
+                        addSystemFontFamily(font)
+                        setShowSystemFontList(false)
+                      }
+                      setSearch2("")
+                    }}
+                  >
+                    <span
+                      className="flex-1 truncate"
+                      style={{ fontFamily: font }}
+                    >
+                      {font}
+                    </span>
+                    {isAdded && <span className="text-primary shrink-0">✓</span>}
+                  </button>
+                )
+              })}
+              {filtered2.length === 0 && (
+                <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
+                  No fonts match &quot;{search2}&quot;
+                </p>
+              )}
+            </div>
+            <button
+              className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+              onClick={() => { setShowSystemFontList(false); setSearch2("") }}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button
+            className="flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            onClick={() => { setShowSystemFontList(true); setSearch2("") }}
+          >
+            + Add font
+          </button>
+        )}
+        <p className="text-[10px] text-muted-foreground mt-1">
+          Controls all UI text (buttons, bars, lists, panels).
+        </p>
+      </div>
+
+      {/* Font size */}
         <div>
           <label className="block text-xs font-medium mb-1.5">
             Font size: {style.fontSize}px
@@ -656,11 +887,6 @@ function StyleConfigContent() {
             value={style.fontSize}
             onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>9px</span>
-            <span>13px</span>
-            <span>24px</span>
-          </div>
         </div>
 
         {/* Global font size */}
@@ -677,27 +903,21 @@ function StyleConfigContent() {
             value={style.globalFontSize}
             onChange={(e) => setGlobalFontSize(parseInt(e.target.value, 10))}
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>12px</span>
-            <span>14px</span>
-            <span>20px</span>
-          </div>
         </div>
+      </div>
 
-        {/* Preview */}
-        <div className="rounded-md border bg-muted/30 p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Preview</p>
-          <p
-            className="text-muted-foreground/80"
-            style={{
-              fontFamily: style.fontFamily,
-              fontSize: style.fontSize,
-              lineHeight: 1.6,
-            }}
-          >
-            The quick brown fox jumps over the lazy dog. 敏捷的棕色狐狸跳过了懒惰的狗。
-          </p>
-        </div>
+      {/* PDF scrollbar toggle */}
+      <div className="flex items-center gap-2 mt-5">
+        <input
+          type="checkbox"
+          id="pdfScrollbar"
+          className="rounded"
+          checked={style.pdfScrollbar}
+          onChange={(e) => setPdfScrollbar(e.target.checked)}
+        />
+        <label htmlFor="pdfScrollbar" className="text-xs">
+          Show PDF scrollbar (floating overlay)
+        </label>
       </div>
 
       <div className="mt-4 border-t pt-3">

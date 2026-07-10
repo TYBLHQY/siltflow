@@ -25,7 +25,8 @@ export function useShortcut(
   options?: UseShortcutOptions,
 ) {
   const enabled = options?.enabled ?? true
-  const getKeys = useShortcutsStore((s) => s.getKeys)
+  // Subscribe to the exact key string so the effect re-runs when the shortcut changes
+  const keys = useShortcutsStore((s) => s.getKeys(actionId))
   const handlerRef = useRef(handler)
 
   // Keep the handler ref current (avoids stale closure issues)
@@ -36,8 +37,7 @@ export function useShortcut(
   useEffect(() => {
     if (!enabled) return
 
-    const shortcutString = getKeys(actionId)
-    const parsed = parseShortcut(shortcutString)
+    const parsed = parseShortcut(keys)
     if (!parsed) return
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -65,5 +65,5 @@ export function useShortcut(
     return () => {
       document.removeEventListener("keydown", onKeyDown, true)
     }
-  }, [actionId, enabled, getKeys])
+  }, [actionId, enabled, keys])
 }

@@ -108,25 +108,23 @@ export function StudyPanel({
         {answerRevealed && ai && (
           <div className="border-t px-4 py-3 space-y-2 overflow-y-auto">
             {/* Translation */}
-            {ai.translations && ai.translations.length > 0 && (
+            {ai.translate && (
               <p className="text-sm font-medium text-primary">
-                {ai.translations[0]!.target}
-                {ai.translations.length > 1 && (
-                  <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                    +{ai.translations.length - 1} more
-                  </span>
-                )}
+                {ai.translate}
               </p>
             )}
 
-            {/* Definition */}
-            {ai.definitions && ai.definitions[0] && (
-              <p className="text-xs text-muted-foreground">
-                {ai.definitions[0].part_of_speech && (
-                  <span className="italic mr-1">{ai.definitions[0].part_of_speech}</span>
-                )}
-                {ai.definitions[0].definition_local ?? ai.definitions[0].definition}
-              </p>
+            {/* Word analysis */}
+            {ai.words && ai.words.length > 0 && ai.words[0]?.word && (
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                {ai.words.slice(0, 8).map((w, i) => (
+                  <span key={i} className="text-[11px]">
+                    <span className="font-medium">{w.word}</span>
+                    {w.pos && <span className="text-muted-foreground/60 ml-0.5">{w.pos}</span>}
+                    <span className="text-muted-foreground ml-0.5">— {w.meaning}</span>
+                  </span>
+                ))}
+              </div>
             )}
 
             {/* Phonetic */}
@@ -149,6 +147,36 @@ export function StudyPanel({
                 </span>
               ))}
             </div>
+
+            {/* Collocations */}
+            {ai.frequently && ai.frequently.length > 0 && (
+              <div>
+                <span className="text-[10px] font-medium text-muted-foreground">Collocations</span>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+                  {ai.frequently.map((f, i) => (
+                    <span key={i}>
+                      <span className="font-medium">{f.phrase}</span>
+                      <span className="text-muted-foreground"> — {f.translation}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Examples */}
+            {ai.examples && ai.examples.length > 0 && (
+              <div>
+                <span className="text-[10px] font-medium text-muted-foreground">Examples</span>
+                <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
+                  {ai.examples.slice(0, 5).map((ex, i) => (
+                    <li key={i}>
+                      {ex.sentence}
+                      {ex.translation && <span className="block ml-0">→ {ex.translation}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>

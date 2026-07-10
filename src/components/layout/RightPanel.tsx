@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react"
-import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
@@ -18,10 +17,10 @@ import { useAIStore } from "@/stores/ai.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useSummaryStore } from "@/stores/summary.store"
 import { useDocumentStore } from "@/stores/document.store"
-import { useStyleStore } from "@/stores/style.store"
+import { useStyleStore, buildFontStack } from "@/stores/style.store"
 import { useToastStore } from "@/stores/toast.store"
 import { AITranslateCard } from "@/components/document/AITranslateCard"
-import { StudyPanel } from "@/components/document/StudyPanel"
+import { LearningModal } from "@/components/document/LearningModal"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { extractPageTexts, summarizeSelectedPages } from "@/lib/summarize"
 import { reviewAnnotation } from "@/stores/fsrs.store"
@@ -47,6 +46,9 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const selectedPages = useSummaryStore((s) => s.selectedPages)
   const setSummary = useSummaryStore((s) => s.setSummary)
   const clearSummary = useSummaryStore((s) => s.clearSummary)
+  const targetLangs = useSummaryStore((s) => s.targetLangs)
+  const setTargetLang = useSummaryStore((s) => s.setTargetLang)
+  const defaultTargetLang = useAIStore((s) => s.defaultTargetLang)
   const setPageTexts = useSummaryStore((s) => s.setPageTexts)
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages)
   const style = useStyleStore((s) => s.style)
@@ -55,6 +57,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const [studyPanelOpen, setStudyPanelOpen] = useState(false)
   const [studyingIndex, setStudyingIndex] = useState(0)
   const [answerRevealed, setAnswerRevealed] = useState(false)
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
 
   // Compute due annotations for the study panel
   const dueItems = useMemo(
@@ -96,10 +99,65 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const summary = docId ? summaries[docId] : undefined
   const texts = docId ? pageTexts[docId] : undefined
   const selPages = docId ? selectedPages[docId] : undefined
+  const sourceLang = summary?.sourceLang ?? "en"
+  const effectiveTargetLang = (docId && targetLangs[docId]) || defaultTargetLang || "zh"
 
   const [summarizing, setSummarizing] = useState(false)
   const [editingSummary, setEditingSummary] = useState(false)
   const [extracting, setExtracting] = useState(false)
+  const [batchTranslating, setBatchTranslating] = useState(false)
+
+  // Batch translate all untranslated annotations
+  const handleBatchTranslate = useCallback(async () => {
+    const untranslated = items.filter((i) => i.aiResult === undefined)
+    if (untranslated.length === 0) {
+      showToast("All annotations already translated", "info")
+      return
+    }
+    if (!activeProfile) {
+      showToast("Please configure an AI provider in Settings > AI Config", "info")
+      return
+    }
+
+    // Require summary before batch translate — jump to Summary tab if missing
+    if (!summary || !summary.text?.trim()) {
+      showToast("Please generate a summary first", "info")
+      onTabChange?.("summary")
+      return
+    }
+
+    setBatchTranslating(true)
+    const results = await Promise.all(
+      untranslated.map(async (item) => {
+        updateItem(item.id, { aiResult: null })
+        try {
+          const { translateAnnotation, extractArticleContext } = await import("@/lib/translate")
+          const result = await translateAnnotation(activeProfile, {
+            text: item.text,
+            sourceLang,
+            targetLang: effectiveTargetLang,
+            contextSentence: item.text,
+            context: summary?.text ?? extractArticleContext(texts ? texts.map(t => t).join(" ") : ""),
+          })
+          updateItem(item.id, {
+            aiResult: result,
+            text: result.cleaned_input || item.text,
+          })
+          return true
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Translation failed"
+          showToast(`${message}`, "error")
+          updateItem(item.id, { aiResult: undefined })
+          return false
+        }
+      }),
+    )
+    setBatchTranslating(false)
+    const completed = results.filter(Boolean).length
+    if (completed > 0) {
+      showToast(`Translated ${completed} annotation${completed > 1 ? "s" : ""}`, "info")
+    }
+  }, [items, activeProfile, summary, texts, updateItem, showToast, onTabChange])
 
   const extractedRef = useRef<string | null>(null)
 
@@ -170,7 +228,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     setSummarizing(true)
     try {
       const result = await summarizeSelectedPages(activeProfile, texts, pagesToSummarize)
-      setSummary(docId, result, true)
+      setSummary(docId, result.summary, true, result.sourceLang, result.keyVocabulary, result.gist)
       showToast("Summary generated", "info")
     } catch (err) {
       const message = err instanceof Error ? err.message : "Summarization failed"
@@ -204,9 +262,6 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
             <TabsTrigger value="annotations" className="text-xs px-2 py-0.5 h-6">
               <Highlighter className="h-3.5 w-3.5 mr-1" />
               Annotations
-              {items.length > 0 && (
-                <span className="ml-1 text-[10px] tabular-nums">{items.length}</span>
-              )}
             </TabsTrigger>
             <TabsTrigger
               value="summary"
@@ -222,23 +277,73 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
         {/* ── Annotations tab ── */}
         <TabsContent value="annotations" className="flex-1 min-h-0 mt-0 flex flex-col">
           {items.length > 0 && (
-            <div className="shrink-0 border-b px-3 py-2">
+            <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
               <button
                 className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                onClick={() => {
-                  const d = dueItems
-                  if (d.length === 0) {
-                    showToast("No due annotations", "info")
-                    return
-                  }
-                  setStudyingIndex(0)
-                  setAnswerRevealed(false)
-                  setStudyPanelOpen(true)
-                }}
+                onClick={handleStartLearning}
               >
                 <CheckSquare className="h-3.5 w-3.5" />
                 Start Learning ({dueCount})
               </button>
+              <button
+                className="flex w-full items-center justify-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                onClick={handleBatchTranslate}
+                disabled={batchTranslating}
+                title="Translate all untranslated annotations"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {batchTranslating ? "Translating..." : "Batch Translate"}
+              </button>
+            </div>
+          )}
+          {items.length > 0 && docId && (
+            <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-[11px]">
+              {/* Source language — select */}
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="font-medium">Source:</span>
+                <select
+                  className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-[11px]"
+                  value={sourceLang}
+                  onChange={(e) => {
+                    if (docId && summary) {
+                      useSummaryStore.getState().setSummary(docId, summary.text, summary.isAiGenerated, e.target.value)
+                    }
+                  }}
+                >
+                  <option value="en">English</option>
+                  <option value="zh">中文</option>
+                  <option value="ja">日本語</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="es">Español</option>
+                  <option value="ko">한국어</option>
+                  <option value="ru">Русский</option>
+                  <option value="auto">Auto</option>
+                </select>
+              </span>
+              {/* Target language — select */}
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="font-medium">Target:</span>
+                <select
+                  className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-[11px]"
+                  value={effectiveTargetLang}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val === "__default__") return
+                    if (docId) setTargetLang(docId, val)
+                  }}
+                >
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                  <option value="ja">日本語</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="es">Español</option>
+                  <option value="ko">한국어</option>
+                  <option value="ru">Русский</option>
+                  <option value="__default__">Default ({defaultTargetLang || "zh"})</option>
+                </select>
+              </span>
             </div>
           )}
           {items.length === 0 ? (
@@ -249,37 +354,16 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
               </p>
             </div>
           ) : (
-            <>
-              {studyPanelOpen ? (
-                <StudyPanel
-                  items={dueItems}
-                  studyingIndex={studyingIndex}
-                  answerRevealed={answerRevealed}
-                  setAnswerRevealed={setAnswerRevealed}
-                  onRate={(grade) => {
-                    const item = dueItems[studyingIndex]
-                    if (item) {
-                      reviewAnnotation(item.id, grade as Grade)
-                    }
-                    if (studyingIndex + 1 < dueItems.length) {
-                      setStudyingIndex((i) => i + 1)
-                      setAnswerRevealed(false)
-                    } else {
-                      setStudyPanelOpen(false)
-                      showToast("Learning complete!", "info")
-                    }
-                  }}
-                  onBack={() => setStudyPanelOpen(false)}
-                />
-              ) : (
-                <ScrollArea className="flex-1">
-              <div className="space-y-0">
+            <ScrollArea className="flex-1">
+              <div className="space-y-2 p-3" style={{ width: 0, minWidth: "100%" }}>
                 {items.map((ann) => (
                   <AITranslateCard
                     key={ann.id}
                     id={ann.id}
                     item={ann}
                     scrolled={false}
+                    expanded={expandedCardId === ann.id}
+                    onToggleExpand={(id) => setExpandedCardId(id)}
                     onClick={() => scrollToHighlight?.(ann.id)}
                     onDelete={(id) => {
                       window.siltflow.annotations.delete(id)
@@ -295,16 +379,28 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                         return
                       }
 
+                      // Require summary
+                      if (!summary || !summary.text?.trim()) {
+                        showToast("Please generate a summary first", "info")
+                        onTabChange?.("summary")
+                        return
+                      }
+
                       updateItem(id, { aiResult: null })
 
                       try {
                         const { translateAnnotation, extractArticleContext } = await import("@/lib/translate")
                         const result = await translateAnnotation(profile, {
                           text: item.text,
-                          targetLang: "zh",
+                          sourceLang,
+                          targetLang: effectiveTargetLang,
+                          contextSentence: item.text,
                           context: summary?.text ?? extractArticleContext(texts.map(t => t).join(" ")),
                         })
-                        updateItem(id, { aiResult: result })
+                        updateItem(id, {
+                          aiResult: result,
+                          text: result.cleaned_input || item.text,
+                        })
                       } catch (err) {
                         const message = err instanceof Error ? err.message : "Translation failed"
                         showToast(message, "error")
@@ -316,14 +412,36 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
               </div>
             </ScrollArea>
           )}
-        </>
-      )}
+
+          {/* Start Learning overlay modal */}
+          {studyPanelOpen && (
+            <LearningModal
+              items={dueItems}
+              studyingIndex={studyingIndex}
+              answerRevealed={answerRevealed}
+              setAnswerRevealed={setAnswerRevealed}
+              onRate={(grade) => {
+                const item = dueItems[studyingIndex]
+                if (item) {
+                  reviewAnnotation(item.id, grade as Grade)
+                }
+                if (studyingIndex + 1 < dueItems.length) {
+                  setStudyingIndex((i) => i + 1)
+                  setAnswerRevealed(false)
+                } else {
+                  setStudyPanelOpen(false)
+                  showToast("Learning complete!", "info")
+                }
+              }}
+              onClose={() => setStudyPanelOpen(false)}
+            />
+          )}
       </TabsContent>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
           {extracting ? (
             <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Extracting page text&hellip;
+              Extracting page text…
             </div>
           ) : texts && texts.length > 0 ? (
             <div className="flex flex-col flex-1 min-h-0">
@@ -378,7 +496,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                     <Sparkles className="h-3 w-3" />
                   )}
                   {summarizing
-                    ? "Summarizing&hellip;"
+                    ? "Summarizing…"
                     : summary
                       ? "Regenerate"
                       : "AI Summarize"}
@@ -437,7 +555,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                     <textarea
                       className="h-full w-full resize-none border-0 bg-background p-3 leading-relaxed"
                       style={{
-                        fontFamily: style.fontFamily,
+                        fontFamily: buildFontStack(style.fontFamilies),
                         fontSize: style.fontSize,
                       }}
                       value={summary.text}

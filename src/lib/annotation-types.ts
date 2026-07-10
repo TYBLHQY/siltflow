@@ -3,95 +3,132 @@
  * Annotation Type System — AI-powered translation & analysis
  * ====================================================================
  *
- * The AI classifies selected text into one of four granularities:
- *   word     — single lexical unit (e.g. "ephemeral")
- *   phrase   — multi-word expression  (e.g. "in the wake of")
- *   sentence — complete clause/sentence
- *   passage  — paragraph or longer block
+ * Schema designed based on commercial-grade tools (Migaku, Readlang,
+ * LingQ, DeepL, Wiktextract) for reading-comprehension annotation.
  *
- * For each type the AI returns a structured JSON payload that drives
- * the rendering of the AnnotationCard in the right panel.
+ * Key design principles:
+ * - translation, definitions, examples 三者分离清晰
+ * - lemma 支持屈折还原
+ * - 多义项独立条目
+ * - context_sentence 保存原文上下文
+ * - metadata 结构化（CEFR, register, tags）
+ * - backward compat: 渲染层 fallback 到旧字段
  */
 
 // ---------------------------------------------------------------------------
-// Granularity
-// ---------------------------------------------------------------------------
-/** AI-detected text granularity. */
-export type AnnotationGranularity = "word" | "phrase" | "sentence" | "passage"
-
-// ---------------------------------------------------------------------------
-// AI result — translation variant
-// ---------------------------------------------------------------------------
-export interface TranslationVariant {
-  /** The translated text. */
-  target: string
-  /** When this variant is preferred (e.g. "formal", "colloquial", "in biology"). */
-  context_hint?: string
-}
-
-// ---------------------------------------------------------------------------
-// AI result — definition / gloss
+// Definitions entry
 // ---------------------------------------------------------------------------
 export interface DefinitionEntry {
-  part_of_speech?: string
-  /** Definition in the source language (e.g. English → English). */
-  definition?: string
-  /** Definition localised into the target language (e.g. English → Chinese). */
-  definition_local?: string
+  pos?: string
+  /** Explanation in the source language. */
+  definition: string
+  /** Explanation in the target language. */
+  gloss?: string
 }
 
 // ---------------------------------------------------------------------------
-// AI result — related term
+// Example sentence
 // ---------------------------------------------------------------------------
-export interface RelatedTerm {
-  term: string
-  relation: "synonym" | "antonym" | "collocation" | "derivation" | "see_also"
-  /** Translation of this related term. */
-  term_local?: string
+export interface ExampleEntry {
+  sentence: string
+  translation: string
+  /** "context" = from user's own text, "dictionary" = AI-generated. */
+  source: "context" | "dictionary"
+}
+
+// ---------------------------------------------------------------------------
+// Collocation / frequent pattern
+// ---------------------------------------------------------------------------
+export interface CollocationEntry {
+  phrase: string
+  translation: string
+}
+
+// ---------------------------------------------------------------------------
+// Alternative expression (synonym / rephrase)
+// ---------------------------------------------------------------------------
+export interface AlternativeEntry {
+  expression: string
+  register?: string
+}
+
+// ---------------------------------------------------------------------------
+// Pronunciation
+// ---------------------------------------------------------------------------
+export interface PronunciationInfo {
+  ipa?: string
+}
+
+// ---------------------------------------------------------------------------
+// Metadata
+// ---------------------------------------------------------------------------
+export interface AITranslateMetadata {
+  difficulty?: string       // CEFR: A1-C2 / native
+  register?: string         // formal | casual | neutral | academic | literary
+  tags?: string[]           // domain tags
 }
 
 // ---------------------------------------------------------------------------
 // Full AI annotation payload
 // ---------------------------------------------------------------------------
 export interface AIAnnotationData {
-  /** The original selected text. */
-  source_text: string
-
-  /** AI-inferred granularity. */
-  type: AnnotationGranularity
-
-  /** Source language code (ISO 639-1, e.g. "en", "zh", "fr"). */
+  /** Natural translation. */
+  translation: string
+  /** Source language code (ISO 639-1). */
   source_lang: string
-  /** Target language code.  Same as source_lang for self-translate. */
+  /** Target language code. */
   target_lang: string
+  /** Normalized user input. */
+  cleaned_input: string
 
-  // ── Translations (absent for same-language "explain" mode) ─────────
-  translations?: TranslationVariant[]
+  /** Base/dictionary form (for inflected words). */
+  lemma?: string
+  /** Part-of-speech tag. */
+  pos?: string
 
-  // ── Definitions (always present) ──────────────────────────────────
-  definitions?: DefinitionEntry[]
+  /** Multi-sense definitions. */
+  definitions: DefinitionEntry[]
+  /** Example sentences. */
+  examples: ExampleEntry[]
+  /** Common collocations / usage patterns. */
+  collocations: CollocationEntry[]
+  /** Synonyms / alternative phrasings by register. */
+  alternatives: AlternativeEntry[]
 
-  // ── Pronunciation (useful for words/phrases) ──────────────────────
-  phonetic?: string
+  /** Pronunciation information. */
+  pronunciation?: PronunciationInfo
 
-  // ── Usage & examples ──────────────────────────────────────────────
-  usage_notes?: string
+  /** Metadata (CEFR, register, domain tags). */
+  metadata?: AITranslateMetadata
+
+  /** The sentence from the user's document where this text appears. */
+  context_sentence?: string
+
+  // ── Backward compat (old fields kept for existing annotations) ──
+  /** @deprecated Use translation. */
+  translate?: string
+  /** @deprecated Use definitions. */
+  words?: Array<{ word: string; pos?: string; meaning: string }>
+  /** @deprecated Use collocations. */
+  frequently?: Array<{ phrase: string; translation: string }>
+  /** @deprecated Use examples. */
   usage_examples?: string[]
-
-  // ── Word-links (for words & phrases) ──────────────────────────────
-  related_terms?: RelatedTerm[]
-
-  // ── Categorisation (for knowledge structuring) ────────────────────
-  /** Subject / domain tags. */
-  category_tags?: string[]
-  /** Estimated difficulty (CEFR: A1–C2, or "native"). */
+  /** @deprecated Use metadata.difficulty. */
   difficulty_level?: string
-
-  // ── Sentence / passage level ──────────────────────────────────────
-  /** Grammatical / structural analysis (sentence-level). */
+  /** @deprecated Use metadata.tags. */
+  category_tags?: string[]
+  /** @deprecated Use pronunciation.ipa. */
+  phonetic?: string
+  /** @deprecated Not used in new schema. */
+  granularity?: string
+  /** @deprecated Not used in new schema. */
+  usage_notes?: string
+  /** @deprecated Not used in new schema. */
   grammar_notes?: string
-  /** In-passage key term explanations. */
-  key_terms?: Array<{ term: string; explanation: string }>
-  /** Core idea summary (passage-level). */
+  /** @deprecated Not used in new schema. */
   gist?: string
+  /** @deprecated Not used in new schema. */
+  key_terms?: Array<{ term: string; explanation: string }>
+  /** @deprecated Not used in new schema. */
+  related_terms?: Array<{ term: string; relation: string; term_local?: string }>
 }

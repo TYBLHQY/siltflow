@@ -150,28 +150,34 @@
   opacity: 0.25 !important;
 }
 
-/* PdfHighlighter: override library's inline <style> with !important */
-.PdfHighlighter::-webkit-scrollbar-thumb {
+/* PdfHighlighter: scrollbar controlled by data-pdf-scrollbar attribute */
+/* When enabled: thin floating overlay */
+div[data-pdf-scrollbar="true"] .PdfHighlighter {
+  scrollbar-width: thin !important;
+  scrollbar-color: hsl(var(--border)) transparent !important;
+}
+div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
   background: transparent !important;
+}
+div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-thumb {
+  background: hsl(var(--border)) !important;
   border-radius: 999px !important;
 }
-.PdfHighlighter:hover::-webkit-scrollbar-thumb,
-.PdfHighlighter:focus::-webkit-scrollbar-thumb {
-  background: hsl(var(--border)) !important;
-}
-.PdfHighlighter::-webkit-scrollbar-thumb:hover {
+div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground)) !important;
 }
-.PdfHighlighter::-webkit-scrollbar-track,
-.PdfHighlighter::-webkit-scrollbar-track-piece {
+div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-track,
+div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-track-piece {
   background: transparent !important;
+  border: none !important;
 }
-
-/* PdfHighlighter Firefox — same treatment */
-.PdfHighlighter {
-  scrollbar-width: thin !important;
-  scrollbar-color: transparent transparent !important;
+/* When disabled: no scrollbar */
+div[data-pdf-scrollbar="false"] .PdfHighlighter {
+  scrollbar-width: none !important;
 }
-.PdfHighlighter:hover {
-  scrollbar-color: hsl(var(--border)) transparent !important;
+div[data-pdf-scrollbar="false"] .PdfHighlighter::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
 }

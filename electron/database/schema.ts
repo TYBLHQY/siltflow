@@ -32,6 +32,7 @@ export const summaries = sqliteTable(
     isAiGenerated: integer("is_ai_generated", { mode: "boolean" })
       .notNull()
       .default(false),
+    sourceLang: text("source_lang"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },

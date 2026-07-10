@@ -2,11 +2,6 @@
  * ====================================================================
  * AI Document Summarization — User-selectable pages, single-shot
  * ====================================================================
- *
- * Instead of map-reduce (which costs too many tokens), we extract
- * per-page text and let the user pick which pages to summarise.
- * Only the selected pages are concatenated and sent to the AI in
- * one shot — cheap and fast.
  */
 
 import type { AIProfile } from "@/stores/ai.store"
@@ -14,13 +9,20 @@ import { chatCompletion } from "@/lib/ai"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 
 // ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface SummaryResult {
+  summary: string
+  sourceLang: string
+  keyVocabulary: { term: string; cefr?: string }[]
+  gist: string
+}
+
+// ---------------------------------------------------------------------------
 // PDF text extraction — per-page
 // ---------------------------------------------------------------------------
 
-/**
- * Extract text from every page of a PDF, returning an array indexed by
- * page number (1-based).
- */
 export async function extractPageTexts(pdfDoc: PDFDocumentProxy): Promise<string[]> {
   const numPages = pdfDoc.numPages
   const texts: string[] = []
@@ -38,34 +40,40 @@ export async function extractPageTexts(pdfDoc: PDFDocumentProxy): Promise<string
 }
 
 // ---------------------------------------------------------------------------
-// One-shot summarization of user-selected pages
+// Summary prompt
 // ---------------------------------------------------------------------------
 
-const SUMMARY_PROMPT = `You are a professional document summarizer.
+const SUMMARY_PROMPT = `You are a professional document summarizer for language learners.
 
-Below are excerpts from a document.  Produce a concise summary capturing the key information, main arguments, and important details.
+Output valid JSON only — no markdown fences, no commentary.
+Schema:
+{
+  "summary": "<concise summary from a learner's perspective, highlighting core arguments and key information>",
+  "source_lang": "<ISO 639-1 language code of the document>",
+  "key_vocabulary": [
+    { "term": "<important vocabulary item>", "cefr": "<A1|A2|B1|B2|C1|C2>" }
+  ],
+  "gist": "<one-sentence core idea>"
+}
 
-Output valid JSON only — no markdown fences, no commentary:
-{ "summary": "<your summary here>" }
+CONSTRAINTS:
+- summary: 3-5 sentences, focus on main arguments.
+- source_lang: detect the document's primary language.
+- key_vocabulary: extract 3-8 important or challenging words from the document that a learner should look up.
+- gist: one sentence capturing the single most important idea.
 
 EXCERPTS:`
 
-/**
- * Summarize the selected pages of a PDF in a single API call.
- *
- * @param profile      - AI provider profile
- * @param pageTexts    - full per-page text array (indexed 0-based)
- * @param selectedPageNumbers - 1-based page numbers to include
- * @param signal       - optional AbortSignal
- * @returns The summary string.
- */
+// ---------------------------------------------------------------------------
+// One-shot summarization
+// ---------------------------------------------------------------------------
+
 export async function summarizeSelectedPages(
   profile: AIProfile,
   pageTexts: string[],
   selectedPageNumbers: number[],
   signal?: AbortSignal,
-): Promise<string> {
-  // Concatenate selected pages
+): Promise<SummaryResult> {
   const parts = selectedPageNumbers
     .filter((p) => p >= 1 && p <= pageTexts.length)
     .map((p) => `[Page ${p}]\n${pageTexts[p - 1]!}`)
@@ -87,8 +95,13 @@ export async function summarizeSelectedPages(
 
   try {
     const parsed = JSON.parse(cleaned)
-    return parsed.summary ?? cleaned
+    return {
+      summary: parsed.summary ?? cleaned,
+      sourceLang: parsed.source_lang ?? "en",
+      keyVocabulary: Array.isArray(parsed.key_vocabulary) ? parsed.key_vocabulary : [],
+      gist: parsed.gist ?? "",
+    }
   } catch {
-    return cleaned
+    return { summary: cleaned, sourceLang: "en", keyVocabulary: [], gist: "" }
   }
 }

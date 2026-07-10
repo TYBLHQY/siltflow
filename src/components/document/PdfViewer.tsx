@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect, useRef } from "react"
+import { useStyleStore } from "@/stores/style.store"
 import {
   PdfLoader,
   PdfHighlighter,
@@ -407,6 +408,7 @@ function PdfHighlighterWrapper({
   const fitWidth = usePdfViewerStore((s) => s.fitWidth)
   const setScrollToHighlightStore = usePdfViewerStore((s) => s.setScrollToHighlight)
   const lastPage = usePdfViewerStore((s) => s.lastPageByDocId[documentId])
+  const pdfScrollbar = useStyleStore((s) => s.style.pdfScrollbar)
   const setLastPage = usePdfViewerStore((s) => s.setLastPage)
   const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled)
 
@@ -490,7 +492,7 @@ function PdfHighlighterWrapper({
   }, [])
 
   return (
-    <div ref={wrapperRef} className="h-full w-full">
+    <div ref={wrapperRef} className="h-full w-full" data-pdf-scrollbar={pdfScrollbar ? "true" : "false"}>
       <PdfHighlighter
       pdfDocument={pdfDocument}
       highlights={highlights}

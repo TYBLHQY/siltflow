@@ -1,12 +1,10 @@
-import { Button } from "@/components/ui/button"
-import { Highlighter, Trash2, Sparkles, Loader2, ChevronDown, ChevronRight, Volume2, Pencil } from "lucide-react"
-import { useState, useCallback, useRef, useEffect } from "react"
+import { Highlighter, Trash2, Sparkles, Loader2, Volume2, Pencil } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
-import { reviewAnnotation, getNextReview } from "@/stores/fsrs.store"
-import type { Grade } from "ts-fsrs"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { useTTS } from "@/lib/use-tts"
 import { useAnnotationStore } from "@/stores/annotation.store"
+import { useStyleStore, buildFontStack } from "@/stores/style.store"
 
 interface AITranslateCardProps {
   id: string
@@ -16,16 +14,96 @@ interface AITranslateCardProps {
   onClick?: () => void
   scrolled?: boolean
   className?: string
+  expanded: boolean
+  onToggleExpand: (id: string) => void
 }
 
-const GRADE_LABELS: { grade: Grade; label: string; color: string }[] = [
-  { grade: 1, label: "Again", color: "bg-red-500/10 text-red-600 hover:bg-red-500/20" },
-  { grade: 2, label: "Hard", color: "bg-orange-500/10 text-orange-600 hover:bg-orange-500/20" },
-  { grade: 3, label: "Good", color: "bg-green-500/10 text-green-600 hover:bg-green-500/20" },
-  { grade: 4, label: "Easy", color: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20" },
-]
+// ── Backward-compat helpers ─────────────────────────────────────────────
 
-/** Renders a single annotation card, with AI result when available. */
+function getTranslation(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.translation || ai.translate
+}
+
+function getDefinitions(ai: NonNullable<AnnotationItem["aiResult"]>) {
+  // New format: definitions[] with {pos, definition, gloss}
+  if (ai.definitions && ai.definitions.length > 0) {
+    return ai.definitions.filter(d => d.definition || d.gloss)
+  }
+  // Old format: words[] with {word, pos, meaning}
+  if (ai.words && ai.words.length > 0) {
+    return ai.words.filter(w => w.word).map(w => ({
+      pos: w.pos,
+      definition: w.word,
+      gloss: w.meaning,
+      _legacyWord: w.word,
+    }))
+  }
+  return []
+}
+
+function getCollocations(ai: NonNullable<AnnotationItem["aiResult"]>) {
+  if (ai.collocations && ai.collocations.length > 0) return ai.collocations
+  if (ai.frequently && ai.frequently.length > 0) return ai.frequently
+  return []
+}
+
+function getIpa(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.pronunciation?.ipa || ai.phonetic
+}
+
+function getDifficulty(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.metadata?.difficulty || ai.difficulty_level
+}
+
+function getTags(ai: NonNullable<AnnotationItem["aiResult"]>): string[] | undefined {
+  return ai.metadata?.tags || ai.category_tags
+}
+
+function getRegister(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.metadata?.register
+}
+
+function getAlternatives(ai: NonNullable<AnnotationItem["aiResult"]>) {
+  // New format
+  if (ai.alternatives && ai.alternatives.length > 0) return ai.alternatives
+  // Old format: words with pos === "syn"
+  if (ai.words) {
+    const syns = ai.words.filter(w => w.pos === "syn")
+    if (syns.length > 0) return syns.map(s => ({ expression: s.word, register: undefined as string | undefined }))
+  }
+  return []
+}
+
+function inferGranularity(ai: NonNullable<AnnotationItem["aiResult"]>, text: string): string {
+  if (ai.granularity) return ai.granularity
+  // Fallback inference
+  const t = text.trim()
+  if (t.includes("\n") || (t.split(" ").length > 30 && t.includes("."))) return "passage"
+  if (t.split(/[.!?;]+/).filter(Boolean).length > 1) return "sentence"
+  if (t.split(" ").length > 2) return "phrase"
+  return "word"
+}
+
+function hasDetails(ai: NonNullable<AnnotationItem["aiResult"]>): boolean {
+  const coll = getCollocations(ai)
+  const alts = getAlternatives(ai)
+  const defs = getDefinitions(ai)
+  const exs = ai.examples
+  const register = getRegister(ai)
+  const contextSentence = ai.context_sentence
+
+  if (coll.length > 0) return true
+  if (alts.length > 0) return true
+  if (exs && exs.length > 0) return true
+  if (register) return true
+  if (contextSentence) return true
+  // If we have definitions with gloss (multi-sense), details are useful
+  if (defs.length > 1) return true
+  return false
+}
+
+// ── Component ──────────────────────────────────────────────────────────
+
 export function AITranslateCard({
   id,
   item,
@@ -34,17 +112,16 @@ export function AITranslateCard({
   onClick,
   scrolled,
   className = "",
+  expanded,
+  onToggleExpand,
 }: AITranslateCardProps) {
   const ai = item.aiResult
-  const [expanded, setExpanded] = useState(false)
-  const [reviewed, setReviewed] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(item.text)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const isWord = ai?.type === "word" || ai?.type === "phrase"
-  const isLong = ai?.type === "sentence" || ai?.type === "passage"
   const tts = useTTS()
   const updateItem = useAnnotationStore((s) => s.updateItem)
+  const style = useStyleStore((s) => s.style)
 
   useEffect(() => {
     setEditText(item.text)
@@ -65,7 +142,6 @@ export function AITranslateCard({
   const handleEditToggle = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (editing) {
-      // Save
       updateItem(id, { text: editText })
     }
     setEditing(!editing)
@@ -83,43 +159,44 @@ export function AITranslateCard({
     }
   }
 
-  const handleReview = useCallback(
-    (grade: Grade) => {
-      reviewAnnotation(id, grade)
-      setReviewed(true)
-      setTimeout(() => setReviewed(false), 1500)
-    },
-    [id],
-  )
+  const handleCardClick = () => {
+    if (ai) {
+      onToggleExpand(id)
+    }
+    onClick?.()
+  }
 
-  const card = item.fsrsCard
-  const nextReview = card ? getNextReview(card) : undefined
-  const isDue = nextReview ? nextReview <= new Date() : false
+  // Resolve data with backward compat
+  const translation = ai ? getTranslation(ai) : undefined
+  const defs = ai ? getDefinitions(ai) : []
+  const colls = ai ? getCollocations(ai) : []
+  const ipa = ai ? getIpa(ai) : undefined
+  const difficulty = ai ? getDifficulty(ai) : undefined
+  const tags = ai ? getTags(ai) : undefined
+  const register = ai ? getRegister(ai) : undefined
+  const alts = ai ? getAlternatives(ai) : []
+  const examples = ai?.examples ?? []
+  const contextSentence = ai?.context_sentence
+  const granularity = ai ? inferGranularity(ai, item.text) : "highlight"
+  const isWord = granularity === "word" || granularity === "phrase"
+  const isDetailAvailable = ai ? hasDetails(ai) : false
 
   return (
     <div
-      className={`group relative border-b border-border/50 px-3 py-2.5 transition-colors cursor-pointer ${
-        scrolled ? "bg-accent/40" : ""
+      className={`w-full min-w-0 rounded-lg border border-border/80 bg-card shadow-sm p-3 transition-colors cursor-pointer ${
+        scrolled ? "bg-accent/40 border-accent" : "hover:border-accent"
       } ${className}`}
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-1">
+      <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
           <Highlighter className="h-3 w-3 text-yellow-500 shrink-0" />
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-            {ai?.type ?? "highlight"}
+            {granularity}
           </span>
           <span className="text-[11px] text-muted-foreground">p.{item.pageNumber}</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5"
-          onClick={handleDelete}
-        >
-          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-        </Button>
       </div>
 
       {/* Source text — editable */}
@@ -139,11 +216,10 @@ export function AITranslateCard({
         />
       )}
 
-      {/* Action bar: TTS + Translate + FSRS review + Edit */}
+      {/* Action bar */}
       <div className="flex flex-wrap items-center gap-1.5 mt-1">
-        {/* Edit button */}
         <button
-          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium transition-colors ${
             editing
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -154,22 +230,18 @@ export function AITranslateCard({
           <Pencil className="h-3 w-3" />
           {editing ? "Save" : "Edit"}
         </button>
-        {/* TTS: read aloud */}
         <button
-          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium transition-colors ${
             tts.state === "playing"
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           }`}
           onClick={(e) => {
             e.stopPropagation()
-            if (tts.state === "playing") {
-              tts.stop()
-            } else {
-              tts.speak(item.text)
-            }
+            if (tts.state === "playing") tts.stop()
+            else tts.speak(item.text)
           }}
-          title="Read aloud (Edge TTS)"
+          title="Read aloud"
         >
           {tts.state === "loading" ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -179,10 +251,9 @@ export function AITranslateCard({
           {tts.state === "playing" ? "Stop" : "Listen"}
         </button>
 
-        {/* AI Translate button */}
         {ai === undefined && (
           <button
-            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             onClick={(e) => {
               e.stopPropagation()
               onTranslate(id)
@@ -193,7 +264,6 @@ export function AITranslateCard({
           </button>
         )}
 
-        {/* AI loading */}
         {ai === null && (
           <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -201,174 +271,157 @@ export function AITranslateCard({
           </span>
         )}
 
-        {/* FSRS review buttons (when AI result available) */}
-        {ai && (
-          <div className="flex flex-wrap items-center gap-1">
-            {GRADE_LABELS.map((g) => (
-              <button
-                key={g.grade}
-                className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${g.color}`}
-                onClick={() => handleReview(g.grade as Grade)}
-              >
-                {g.label}
-              </button>
-            ))}
-            {reviewed && (
-              <span className="text-[10px] text-muted-foreground italic self-center">✓</span>
-            )}
-            {nextReview && !reviewed && (
-              <span className={`text-[10px] self-center ${isDue ? "text-destructive" : "text-muted-foreground"}`}>
-                {formatDue(nextReview)}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* More button (when AI result available) */}
-        {ai && aiHasDetails(ai) && (
-          <button
-            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            {expanded ? "Less" : "More"}
-          </button>
-        )}
+        <button
+          className="ml-auto inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-destructive transition-colors"
+          onClick={handleDelete}
+          title="Delete annotation"
+        >
+          <Trash2 className="h-3 w-3" />
+          Delete
+        </button>
       </div>
 
       {/* AI result content */}
       {ai && (
-        <div className="mt-1.5 space-y-1">
+        <div
+          className="mt-1.5 space-y-1"
+          style={{
+            fontFamily: buildFontStack(style.fontFamilies),
+            fontSize: style.fontSize,
+          }}
+        >
           {/* Translation */}
-          {ai.translations && ai.translations.length > 0 && (
-            <p className="text-sm font-medium text-primary">
-              {ai.translations[0]!.target}
-              {ai.translations.length > 1 && (
-                <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                  +{ai.translations.length - 1} more
+          {translation && (
+            <p className="font-medium text-primary leading-relaxed">{translation}</p>
+          )}
+
+          {/* Lemma + POS chip */}
+          {ai.lemma && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-semibold text-foreground">{ai.lemma}</span>
+              {ai.pos && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground font-mono">
+                  {ai.pos}
                 </span>
               )}
-            </p>
-          )}
-
-          {/* Definition */}
-          {ai.definitions && ai.definitions[0] && (
-            <p className="text-xs text-muted-foreground">
-              {ai.definitions[0].part_of_speech && (
-                <span className="italic mr-1">{ai.definitions[0].part_of_speech}</span>
+              {register && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                  {register}
+                </span>
               )}
-              {ai.definitions[0].definition_local ?? ai.definitions[0].definition}
+            </div>
+          )}
+
+          {/* IPA pronunciation (word/phrase only) */}
+          {ipa && isWord && (
+            <p className="text-muted-foreground/70 italic leading-relaxed">{ipa}</p>
+          )}
+
+          {/* Difficulty & tags */}
+          {(difficulty || (tags && tags.length > 0)) && (
+            <div className="flex flex-wrap gap-1">
+              {difficulty && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                  {difficulty}
+                </span>
+              )}
+              {tags?.slice(0, 3).map((tag) => (
+                <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Definitions */}
+          {defs.length > 0 && (
+            <div className="space-y-0.5">
+              {defs.slice(0, 5).map((d: any, i) => (
+                <div key={i} className="leading-relaxed">
+                  {d._legacyWord ? (
+                    <>
+                      <span className="font-medium">{d._legacyWord}</span>
+                      {d.pos && <span className="text-muted-foreground/60 ml-1">{d.pos}</span>}
+                      <span className="text-muted-foreground ml-1">— {d.gloss || d.meaning}</span>
+                    </>
+                  ) : (
+                    <>
+                      {d.definition && <span className="text-muted-foreground">{d.definition}</span>}
+                      {d.gloss && <span className="text-muted-foreground/70 ml-1">{d.gloss}</span>}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Context sentence collapsed preview — only when relevant */}
+          {contextSentence && !expanded && (
+            <p className="text-[90%] text-muted-foreground/60 italic leading-relaxed truncate">
+              "{contextSentence}"
             </p>
           )}
-
-          {/* Phonetic (word/phrase only) */}
-          {ai.phonetic && isWord && (
-            <p className="text-xs text-muted-foreground/70 italic">{ai.phonetic}</p>
-          )}
-
-          {/* Tags & difficulty — inline as list */}
-          <div className="flex flex-wrap gap-1">
-            {ai.difficulty_level && (
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                {ai.difficulty_level}
-              </span>
-            )}
-            {ai.category_tags?.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
 
           {/* Expanded details */}
-          {expanded && (
-            <div className="space-y-1.5 text-xs text-muted-foreground border-t pt-1.5">
-              {/* All translations */}
-              {ai.translations && ai.translations.length > 1 && (
-                <div className="flex flex-wrap gap-x-1">
-                  <span className="font-medium text-foreground shrink-0">Translations: </span>
-                  <span>
-                    {ai.translations.map((t, i) => (
-                      <span key={i}>
-                        {t.target}
-                        {t.context_hint && <span className="italic"> ({t.context_hint})</span>}
-                        {i < ai.translations!.length - 1 ? "; " : ""}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              )}
-
-              {/* All definitions */}
-              {ai.definitions && ai.definitions.length > 1 && (
-                <div className="flex flex-wrap gap-x-1">
-                  <span className="font-medium text-foreground shrink-0">Definitions: </span>
-                  <span>
-                    {ai.definitions.map((d, i) => (
-                      <span key={i}>
-                        {d.part_of_speech && <span className="italic">({d.part_of_speech}) </span>}
-                        {d.definition_local ?? d.definition}
-                        {i < ai.definitions!.length - 1 ? "; " : ""}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              )}
-
-              {/* Related terms */}
-              {ai.related_terms && ai.related_terms.length > 0 && (
-                <div className="flex flex-wrap gap-x-1">
-                  <span className="font-medium text-foreground shrink-0">Related: </span>
-                  <span>
-                    {ai.related_terms.map((r, i) => (
-                      <span key={i}>
-                        {r.term}
-                        {r.term_local && <span> ({r.term_local})</span>}
-                        <span className="italic"> — {r.relation}</span>
-                        {i < ai.related_terms!.length - 1 ? "; " : ""}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              )}
-
-              {/* Usage examples */}
-              {ai.usage_examples && ai.usage_examples.length > 0 && (
+          {expanded && isDetailAvailable && (
+            <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
+              {/* Examples */}
+              {examples.length > 0 && (
                 <div>
-                  <span className="font-medium text-foreground">Examples: </span>
-                  <ul className="list-inside list-disc mt-0.5 space-y-0.5">
-                    {ai.usage_examples.map((ex, i) => (
-                      <li key={i} className="italic">{ex}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {ai.usage_notes && (
-                <p><span className="font-medium text-foreground">Usage: </span>{ai.usage_notes}</p>
-              )}
-
-              {/* Sentence / passage fields */}
-              {isLong && ai.grammar_notes && (
-                <p><span className="font-medium text-foreground">Grammar: </span>{ai.grammar_notes}</p>
-              )}
-              {isLong && ai.gist && (
-                <p><span className="font-medium text-foreground">Gist: </span>{ai.gist}</p>
-              )}
-              {isLong && ai.key_terms && ai.key_terms.length > 0 && (
-                <div>
-                  <span className="font-medium text-foreground">Key terms: </span>
-                  <ul className="list-disc list-inside mt-0.5 space-y-0.5">
-                    {ai.key_terms.map((kt, i) => (
+                  <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                    Examples
+                  </span>
+                  <ul className="space-y-1">
+                    {examples.slice(0, 5).map((ex: any, i) => (
                       <li key={i}>
-                        <span className="font-medium">{kt.term}</span>
-                        <span className="text-muted-foreground"> — {kt.explanation}</span>
+                        <span>{ex.sentence}</span>
+                        {ex.translation && (
+                          <span className="text-muted-foreground block ml-0">
+                            {ex.translation}
+                            {ex.source === "context" && (
+                              <span className="text-[80%] text-muted-foreground/50 ml-1">(from text)</span>
+                            )}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {/* Collocations */}
+              {colls.length > 0 && (
+                <div>
+                  <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                    Collocations
+                  </span>
+                  <div className="space-y-0.5">
+                    {colls.map((c: any, i) => (
+                      <div key={i} className="leading-relaxed">
+                        <span className="font-medium">{c.phrase}</span>
+                        <span className="text-muted-foreground"> {c.translation}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Alternatives / synonyms */}
+              {alts.length > 0 && (
+                <div>
+                  <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                    Alternatives
+                  </span>
+                  <div className="space-y-0.5">
+                    {alts.map((a: any, i) => (
+                      <div key={i} className="leading-relaxed">
+                        <span className="font-medium">{a.expression}</span>
+                        {a.register && (
+                          <span className="text-muted-foreground/60 ml-1 text-[90%]">({a.register})</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -377,31 +430,4 @@ export function AITranslateCard({
       )}
     </div>
   )
-}
-
-/** Check whether an AI result has expandable details. */
-function aiHasDetails(ai: NonNullable<AnnotationItem["aiResult"]>): boolean {
-  if (ai.translations && ai.translations.length > 1) return true
-  if (ai.definitions && ai.definitions.length > 1) return true
-  if (ai.related_terms && ai.related_terms.length > 0) return true
-  if (ai.usage_examples && ai.usage_examples.length > 0) return true
-  if (ai.usage_notes) return true
-  if (ai.grammar_notes || ai.gist) return true
-  if (ai.key_terms && ai.key_terms.length > 0) return true
-  return false
-}
-
-/** Format a due date as a relative string. */
-function formatDue(date: Date): string {
-  const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  if (diffMs <= 0) return "Due"
-  const diffMin = Math.round(diffMs / 60000)
-  if (diffMin < 60) return `in ${diffMin}m`
-  const diffHour = Math.round(diffMin / 60)
-  if (diffHour < 24) return `in ${diffHour}h`
-  const diffDay = Math.round(diffHour / 24)
-  if (diffDay < 30) return `in ${diffDay}d`
-  const diffMonth = Math.round(diffDay / 30)
-  return `in ${diffMonth}mo`
 }

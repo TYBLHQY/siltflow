@@ -4,7 +4,7 @@ import { ThreeColumnLayout } from "@/components/layout/ThreeColumnLayout"
 import { loadFromVault, useAIStore } from "@/stores/ai.store"
 import { loadFSRSParams } from "@/stores/fsrs.store"
 import { loadSummariesFromVault } from "@/stores/summary.store"
-import { loadStyleFromVault, useStyleStore } from "@/stores/style.store"
+import { loadStyleFromVault, useStyleStore, buildFontStack } from "@/stores/style.store"
 import { loadTTSConfigFromVault } from "@/stores/tts.store"
 import { useToastStore } from "@/stores/toast.store"
 import { loadShortcutsFromVault } from "@/stores/shortcuts.store"
@@ -36,11 +36,16 @@ function App() {
     }
   }, [aiLoaded, showToast])
 
-  // Apply global font size to <html> element
+  // Apply global font size and system font to <html> element
   const globalFontSize = useStyleStore((s) => s.style.globalFontSize)
+  const systemFontFamilies = useStyleStore((s) => s.style.systemFontFamilies)
+  const systemFontStack = buildFontStack(systemFontFamilies)
   useEffect(() => {
     document.documentElement.style.fontSize = `${globalFontSize}px`
   }, [globalFontSize])
+  useEffect(() => {
+    document.documentElement.style.fontFamily = systemFontStack
+  }, [systemFontStack])
 
   const handleReady = () => {
     setVaultReady(true)

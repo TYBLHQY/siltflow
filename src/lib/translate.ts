@@ -3,17 +3,8 @@
  * AI Translation & Knowledge Extraction
  * ====================================================================
  *
- * Architectural decisions:
- *
- * 1. **Prompt variables last** — common prefix is identical across requests
- *    so OpenAI / Anthropic prompt caching can reuse the system-prefix block.
- * 2. **JSON response_format** — the API request declares { "type": "json_object" }
- *    to guarantee parseable output.
- * 3. **Type detection** — the prompt asks the model to classify the selection
- *    (word / phrase / sentence / passage) and return the appropriate shape.
- * 4. **Article context** — a lightweight extraction algorithm (first N chars,
- *    first sentence of each section, headings) produces a digest that is
- *    injected into the prompt so the translation can be context-aware.
+ * Prompt and schema designed based on commercial-grade tools
+ * (Migaku, Readlang, LingQ, DeepL, Wiktextract).
  */
 
 import type { AIProfile } from "@/stores/ai.store"
@@ -27,6 +18,8 @@ import type { AIAnnotationData } from "@/lib/annotation-types"
 export interface TranslateOptions {
   /** The selected text to translate / analyse. */
   text: string
+  /** The sentence from the document that contains this text. */
+  contextSentence?: string
   /** Source language code (ISO 639-1). Auto-detected if omitted. */
   sourceLang?: string
   /** Target language code. Default: "zh" */
@@ -38,72 +31,90 @@ export interface TranslateOptions {
 }
 
 // ===========================================================================
-// System prompt — variables at the end for prompt caching
+// System prompt
 // ===========================================================================
 
-const SYSTEM_PROMPT_PREFIX = `You are a professional bilingual assistant specialised in reading-comprehension annotation.
+function buildTranslatePrompt(
+  sourceLang: string,
+  targetLang: string,
+  _contextSentence?: string,
+): string {
+  const isSameLanguage = sourceLang === targetLang
 
-TASK
-For the user-provided text selection, determine its granularity and return a structured JSON object (no markdown fences, no commentary).
-
-GRANULARITY CLASSIFICATION
-- "word"       — a single lexical unit (e.g. "ephemeral", "ephemeral" is a word)
-- "phrase"     — multi-word expression (e.g. "in the wake of", "by and large")
-- "sentence"   — a complete clause or sentence (ending with . ! ?)
-- "passage"    — multiple sentences or a paragraph
-
-JSON OUTPUT SCHEMA
-{
-  "source_text": "<original text>",
-  "type": "<word|phrase|sentence|passage>",
-  "source_lang": "<ISO 639-1 code>",
-  "target_lang": "<ISO 639-1 code>",
-
-  // Required WHEN source_lang !== target_lang
-  "translations": [
-    { "target": "<translated text>", "context_hint": "<optional usage hint>" }
-  ],
-
-  // Definitions — always provide at least one
+  const BASE_SCHEMA = `{
+  "translation": "<natural translation>",
+  "source_lang": "<ISO 639-1>",
+  "target_lang": "<ISO 639-1>",
+  "cleaned_input": "<normalized user text>",
+  "lemma": "<base/dictionary form>",
+  "pos": "<part-of-speech tag>",
   "definitions": [
-    {
-      "part_of_speech": "<optional POS tag>",
-      "definition": "<definition in source language>",
-      "definition_local": "<definition in target language (omit if same as source)>"
-    }
+    { "pos": "<pos>", "definition": "<explanation in source language>", "gloss": "<explanation in target language>" }
   ],
-
-  "phonetic": "<IPA or pronunciation, for words/phrases>",
-  "usage_notes": "<brief usage / collocation note>",
-  "usage_examples": ["<example sentence>"],
-
-  // Word/phrase level only
-  "related_terms": [
-    { "term": "<related term>", "relation": "synonym|antonym|collocation|derivation|see_also", "term_local": "<translation if applicable>" }
+  "examples": [
+    { "sentence": "<example sentence>", "translation": "<translation>", "source": "context|dictionary" }
   ],
-
-  // Categorisation
-  "category_tags": ["<domain tag>"],
-  "difficulty_level": "<A1|A2|B1|B2|C1|C2|native>",
-
-  // Sentence / passage level only
-  "grammar_notes": "<grammatical structure analysis>",
-  "key_terms": [
-    { "term": "<key term>", "explanation": "<brief explanation in target language>" }
+  "collocations": [
+    { "phrase": "<common collocation>", "translation": "<translation>" }
   ],
-  "gist": "<core idea summary in target language>"
+  "alternatives": [
+    { "expression": "<synonym or alternative phrasing>", "register": "formal|casual|neutral" }
+  ],
+  "pronunciation": { "ipa": "<IPA transcription>" },
+  "metadata": {
+    "difficulty": "<A1|A2|B1|B2|C1|C2|native>",
+    "register": "<formal|casual|neutral|academic|literary>",
+    "tags": ["<domain tag>"]
+  },
+  "context_sentence": "<context sentence if provided, else omit>"
+}`
+
+  if (isSameLanguage) {
+    return `You are a professional lexicographer. Explain the given word or phrase in ${targetLang}, providing definitions, usage examples, synonyms, and collocations.
+
+Output ONLY valid JSON — no surrounding text, no markdown fences, no commentary.
+Schema:
+${BASE_SCHEMA}
+
+CONSTRAINTS:
+- 'lemma': base/dictionary form. For "ran" → "run"; for "better" → "good".
+- 'definitions': at least 1 entry, max 5 for multi-sense words.
+- 'examples': at least 1 entry; if a context sentence is provided, include it as the first example with source "context" and highlight the word with **word**.
+- All string fields (translation, definitions, examples, collocations, alternatives) must be plain text only — NO markdown formatting (no bold, italics, lists, headings, code fences, or any other markup). Plain sentences only.
+- 'collocations': max 4 entries.
+- 'alternatives': max 3 entries, each differing in register.
+- 'pronunciation': include IPA for words/phrases; omit for sentences/passages.
+- 'metadata.difficulty': estimate CEFR level.
+- 'metadata.register': indicate formality level.
+- 'metadata.tags': max 3 domain tags.
+- POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
+- Use ISO 639-1 language codes.
+- cleaned_input: normalize whitespace, remove artifacts.
+Source language: ${sourceLang}. Target language: ${targetLang}.`
+  } else {
+    return `You are a professional bilingual lexicographer. Given a text selection and optional article context, provide translation and lexical analysis.
+
+Output ONLY valid JSON — no surrounding text, no markdown fences, no commentary.
+Schema:
+${BASE_SCHEMA}
+
+CONSTRAINTS:
+- 'lemma': base/dictionary form. For "ran" → "run"; for "better" → "good".
+- 'definitions': at least 1 entry, max 5 for multi-sense words.
+- 'examples': at least 1 entry; if a context sentence is provided, include it as the first example with source "context" and highlight the word with **word**.
+- All string fields (translation, definitions, examples, collocations, alternatives) must be plain text only — NO markdown formatting (no bold, italics, lists, headings, code fences, or any other markup). Plain sentences only.
+- 'collocations': max 4 entries.
+- 'alternatives': max 3 entries, each differing in register.
+- 'pronunciation': include IPA for words/phrases; omit for sentences/passages.
+- 'metadata.difficulty': estimate CEFR level.
+- 'metadata.register': indicate formality level.
+- 'metadata.tags': max 3 domain tags.
+- POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
+- Use ISO 639-1 language codes.
+- cleaned_input: normalize whitespace, remove artifacts.
+Source language: ${sourceLang}. Target language: ${targetLang}.`
+  }
 }
-
-CONSTRAINTS
-- Output valid JSON only — no surrounding text, no markdown fences.
-- For same-language requests (source===target), omit "translations".
-- Use target_lang for all localised fields (definitions, gist, etc.).
-- When context is provided below, use it to disambiguate domain-specific terms.
-
-CONTEXT:`
-
-const SYSTEM_PROMPT_SUFFIX = `
-SELECTED TEXT:`
 
 // ===========================================================================
 // Translate one annotation
@@ -116,22 +127,26 @@ export async function translateAnnotation(
   const sourceLang = options.sourceLang ?? "auto"
   const targetLang = options.targetLang ?? "zh"
 
-  // Build system message: static prefix + optional context + static suffix + selection
-  let systemMsg = SYSTEM_PROMPT_PREFIX
-  if (options.context) {
-    systemMsg += `\n${options.context}`
-  }
-  systemMsg += SYSTEM_PROMPT_SUFFIX
+  let systemContent = buildTranslatePrompt(sourceLang, targetLang, options.contextSentence)
 
-  const userMsg = `${options.text}\n\n(source_lang: ${sourceLang}, target_lang: ${targetLang})`
+  // Append article context to system prompt for disambiguation
+  if (options.context) {
+    systemContent += `\n\nCONTEXT (article excerpt for disambiguation):\n${options.context}`
+  }
+
+  // Build user message: text + context sentence hint
+  let userContent = options.text
+  if (options.contextSentence) {
+    userContent += `\n\nCONTEXT SENTENCE:\n${options.contextSentence}`
+  }
 
   let fullResponse = ""
 
   await chatCompletion(
     profile,
     [
-      { role: "system", content: systemMsg },
-      { role: "user", content: userMsg },
+      { role: "system", content: systemContent },
+      { role: "user", content: userContent },
     ],
     (chunk) => {
       fullResponse += chunk.content
@@ -146,8 +161,6 @@ export async function translateAnnotation(
   console.log("[translate] raw response length:", fullResponse.length, "preview:", fullResponse.slice(0, 200))
 
   const rawJson = fullResponse.trim()
-
-  // Strip markdown code fences if present (defensive, json_object mode should not produce them)
   const cleaned = rawJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
 
   return JSON.parse(cleaned) as AIAnnotationData
@@ -160,12 +173,6 @@ export async function translateAnnotation(
 /**
  * Extract a lightweight digest from a large PDF text chunk for use as
  * translation background context.
- *
- * Strategy (Geyken et al. "Automatic summarisation for reading aids"):
- * 1. Take the first ~2000 chars (introduction / abstract).
- * 2. Scan for section headings (lines matching common heading patterns).
- * 3. Take the first sentence of each following block (up to 500 chars each).
- * 4. Concatenate and truncate to ~3000 chars.
  */
 export function extractArticleContext(pdfText: string): string {
   const lines = pdfText.split("\n")
@@ -186,11 +193,9 @@ export function extractArticleContext(pdfText: string): string {
     const line = lines[i]!.trim()
     if (!line) continue
     if (headingRe.test(line)) {
-      // Take the heading
       result.push(line)
       remaining -= line.length
 
-      // Take the first sentence of the following paragraph
       let sentence = ""
       for (let j = i + 1; j < Math.min(lines.length, i + 5); j++) {
         const next = lines[j]!.trim()

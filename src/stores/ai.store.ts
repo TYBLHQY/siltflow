@@ -83,8 +83,6 @@ function createProfile(preset: ProviderPreset, idx: number): AIProfile {
   }
 }
 
-const VAULT_KEY = "aiStore"
-
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -93,10 +91,12 @@ interface AIStoreState {
   /** Whether the initial load from vault has completed */
   loaded: boolean
   profiles: AIProfile[]
+  defaultTargetLang: string
   addProfile: (providerKey: string) => void
   removeProfile: (id: string) => void
   updateProfile: (id: string, patch: Partial<AIProfile>) => void
   setActiveProfile: (id: string) => void
+  setDefaultTargetLang: (lang: string) => void
   /** Get the currently-active profile, or null if none */
   activeProfile: () => AIProfile | null
 }
@@ -104,6 +104,7 @@ interface AIStoreState {
 export const useAIStore = create<AIStoreState>()((set, get) => ({
   loaded: false,
   profiles: [],
+  defaultTargetLang: "zh",
 
   addProfile: (providerKey: string) => {
     const preset = BUILTIN_PROVIDERS.find((p) => p.key === providerKey)
@@ -142,25 +143,37 @@ export const useAIStore = create<AIStoreState>()((set, get) => ({
     const profiles = get().profiles
     return profiles.find((p) => p.active) ?? profiles[0] ?? null
   },
+
+  setDefaultTargetLang: (lang) => {
+    set({ defaultTargetLang: lang })
+    window.siltflow.vaultConfigSet({ defaultTargetLang: lang })
+  },
 }))
 
 // ---------------------------------------------------------------------------
 // Vault persistence
 // ---------------------------------------------------------------------------
 
+const AI_VAULT_KEY = "aiStore"
+
 function persistToVault(profiles: AIProfile[]) {
-  window.siltflow.vaultConfigSet({ [VAULT_KEY]: profiles })
+  window.siltflow.vaultConfigSet({ [AI_VAULT_KEY]: profiles })
 }
 
-/** Call once on app boot to restore profiles from vault. */
+/** Call once on app boot to restore profiles and settings from vault. */
 export async function loadFromVault() {
   try {
     const cfg = await window.siltflow.vaultConfigGet()
-    const saved = (cfg as Record<string, unknown>)[VAULT_KEY]
+    const saved = (cfg as Record<string, unknown>)[AI_VAULT_KEY]
     if (Array.isArray(saved)) {
       useAIStore.setState({ profiles: saved as AIProfile[], loaded: true })
-      return
     }
+    const defaultTargetLang = (cfg as Record<string, unknown>)["defaultTargetLang"] as string | undefined
+    if (defaultTargetLang) {
+      useAIStore.setState({ defaultTargetLang })
+    }
+    useAIStore.setState({ loaded: true })
+    return
   } catch { /* ignore */ }
   useAIStore.setState({ loaded: true })
 }

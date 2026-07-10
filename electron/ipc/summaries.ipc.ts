@@ -13,17 +13,18 @@ export function registerSummaryHandlers() {
       .get()
   })
 
-  ipcMain.handle("summaries:save", (_event, summary: { documentId: string; text: string; isAiGenerated: boolean }) => {
+  ipcMain.handle("summaries:save", (_event, summary: { documentId: string; text: string; isAiGenerated: boolean; sourceLang?: string }) => {
     const sql = getSqlite()
     if (!sql) return null
     const now = new Date().toISOString()
     sql.prepare(
-      `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, created_at, updated_at)
-       VALUES (?, ?, ?, COALESCE((SELECT created_at FROM summaries WHERE document_id = ?), ?), ?)`
+      `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at)
+       VALUES (?, ?, ?, ?, COALESCE((SELECT created_at FROM summaries WHERE document_id = ?), ?), ?)`
     ).run(
       summary.documentId,
       summary.text,
       summary.isAiGenerated ? 1 : 0,
+      summary.sourceLang ?? null,
       summary.documentId,
       now,
       now,

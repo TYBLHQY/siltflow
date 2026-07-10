@@ -106,6 +106,7 @@ function createTables() {
       document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
       text TEXT NOT NULL,
       is_ai_generated INTEGER NOT NULL DEFAULT 0,
+      source_lang TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (document_id)
