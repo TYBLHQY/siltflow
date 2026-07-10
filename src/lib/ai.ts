@@ -43,9 +43,19 @@ export async function chatCompletion(
     { signal },
   )
 
-  const content = response.choices?.[0]?.message?.content ?? ""
+  const choice = response.choices?.[0]
+  if (!choice) {
+    const msg = JSON.stringify(response, null, 2)
+    throw new Error(`Empty response from AI model (no choices) — full response: ${msg}`)
+  }
+
+  if (choice.finish_reason === "length") {
+    throw new Error(`AI response truncated (max_tokens=${profile.maxTokens}) — try increasing max tokens`)
+  }
+
+  const content = choice.message?.content ?? ""
   if (!content) {
-    throw new Error("Empty response from AI model — check your API key and model name")
+    throw new Error(`Empty content in AI response (finish_reason: ${choice.finish_reason}) — check your API key and model name`)
   }
   onChunk({ content, done: true })
 }

@@ -31,14 +31,17 @@ export function RightPanel() {
 
     try {
       const { translateAnnotation } = await import("@/lib/translate")
+      console.log("[RightPanel] Starting translation for", id, "text:", item.text.slice(0, 50))
       const result = await translateAnnotation(profile, {
         text: item.text,
         targetLang: "zh",
       })
+      console.log("[RightPanel] Translation result:", result)
       updateItem(id, { aiResult: result })
     } catch (err) {
       console.error("Translation failed:", err)
-      showToast("Translation failed — check your AI config or console", "error")
+      const message = err instanceof Error ? err.message : "Translation failed"
+      showToast(message, "error")
       updateItem(id, { aiResult: undefined }) // allow retry
     }
   }
