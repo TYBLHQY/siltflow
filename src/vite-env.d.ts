@@ -23,6 +23,16 @@ interface SiltflowAPI {
     save: (summary: { documentId: string; text: string; isAiGenerated: boolean }) => Promise<any>
     delete: (documentId: string) => Promise<void>
   }
+  aiResults: {
+    get: (annotationId: string, documentId: string) => Promise<string | null>
+    save: (annotationId: string, documentId: string, data: any) => Promise<any>
+    delete: (annotationId: string, documentId: string) => Promise<void>
+  }
+  fsrsCards: {
+    get: (annotationId: string, documentId: string) => Promise<string | null>
+    save: (annotationId: string, documentId: string, data: any) => Promise<any>
+    delete: (annotationId: string, documentId: string) => Promise<void>
+  }
 }
 
 interface Window {

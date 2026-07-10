@@ -40,8 +40,6 @@ function persistAnnotation(item: AnnotationItem) {
     text: item.text,
     pageNumber: item.pageNumber,
     embedData: JSON.stringify(item.embedData),
-    aiResult: item.aiResult,
-    fsrsCard: item.fsrsCard,
   })
 }
 
@@ -51,24 +49,32 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   setItems: (items) => set({ items }),
   addItem: (item) => {
     persistAnnotation(item)
+    if (item.aiResult) {
+      window.siltflow.aiResults.save(item.id, item.documentId, item.aiResult)
+    }
+    if (item.fsrsCard) {
+      window.siltflow.fsrsCards.save(item.id, item.documentId, item.fsrsCard)
+    }
     set((s) => ({ items: [...s.items, item] }))
   },
 
-  removeItem: (id) =>
-    set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+  removeItem: (id) => {
+    // Cascade delete in DB handles FK, but still good hygiene
+    set((s) => ({ items: s.items.filter((i) => i.id !== id) }))
+  },
 
   updateItem: (id, patch) => {
-    // Persist merged annotation to backend before updating Zustand
     const current = useAnnotationStore.getState().items.find((i) => i.id === id)
     if (current) {
       const merged = { ...current, ...patch }
+      // Always persist the annotation core
       persistAnnotation(merged)
-      // Also persist FSRS card changes specifically
-      if (patch.fsrsCard) {
-        window.siltflow.annotations.save({
-          ...merged,
-          embedData: JSON.stringify(merged.embedData),
-        })
+      // Persist side tables if changed
+      if (patch.aiResult !== undefined) {
+        window.siltflow.aiResults.save(id, current.documentId, patch.aiResult)
+      }
+      if (patch.fsrsCard !== undefined) {
+        window.siltflow.fsrsCards.save(id, current.documentId, patch.fsrsCard)
       }
     }
     set((s) => ({

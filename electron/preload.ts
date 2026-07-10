@@ -26,6 +26,14 @@ export interface SiltflowAPI {
     save: (summary: { documentId: string; text: string; isAiGenerated: boolean }) => Promise<any>
     delete: (documentId: string) => Promise<void>
   }
+  aiResults: {
+    save: (annotationId: string, documentId: string, data: any) => Promise<any>
+    delete: (annotationId: string, documentId: string) => Promise<void>
+  }
+  fsrsCards: {
+    save: (annotationId: string, documentId: string, data: any) => Promise<any>
+    delete: (annotationId: string, documentId: string) => Promise<void>
+  }
 }
 
 const api: SiltflowAPI = {
@@ -51,6 +59,16 @@ const api: SiltflowAPI = {
     get: (documentId) => ipcRenderer.invoke('summaries:get', documentId),
     save: (summary) => ipcRenderer.invoke('summaries:save', summary),
     delete: (documentId) => ipcRenderer.invoke('summaries:delete', documentId),
+  },
+  aiResults: {
+    get: (annotationId, documentId) => ipcRenderer.invoke('aiResults:get', annotationId, documentId),
+    save: (annotationId, documentId, data) => ipcRenderer.invoke('aiResults:save', { annotationId, documentId, data }),
+    delete: (annotationId, documentId) => ipcRenderer.invoke('aiResults:delete', annotationId, documentId),
+  },
+  fsrsCards: {
+    get: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:get', annotationId, documentId),
+    save: (annotationId, documentId, data) => ipcRenderer.invoke('fsrsCards:save', { annotationId, documentId, data }),
+    delete: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:delete', annotationId, documentId),
   },
 }
 

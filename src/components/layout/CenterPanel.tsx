@@ -705,29 +705,34 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
 
     loadedDocRef.current = documentId
 
-    window.siltflow.annotations.list(documentId).then((saved) => {
+    window.siltflow.annotations.list(documentId).then(async (saved) => {
       if (loadedDocRef.current !== documentId) return
+
+      // Load ai_results and fsrs_cards for all annotations in batch
+      const aiResults = new Map<string, any>()
+      const fsrsCards = new Map<string, any>()
+      for (const a of saved || []) {
+        try {
+          const r = await window.siltflow.aiResults.get(a.id, a.documentId)
+          if (r) aiResults.set(a.id, JSON.parse(r))
+        } catch { /* not found */ }
+        try {
+          const c = await window.siltflow.fsrsCards.get(a.id, a.documentId)
+          if (c) fsrsCards.set(a.id, JSON.parse(c))
+        } catch { /* not found */ }
+      }
+
       setItems(
-        (saved || []).map((a: any) => {
-          let aiResult: any = undefined
-          if (a.ai_result != null) {
-            try { aiResult = JSON.parse(a.ai_result) } catch { /* ignore */ }
-          }
-          let fsrsCard: any = undefined
-          if (a.fsrs_card != null) {
-            try { fsrsCard = JSON.parse(a.fsrs_card) } catch { /* ignore */ }
-          }
-          return {
-            id: a.id,
-            documentId: a.documentId,
-            type: a.type,
-            text: a.text || "",
-            pageNumber: a.pageNumber ?? 1,
-            embedData: JSON.parse(a.embedData) as AnnotationEmbedData,
-            aiResult,
-            fsrsCard,
-          }
-        }),
+        (saved || []).map((a: any) => ({
+          id: a.id,
+          documentId: a.documentId,
+          type: a.type,
+          text: a.text || "",
+          pageNumber: a.pageNumber ?? 1,
+          embedData: JSON.parse(a.embedData) as AnnotationEmbedData,
+          aiResult: aiResults.get(a.id) ?? undefined,
+          fsrsCard: fsrsCards.get(a.id) ?? undefined,
+        })),
       )
     })
   }, [documentId, setItems])

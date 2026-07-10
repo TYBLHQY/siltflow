@@ -61,24 +61,44 @@ function createTables() {
       text TEXT,
       page_number INTEGER,
       embed_data TEXT NOT NULL,
-      ai_result TEXT,
-      fsrs_card TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (id, document_id)
     );
   `)
 
-  // Migration: add ai_result column if missing
-  const annoCols = cols.length > 0 ? cols : sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
-  const hasAiResult = annoCols.some((c: any) => c.name === 'ai_result')
-  if (!hasAiResult) {
-    sqlite.exec("ALTER TABLE annotations ADD COLUMN ai_result TEXT")
+  // Migrate: drop old ai_result / fsrs_card columns if present (now in own tables)
+  const annoCols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
+  if (annoCols.some((c: any) => c.name === 'ai_result')) {
+    sqlite.exec("ALTER TABLE annotations DROP COLUMN ai_result")
   }
-  const hasFsrs = annoCols.some((c: any) => c.name === 'fsrs_card')
-  if (!hasFsrs) {
-    sqlite.exec("ALTER TABLE annotations ADD COLUMN fsrs_card TEXT")
+  if (annoCols.some((c: any) => c.name === 'fsrs_card')) {
+    sqlite.exec("ALTER TABLE annotations DROP COLUMN fsrs_card")
   }
+
+  // Create ai_results table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS ai_results (
+      annotation_id TEXT NOT NULL,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (annotation_id, document_id)
+    );
+  `)
+
+  // Create fsrs_cards table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS fsrs_cards (
+      annotation_id TEXT NOT NULL,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (annotation_id, document_id)
+    );
+  `)
 
   // Create summaries table
   sqlite.exec(`

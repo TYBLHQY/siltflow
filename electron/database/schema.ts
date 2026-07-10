@@ -40,12 +40,42 @@ export const annotations = sqliteTable(
     text: text("text"),
     pageNumber: integer("page_number"),
     embedData: text("embed_data").notNull(),
-    aiResult: text("ai_result"),
-    fsrsCard: text("fsrs_card"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.id, table.documentId] }),
+  })
+)
+
+export const aiResults = sqliteTable(
+  "ai_results",
+  {
+    annotationId: text("annotation_id").notNull(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    data: text("data").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.annotationId, table.documentId] }),
+  })
+)
+
+export const fsrsCards = sqliteTable(
+  "fsrs_cards",
+  {
+    annotationId: text("annotation_id").notNull(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    data: text("data").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.annotationId, table.documentId] }),
   })
 )
