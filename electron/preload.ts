@@ -75,6 +75,7 @@ const api: SiltflowAPI = {
     get: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:get', annotationId, documentId),
     save: (annotationId, documentId, data) => ipcRenderer.invoke('fsrsCards:save', { annotationId, documentId, data }),
     delete: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:delete', annotationId, documentId),
+    listByDocument: (documentId) => ipcRenderer.invoke('fsrsCards:listByDocument', documentId),
   },
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),

@@ -32,6 +32,7 @@ interface SiltflowAPI {
     get: (annotationId: string, documentId: string) => Promise<string | null>
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
+    listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>
   }
   tts: {
     speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string; binaryPath?: string }) => Promise<number[]>

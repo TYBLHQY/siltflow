@@ -80,20 +80,52 @@ export function LeftPanel() {
 
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument)
   const annotationItems = useAnnotationStore((s) => s.items)
+  const [docMetrics, setDocMetrics] = useState<DocReviewMetrics[]>([])
+  const [metricsLoading, setMetricsLoading] = useState(false)
 
-  // Build per-document FSRS metrics
-  const docMetrics = useMemo(() => {
-    // Group annotation cards by document
-    const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
-    for (const doc of documents) {
-      byDoc[doc.id] = { title: doc.title, cards: [] }
-    }
-    for (const item of annotationItems) {
-      if (item.fsrsCard && byDoc[item.documentId]) {
-        byDoc[item.documentId]!.cards.push(item.fsrsCard)
+  // Load per-document FSRS metrics directly from backend on mount and when annotations change
+  useEffect(() => {
+    let cancelled = false
+    async function loadMetrics() {
+      setMetricsLoading(true)
+      try {
+        const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
+        for (const doc of documents) {
+          byDoc[doc.id] = { title: doc.title, cards: [] }
+        }
+        // For each document fetch its FSRS cards in batch
+        for (const doc of documents) {
+          const rows = await window.siltflow.fsrsCards.listByDocument(doc.id)
+          for (const row of rows) {
+            try {
+              const card = JSON.parse(row.data)
+              byDoc[doc.id]!.cards.push(card)
+            } catch { /* skip bad json */ }
+          }
+        }
+        if (!cancelled) {
+          setDocMetrics(computeDocMetrics(byDoc))
+        }
+      } catch {
+        // fallback to store-based metrics
+        if (!cancelled) {
+          const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
+          for (const doc of documents) {
+            byDoc[doc.id] = { title: doc.title, cards: [] }
+          }
+          for (const item of annotationItems) {
+            if (item.fsrsCard && byDoc[item.documentId]) {
+              byDoc[item.documentId]!.cards.push(item.fsrsCard)
+            }
+          }
+          setDocMetrics(computeDocMetrics(byDoc))
+        }
+      } finally {
+        if (!cancelled) setMetricsLoading(false)
       }
     }
-    return computeDocMetrics(byDoc)
+    loadMetrics()
+    return () => { cancelled = true }
   }, [documents, annotationItems])
 
   useEffect(() => {
