@@ -77,7 +77,7 @@ function createProfile(preset: ProviderPreset, idx: number): AIProfile {
     apiKey: "",
     model: preset.defaultModel,
     temperature: 0.3,
-    maxTokens: 8192,
+    maxTokens: 393_216,
     topP: 1,
     active: false,
   }
