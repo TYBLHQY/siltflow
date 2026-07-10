@@ -1,12 +1,52 @@
 import { ipcMain } from "electron"
 import { spawn } from "node:child_process"
-import { mkdtempSync } from "node:fs"
-import { readFile, unlink } from "node:fs/promises"
+import { createHash } from "node:crypto"
+import { existsSync, mkdirSync, mkdtempSync } from "node:fs"
+import { readFile, unlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
+let vaultCacheDir = ""
+
+export function setTtsCacheDir(dir: string) {
+  vaultCacheDir = dir
+}
+
 function getEdgeTtsBin(customPath?: string): string {
   return customPath && customPath.length > 0 ? customPath : "edge-tts"
+}
+
+/** Build a stable cache key from (text, voice, rate, volume, pitch). */
+function cacheKey(text: string, voice: string, rate: string, volume: string, pitch: string): string {
+  const hash = createHash("sha256")
+  hash.update(`${text}\x00${voice}\x00${rate}\x00${volume}\x00${pitch}`)
+  return hash.digest("hex").slice(0, 32)
+}
+
+const MAX_CACHE_FILES = 200
+
+/** Keep at most MAX_CACHE_FILES in the tts cache dir, removing oldest first. */
+async function trimCache(): Promise<void> {
+  if (!vaultCacheDir) return
+  try {
+    const { readdir, stat } = await import("node:fs/promises")
+    const files = await readdir(vaultCacheDir)
+    if (files.length <= MAX_CACHE_FILES) return
+
+    const entries = await Promise.all(
+      files.map(async (f) => {
+        const p = join(vaultCacheDir, f)
+        const s = await stat(p)
+        return { name: f, path: p, mtime: s.mtimeMs }
+      })
+    )
+    entries.sort((a, b) => a.mtime - b.mtime)
+
+    const toDelete = entries.slice(0, entries.length - MAX_CACHE_FILES)
+    for (const e of toDelete) {
+      unlink(e.path).catch(() => {})
+    }
+  } catch { /* best effort */ }
 }
 
 export function registerTTSHandlers() {
@@ -22,6 +62,14 @@ export function registerTTSHandlers() {
     const rate = options.rate || "+0%"
     const volume = options.volume || "+0%"
     const pitch = options.pitch || "+0Hz"
+
+    // Check cache first
+    const key = cacheKey(text, voice, rate, volume, pitch)
+    const cachePath = vaultCacheDir ? join(vaultCacheDir, `${key}.mp3`) : ""
+    if (cachePath && existsSync(cachePath)) {
+      const buf = await readFile(cachePath)
+      return Array.from(new Uint8Array(buf))
+    }
 
     const tmpDir = mkdtempSync(join(tmpdir(), "siltflow-tts-"))
     const outPath = join(tmpDir, "tts.mp3")
@@ -56,6 +104,16 @@ export function registerTTSHandlers() {
         try {
           const buf = await readFile(outPath)
           const audioData = Array.from(new Uint8Array(buf))
+
+          // Cache the result
+          if (cachePath) {
+            try {
+              if (!existsSync(vaultCacheDir)) mkdirSync(vaultCacheDir, { recursive: true })
+              await writeFile(cachePath, buf)
+              trimCache().catch(() => {})
+            } catch { /* cache write best effort */ }
+          }
+
           unlink(outPath).catch(() => {})
           unlink(tmpDir).catch(() => {})
           resolve(audioData)

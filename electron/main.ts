@@ -11,7 +11,7 @@ import { registerAnnotationHandlers } from './ipc/annotations.ipc'
 import { registerSummaryHandlers } from './ipc/summaries.ipc'
 import { registerAiResultHandlers } from './ipc/ai-results.ipc'
 import { registerFSRSCardHandlers } from './ipc/fsrs-cards.ipc'
-import { registerTTSHandlers } from './ipc/tts.ipc'
+import { registerTTSHandlers, setTtsCacheDir } from './ipc/tts.ipc'
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
@@ -165,6 +165,7 @@ ipcMain.handle('vault:select', async () => {
   registerAiResultHandlers()
   registerFSRSCardHandlers()
   registerTTSHandlers()
+  setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
   return vaultPath
 })
 
@@ -178,6 +179,7 @@ ipcMain.handle('vault:setPath', (_event, vaultPath: string) => {
   registerAiResultHandlers()
   registerFSRSCardHandlers()
   registerTTSHandlers()
+  setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
   return vaultPath
 })
 
@@ -241,6 +243,7 @@ app.whenReady().then(async () => {
     registerAiResultHandlers()
     registerFSRSCardHandlers()
   registerTTSHandlers()
+  setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
   }
 
   // Register siltflow:// protocol → vault path
