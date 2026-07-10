@@ -1,5 +1,4 @@
 import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain } from 'electron'
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
@@ -19,7 +18,6 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'siltflow', privileges: { standard: true, supportFetchAPI: true, bypassCSP: true } },
 ])
 
-const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 process.env.APP_ROOT = path.join(__dirname, '..')

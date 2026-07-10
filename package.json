@@ -60,6 +60,10 @@
     "vite-plugin-electron": "^0.28.6",
     "vite-plugin-electron-renderer": "^0.14.5"
   },
+  "author": {
+    "name": "MYQ"
+  },
+  "homepage": "https://github.com/myq/siltflow",
   "main": "dist-electron/main.js",
   "pnpm": {
     "onlyBuiltDependencies": [

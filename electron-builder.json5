@@ -38,6 +38,8 @@
   },
   "linux": {
     "icon": "build/icon.png",
+    "category": "Utility",
+    "maintainer": "MYQ <myq@localhost>",
     "target": [
       "deb",
       "AppImage"
