@@ -314,6 +314,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
             pdfDocument={pdfDocument}
             documentId={documentId}
             highlights={highlights}
+            highlightsRef={highlightsRef}
             onSelection={handleSelection}
             deleteHighlight={deleteHighlight}
           />
@@ -328,12 +329,14 @@ function PdfHighlighterWrapper({
   pdfDocument,
   documentId,
   highlights,
+  highlightsRef,
   onSelection,
   deleteHighlight,
 }: {
   pdfDocument: PDFDocumentProxy
   documentId: string
   highlights: SiltflowHighlight[]
+  highlightsRef: React.MutableRefObject<SiltflowHighlight[]>
   onSelection: (selection: PdfSelection) => void
   deleteHighlight: (id: string) => void
 }) {
