@@ -323,7 +323,7 @@ export function LeftPanel() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </TabsContent>
       </Tabs>
