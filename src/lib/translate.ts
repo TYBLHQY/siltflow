@@ -134,7 +134,7 @@ export async function translateAnnotation(
       { role: "user", content: userMsg },
     ],
     (chunk) => {
-      if (!chunk.done) fullResponse += chunk.content
+      fullResponse += chunk.content
     },
     options.signal,
   )
