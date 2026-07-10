@@ -4,6 +4,7 @@ import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { Volume2, ArrowLeft, CheckSquare } from "lucide-react"
 import { useTTS } from "@/lib/use-tts"
 import { useShortcut } from "@/hooks/useShortcut"
+import { useStyleStore, buildFontStack } from "@/stores/style.store"
 
 interface StudyPanelProps {
   items: AnnotationItem[]
@@ -21,6 +22,49 @@ const GRADE_LABELS: { grade: number; label: string; color: string }[] = [
   { grade: 4, label: "Easy", color: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20" },
 ]
 
+// ── Backward-compat helpers (same as AITranslateCard) ──
+
+function getTranslation(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.translation || ai.translate
+}
+
+function getDefinitions(ai: NonNullable<AnnotationItem["aiResult"]>) {
+  if (ai.definitions && ai.definitions.length > 0) {
+    return ai.definitions.filter(d => d.definition || d.gloss)
+  }
+  if (ai.words && ai.words.length > 0) {
+    return ai.words.filter(w => w.word).map(w => ({
+      pos: w.pos,
+      definition: w.word,
+      gloss: w.meaning,
+      _legacyWord: w.word,
+    }))
+  }
+  return []
+}
+
+function getCollocations(ai: NonNullable<AnnotationItem["aiResult"]>) {
+  if (ai.collocations && ai.collocations.length > 0) return ai.collocations
+  if (ai.frequently && ai.frequently.length > 0) return ai.frequently
+  return []
+}
+
+function getIpa(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.pronunciation?.ipa || ai.phonetic
+}
+
+function getDifficulty(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.metadata?.difficulty || ai.difficulty_level
+}
+
+function getTags(ai: NonNullable<AnnotationItem["aiResult"]>): string[] | undefined {
+  return ai.metadata?.tags || ai.category_tags
+}
+
+function getRegister(ai: NonNullable<AnnotationItem["aiResult"]>): string | undefined {
+  return ai.metadata?.register
+}
+
 export function StudyPanel({
   items,
   studyingIndex,
@@ -31,6 +75,7 @@ export function StudyPanel({
 }: StudyPanelProps) {
   const item = items[studyingIndex]
   const tts = useTTS()
+  const style = useStyleStore((s) => s.style)
 
   const handleReveal = useCallback(() => {
     if (!answerRevealed) setAnswerRevealed(true)
@@ -67,6 +112,16 @@ export function StudyPanel({
   const ai = item.aiResult
   const total = items.length
   const current = studyingIndex + 1
+
+  // Resolve data with backward compat
+  const translation = ai ? getTranslation(ai) : undefined
+  const defs = ai ? getDefinitions(ai) : []
+  const colls = ai ? getCollocations(ai) : []
+  const ipa = ai ? getIpa(ai) : undefined
+  const difficulty = ai ? getDifficulty(ai) : undefined
+  const tags = ai ? getTags(ai) : undefined
+  const register = ai ? getRegister(ai) : undefined
+  const examples = ai?.examples ?? []
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
@@ -106,72 +161,101 @@ export function StudyPanel({
 
         {/* Answer (revealed) */}
         {answerRevealed && ai && (
-          <div className="border-t px-4 py-3 space-y-2 overflow-y-auto">
+          <div className="border-t px-4 py-3 space-y-2 overflow-y-auto"
+            style={{
+              fontFamily: buildFontStack(style.fontFamilies),
+              fontSize: style.fontSize,
+            }}
+          >
             {/* Translation */}
-            {ai.translate && (
+            {translation && (
               <p className="text-sm font-medium text-primary">
-                {ai.translate}
+                {translation}
               </p>
             )}
 
-            {/* Word analysis */}
-            {ai.words && ai.words.length > 0 && ai.words[0]?.word && (
-              <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-                {ai.words.slice(0, 8).map((w, i) => (
-                  <span key={i} className="text-[11px]">
-                    <span className="font-medium">{w.word}</span>
-                    {w.pos && <span className="text-muted-foreground/60 ml-0.5">{w.pos}</span>}
-                    <span className="text-muted-foreground ml-0.5">— {w.meaning}</span>
+            {/* Lemma + POS + register */}
+            {(ai.lemma || ai.pos || register) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {ai.lemma && <span className="font-semibold text-foreground text-sm">{ai.lemma}</span>}
+                {ai.pos && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-mono">{ai.pos}</span>
+                )}
+                {register && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{register}</span>
+                )}
+              </div>
+            )}
+
+            {/* IPA */}
+            {ipa && (
+              <p className="text-xs text-muted-foreground/70 italic">
+                /{ipa}/
+              </p>
+            )}
+
+            {/* Tags */}
+            {(difficulty || (tags && tags.length > 0)) && (
+              <div className="flex flex-wrap gap-1">
+                {difficulty && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {difficulty}
+                  </span>
+                )}
+                {tags?.slice(0, 3).map((tag) => (
+                  <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {tag}
                   </span>
                 ))}
               </div>
             )}
 
-            {/* Phonetic */}
-            {ai.phonetic && (
-              <p className="text-xs text-muted-foreground/70 italic">
-                {ai.phonetic}
-              </p>
+            {/* Definitions */}
+            {defs.length > 0 && (
+              <div className="space-y-0.5">
+                {defs.slice(0, 5).map((d: any, i) => (
+                  <div key={i} className="text-xs leading-relaxed">
+                    {d._legacyWord ? (
+                      <>
+                        <span className="font-medium">{d._legacyWord}</span>
+                        {d.pos && <span className="text-muted-foreground/60 ml-1">{d.pos}</span>}
+                        <span className="text-muted-foreground ml-1">{d.gloss || d.meaning}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">{d.definition}</span>
+                        {d.gloss && <span className="text-muted-foreground/70 ml-1">{d.gloss}</span>}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1">
-              {ai.difficulty_level && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {ai.difficulty_level}
-                </span>
-              )}
-              {ai.category_tags?.slice(0, 3).map((tag) => (
-                <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {tag}
-                </span>
-              ))}
-            </div>
-
             {/* Collocations */}
-            {ai.frequently && ai.frequently.length > 0 && (
+            {colls.length > 0 && (
               <div>
                 <span className="text-[10px] font-medium text-muted-foreground">Collocations</span>
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
-                  {ai.frequently.map((f, i) => (
-                    <span key={i}>
-                      <span className="font-medium">{f.phrase}</span>
-                      <span className="text-muted-foreground"> — {f.translation}</span>
-                    </span>
+                <div className="space-y-0.5 text-xs">
+                  {colls.map((c: any, i) => (
+                    <div key={i}>
+                      <span className="font-medium">{c.phrase}</span>
+                      <span className="text-muted-foreground"> {c.translation}</span>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
             {/* Examples */}
-            {ai.examples && ai.examples.length > 0 && (
+            {examples.length > 0 && (
               <div>
                 <span className="text-[10px] font-medium text-muted-foreground">Examples</span>
-                <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
-                  {ai.examples.slice(0, 5).map((ex, i) => (
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {examples.slice(0, 5).map((ex: any, i) => (
                     <li key={i}>
                       {ex.sentence}
-                      {ex.translation && <span className="block ml-0">→ {ex.translation}</span>}
+                      {ex.translation && <span className="block ml-0">{ex.translation}</span>}
                     </li>
                   ))}
                 </ul>
