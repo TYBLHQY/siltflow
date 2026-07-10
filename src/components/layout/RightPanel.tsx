@@ -230,19 +230,6 @@ export function RightPanel() {
             </div>
           ) : (
             <>
-              <div className="shrink-0 border-b px-3 py-2">
-                <button
-                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onClick={() => {
-                    setStudyingIndex(0)
-                    setAnswerRevealed(false)
-                    setStudyPanelOpen(true)
-                  }}
-                >
-                  <CheckSquare className="h-3.5 w-3.5" />
-                  Start Learning ({dueCount})
-                </button>
-              </div>
               {studyPanelOpen ? (
                 <StudyPanel
                   items={dueItems}
