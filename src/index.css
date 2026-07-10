@@ -150,6 +150,20 @@
   opacity: 0.25 !important;
 }
 
+/* In dark mode, invert PDF canvas so white-background PDFs become readable */
+.dark .PdfHighlighter :is(canvas, .textLayer) {
+  filter: invert(1) hue-rotate(180deg);
+}
+.dark .PdfHighlighter .PdfHighlighter__highlight-layer,
+.dark .PdfHighlighter .TextHighlight,
+.dark .PdfHighlighter .AreaHighlight,
+.dark .PdfHighlighter .DrawingHighlight,
+.dark .PdfHighlighter .ShapeHighlight,
+.dark .PdfHighlighter .FreetextHighlight,
+.dark .PdfHighlighter .ImageHighlight {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* PdfHighlighter: scrollbar controlled by data-pdf-scrollbar attribute */
 /* When enabled: thin floating overlay */
 div[data-pdf-scrollbar="true"] .PdfHighlighter {
