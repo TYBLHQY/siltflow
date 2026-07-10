@@ -56,6 +56,9 @@ importers:
       edge-tts-ts:
         specifier: ^1.0.0
         version: 1.0.0
+      file-uri-to-path:
+        specifier: ^1.0.0
+        version: 1.0.0
       lucide-react:
         specifier: ^1.24.0
         version: 1.24.0(react@18.3.1)
