@@ -33,6 +33,9 @@ interface SiltflowAPI {
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
   }
+  tts: {
+    speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string }) => Promise<number[]>
+  }
 }
 
 interface Window {

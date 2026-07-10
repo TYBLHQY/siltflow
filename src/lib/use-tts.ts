@@ -20,7 +20,7 @@ export function useTTS() {
     setState("loading")
 
     try {
-      const audioData: number[] = await window.ipcRenderer.invoke("tts:speak", text, {
+      const audioData: number[] = await window.siltflow.tts.speak(text, {
         voice,
         rate: "+0%",
         volume: "+0%",

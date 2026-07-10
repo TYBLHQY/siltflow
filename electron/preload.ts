@@ -27,12 +27,17 @@ export interface SiltflowAPI {
     delete: (documentId: string) => Promise<void>
   }
   aiResults: {
+    get: (annotationId: string, documentId: string) => Promise<string | null>
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
   }
   fsrsCards: {
+    get: (annotationId: string, documentId: string) => Promise<string | null>
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
+  }
+  tts: {
+    speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string }) => Promise<number[]>
   }
 }
 
@@ -69,6 +74,9 @@ const api: SiltflowAPI = {
     get: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:get', annotationId, documentId),
     save: (annotationId, documentId, data) => ipcRenderer.invoke('fsrsCards:save', { annotationId, documentId, data }),
     delete: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:delete', annotationId, documentId),
+  },
+  tts: {
+    speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),
   },
 }
 
