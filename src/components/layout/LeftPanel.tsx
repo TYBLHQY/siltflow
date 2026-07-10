@@ -218,7 +218,7 @@ export function LeftPanel() {
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className={`group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer ${
+                    className={`group flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer overflow-hidden ${
                       currentDocument?.id === doc.id
                         ? "bg-accent text-accent-foreground"
                         : "hover:bg-accent"
