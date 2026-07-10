@@ -219,7 +219,7 @@ function SelectionTip() {
     const item: AnnotationItem = {
       id,
       documentId: docId,
-      type: "highlight",
+      type: "text",
       text: pendingAnnotation.text,
       pageNumber: pendingAnnotation.pageNumber,
       embedData: { position: pendingAnnotation.position, content: { text: pendingAnnotation.text } },
@@ -227,7 +227,7 @@ function SelectionTip() {
     window.siltflow.annotations.save({
       id,
       documentId: docId,
-      type: "highlight",
+      type: "text",
       text: pendingAnnotation.text,
       pageNumber: pendingAnnotation.pageNumber,
       embedData: JSON.stringify(item.embedData),
