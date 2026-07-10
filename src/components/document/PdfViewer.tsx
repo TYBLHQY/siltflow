@@ -234,14 +234,18 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
         content: selection.content,
         position: selection.position,
       }
-      const item = selectionToAnnotation(id, documentId, ghost)
+      const cleanedText = (ghost.content?.text ?? "").replace(/\n/g, " ")
+      const item = selectionToAnnotation(id, documentId, {
+        ...ghost,
+        content: ghost.content ? { ...ghost.content, text: cleanedText } : undefined,
+      } as GhostHighlight)
 
       // Persist to Electron backend (embedData as JSON string)
       window.siltflow.annotations.save({
         id,
         documentId,
         type: ghost.type || "highlight",
-        text: ghost.content?.text ?? "",
+        text: cleanedText,
         pageNumber: ghost.position.boundingRect.pageNumber ?? 1,
         embedData: JSON.stringify(item.embedData),
       })
@@ -333,6 +337,7 @@ function PdfHighlighterWrapper({
   const setFitWidth = usePdfViewerStore((s) => s.setFitWidth)
   const setSetViewerScale = usePdfViewerStore((s) => s.setSetViewerScale)
   const pdfScale = usePdfViewerStore((s) => s.pdfScale)
+  const fitWidth = usePdfViewerStore((s) => s.fitWidth)
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
@@ -343,16 +348,21 @@ function PdfHighlighterWrapper({
   // 0 means "not yet set" → omit prop so library defaults to "auto".
   // After any zoom, pdfScale holds a real number and gets passed as prop;
   // the library's proximity check (< 0.5% diff) skips re-apply on re-renders.
-  const pdfScaleValue = pdfScale > 0 ? pdfScale : undefined
+  //
+  // When fitWidth is active, pass "page-width" so the built-in ResizeObserver
+  // keeps applying it (otherwise undefined → "auto" overrides).
+  const numScale = pdfScale > 0 ? pdfScale : undefined
+  const pdfScaleValue: number | string | undefined = fitWidth ? "page-width" : numScale
 
   const handleZoomChange = useCallback(
     (scale: number) => {
+      // Fit-to-width mode: don't interfere — the page-width value handles
+      // container resize automatically.
+      if (fitWidth) return
       // User manually zoomed (ctrl+wheel etc.) — store the numeric value
       setPdfScale(Math.round(scale * 100) / 100)
-      // User overrode whatever preset was active
-      setFitWidth(false)
     },
-    [setPdfScale, setFitWidth],
+    [fitWidth, setPdfScale],
   )
 
   return (
