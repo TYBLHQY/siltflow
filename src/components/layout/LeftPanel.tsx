@@ -218,7 +218,7 @@ export function LeftPanel() {
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className={`group flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer overflow-hidden ${
+                    className={`group relative w-full min-w-0 rounded-md border border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer overflow-hidden ${
                       currentDocument?.id === doc.id
                         ? "bg-accent text-accent-foreground"
                         : "hover:bg-accent"
@@ -230,17 +230,19 @@ export function LeftPanel() {
                       setContextMenu({ doc, x: e.clientX, y: e.clientY })
                     }}
                   >
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="min-w-0 truncate flex-1 text-left">{doc.title}</span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start">
-                          {doc.title}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="min-w-0 truncate flex-1 text-left">{doc.title}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" align="start">
+                            {doc.title}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </div>
                 ))}
               </div>
