@@ -138,12 +138,19 @@ export function LeftPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <Tabs defaultValue="documents" className="flex flex-col flex-1 min-h-0">
+      <Tabs defaultValue="review" className="flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between border-b px-3 py-1.5">
           <TabsList className="h-7">
             <TabsTrigger value="documents" className="text-xs px-2 py-0.5 h-6">
               <FileText className="h-3.5 w-3.5 mr-1" />
               Docs
+            </TabsTrigger>
+            <TabsTrigger
+              value="review"
+              className="text-xs px-2 py-0.5 h-6"
+            >
+              <BrainCircuit className="h-3.5 w-3.5 mr-1" />
+              Review
             </TabsTrigger>
             <TabsTrigger
               value="outline"
@@ -153,20 +160,16 @@ export function LeftPanel() {
               <BookMarked className="h-3.5 w-3.5 mr-1" />
               Outlines
             </TabsTrigger>
-            <TabsTrigger
-              value="review"
-              className="text-xs px-2 py-0.5 h-6"
-            >
-              <BrainCircuit className="h-3.5 w-3.5 mr-1" />
-              Review
-            </TabsTrigger>
           </TabsList>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleImport}>
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
 
         <TabsContent value="documents" className="flex-1 min-h-0 mt-0 pt-2">
+          <div className="px-3 pb-2">
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs h-7" onClick={handleImport}>
+              <Plus className="h-3.5 w-3.5" />
+              Import PDF
+            </Button>
+          </div>
           <ScrollArea className="h-full">
             {loading ? (
               <div className="flex items-center justify-center py-8">
