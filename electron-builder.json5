@@ -3,6 +3,13 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.myq.siltflow",
   "asar": true,
+  "asarUnpack": [
+    "**/better-sqlite3/**",
+    "**/bindings/**",
+    "**/file-uri-to-path/**",
+    "**/prebuild-install/**",
+    "**/*.node"
+  ],
   "productName": "Siltflow",
   "directories": {
     "output": "release/${version}"
@@ -11,6 +18,7 @@
     "dist",
     "dist-electron"
   ],
+  "npmRebuild": false,
   "mac": {
     "icon": "build/icon.icns",
     "target": [
