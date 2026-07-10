@@ -278,15 +278,19 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   )
 
   // Clean up store state when documentId changes
-  // NOTE: only clean pdfDocument, NOT goToPage — the library's utilsRef only
-  // fires ONCE (guarded by an internal ref), so cleaning it in StrictMode's
-  // unmount/remount cycle would leave it null forever.
+  // NOTE: only clean pdfDocument and scroll helpers, NOT goToPage — the
+  // library's utilsRef only fires ONCE (guarded by an internal ref), so
+  // cleaning it in StrictMode's unmount/remount cycle would leave it null forever.
   const pdfDocumentCleanup = usePdfViewerStore((s) => s.setPdfDocument)
+  const setScrollToHighlightCleanup = usePdfViewerStore((s) => s.setScrollToHighlight)
+  const setScrolledHighlightIdCleanup = usePdfViewerStore((s) => s.setScrolledHighlightId)
   useEffect(() => {
     return () => {
       pdfDocumentCleanup(null)
+      setScrollToHighlightCleanup(null)
+      setScrolledHighlightIdCleanup(null)
     }
-  }, [documentId, pdfDocumentCleanup])
+  }, [documentId, pdfDocumentCleanup, setScrollToHighlightCleanup, setScrolledHighlightIdCleanup])
 
   return (
     <div className={className}>
@@ -338,6 +342,8 @@ function PdfHighlighterWrapper({
   const setSetViewerScale = usePdfViewerStore((s) => s.setSetViewerScale)
   const pdfScale = usePdfViewerStore((s) => s.pdfScale)
   const fitWidth = usePdfViewerStore((s) => s.fitWidth)
+  const setScrolledHighlightId = usePdfViewerStore((s) => s.setScrolledHighlightId)
+  const setScrollToHighlightStore = usePdfViewerStore((s) => s.setScrollToHighlight)
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
@@ -371,6 +377,7 @@ function PdfHighlighterWrapper({
       highlights={highlights}
       key={documentId}
       onSelection={onSelection}
+      onScrollAway={() => setScrolledHighlightId(null)}
       utilsRef={(utils: PdfHighlighterUtils) => {
         setGoToPage((pageNumber: number) => utils.goToPage(pageNumber))
 
@@ -383,6 +390,16 @@ function PdfHighlighterWrapper({
         // viewer.currentScaleValue = "page-width" directly.
         setSetViewerScale((value: string) => {
           if (viewer) viewer.currentScaleValue = value
+        })
+
+        // Expose scrollToHighlight so RightPanel/LeftPanel can call it
+        setScrollToHighlightStore((id: string) => {
+          setScrolledHighlightId(id)
+          // Find the highlight in the highlights array and scroll to it
+          const highlight = highlights.find((h) => h.id === id)
+          if (highlight) {
+            utils.scrollToHighlight(highlight)
+          }
         })
       }}
       onPageChange={(page: number) => setCurrentPage(page)}

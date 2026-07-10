@@ -33,6 +33,14 @@ interface PdfViewerState {
    */
   setViewerScale: ((value: string) => void) | null
   setSetViewerScale: (fn: ((value: string) => void) | null) => void
+
+  /** Scroll to a highlight by id — set from RightPanel/LeftPanel */
+  scrollToHighlight: ((id: string) => void) | null
+  setScrollToHighlight: (fn: ((id: string) => void) | null) => void
+
+  /** The id of the highlight that was just scrolled to (for highlighting in the sidebar) */
+  scrolledHighlightId: string | null
+  setScrolledHighlightId: (id: string | null) => void
 }
 
 export const usePdfViewerStore = create<PdfViewerState>((set) => ({
@@ -53,4 +61,10 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 
   setViewerScale: null,
   setSetViewerScale: (fn) => set({ setViewerScale: fn }),
+
+  scrollToHighlight: null,
+  setScrollToHighlight: (fn) => set({ scrollToHighlight: fn }),
+
+  scrolledHighlightId: null,
+  setScrolledHighlightId: (id) => set({ scrolledHighlightId: id }),
 }))

@@ -41,6 +41,8 @@ export function RightPanel() {
   const setPageTexts = useSummaryStore((s) => s.setPageTexts)
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages)
   const style = useStyleStore((s) => s.style)
+  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight)
+  const scrolledHighlightId = usePdfViewerStore((s) => s.scrolledHighlightId)
 
   /** Get the active profile from the store's raw state */
   const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null
@@ -189,6 +191,8 @@ export function RightPanel() {
                     key={ann.id}
                     id={ann.id}
                     item={ann}
+                    scrolled={scrolledHighlightId === ann.id}
+                    onClick={() => scrollToHighlight?.(ann.id)}
                     onDelete={(id) => {
                       window.siltflow.annotations.delete(id)
                       removeItem(id)

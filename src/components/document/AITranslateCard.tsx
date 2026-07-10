@@ -12,6 +12,8 @@ interface AITranslateCardProps {
   item: AnnotationItem
   onDelete: (id: string) => void
   onTranslate: (id: string) => void
+  onClick?: () => void
+  scrolled?: boolean
   className?: string
 }
 
@@ -28,6 +30,8 @@ export function AITranslateCard({
   item,
   onDelete,
   onTranslate,
+  onClick,
+  scrolled,
   className = "",
 }: AITranslateCardProps) {
   const ai = item.aiResult
@@ -54,7 +58,10 @@ export function AITranslateCard({
 
   return (
     <div
-      className={`group relative border-b border-border/50 px-3 py-2.5 transition-colors ${className}`}
+      className={`group relative border-b border-border/50 px-3 py-2.5 transition-colors cursor-pointer ${
+        scrolled ? "bg-accent/40" : ""
+      } ${className}`}
+      onClick={onClick}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-1">

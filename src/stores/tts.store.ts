@@ -85,11 +85,11 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
         if (filtered.length > 0) lists[langId] = filtered
       }
 
-      set((s) => ({
-        config: { ...s.config, voiceLists: lists },
-        loadingVoices: false,
-      }))
-      persist({ ...get().config, voiceLists: lists })
+      // Persist the current config merged with the new voice lists
+      const current = get().config
+      const next = { ...current, voiceLists: lists }
+      persist(next)
+      set({ config: next, loadingVoices: false })
     } catch {
       set({ loadingVoices: false })
     }
