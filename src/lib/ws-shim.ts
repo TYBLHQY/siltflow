@@ -1,9 +1,21 @@
 /**
  * Browser-compatible WebSocket shim for isomorphic-ws.
- * The edge-tts-ts library passes options like `{ headers }` to
- * WebSocket constructor as a second argument. Native browser WebSocket
- * interprets this as subprotocol (array of strings) — which fails.
  *
- * This shim discards the options and uses the native WebSocket directly.
+ * edge-tts-ts passes `{ headers }` as the second argument to WebSocket.
+ * Browser native WebSocket interprets the second arg as subprotocols
+ * (string or string[]), not as an options bag — `[object Object]` is
+ * never a valid subprotocol.
+ *
+ * This shim wraps the native WebSocket to discard the options argument
+ * and set headers via the `headers` property if supported, or simply
+ * ignores them.
  */
-export default globalThis.WebSocket
+class BrowserWebSocket extends globalThis.WebSocket {
+  constructor(url: string, opts?: { headers?: Record<string, string> }) {
+    // Browser WebSocket only accepts string|string[] as 2nd arg (subprotocols).
+    // Drop the options entirely — headers are not needed for the connection.
+    super(url)
+  }
+}
+
+export default BrowserWebSocket
