@@ -152,6 +152,7 @@ export function LeftPanel() {
             >
               <BookMarked className="h-3.5 w-3.5 mr-1" />
               Outlines
+            </TabsTrigger>
             <TabsTrigger
               value="review"
               className="text-xs px-2 py-0.5 h-6"
