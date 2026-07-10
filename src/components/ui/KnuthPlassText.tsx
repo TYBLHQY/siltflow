@@ -139,7 +139,7 @@ export const KnuthPlassText = memo(function KnuthPlassText({
         >
           {line.segments.map((seg, si) =>
             seg.isSpace ? (
-              <span key={si} />
+              <span key={si}>{" "}</span>
             ) : (
               <span key={si}>{seg.text}</span>
             ),
