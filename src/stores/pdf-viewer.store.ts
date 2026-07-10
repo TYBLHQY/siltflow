@@ -41,6 +41,18 @@ interface PdfViewerState {
   /** Last-read page per document ID (persisted to vault config) */
   lastPageByDocId: Record<string, number>
   setLastPage: (docId: string, page: number) => void
+
+  /** Quick-add mode: selection immediately creates an annotation */
+  quickAddEnabled: boolean
+  setQuickAddEnabled: (v: boolean) => void
+
+  /** Pending ghost annotation info (null = nothing pending) */
+  pendingAnnotation: {
+    text: string
+    pageNumber: number
+    position: any
+  } | null
+  setPendingAnnotation: (ann: { text: string; pageNumber: number; position: any } | null) => void
 }
 
 export const usePdfViewerStore = create<PdfViewerState>((set) => ({
@@ -69,10 +81,15 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
   setLastPage: (docId, page) =>
     set((s) => {
       const next = { ...s.lastPageByDocId, [docId]: page }
-      // Persist to vault config
       window.siltflow.vaultConfigSet({ lastPages: next })
       return { lastPageByDocId: next }
     }),
+
+  quickAddEnabled: true,
+  setQuickAddEnabled: (v) => set({ quickAddEnabled: v }),
+
+  pendingAnnotation: null,
+  setPendingAnnotation: (ann) => set({ pendingAnnotation: ann }),
 }))
 
 /** Load persisted last-page map from vault (call once on app boot). */

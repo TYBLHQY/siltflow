@@ -27,6 +27,7 @@ export type ShortcutActionId =
   | "toggleLeftPanel"
   | "toggleRightPanel"
   | "openSettings"
+  | "toggleQuickAdd"
   // PDF open
   | "toggleFitWidth"
   // Annotations tab
@@ -70,6 +71,7 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { actionId: "toggleRightPanel",     label: "Toggle right panel",   context: "global",           defaultKeys: "alt+]",       keys: "alt+]" },
   // Global — settings
   { actionId: "openSettings",         label: "Open settings",        context: "global",           defaultKeys: "ctrl+,",      keys: "ctrl+," },
+  { actionId: "toggleQuickAdd",       label: "Toggle quick add",     context: "global",           defaultKeys: "ctrl+i",      keys: "ctrl+i" },
   // PDF open
   { actionId: "toggleFitWidth",       label: "Toggle fit width",     context: "pdf-open",         defaultKeys: "ctrl+e",      keys: "ctrl+e" },
   // Annotations tab

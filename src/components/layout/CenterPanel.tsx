@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
-import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard } from "lucide-react"
+import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard, PenLine, MousePointer2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
@@ -10,6 +10,26 @@ import { useStyleStore } from "@/stores/style.store"
 import { useTTSStore, type TTSConfig } from "@/stores/tts.store"
 import { useShortcutsStore } from "@/stores/shortcuts.store"
 import { formatShortcut } from "@/lib/keyboard-keys"
+
+// ---------------------------------------------------------------------------
+// Quick-add toggle button — placed left of fit-width in the toolbar.
+// ---------------------------------------------------------------------------
+function QuickAddToggle() {
+  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled)
+  const setQuickAddEnabled = usePdfViewerStore((s) => s.setQuickAddEnabled)
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={`h-6 w-6 ${quickAddEnabled ? "bg-accent" : ""}`}
+      onClick={() => setQuickAddEnabled(!quickAddEnabled)}
+      title={quickAddEnabled ? "Quick-add mode (selection auto-annotates)" : "Manual mode (selection shows add button)"}
+    >
+      {quickAddEnabled ? <PenLine className="h-4 w-4" /> : <MousePointer2 className="h-4 w-4" />}
+    </Button>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Fit-to-width toggle button.  Uses setViewerScale directly so it can pass
@@ -1228,6 +1248,7 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
         </h1>
 
         <div className="flex items-center shrink-0">
+          {fileName && <QuickAddToggle />}
           {fileName && <FitWidthButton />}
           <SettingsButton />
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleRight}>

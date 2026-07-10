@@ -56,6 +56,11 @@ export function ThreeColumnLayout() {
     }
   }, [])
 
+  const handleToggleQuickAdd = useCallback(() => {
+    const pf = usePdfViewerStore.getState()
+    pf.setQuickAddEnabled(!pf.quickAddEnabled)
+  }, [])
+
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
   const hasPdf = !!currentDocument?.filePath
 
@@ -90,6 +95,7 @@ export function ThreeColumnLayout() {
   useShortcut("toggleRightPanel", handleToggleRight)
   useShortcut("openSettings", handleSettingsOpen)
   useShortcut("toggleFitWidth", handleToggleFitWidth, { enabled: hasPdf })
+  useShortcut("toggleQuickAdd", handleToggleQuickAdd, { enabled: hasPdf })
   // ──────────────────────────────────────────────────────────────────────────
 
   // Wait for layout to restore before rendering

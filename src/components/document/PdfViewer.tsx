@@ -20,7 +20,9 @@ import type {
 } from "react-pdf-highlighter-plus"
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
+import { useDocumentStore } from "@/stores/document.store"
 import type { PDFDocumentProxy } from "pdfjs-dist"
+import { Plus } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // SiltflowHighlight — our application-specific highlight extension
@@ -200,10 +202,67 @@ interface PdfViewerProps {
   className?: string
 }
 
+/**
+ * Floating "Add annotation" button that appears after text selection in manual mode.
+ * Rendered via the library's selectionTip prop.
+ */
+function SelectionTip() {
+  const setPendingAnnotation = usePdfViewerStore((s) => s.setPendingAnnotation)
+  const pendingAnnotation = usePdfViewerStore((s) => s.pendingAnnotation)
+  const addItem = useAnnotationStore((s) => s.addItem)
+
+  const handleAdd = useCallback(() => {
+    if (!pendingAnnotation) return
+    const docId = useDocumentStore.getState().currentDocument?.id
+    if (!docId) return
+    const id = crypto.randomUUID()
+    const item: AnnotationItem = {
+      id,
+      documentId: docId,
+      type: "highlight",
+      text: pendingAnnotation.text,
+      pageNumber: pendingAnnotation.pageNumber,
+      embedData: { position: pendingAnnotation.position, content: { text: pendingAnnotation.text } },
+    }
+    window.siltflow.annotations.save({
+      id,
+      documentId: docId,
+      type: "highlight",
+      text: pendingAnnotation.text,
+      pageNumber: pendingAnnotation.pageNumber,
+      embedData: JSON.stringify(item.embedData),
+    })
+    addItem(item)
+    setPendingAnnotation(null)
+  }, [pendingAnnotation, addItem, setPendingAnnotation])
+
+  if (!pendingAnnotation) return null
+
+  return (
+    <div className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 shadow-lg">
+      <button
+        className="flex items-center gap-1 text-[11px] font-medium text-primary-foreground hover:opacity-80 transition-opacity"
+        onClick={handleAdd}
+      >
+        <Plus className="h-3 w-3" />
+        Add
+      </button>
+      <button
+        className="text-[11px] text-primary-foreground/70 hover:text-primary-foreground"
+        onClick={() => setPendingAnnotation(null)}
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
 export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   const storeItems = useAnnotationStore((s) => s.items)
   const addItem = useAnnotationStore((s) => s.addItem)
   const removeItem = useAnnotationStore((s) => s.removeItem)
+  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled)
+  const setPendingAnnotation = usePdfViewerStore((s) => s.setPendingAnnotation)
   const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() =>
     storeItems.map(annotationToHighlight),
   )
@@ -220,9 +279,9 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
 
   /**
    * When user finishes a text/area selection, create a new highlight:
-   * 1. Convert the selection to an AnnotationItem and persist to backend
-   * 2. Update the local highlights state immediately (before store reacts)
-   * 3. Add to Zustand store for RightPanel/LeftPanel to pick up
+   * 1. Convert the selection to an AnnotationItem
+   * 2. If quick-add: persist + add immediately
+   * 3. If not quick-add: store as pending, show selection tip
    *
    * We do NOT call selection.makeGhostHighlight() because that creates a
    * temporary ghost overlay that blocks interaction with the permanent
@@ -240,32 +299,35 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
         position: selection.position,
       }
       const cleanedText = (ghost.content?.text ?? "").replace(/\n/g, " ")
+      const pageNumber = ghost.position.boundingRect.pageNumber ?? 1
       const item = selectionToAnnotation(id, documentId, {
         ...ghost,
         content: ghost.content ? { ...ghost.content, text: cleanedText } : undefined,
       } as GhostHighlight)
 
-      // Persist to Electron backend (embedData as JSON string)
-      window.siltflow.annotations.save({
-        id,
-        documentId,
-        type: ghost.type || "highlight",
-        text: cleanedText,
-        pageNumber: ghost.position.boundingRect.pageNumber ?? 1,
-        embedData: JSON.stringify(item.embedData),
-      })
-
-      // Update highlights immediately so the library renders the new
-      // highlight without needing a second render cycle.
-      setHighlights((prev) => [...prev, annotationToHighlight(item)])
-      // Add to Zustand store for sidebar panels
-      addItem(item)
-
-      // Clear the text selection so the user doesn't see blue highlights
-      // lingering on the selected text.
-      window.getSelection()?.removeAllRanges()
+      if (quickAddEnabled) {
+        // Quick-add: persist immediately
+        window.siltflow.annotations.save({
+          id,
+          documentId,
+          type: ghost.type || "highlight",
+          text: cleanedText,
+          pageNumber,
+          embedData: JSON.stringify(item.embedData),
+        })
+        setHighlights((prev) => [...prev, annotationToHighlight(item)])
+        addItem(item)
+        window.getSelection()?.removeAllRanges()
+      } else {
+        // Manual mode: store pending, show tip
+        setPendingAnnotation({
+          text: cleanedText,
+          pageNumber,
+          position: item.embedData.position,
+        })
+      }
     },
-    [documentId, addItem],
+    [documentId, quickAddEnabled, addItem, setPendingAnnotation],
   )
 
   /**
@@ -350,6 +412,7 @@ function PdfHighlighterWrapper({
   const setScrollToHighlightStore = usePdfViewerStore((s) => s.setScrollToHighlight)
   const lastPage = usePdfViewerStore((s) => s.lastPageByDocId[documentId])
   const setLastPage = usePdfViewerStore((s) => s.setLastPage)
+  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled)
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
@@ -365,14 +428,14 @@ function PdfHighlighterWrapper({
 
   const handleZoomChange = useCallback(
     (scale: number) => {
-      // Fit-to-width mode: don't interfere — the page-width value handles
-      // container resize automatically.
       if (fitWidth) return
-      // User manually zoomed (ctrl+wheel etc.) — store the numeric value
       setPdfScale(Math.round(scale * 100) / 100)
     },
     [fitWidth, setPdfScale],
   )
+
+  /** Render a floating "Add annotation" tip after selection in non-quick-add mode. */
+  const selectionTipContent = !quickAddEnabled ? <SelectionTip /> : undefined
 
   return (
     <PdfHighlighter
@@ -380,6 +443,7 @@ function PdfHighlighterWrapper({
       highlights={highlights}
       key={documentId}
       onSelection={onSelection}
+      selectionTip={selectionTipContent}
       utilsRef={(utils: PdfHighlighterUtils) => {
         setGoToPage((pageNumber: number) => utils.goToPage(pageNumber))
 
