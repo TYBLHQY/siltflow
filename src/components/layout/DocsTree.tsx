@@ -85,6 +85,7 @@ function buildTree(folders: FolderItem[], documents: DocumentItem[]): NodeData[]
 type ContextMenu =
   | { type: "document"; target: DocumentItem; x: number; y: number }
   | { type: "folder"; target: FolderItem; x: number; y: number }
+  | { type: "empty"; x: number; y: number }
 
 // ---------------------------------------------------------------------------
 // DocsTree component
@@ -132,38 +133,41 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     // Tree data
     const treeData = useMemo(() => buildTree(folders, documents), [folders, documents])
 
+    // Refresh both folders and docs
+    const refreshAll = useCallback(async () => {
+      await useFolderStore.getState().loadFolders(true)
+      const freshDocs = await window.siltflow.documents.list()
+      useDocumentStore.getState().setDocuments(freshDocs || [])
+    }, [])
+
+    // Create a folder directly, then trigger inline rename on it
+    const createDirectFolder = useCallback(async (parentFolderId: string | null) => {
+      const folder = await createFolder("", parentFolderId)
+      if (!folder) return
+      // Reload to get the new folder into state
+      await refreshAll()
+      // Find the newly created folder node and start editing
+      const treeNodes = tree?.visibleNodes ?? []
+      for (const n of treeNodes) {
+        if (n.id === `folder:${folder.id}`) {
+          n.edit()
+          break
+        }
+      }
+    }, [createFolder, tree, refreshAll])
+
     // Ref: create folder via tree
     useImperativeHandle(
       ref,
       () => ({
-        createFolder: () => {
-          tree?.create({ parentId: null, index: 0 })
+        createFolder: async () => {
+          await createDirectFolder(null)
         },
       }),
-      [tree],
+      [createDirectFolder],
     )
 
-    // onCreate: persist folder immediately and return real data
-    const handleCreate = useCallback(
-      async (_args: {
-        parentId: string | null
-        index: number
-        type: "internal" | "leaf"
-      }): Promise<NodeData | null> => {
-        const folder = await createFolder("")
-        if (!folder) return null
-        return {
-          id: `folder:${folder.id}`,
-          name: "",
-          type: "folder",
-          originalId: folder.id,
-          folder,
-        }
-      },
-      [createFolder],
-    )
-
-    // onRename: persist the new name
+    // onRename: persist the new name for existing folders
     const handleRename = useCallback(
       async ({ id, name }: { id: string; name: string }) => {
         if (id.startsWith("folder:")) {
@@ -171,6 +175,12 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         }
       },
       [renameFolder],
+    )
+
+    // onCreate: required by react-arborist for tree.create() — we don't use it
+    const handleCreate = useCallback(
+      () => null as NodeData | null,
+      [],
     )
 
     // onMove: drag-and-drop
@@ -235,11 +245,15 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     )
     const handleNewSubfolder = useCallback(
       (folder: FolderItem) => {
-        tree?.create({ parentId: `folder:${folder.id}`, index: 0 })
+        createDirectFolder(folder.id)
         setContextMenu(null)
       },
-      [tree],
+      [createDirectFolder],
     )
+    const handleNewFolder = useCallback(() => {
+      createDirectFolder(null)
+      setContextMenu(null)
+    }, [createDirectFolder])
 
     // Dismiss context menu
     useEffect(() => {
@@ -263,8 +277,14 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       [],
     )
 
+    // Empty area right-click on the tree container
+    const onContainerContextMenu = useCallback((e: React.MouseEvent) => {
+      // Only handle right-click on the container itself, not on tree items
+      setContextMenu({ type: "empty", x: e.clientX, y: e.clientY })
+    }, [])
+
     return (
-      <div ref={containerRef} className="flex-1 min-h-0 relative overflow-hidden">
+      <div ref={containerRef} className="flex-1 min-h-0 relative overflow-hidden" onContextMenu={onContainerContextMenu}>
         <div className="absolute inset-0">
           <Tree
             data={treeData}
@@ -313,6 +333,16 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             </button>
           </div>
         )}
+
+        {contextMenu?.type === "empty" && (
+          <div className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
+            style={{ left: contextMenu.x, top: contextMenu.y }}>
+            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              onClick={() => handleNewFolder()}>
+              <Plus className="h-3 w-3" /> New Folder
+            </button>
+          </div>
+        )}
       </div>
     )
   },
@@ -330,6 +360,12 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
   const data = node.data
   if (!data) return null
 
+  // For folder rename/esccape
+  const handleDeleteFolder = useCallback(
+    (folderId: string) => useFolderStore.getState().deleteFolder(folderId),
+    [],
+  )
+
   return (
     <div
       style={{ ...style, height: "100%", display: "flex", alignItems: "center", gap: "6px" }}
@@ -337,6 +373,10 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
       className={`w-full cursor-pointer ${
         node.isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
       }`}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (data.type === "folder") node.toggle()
+      }}
       onContextMenu={(e) => onContextMenu(e, data)}
     >
       {data.type === "folder" ? (
@@ -363,10 +403,32 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
           className="flex-1 min-w-0 rounded border border-primary bg-background px-1 py-0 text-xs outline-none"
           defaultValue={data.name}
           autoFocus
-          onBlur={(e) => node.submit(e.target.value)}
+          onBlur={(e) => {
+            const val = e.target.value.trim()
+            if (val) {
+              node.submit(val)
+            } else {
+              // Revert to original name on blur
+              node.reset()
+            }
+          }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") node.submit((e.target as HTMLInputElement).value)
-            if (e.key === "Escape") node.reset()
+            if (e.key === "Enter") {
+              const val = (e.target as HTMLInputElement).value.trim()
+              if (!val) {
+                e.preventDefault()
+                return // ignore empty name on Enter
+              }
+              node.submit(val)
+            }
+            if (e.key === "Escape") {
+              const id = node.id
+              node.reset()
+              // If it's a newly created folder (empty name), delete it
+              if (id.startsWith("folder:") && !data.name && data.folder) {
+                handleDeleteFolder(id.slice(7))
+              }
+            }
           }}
         />
       ) : (

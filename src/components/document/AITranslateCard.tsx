@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button"
-import { Highlighter, Trash2, Sparkles, Loader2, ChevronDown, ChevronRight, Volume2 } from "lucide-react"
-import { useState, useCallback } from "react"
+import { Highlighter, Trash2, Sparkles, Loader2, ChevronDown, ChevronRight, Volume2, Pencil } from "lucide-react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
 import { reviewAnnotation, getNextReview } from "@/stores/fsrs.store"
 import type { Grade } from "ts-fsrs"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { useTTS } from "@/lib/use-tts"
+import { useAnnotationStore } from "@/stores/annotation.store"
 
 interface AITranslateCardProps {
   id: string
@@ -37,13 +38,49 @@ export function AITranslateCard({
   const ai = item.aiResult
   const [expanded, setExpanded] = useState(false)
   const [reviewed, setReviewed] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState(item.text)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const isWord = ai?.type === "word" || ai?.type === "phrase"
   const isLong = ai?.type === "sentence" || ai?.type === "passage"
   const tts = useTTS()
+  const updateItem = useAnnotationStore((s) => s.updateItem)
+
+  useEffect(() => {
+    setEditText(item.text)
+  }, [item.text])
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editing])
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
     onDelete(id)
+  }
+
+  const handleEditToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (editing) {
+      // Save
+      updateItem(id, { text: editText })
+    }
+    setEditing(!editing)
+  }
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      updateItem(id, { text: editText })
+      setEditing(false)
+    }
+    if (e.key === "Escape") {
+      setEditText(item.text)
+      setEditing(false)
+    }
   }
 
   const handleReview = useCallback(
@@ -85,14 +122,38 @@ export function AITranslateCard({
         </Button>
       </div>
 
-      {/* Source text — Knuth-Plass optimal line-breaking */}
-      <KnuthPlassText
-        text={item.text}
-        className="text-sm mb-1"
-      />
+      {/* Source text — editable */}
+      {editing ? (
+        <textarea
+          ref={inputRef}
+          className="w-full rounded border bg-background px-2 py-1 text-sm resize-none min-h-[60px]"
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          onKeyDown={handleEditKeyDown}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <KnuthPlassText
+          text={item.text}
+          className="text-sm mb-1"
+        />
+      )}
 
-      {/* Action bar: TTS + Translate + FSRS review */}
+      {/* Action bar: TTS + Translate + FSRS review + Edit */}
       <div className="flex flex-wrap items-center gap-1.5 mt-1">
+        {/* Edit button */}
+        <button
+          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+            editing
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
+          onClick={handleEditToggle}
+          title={editing ? "Save" : "Edit text"}
+        >
+          <Pencil className="h-3 w-3" />
+          {editing ? "Save" : "Edit"}
+        </button>
         {/* TTS: read aloud */}
         <button
           className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${

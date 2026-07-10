@@ -12,7 +12,7 @@ interface FolderState {
   folders: FolderItem[]
   loading: boolean
   loaded: boolean
-  loadFolders: () => Promise<void>
+  loadFolders: (force?: boolean) => Promise<void>
   createFolder: (name: string, parentId?: string | null) => Promise<FolderItem | null>
   renameFolder: (id: string, name: string) => Promise<void>
   deleteFolder: (id: string) => Promise<void>
@@ -26,8 +26,8 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   loading: false,
   loaded: false,
 
-  loadFolders: async () => {
-    if (get().loaded) return
+  loadFolders: async (force?: boolean) => {
+    if (!force && get().loaded) return
     set({ loading: true })
     try {
       const folders = await window.siltflow.folders.list()
