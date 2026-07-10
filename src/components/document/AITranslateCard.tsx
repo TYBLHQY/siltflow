@@ -290,12 +290,12 @@ export function AITranslateCard({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-semibold text-foreground">{ai.lemma}</span>
               {ai.pos && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground font-mono">
+                <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach font-mono">
                   {ai.pos}
                 </span>
               )}
               {register && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                   {register}
                 </span>
               )}
@@ -309,12 +309,12 @@ export function AITranslateCard({
           {(difficulty || (tags && tags.length > 0)) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                   {difficulty}
                 </span>
               )}
               {tags?.slice(0, 3).map((tag) => (
-                <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                <span key={tag} className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                   {tag}
                 </span>
               ))}
@@ -333,7 +333,7 @@ export function AITranslateCard({
                     </>
                   ) : (
                     <>
-                      {d.definition && <span className="text-muted-foreground">{d.definition}</span>}
+                      {d.definition && <span className="text-foreground">{d.definition}</span>}
                       {d.gloss && <span className="text-muted-foreground/70 ml-1">{d.gloss}</span>}
                     </>
                   )}
@@ -343,7 +343,7 @@ export function AITranslateCard({
           )}
 
           {contextSentence && !expanded && (
-            <p className="text-muted-foreground/60 italic leading-relaxed truncate">
+            <p className="text-muted-foreground/80 italic leading-relaxed truncate">
               "{contextSentence}"
             </p>
           )}
@@ -358,7 +358,7 @@ export function AITranslateCard({
                   <ul className="space-y-1">
                     {examples.slice(0, 5).map((ex: any, i) => (
                       <li key={i}>
-                        <span>{ex.sentence}</span>
+                        <span className="text-foreground">{ex.sentence}</span>
                         {ex.translation && (
                           <span className="text-muted-foreground block ml-0">
                             {ex.translation}
@@ -381,7 +381,7 @@ export function AITranslateCard({
                   <div className="space-y-0.5">
                     {colls.map((c: any, i) => (
                       <div key={i} className="leading-relaxed">
-                        <span className="font-medium">{c.phrase}</span>
+                        <span className="font-medium text-foreground">{c.phrase}</span>
                         <span className="text-muted-foreground"> {c.translation}</span>
                       </div>
                     ))}
@@ -397,7 +397,7 @@ export function AITranslateCard({
                   <div className="space-y-0.5">
                     {alts.map((a: any, i) => (
                       <div key={i} className="leading-relaxed">
-                        <span className="font-medium">{a.expression}</span>
+                        <span className="font-medium text-foreground">{a.expression}</span>
                         {a.register && (
                           <span className="text-muted-foreground/60 ml-1">({a.register})</span>
                         )}
