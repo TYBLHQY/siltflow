@@ -368,6 +368,8 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
   const data = node.data
   if (!data) return null
 
+  const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
+
   // For folder rename/esccape
   const handleDeleteFolder = useCallback(
     (folderId: string) => useFolderStore.getState().deleteFolder(folderId),
