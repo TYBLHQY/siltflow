@@ -309,10 +309,10 @@ export function RightPanel() {
               </div>
             </ScrollArea>
           )}
-        </TabsContent>
-
-        {/* ── Summary tab ── */}
-        <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
+        </>
+      )}
+      </TabsContent>
+      <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
           {extracting ? (
             <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
