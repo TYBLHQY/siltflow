@@ -292,6 +292,14 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             onRename={handleRename}
             onCreate={handleCreate}
             onSelect={handleSelect}
+            onActivate={(node) => {
+              if (node.id.startsWith("doc:")) {
+                const found = documents.find((d) => d.id === node.id.slice(4))
+                if (found) {
+                  setCurrentDocument(found)
+                }
+              }
+            }}
             rowHeight={32}
             indent={16}
             openByDefault={false}

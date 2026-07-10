@@ -145,6 +145,24 @@ app.on('activate', () => {
 
 // ── IPC Handlers ──────────────────────────────────────────────────
 
+// Register IPC handlers once at module load time (safe to call multiple
+// times — the inner flag prevents double registration).
+let handlersRegistered = false
+
+function registerAllHandlers(vaultPath: string) {
+  if (handlersRegistered) return
+  handlersRegistered = true
+  initDatabase(vaultPath)
+  registerDocumentHandlers()
+  registerAnnotationHandlers()
+  registerSummaryHandlers()
+  registerAiResultHandlers()
+  registerFSRSCardHandlers()
+  registerTTSHandlers()
+  registerFolderHandlers()
+  setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
+}
+
 // Vault operations
 ipcMain.handle('vault:getPath', () => {
   return getVaultPath()
@@ -160,30 +178,22 @@ ipcMain.handle('vault:select', async () => {
   const vaultPath = result.filePaths[0]
   ensureVaultStructure(vaultPath)
   setVaultPath(vaultPath)
-  initDatabase(vaultPath)
-  registerDocumentHandlers()
-  registerAnnotationHandlers()
-  registerSummaryHandlers()
-  registerAiResultHandlers()
-  registerFSRSCardHandlers()
-  registerTTSHandlers()
-  registerFolderHandlers()
-  setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
+  if (!handlersRegistered) {
+    registerAllHandlers(vaultPath)
+  } else {
+    initDatabase(vaultPath)
+  }
   return vaultPath
 })
 
 ipcMain.handle('vault:setPath', (_event, vaultPath: string) => {
   ensureVaultStructure(vaultPath)
   setVaultPath(vaultPath)
-  initDatabase(vaultPath)
-  registerDocumentHandlers()
-  registerAnnotationHandlers()
-  registerSummaryHandlers()
-  registerAiResultHandlers()
-  registerFSRSCardHandlers()
-  registerTTSHandlers()
-  registerFolderHandlers()
-  setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
+  if (!handlersRegistered) {
+    registerAllHandlers(vaultPath)
+  } else {
+    initDatabase(vaultPath)
+  }
   return vaultPath
 })
 
@@ -237,18 +247,10 @@ ipcMain.handle('file:load', async (_event, filePath: string) => {
 
 // ── App Bootstrap ─────────────────────────────────────────────────
 app.whenReady().then(async () => {
-  // Initialize database if vault is set
+  // Initialize database and register IPC handlers if vault is set
   const vaultPath = getVaultPath()
   if (vaultPath) {
-    initDatabase(vaultPath)
-    registerDocumentHandlers()
-    registerAnnotationHandlers()
-    registerSummaryHandlers()
-    registerAiResultHandlers()
-    registerFSRSCardHandlers()
-    registerTTSHandlers()
-    registerFolderHandlers()
-    setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"))
+    registerAllHandlers(vaultPath)
   }
 
   // Register siltflow:// protocol → vault path
