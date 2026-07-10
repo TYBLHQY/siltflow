@@ -139,26 +139,14 @@ export async function translateAnnotation(
     options.signal,
   )
 
-  // Strip markdown fences if the model included them despite instructions
-  let cleaned = fullResponse
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim()
-
-  // Validate JSON; if invalid, try repairing common issues
-  try {
-    JSON.parse(cleaned)
-  } catch (_e) {
-    cleaned = cleaned.replace(/,(\s*[}\]])/g, "$1")
-    cleaned = cleaned.replace(/^\s*\/\/.*$/gm, "")
-    cleaned = cleaned.replace(/\/\*[\s\S]*?\*\//g, "")
-    try {
-      JSON.parse(cleaned)
-    } catch (_e2) {
-      console.error("[translate] Failed to parse AI response after repair:", cleaned.slice(0, 500))
-      throw _e2
-    }
+  if (!fullResponse) {
+    throw new Error("Empty response from AI model")
   }
+
+  const rawJson = fullResponse.trim()
+
+  // Strip markdown code fences if present (defensive, json_object mode should not produce them)
+  const cleaned = rawJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
 
   return JSON.parse(cleaned) as AIAnnotationData
 }

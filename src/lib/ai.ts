@@ -13,8 +13,9 @@ export interface ChatChunk {
 }
 
 /**
- * Send a streaming Chat Completions request via the OpenAI SDK.
+ * Send a Chat Completions request via the OpenAI SDK (non-streaming).
  * Uses response_format: json_object for structured output.
+ * Returns the full response content string.
  */
 export async function chatCompletion(
   profile: AIProfile,
@@ -22,7 +23,6 @@ export async function chatCompletion(
   onChunk: (chunk: ChatChunk) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  // Dynamic import so the SDK is lazy-loaded only on first AI call
   const { OpenAI } = await import("openai")
 
   const client = new OpenAI({
@@ -31,28 +31,21 @@ export async function chatCompletion(
     dangerouslyAllowBrowser: true,
   })
 
-  const stream = await client.chat.completions.create(
+  const response = await client.chat.completions.create(
     {
       model: profile.model,
       messages,
       temperature: profile.temperature,
       max_tokens: profile.maxTokens,
       top_p: profile.topP,
-      stream: true,
       response_format: { type: "json_object" },
     },
     { signal },
   )
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices?.[0]?.delta?.content
-    if (delta && delta !== null) {
-      onChunk({ content: delta, done: false })
-    }
-    if (chunk.choices?.[0]?.finish_reason) {
-      break
-    }
+  const content = response.choices?.[0]?.message?.content ?? ""
+  if (!content) {
+    throw new Error("Empty response from AI model — check your API key and model name")
   }
-
-  onChunk({ content: "", done: true })
+  onChunk({ content, done: true })
 }
