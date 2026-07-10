@@ -38,6 +38,16 @@ interface SiltflowAPI {
     speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string; binaryPath?: string }) => Promise<number[]>
     listVoices: (binaryPath?: string) => Promise<string[]>
   }
+  folders: {
+    list: () => Promise<any[]>
+    create: (params: { name: string; parentId?: string | null }) => Promise<any>
+    rename: (params: { id: string; name: string }) => Promise<void>
+    delete: (id: string) => Promise<void>
+    moveDocuments: (params: { docIds: string[]; targetFolderId: string | null }) => Promise<void>
+    moveFolder: (params: { folderId: string; targetParentId: string | null }) => Promise<void>
+    updateSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
+    updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
+  }
 }
 
 interface Window {

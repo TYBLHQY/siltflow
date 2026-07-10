@@ -4,6 +4,8 @@ export interface DocumentItem {
   id: string
   title: string
   filePath: string
+  folderId?: string | null
+  sortOrder?: number
 }
 
 interface DocumentState {
@@ -14,6 +16,7 @@ interface DocumentState {
   addDocument: (doc: DocumentItem) => void
   setCurrentDocument: (doc: DocumentItem | null) => void
   removeDocument: (id: string) => void
+  setDocuments: (docs: DocumentItem[]) => void
   loadFromDb: () => Promise<void>
   setLoading: (loading: boolean) => void
 }
@@ -36,6 +39,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       documents: state.documents.filter((d) => d.id !== id),
       currentDocument: state.currentDocument?.id === id ? null : state.currentDocument,
     })),
+
+  setDocuments: (docs) => set({ documents: docs }),
 
   loadFromDb: async () => {
     if (get().loaded) return

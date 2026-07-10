@@ -7,6 +7,17 @@ export const documents = sqliteTable("documents", {
   filePath: text("file_path").notNull(),
   totalPages: integer("total_pages"),
   metadata: text("metadata"),
+  folderId: text("folder_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+})
+
+export const folders = sqliteTable("folders", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  parentId: text("parent_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 })

@@ -35,10 +35,21 @@ export interface SiltflowAPI {
     get: (annotationId: string, documentId: string) => Promise<string | null>
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
+    listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>
   }
   tts: {
     speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string; binaryPath?: string }) => Promise<number[]>
     listVoices: (binaryPath?: string) => Promise<string[]>
+  }
+  folders: {
+    list: () => Promise<any[]>
+    create: (params: { name: string; parentId?: string | null }) => Promise<any>
+    rename: (params: { id: string; name: string }) => Promise<void>
+    delete: (id: string) => Promise<void>
+    moveDocuments: (params: { docIds: string[]; targetFolderId: string | null }) => Promise<void>
+    moveFolder: (params: { folderId: string; targetParentId: string | null }) => Promise<void>
+    updateSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
+    updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
   }
 }
 
@@ -76,6 +87,16 @@ const api: SiltflowAPI = {
     save: (annotationId, documentId, data) => ipcRenderer.invoke('fsrsCards:save', { annotationId, documentId, data }),
     delete: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:delete', annotationId, documentId),
     listByDocument: (documentId) => ipcRenderer.invoke('fsrsCards:listByDocument', documentId),
+  },
+  folders: {
+    list: () => ipcRenderer.invoke('folders:list'),
+    create: (params: { name: string; parentId?: string | null }) => ipcRenderer.invoke('folders:create', params),
+    rename: (params: { id: string; name: string }) => ipcRenderer.invoke('folders:rename', params),
+    delete: (id: string) => ipcRenderer.invoke('folders:delete', id),
+    moveDocuments: (params: { docIds: string[]; targetFolderId: string | null }) => ipcRenderer.invoke('folders:moveDocuments', params),
+    moveFolder: (params: { folderId: string; targetParentId: string | null }) => ipcRenderer.invoke('folders:moveFolder', params),
+    updateSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('folders:updateSortOrder', items),
+    updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('documents:updateSortOrder', items),
   },
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),

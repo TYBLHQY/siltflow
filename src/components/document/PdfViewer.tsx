@@ -433,8 +433,65 @@ function PdfHighlighterWrapper({
   /** Render a floating "Add annotation" tip after selection in non-quick-add mode. */
   const selectionTipContent = !quickAddEnabled ? <SelectionTip /> : undefined
 
+  // ── Middle-click pan (non-auto zoom mode) ──
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const panRef = useRef<{
+    startX: number; startY: number
+    scrollLeft: number; scrollTop: number
+    scrollEl: HTMLElement
+  } | null>(null)
+
+  // Disable text selection during pan
+  useEffect(() => {
+    if (!wrapperRef.current) return
+    const el = wrapperRef.current
+    const onDragStart = (e: MouseEvent) => {
+      if (e.button !== 1) return
+      e.preventDefault()
+      const scrollEl = el.querySelector<HTMLElement>(".PdfHighlighter")
+      if (!scrollEl) return
+
+      // Grab cursor
+      scrollEl.style.cursor = "grabbing"
+      scrollEl.style.userSelect = "none"
+
+      panRef.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        scrollLeft: scrollEl.scrollLeft,
+        scrollTop: scrollEl.scrollTop,
+        scrollEl,
+      }
+
+      const onMove = (ev: MouseEvent) => {
+        const p = panRef.current
+        if (!p) return
+        p.scrollEl.scrollLeft = p.scrollLeft - (ev.clientX - p.startX)
+        p.scrollEl.scrollTop  = p.scrollTop  - (ev.clientY - p.startY)
+        ev.preventDefault()
+      }
+
+      const onUp = () => {
+        document.removeEventListener("mousemove", onMove)
+        document.removeEventListener("mouseup", onUp)
+        if (panRef.current) {
+          panRef.current.scrollEl.style.cursor = ""
+          panRef.current.scrollEl.style.userSelect = ""
+          panRef.current = null
+        }
+      }
+
+      document.addEventListener("mousemove", onMove)
+      document.addEventListener("mouseup", onUp)
+    }
+
+    el.addEventListener("mousedown", onDragStart)
+    return () => el.removeEventListener("mousedown", onDragStart)
+  }, [])
+
   return (
-    <PdfHighlighter
+    <div ref={wrapperRef} className="h-full w-full">
+      <PdfHighlighter
       pdfDocument={pdfDocument}
       highlights={highlights}
       key={documentId}
@@ -476,5 +533,6 @@ function PdfHighlighterWrapper({
     >
       <SiltflowHighlightContainer deleteHighlight={deleteHighlight} />
     </PdfHighlighter>
+    </div>
   )
 }

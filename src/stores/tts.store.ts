@@ -1,6 +1,11 @@
 import { create } from "zustand"
 
+export type TTSProvider = "edge-tts" | "mimo"
+
 export interface TTSConfig {
+  /** Active TTS provider */
+  provider: TTSProvider
+  // ── edge-tts settings ──
   /** Absolute path to edge-tts binary, or "" to search via PATH. */
   binaryPath: string
   /** Speech rate string, e.g. "+0%", "-10%", "+50%". */
@@ -15,6 +20,17 @@ export interface TTSConfig {
   perLanguageVoices: Record<string, string>
   /** Cached voice lists from edge-tts --list-voices, keyed by language id. */
   voiceLists: Record<string, string[]>
+  // ── MiMo settings ──
+  /** MiMo API key */
+  mimoApiKey: string
+  /** MiMo voice ID (e.g. "冰糖", "Chloe") */
+  mimoVoice: string
+  /** MiMo model */
+  mimoModel: string
+  /** MiMo style — natural language tone instruction (sent in user role) */
+  mimoStylePrompt: string
+  /** MiMo inline audio tags — inserted at start of assistant content (e.g. "(温柔)") */
+  mimoInlineTag: string
   /** Whether auto-TTS after AI translation is enabled. */
   autoTts: boolean
 }
@@ -31,6 +47,7 @@ interface TTSStoreState {
 const STORAGE_KEY = "ttsConfig"
 
 const DEFAULT_CONFIG: TTSConfig = {
+  provider: "edge-tts",
   binaryPath: "",
   rate: "+0%",
   volume: "+0%",
@@ -45,8 +62,30 @@ const DEFAULT_CONFIG: TTSConfig = {
     es: "es-ES-ElviraNeural",
   },
   voiceLists: {},
+  mimoApiKey: "",
+  mimoVoice: "冰糖",
+  mimoModel: "mimo-v2.5-tts",
+  mimoStylePrompt: "",
+  mimoInlineTag: "",
   autoTts: false,
 }
+
+export const MIMO_PRESET_VOICES = [
+  { id: "冰糖", label: "冰糖 (Chinese, Female)" },
+  { id: "茉莉", label: "茉莉 (Chinese, Female)" },
+  { id: "苏打", label: "苏打 (Chinese, Male)" },
+  { id: "白桦", label: "白桦 (Chinese, Male)" },
+  { id: "Mia", label: "Mia (English, Female)" },
+  { id: "Chloe", label: "Chloe (English, Female)" },
+  { id: "Milo", label: "Milo (English, Male)" },
+  { id: "Dean", label: "Dean (English, Male)" },
+]
+
+export const MIMO_MODELS = [
+  { id: "mimo-v2.5-tts", label: "mimo-v2.5-tts (Preset voices)" },
+  { id: "mimo-v2.5-tts-voicedesign", label: "mimo-v2.5-tts-voicedesign (Voice design)" },
+  { id: "mimo-v2.5-tts-voiceclone", label: "mimo-v2.5-tts-voiceclone (Voice clone)" },
+]
 
 function persist(config: TTSConfig) {
   window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config })
@@ -85,7 +124,6 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
         if (filtered.length > 0) lists[langId] = filtered
       }
 
-      // Persist the current config merged with the new voice lists
       const current = get().config
       const next = { ...current, voiceLists: lists }
       persist(next)
@@ -97,6 +135,7 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
 
   getVoice: (language?: string) => {
     const { config } = get()
+    if (config.provider === "mimo") return config.mimoVoice
     if (language && config.perLanguageVoices[language]) {
       return config.perLanguageVoices[language]
     }

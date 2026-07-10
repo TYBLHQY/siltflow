@@ -1,5 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState, useRef } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   Tooltip,
@@ -7,12 +6,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { FileText, Plus, Loader2, BookText, BookMarked, Trash2, BrainCircuit } from "lucide-react"
-import { useDocumentStore, type DocumentItem } from "@/stores/document.store"
+import { FileText, Plus, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus } from "lucide-react"
+import { useDocumentStore } from "@/stores/document.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useDocumentOutline, DocumentOutline } from "react-pdf-highlighter-plus"
 import { useAnnotationStore } from "@/stores/annotation.store"
 import { computeDocMetrics, urgencyLabel, type DocReviewMetrics } from "@/lib/doc-review"
+import { DocsTree, type DocsTreeHandle } from "./DocsTree"
 
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument)
@@ -77,9 +77,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     currentDocument,
     setCurrentDocument,
     addDocument,
-    removeDocument,
     loadFromDb,
-    loading,
   } = useDocumentStore()
 
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument)
@@ -154,20 +152,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     }
   }
 
-  const [contextMenu, setContextMenu] = useState<{ doc: DocumentItem; x: number; y: number } | null>(null)
-
-  useEffect(() => {
-    if (!contextMenu) return
-    const handler = () => setContextMenu(null)
-    document.addEventListener("click", handler)
-    return () => document.removeEventListener("click", handler)
-  }, [contextMenu])
-
-  const handleDeleteDoc = async (doc: DocumentItem) => {
-    await window.siltflow.documents.delete(doc.id)
-    removeDocument(doc.id)
-    setContextMenu(null)
-  }
+  const docsTreeRef = useRef<DocsTreeHandle>(null)
 
   return (
     <div className="flex h-full flex-col">
@@ -196,72 +181,24 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         {/* ── Docs tab ── */}
         <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
           <div className="shrink-0 border-b px-3 py-2">
-            <button
-              className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              onClick={handleImport}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Import PDF
-            </button>
-          </div>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : documents.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
-              <FileText className="h-8 w-8 mb-2" />
-              <p className="text-xs text-center">No documents yet</p>
-              <p className="text-xs text-center">Click Import PDF to add one</p>
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <div className="space-y-0 w-full">
-                {documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className={`group relative border-b border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
-                      currentDocument?.id === doc.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
-                    }`}
-                    onClick={() => setCurrentDocument(doc)}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setContextMenu({ doc, x: e.clientX, y: e.clientY })
-                    }}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="truncate min-w-0 flex-1">{doc.title}</span>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" align="start">
-                            {doc.title}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {contextMenu && (
-            <div
-              className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
-              style={{ left: contextMenu.x, top: contextMenu.y }}
-            >
+            <div className="flex gap-2">
               <button
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
-                onClick={() => handleDeleteDoc(contextMenu.doc)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={handleImport}
               >
-                <Trash2 className="h-3 w-3" />
-                Delete
+                <Plus className="h-3.5 w-3.5" />
+                Import PDF
+              </button>
+              <button
+                className="flex items-center justify-center gap-1 rounded-md border border-border/50 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent transition-colors"
+                onClick={() => docsTreeRef.current?.createFolder()}
+              >
+                <FolderPlus className="h-3.5 w-3.5" />
+                Folder
               </button>
             </div>
-          )}
+          </div>
+          <DocsTree ref={docsTreeRef} />
         </TabsContent>
 
         {/* ── Outline tab ── */}
@@ -303,7 +240,16 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate min-w-0 flex-1">{m.documentTitle}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="truncate min-w-0 flex-1">{m.documentTitle}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" align="start">
+                            {m.documentTitle}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
