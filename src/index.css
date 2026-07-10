@@ -187,6 +187,7 @@
     @apply bg-background text-foreground m-0 overflow-hidden;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
+    text-shadow: 0 0 1px color-mix(in oklch, var(--background) 60%, transparent);
   }
 
   /* ── Global scrollbar styling: thin, rounded, hidden until hover/scroll ── */
