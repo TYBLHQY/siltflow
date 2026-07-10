@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react"
-import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search } from "lucide-react"
+import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
@@ -7,6 +7,7 @@ import { useAnnotationStore, type AnnotationEmbedData } from "@/stores/annotatio
 import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store"
 import { useFSRSStore } from "@/stores/fsrs.store"
 import { useStyleStore } from "@/stores/style.store"
+import { useTTSStore, type TTSConfig } from "@/stores/tts.store"
 
 // ---------------------------------------------------------------------------
 // Fit-to-width toggle button.  Uses setViewerScale directly so it can pass
@@ -52,11 +53,12 @@ function SettingsButton() {
   const [aiConfigOpen, setAiConfigOpen] = useState(false)
   const [fsrsConfigOpen, setFsrsConfigOpen] = useState(false)
   const [styleConfigOpen, setStyleConfigOpen] = useState(false)
+  const [ttsConfigOpen, setTtsConfigOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   // Close on outside click
   useEffect(() => {
-    if (!open && !aiConfigOpen && !fsrsConfigOpen && !styleConfigOpen) return
+    if (!open && !aiConfigOpen && !fsrsConfigOpen && !styleConfigOpen && !ttsConfigOpen) return
     const id = setTimeout(() => document.addEventListener("click", handler), 0)
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -112,11 +114,22 @@ function SettingsButton() {
             <TextSelect className="h-3.5 w-3.5" />
             Style
           </button>
+          <button
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+            onClick={() => {
+              setTtsConfigOpen(true)
+              setOpen(false)
+            }}
+          >
+            <Volume2 className="h-3.5 w-3.5" />
+            TTS
+          </button>
         </div>
       )}
       {aiConfigOpen && <AIConfigModal onClose={() => setAiConfigOpen(false)} />}
       {fsrsConfigOpen && <FSRSConfigModal onClose={() => setFsrsConfigOpen(false)} />}
       {styleConfigOpen && <StyleConfigModal onClose={() => setStyleConfigOpen(false)} />}
+      {ttsConfigOpen && <TTSConfigModal onClose={() => setTtsConfigOpen(false)} />}
     </div>
   )
 }
@@ -673,6 +686,167 @@ function StyleConfigModal({ onClose }: { onClose: () => void }) {
           >
             Reset to defaults
           </Button>
+          <Button size="sm" className="text-xs" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// TTS Config modal (edge-tts)
+// ---------------------------------------------------------------------------
+function TTSConfigModal({ onClose }: { onClose: () => void }) {
+  const config = useTTSStore((s) => s.config)
+  const setConfig = useTTSStore((s) => s.setConfig)
+
+  const langMeta = [
+    { id: "zh", label: "简体中文" },
+    { id: "en", label: "English" },
+    { id: "de", label: "Deutsch" },
+    { id: "ja", label: "日本語" },
+    { id: "fr", label: "Français" },
+    { id: "es", label: "Español" },
+  ]
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-10"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-lg border bg-background p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Volume2 className="h-5 w-5" />
+            <h2 className="text-base font-semibold">TTS (Edge-TTS)</h2>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Auto TTS toggle */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="autoTts"
+              className="rounded"
+              checked={config.autoTts}
+              onChange={(e) => setConfig({ autoTts: e.target.checked })}
+            />
+            <label htmlFor="autoTts" className="text-xs">
+              Auto-play TTS after AI translation
+            </label>
+          </div>
+
+          {/* Binary path */}
+          <div>
+            <label className="block text-xs font-medium mb-1">Binary path</label>
+            <input
+              className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+              value={config.binaryPath}
+              onChange={(e) => setConfig({ binaryPath: e.target.value })}
+              placeholder="edge-tts (via PATH)"
+            />
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Absolute path or leave empty to search via PATH.
+            </p>
+          </div>
+
+          {/* Rate / Volume / Pitch */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1">
+                Rate: {config.rate}
+              </label>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                value={parseInt(config.rate.replace(/[+%]/g, ""))}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  const sign = v >= 0 ? "+" : ""
+                  setConfig({ rate: `${sign}${v}%` })
+                }}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">
+                Volume: {config.volume}
+              </label>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                value={parseInt(config.volume.replace(/[+%]/g, ""))}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  const sign = v >= 0 ? "+" : ""
+                  setConfig({ volume: `${sign}${v}%` })
+                }}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">
+                Pitch: {config.pitch}
+              </label>
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                value={parseInt(config.pitch.replace(/[+Hz]/g, ""))}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  const sign = v >= 0 ? "+" : ""
+                  setConfig({ pitch: `${sign}${v}Hz` })
+                }}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          {/* Per-language voices */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5">
+              Voices (per language)
+            </label>
+            <div className="space-y-1.5">
+              {langMeta.map((lang) => (
+                <div key={lang.id} className="flex items-center gap-2">
+                  <span className="text-xs w-16 shrink-0">{lang.label}</span>
+                  <input
+                    className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
+                    value={config.perLanguageVoices[lang.id] ?? ""}
+                    onChange={(e) =>
+                      setConfig({
+                        perLanguageVoices: {
+                          ...config.perLanguageVoices,
+                          [lang.id]: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground">
+            Requires <code>pip install edge-tts</code> · Voices provided by
+            Microsoft Edge online TTS.
+          </p>
+        </div>
+
+        <div className="mt-4 flex justify-end border-t pt-3">
           <Button size="sm" className="text-xs" onClick={onClose}>
             Done
           </Button>

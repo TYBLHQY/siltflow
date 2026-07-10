@@ -5,6 +5,7 @@ import { loadFromVault, useAIStore } from "@/stores/ai.store"
 import { loadFSRSParams } from "@/stores/fsrs.store"
 import { loadSummariesFromVault } from "@/stores/summary.store"
 import { loadStyleFromVault } from "@/stores/style.store"
+import { loadTTSConfigFromVault } from "@/stores/tts.store"
 import { useToastStore } from "@/stores/toast.store"
 import { Toast } from "@/components/Toast"
 
@@ -20,6 +21,7 @@ function App() {
       loadFSRSParams()
       loadSummariesFromVault()
       loadStyleFromVault()
+      loadTTSConfigFromVault()
     }
   }, [vaultReady, aiLoaded])
 
