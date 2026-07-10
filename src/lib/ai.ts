@@ -57,7 +57,22 @@ export async function chatCompletion(
     throw new Error(`AI response truncated (max_tokens=${profile.maxTokens}) — try increasing max tokens`)
   }
 
-  const content = choice.message?.content ?? ""
+  let content = choice.message?.content ?? ""
+
+  // Debug empty content
+  if (!content) {
+    console.warn("[ai] empty content, inspecting message:", JSON.stringify(choice.message).slice(0, 500))
+    console.warn("[ai] full response:", JSON.stringify(response, null, 2).slice(0, 1000))
+    // Try deep search — sometimes the content is nested differently
+    const deep = (response as any)?.choices?.[0]?.delta?.content ||
+                 (response as any)?.choices?.[0]?.text ||
+                 ""
+    if (deep) {
+      console.warn("[ai] found content at alternate path:", deep.slice(0, 200))
+      content = deep
+    }
+  }
+
   if (!content) {
     throw new Error(`Empty content in AI response (finish_reason: ${choice.finish_reason}) — check your API key and model name`)
   }
