@@ -117,3 +117,21 @@
 .textLayer > div:not(.PdfHighlighter__highlight-layer):not(.TextHighlight) {
   opacity: 0.25 !important;
 }
+
+/* Hide scrollbar when not scrolling — show on hover */
+.PdfHighlighter::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+.PdfHighlighter:hover::-webkit-scrollbar-thumb {
+  background-color: var(--rphp-border-strong, #b7b3ab);
+}
+
+/* Fallback for Firefox */
+.PdfHighlighter {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.PdfHighlighter:hover {
+  scrollbar-color: var(--rphp-border-strong, #b7b3ab) transparent;
+}
