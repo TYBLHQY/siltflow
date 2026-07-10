@@ -143,6 +143,8 @@ export async function translateAnnotation(
     throw new Error("Empty response from AI model")
   }
 
+  console.log("[translate] raw response length:", fullResponse.length, "preview:", fullResponse.slice(0, 200))
+
   const rawJson = fullResponse.trim()
 
   // Strip markdown code fences if present (defensive, json_object mode should not produce them)
