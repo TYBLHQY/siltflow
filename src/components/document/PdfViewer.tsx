@@ -373,10 +373,15 @@ function PdfHighlighterWrapper({
       onSelection={onSelection}
       utilsRef={(utils: PdfHighlighterUtils) => {
         setGoToPage((pageNumber: number) => utils.goToPage(pageNumber))
+
+        // Unlock canvas resolution cap so page-width and zoomed views
+        // render at full device resolution instead of CSS-only zoom.
+        const viewer = utils.getViewer()
+        if (viewer) viewer.maxCanvasPixels = -1
+
         // Capture a raw scale setter so FitWidthButton/Settings can call
         // viewer.currentScaleValue = "page-width" directly.
         setSetViewerScale((value: string) => {
-          const viewer = utils.getViewer()
           if (viewer) viewer.currentScaleValue = value
         })
       }}
