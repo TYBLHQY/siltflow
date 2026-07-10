@@ -29,7 +29,7 @@ export const KnuthPlassText = memo(function KnuthPlassText({
 }: KnuthPlassTextProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [lines, setLines] = useState<
-    { segments: { text: string; isSpace: boolean }[]; isLast: boolean; maxWidth: number; wordSpacing: number | undefined }[]
+    { text: string; isLast: boolean; maxWidth: number; wordSpacing: number | undefined }[]
   >([])
 
   const style = useStyleStore((s) => s.style)
@@ -92,10 +92,7 @@ export const KnuthPlassText = memo(function KnuthPlassText({
 
       setLines(
         computed.map((line) => ({
-          segments: line.segments.map((s) => ({
-            text: s.text,
-            isSpace: s.isSpace,
-          })),
+          text: line.segments.map((s) => s.text).join(""),
           isLast: line.isLast,
           maxWidth: line.maxWidth,
           wordSpacing: computeWordSpacing(line, spaceWidth, 0.4),
@@ -137,14 +134,7 @@ export const KnuthPlassText = memo(function KnuthPlassText({
               : undefined
           }
         >
-          {line.segments.map((seg, si) =>
-            seg.isSpace ? (
-              <span key={si}>{" "}</span>
-            ) : (
-              <span key={si}>{seg.text}</span>
-            ),
-          )}
-          {line.segments.length === 0 && <span>{"​"}</span>}
+          {line.text || "​"}
         </div>
       ))}
     </div>
