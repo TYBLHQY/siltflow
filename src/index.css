@@ -103,7 +103,7 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* ── Global scrollbar styling ── */
+  /* ── Global scrollbar styling: thin, rounded, hidden until hover/scroll ── */
   *::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -112,16 +112,26 @@
     background: transparent;
   }
   *::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+    background: transparent;
     border-radius: 999px;
+  }
+  *:hover::-webkit-scrollbar-thumb,
+  *:focus::-webkit-scrollbar-thumb,
+  *:active::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
   }
   *::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
   }
 
-  /* Firefox */
+  /* Firefox — thin, auto-hiding */
   * {
     scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover,
+  *:focus,
+  *:active {
     scrollbar-color: hsl(var(--border)) transparent;
   }
 }
@@ -140,15 +150,21 @@
   opacity: 0.25 !important;
 }
 
-/* PdfHighlighter inherits global scrollbar styles */
+/* PdfHighlighter: hidden until hover — same as global style */
 .PdfHighlighter::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: transparent;
   border-radius: 999px;
+}
+.PdfHighlighter:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
 }
 .PdfHighlighter::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
 }
 .PdfHighlighter {
   scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.PdfHighlighter:hover {
   scrollbar-color: hsl(var(--border)) transparent;
 }
