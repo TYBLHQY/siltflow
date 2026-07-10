@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react"
+import { useCallback, useState, useEffect, useRef } from "react"
 import {
   PdfLoader,
   PdfHighlighter,
@@ -109,6 +109,14 @@ function SiltflowHighlightContainer({
     isScrolledTo,
     highlightBindings,
   } = useHighlightContainerContext<SiltflowHighlight>()
+  const setScrolledHighlightId = usePdfViewerStore((s) => s.setScrolledHighlightId)
+
+  // Sync the library's scroll state → store so RightPanel cards light up
+  useEffect(() => {
+    if (isScrolledTo) {
+      setScrolledHighlightId(highlight.id)
+    }
+  }, [isScrolledTo, highlight.id, setScrolledHighlightId])
 
   const handleDelete = useCallback(
     () => deleteHighlight(highlight.id),
@@ -207,6 +215,10 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() =>
     storeItems.map(annotationToHighlight),
   )
+  // Ref always pointing to the current highlights array, so callbacks captured
+  // in utilsRef can find the latest highlights even after new ones are added.
+  const highlightsRef = useRef(highlights)
+  highlightsRef.current = highlights
 
   // Sync from store -> component state whenever store items change.
   // Also triggers when store items identity changes (after delete/add).
@@ -393,10 +405,10 @@ function PdfHighlighterWrapper({
         })
 
         // Expose scrollToHighlight so RightPanel/LeftPanel can call it
+        // Use a ref so the closure always sees the latest highlights array.
         setScrollToHighlightStore((id: string) => {
           setScrolledHighlightId(id)
-          // Find the highlight in the highlights array and scroll to it
-          const highlight = highlights.find((h) => h.id === id)
+          const highlight = highlightsRef.current.find((h) => h.id === id)
           if (highlight) {
             utils.scrollToHighlight(highlight)
           }
