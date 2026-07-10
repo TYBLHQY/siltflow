@@ -708,14 +708,26 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
     window.siltflow.annotations.list(documentId).then((saved) => {
       if (loadedDocRef.current !== documentId) return
       setItems(
-        (saved || []).map((a: any) => ({
-          id: a.id,
-          documentId: a.documentId,
-          type: a.type,
-          text: a.text || "",
-          pageNumber: a.pageNumber ?? 1,
-          embedData: JSON.parse(a.embedData) as AnnotationEmbedData,
-        })),
+        (saved || []).map((a: any) => {
+          let aiResult: any = undefined
+          if (a.ai_result != null) {
+            try { aiResult = JSON.parse(a.ai_result) } catch { /* ignore */ }
+          }
+          let fsrsCard: any = undefined
+          if (a.fsrs_card != null) {
+            try { fsrsCard = JSON.parse(a.fsrs_card) } catch { /* ignore */ }
+          }
+          return {
+            id: a.id,
+            documentId: a.documentId,
+            type: a.type,
+            text: a.text || "",
+            pageNumber: a.pageNumber ?? 1,
+            embedData: JSON.parse(a.embedData) as AnnotationEmbedData,
+            aiResult,
+            fsrsCard,
+          }
+        }),
       )
     })
   }, [documentId, setItems])

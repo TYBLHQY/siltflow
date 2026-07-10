@@ -61,11 +61,24 @@ function createTables() {
       text TEXT,
       page_number INTEGER,
       embed_data TEXT NOT NULL,
+      ai_result TEXT,
+      fsrs_card TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (id, document_id)
     );
   `)
+
+  // Migration: add ai_result column if missing
+  const annoCols = cols.length > 0 ? cols : sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
+  const hasAiResult = annoCols.some((c: any) => c.name === 'ai_result')
+  if (!hasAiResult) {
+    sqlite.exec("ALTER TABLE annotations ADD COLUMN ai_result TEXT")
+  }
+  const hasFsrs = annoCols.some((c: any) => c.name === 'fsrs_card')
+  if (!hasFsrs) {
+    sqlite.exec("ALTER TABLE annotations ADD COLUMN fsrs_card TEXT")
+  }
 }
 
 export function getDb() {

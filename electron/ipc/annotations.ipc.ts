@@ -19,8 +19,8 @@ export function registerAnnotationHandlers() {
     if (!sql) return null
     const now = new Date().toISOString()
     sql.prepare(
-      `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, ai_result, fsrs_card, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       annotation.id,
       annotation.documentId,
@@ -28,6 +28,8 @@ export function registerAnnotationHandlers() {
       annotation.text || "",
       annotation.pageNumber ?? 0,
       annotation.embedData || "",
+      annotation.aiResult !== undefined ? JSON.stringify(annotation.aiResult) : null,
+      annotation.fsrsCard !== undefined ? JSON.stringify(annotation.fsrsCard) : null,
       now,
       now,
     )

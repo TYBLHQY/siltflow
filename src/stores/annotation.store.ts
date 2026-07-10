@@ -31,19 +31,50 @@ interface AnnotationState {
   clear: () => void
 }
 
+/** Persist the full annotation to the Electron backend. */
+function persistAnnotation(item: AnnotationItem) {
+  window.siltflow.annotations.save({
+    id: item.id,
+    documentId: item.documentId,
+    type: item.type,
+    text: item.text,
+    pageNumber: item.pageNumber,
+    embedData: JSON.stringify(item.embedData),
+    aiResult: item.aiResult,
+    fsrsCard: item.fsrsCard,
+  })
+}
+
 export const useAnnotationStore = create<AnnotationState>((set) => ({
   items: [],
 
   setItems: (items) => set({ items }),
-  addItem: (item) => set((s) => ({ items: [...s.items, item] })),
+  addItem: (item) => {
+    persistAnnotation(item)
+    set((s) => ({ items: [...s.items, item] }))
+  },
 
   removeItem: (id) =>
     set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
 
-  updateItem: (id, patch) =>
+  updateItem: (id, patch) => {
+    // Persist merged annotation to backend before updating Zustand
+    const current = useAnnotationStore.getState().items.find((i) => i.id === id)
+    if (current) {
+      const merged = { ...current, ...patch }
+      persistAnnotation(merged)
+      // Also persist FSRS card changes specifically
+      if (patch.fsrsCard) {
+        window.siltflow.annotations.save({
+          ...merged,
+          embedData: JSON.stringify(merged.embedData),
+        })
+      }
+    }
     set((s) => ({
       items: s.items.map((i) => (i.id === id ? { ...i, ...patch } : i)),
-    })),
+    }))
+  },
 
   clear: () => set({ items: [] }),
 }))
