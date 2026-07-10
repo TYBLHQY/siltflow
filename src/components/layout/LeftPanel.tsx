@@ -234,7 +234,7 @@ export function LeftPanel() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="flex-1 truncate min-w-0 text-left">{doc.title}</span>
+                          <span className="min-w-0 truncate flex-1 text-left">{doc.title}</span>
                         </TooltipTrigger>
                         <TooltipContent side="top" align="start">
                           {doc.title}
