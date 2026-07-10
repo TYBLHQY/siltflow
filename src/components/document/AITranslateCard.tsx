@@ -41,7 +41,10 @@ export function AITranslateCard({
   const isLong = ai?.type === "sentence" || ai?.type === "passage"
   const tts = useTTS()
 
-  const handleDelete = () => onDelete(id)
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onDelete(id)
+  }
 
   const handleReview = useCallback(
     (grade: Grade) => {
