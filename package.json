@@ -63,7 +63,7 @@
   "author": {
     "name": "MYQ"
   },
-  "homepage": "https://github.com/myq/siltflow",
+  "homepage": "https://github.com/TYBLHQY/siltflow",
   "main": "dist-electron/main.js",
   "pnpm": {
     "onlyBuiltDependencies": [
