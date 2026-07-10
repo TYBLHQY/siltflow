@@ -37,7 +37,7 @@
     "deleteAppDataOnUninstall": false
   },
   "linux": {
-    "icon": "build/icon.png",
+    "icon": "build/icons",
     "category": "Utility",
     "maintainer": "MYQ <myq@localhost>",
     "target": [
