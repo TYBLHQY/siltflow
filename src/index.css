@@ -150,21 +150,28 @@
   opacity: 0.25 !important;
 }
 
-/* PdfHighlighter: hidden until hover — same as global style */
+/* PdfHighlighter: override library's inline <style> with !important */
 .PdfHighlighter::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 999px;
+  background: transparent !important;
+  border-radius: 999px !important;
 }
-.PdfHighlighter:hover::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+.PdfHighlighter:hover::-webkit-scrollbar-thumb,
+.PdfHighlighter:focus::-webkit-scrollbar-thumb {
+  background: hsl(var(--border)) !important;
 }
 .PdfHighlighter::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: hsl(var(--muted-foreground)) !important;
 }
+.PdfHighlighter::-webkit-scrollbar-track,
+.PdfHighlighter::-webkit-scrollbar-track-piece {
+  background: transparent !important;
+}
+
+/* PdfHighlighter Firefox — same treatment */
 .PdfHighlighter {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-width: thin !important;
+  scrollbar-color: transparent transparent !important;
 }
 .PdfHighlighter:hover {
-  scrollbar-color: hsl(var(--border)) transparent;
+  scrollbar-color: hsl(var(--border)) transparent !important;
 }
