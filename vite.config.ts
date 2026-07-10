@@ -3,6 +3,7 @@ import path from 'node:path'
 import electron from 'vite-plugin-electron/simple'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,6 +14,22 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['pdfjs-dist'],
+  },
+  build: {
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/lucide-react')) return 'vendor-icons'
+          if (id.includes('node_modules/openai')) return 'vendor-ai'
+          if (id.includes('node_modules/drizzle-orm')) return 'vendor-db'
+          if (id.includes('node_modules/react-pdf-highlighter-plus')) return 'vendor-pdf'
+          if (id.includes('node_modules/pdfjs-dist')) return 'vendor-pdf'
+          if (id.includes('node_modules/react-arborist')) return 'vendor-ui'
+          if (id.includes('node_modules')) return 'vendor'
+        },
+      },
+    },
   },
   plugins: [
     tailwindcss(),
@@ -25,6 +42,7 @@ export default defineConfig({
             rollupOptions: {
               external: ['better-sqlite3'],
             },
+            minify: 'esbuild',
           },
         },
       },

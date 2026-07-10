@@ -19,6 +19,7 @@
     "dist-electron"
   ],
   "npmRebuild": false,
+  "compression": "maximum",
   "mac": {
     "icon": "build/icon.icns",
     "target": [
