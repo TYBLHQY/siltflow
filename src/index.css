@@ -102,6 +102,28 @@
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
   }
+
+  /* ── Global scrollbar styling ── */
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
 }
 
 /* Override library's pdf_viewer.css:
@@ -116,22 +138,4 @@
 }
 .textLayer > div:not(.PdfHighlighter__highlight-layer):not(.TextHighlight) {
   opacity: 0.25 !important;
-}
-
-/* Hide scrollbar when not scrolling — show on hover */
-.PdfHighlighter::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 999px;
-}
-.PdfHighlighter:hover::-webkit-scrollbar-thumb {
-  background-color: var(--rphp-border-strong, #b7b3ab);
-}
-
-/* Fallback for Firefox */
-.PdfHighlighter {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-.PdfHighlighter:hover {
-  scrollbar-color: var(--rphp-border-strong, #b7b3ab) transparent;
 }
