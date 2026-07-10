@@ -5,7 +5,9 @@ import { LeftPanel } from "./LeftPanel"
 import { CenterPanel } from "./CenterPanel"
 import { RightPanel } from "./RightPanel"
 import { useDocumentStore } from "@/stores/document.store"
+import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { usePanelLayout } from "@/hooks/usePanelLayout"
+import { useShortcut } from "@/hooks/useShortcut"
 
 const MIN_PANEL_PX = 250
 const MAX_PANEL_PX = 600
@@ -16,6 +18,8 @@ export function ThreeColumnLayout() {
 
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [leftTab, setLeftTab] = useState<string>("review")
+  const [rightTab, setRightTab] = useState<string>("annotations")
 
   const leftPanelRef = useRef<HTMLDivElement>(null)
   const rightPanelRef = useRef<HTMLDivElement>(null)
@@ -32,6 +36,61 @@ export function ThreeColumnLayout() {
   const handleToggleRight = useCallback(() => {
     setRightCollapsed((c) => !c)
   }, [])
+
+  const handleSettingsOpen = useCallback(() => {
+    // Open settings via the CenterPanel's SettingsButton
+    // We dispatch a custom event that CenterPanel listens to
+    window.dispatchEvent(new CustomEvent("siltflow:toggle-settings"))
+  }, [])
+
+  const handleToggleFitWidth = useCallback(() => {
+    const pf = usePdfViewerStore.getState()
+    if (!pf.setViewerScale) return
+    if (pf.fitWidth) {
+      pf.setViewerScale("auto")
+      pf.setFitWidth(false)
+      pf.setPdfScale(0)
+    } else {
+      pf.setViewerScale("page-width")
+      pf.setFitWidth(true)
+    }
+  }, [])
+
+  // ── Global keyboard shortcuts ─────────────────────────────────────────────
+  const hasPdf = !!currentDocument?.filePath
+
+  // Tab shortcuts: set tab state AND auto-open the panel if it was collapsed
+  const goDocsTab = useCallback(() => {
+    setLeftTab("documents")
+    setLeftCollapsed(false)
+  }, [])
+  const goReviewTab = useCallback(() => {
+    setLeftTab("review")
+    setLeftCollapsed(false)
+  }, [])
+  const goOutlinesTab = useCallback(() => {
+    setLeftTab("outline")
+    setLeftCollapsed(false)
+  }, [])
+  const goAnnotationsTab = useCallback(() => {
+    setRightTab("annotations")
+    setRightCollapsed(false)
+  }, [])
+  const goSummaryTab = useCallback(() => {
+    setRightTab("summary")
+    setRightCollapsed(false)
+  }, [])
+
+  useShortcut("toggleDocsTab", goDocsTab)
+  useShortcut("toggleReviewTab", goReviewTab)
+  useShortcut("toggleOutlinesTab", goOutlinesTab)
+  useShortcut("toggleAnnotationsTab", goAnnotationsTab)
+  useShortcut("toggleSummaryTab", goSummaryTab)
+  useShortcut("toggleLeftPanel", handleToggleLeft)
+  useShortcut("toggleRightPanel", handleToggleRight)
+  useShortcut("openSettings", handleSettingsOpen)
+  useShortcut("toggleFitWidth", handleToggleFitWidth, { enabled: hasPdf })
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Wait for layout to restore before rendering
   if (!loaded) return null
@@ -66,7 +125,7 @@ export function ThreeColumnLayout() {
           visible={!leftCollapsed}
         >
           <div ref={leftPanelRef} className="h-full">
-            <LeftPanel />
+            <LeftPanel activeTab={leftTab} onTabChange={setLeftTab} />
           </div>
         </Allotment.Pane>
 
@@ -88,7 +147,7 @@ export function ThreeColumnLayout() {
           visible={!rightCollapsed}
         >
           <div ref={rightPanelRef} className="h-full">
-            <RightPanel />
+            <RightPanel activeTab={rightTab} onTabChange={setRightTab} />
           </div>
         </Allotment.Pane>
       </Allotment>

@@ -26,8 +26,14 @@ import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { extractPageTexts, summarizeSelectedPages } from "@/lib/summarize"
 import { reviewAnnotation } from "@/stores/fsrs.store"
 import type { Grade } from "ts-fsrs"
+import { useShortcut } from "@/hooks/useShortcut"
 
-export function RightPanel() {
+interface RightPanelProps {
+  activeTab?: string
+  onTabChange?: (tab: string) => void
+}
+
+export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const items = useAnnotationStore((s) => s.items)
   const profiles = useAIStore((s) => s.profiles)
   const removeItem = useAnnotationStore((s) => s.removeItem)
@@ -68,6 +74,20 @@ export function RightPanel() {
     [items],
   )
   const dueCount = dueItems.length
+
+  const handleStartLearning = useCallback(() => {
+    if (dueItems.length === 0) {
+      showToast("No due annotations", "info")
+      return
+    }
+    setStudyingIndex(0)
+    setAnswerRevealed(false)
+    setStudyPanelOpen(true)
+  }, [dueItems, showToast])
+
+  // Shortcut: ctrl+s to start learning from annotations tab
+  const annotationsActive = activeTab === "annotations" && !studyPanelOpen
+  useShortcut("startLearning", handleStartLearning, { enabled: annotationsActive })
 
   /** Get the active profile from the store's raw state */
   const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null
@@ -178,7 +198,7 @@ export function RightPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <Tabs defaultValue="annotations" className="flex flex-col flex-1 min-h-0">
+      <Tabs defaultValue="annotations" value={activeTab ?? undefined} onValueChange={onTabChange} className="flex flex-col flex-1 min-h-0">
         <div className="border-b px-3 py-1.5">
           <TabsList className="h-7">
             <TabsTrigger value="annotations" className="text-xs px-2 py-0.5 h-6">

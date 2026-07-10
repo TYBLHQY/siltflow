@@ -37,6 +37,10 @@ interface PdfViewerState {
   /** Scroll to a highlight by id — set from RightPanel */
   scrollToHighlight: ((id: string) => void) | null
   setScrollToHighlight: (fn: ((id: string) => void) | null) => void
+
+  /** Last-read page per document ID (persisted to vault config) */
+  lastPageByDocId: Record<string, number>
+  setLastPage: (docId: string, page: number) => void
 }
 
 export const usePdfViewerStore = create<PdfViewerState>((set) => ({
@@ -52,7 +56,7 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
   pdfScale: 0,
   setPdfScale: (v) => set({ pdfScale: v }),
 
-  fitWidth: false,
+  fitWidth: true,
   setFitWidth: (v) => set({ fitWidth: v }),
 
   setViewerScale: null,
@@ -60,4 +64,24 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 
   scrollToHighlight: null,
   setScrollToHighlight: (fn) => set({ scrollToHighlight: fn }),
+
+  lastPageByDocId: {},
+  setLastPage: (docId, page) =>
+    set((s) => {
+      const next = { ...s.lastPageByDocId, [docId]: page }
+      // Persist to vault config
+      window.siltflow.vaultConfigSet({ lastPages: next })
+      return { lastPageByDocId: next }
+    }),
 }))
+
+/** Load persisted last-page map from vault (call once on app boot). */
+export async function loadLastPages() {
+  try {
+    const cfg = await window.siltflow.vaultConfigGet()
+    const saved = (cfg as Record<string, unknown>).lastPages as Record<string, number> | undefined
+    if (saved && typeof saved === "object") {
+      usePdfViewerStore.setState({ lastPageByDocId: saved })
+    }
+  } catch { /* ignore */ }
+}

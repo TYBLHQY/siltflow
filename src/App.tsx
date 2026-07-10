@@ -4,9 +4,11 @@ import { ThreeColumnLayout } from "@/components/layout/ThreeColumnLayout"
 import { loadFromVault, useAIStore } from "@/stores/ai.store"
 import { loadFSRSParams } from "@/stores/fsrs.store"
 import { loadSummariesFromVault } from "@/stores/summary.store"
-import { loadStyleFromVault } from "@/stores/style.store"
+import { loadStyleFromVault, useStyleStore } from "@/stores/style.store"
 import { loadTTSConfigFromVault } from "@/stores/tts.store"
 import { useToastStore } from "@/stores/toast.store"
+import { loadShortcutsFromVault } from "@/stores/shortcuts.store"
+import { loadLastPages } from "@/stores/pdf-viewer.store"
 import { Toast } from "@/components/Toast"
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
       loadSummariesFromVault()
       loadStyleFromVault()
       loadTTSConfigFromVault()
+      loadShortcutsFromVault()
+      loadLastPages()
     }
   }, [vaultReady, aiLoaded])
 
@@ -31,6 +35,12 @@ function App() {
       showToast("No AI provider configured — go to Settings > AI Config", "info")
     }
   }, [aiLoaded, showToast])
+
+  // Apply global font size to <html> element
+  const globalFontSize = useStyleStore((s) => s.style.globalFontSize)
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${globalFontSize}px`
+  }, [globalFontSize])
 
   const handleReady = () => {
     setVaultReady(true)

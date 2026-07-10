@@ -348,6 +348,8 @@ function PdfHighlighterWrapper({
   const pdfScale = usePdfViewerStore((s) => s.pdfScale)
   const fitWidth = usePdfViewerStore((s) => s.fitWidth)
   const setScrollToHighlightStore = usePdfViewerStore((s) => s.setScrollToHighlight)
+  const lastPage = usePdfViewerStore((s) => s.lastPageByDocId[documentId])
+  const setLastPage = usePdfViewerStore((s) => s.setLastPage)
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
@@ -355,10 +357,7 @@ function PdfHighlighterWrapper({
   }, [pdfDocument, setPdfDocument])
 
   // Example pattern: pdfScaleValue is always numeric (or undefined = auto).
-  // 0 means "not yet set" → omit prop so library defaults to "auto".
-  // After any zoom, pdfScale holds a real number and gets passed as prop;
-  // the library's proximity check (< 0.5% diff) skips re-apply on re-renders.
-  //
+
   // When fitWidth is active, pass "page-width" so the built-in ResizeObserver
   // keeps applying it (otherwise undefined → "auto" overrides).
   const numScale = pdfScale > 0 ? pdfScale : undefined
@@ -406,9 +405,13 @@ function PdfHighlighterWrapper({
           }
         })
       }}
-      onPageChange={(page: number) => setCurrentPage(page)}
+      onPageChange={(page: number) => {
+        setCurrentPage(page)
+        setLastPage(documentId, page)
+      }}
       onZoomChange={handleZoomChange}
       pdfScaleValue={pdfScaleValue}
+      initialPage={lastPage && lastPage > 1 ? lastPage : undefined}
       style={{ height: "100%" }}
     >
       <SiltflowHighlightContainer deleteHighlight={deleteHighlight} />

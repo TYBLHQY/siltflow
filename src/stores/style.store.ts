@@ -5,12 +5,15 @@ export interface ParagraphStyle {
   fontFamily: string
   /** Font size in px. */
   fontSize: number
+  /** Global base font size in px (applied to <html>). */
+  globalFontSize: number
 }
 
 interface StyleState {
   style: ParagraphStyle
   setFontFamily: (family: string) => void
   setFontSize: (size: number) => void
+  setGlobalFontSize: (size: number) => void
   reset: () => void
 }
 
@@ -18,6 +21,7 @@ const STORAGE_KEY = "paragraphStyle"
 const DEFAULT_STYLE: ParagraphStyle = {
   fontFamily: "Inter, system-ui, sans-serif",
   fontSize: 13,
+  globalFontSize: 14,
 }
 
 function persist(style: ParagraphStyle) {
@@ -41,6 +45,13 @@ export const useStyleStore = create<StyleState>((set) => ({
       return { style: next }
     }),
 
+  setGlobalFontSize: (globalFontSize) =>
+    set((s) => {
+      const next = { ...s.style, globalFontSize }
+      persist(next)
+      return { style: next }
+    }),
+
   reset: () => {
     persist(DEFAULT_STYLE)
     set({ style: { ...DEFAULT_STYLE } })
@@ -60,6 +71,8 @@ export async function loadStyleFromVault() {
             (s.fontFamily as string) ?? DEFAULT_STYLE.fontFamily,
           fontSize:
             (s.fontSize as number) ?? DEFAULT_STYLE.fontSize,
+          globalFontSize:
+            (s.globalFontSize as number) ?? DEFAULT_STYLE.globalFontSize,
         },
       })
     }

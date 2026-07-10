@@ -66,7 +66,12 @@ function DocumentOutlinePanel() {
   )
 }
 
-export function LeftPanel() {
+interface LeftPanelProps {
+  activeTab?: string
+  onTabChange?: (tab: string) => void
+}
+
+export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const {
     documents,
     currentDocument,
@@ -166,7 +171,7 @@ export function LeftPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <Tabs defaultValue="review" className="flex flex-col flex-1 min-h-0">
+      <Tabs defaultValue="review" value={activeTab ?? undefined} onValueChange={onTabChange} className="flex flex-col flex-1 min-h-0">
         <div className="border-b px-3 py-1.5">
           <TabsList className="h-7">
             <TabsTrigger value="documents" className="text-xs px-2 py-0.5 h-6">

@@ -1,10 +1,9 @@
 import { useCallback } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
-import { reviewAnnotation, getNextReview } from "@/stores/fsrs.store"
-import type { Grade } from "ts-fsrs"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { Volume2, ArrowLeft, CheckSquare } from "lucide-react"
 import { useTTS } from "@/lib/use-tts"
+import { useShortcut } from "@/hooks/useShortcut"
 
 interface StudyPanelProps {
   items: AnnotationItem[]
@@ -36,6 +35,19 @@ export function StudyPanel({
   const handleReveal = useCallback(() => {
     if (!answerRevealed) setAnswerRevealed(true)
   }, [answerRevealed, setAnswerRevealed])
+
+  const handleGradeAgain = useCallback(() => onRate(1), [onRate])
+  const handleGradeHard = useCallback(() => onRate(2), [onRate])
+  const handleGradeGood = useCallback(() => onRate(3), [onRate])
+  const handleGradeEasy = useCallback(() => onRate(4), [onRate])
+
+  // Learning mode shortcuts (only active when item exists)
+  useShortcut("revealCard", handleReveal, { enabled: !!item && !answerRevealed })
+  useShortcut("gradeAgain", handleGradeAgain, { enabled: !!item && answerRevealed })
+  useShortcut("gradeHard", handleGradeHard, { enabled: !!item && answerRevealed })
+  useShortcut("gradeGood", handleGradeGood, { enabled: !!item && answerRevealed })
+  useShortcut("gradeEasy", handleGradeEasy, { enabled: !!item && answerRevealed })
+  useShortcut("backFromLearning", onBack, { enabled: !!item })
 
   if (!item) {
     return (
