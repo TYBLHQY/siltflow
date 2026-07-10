@@ -395,9 +395,11 @@ function PdfHighlighterWrapper({
         // Expose scrollToHighlight so RightPanel can call it
         // Use a ref so the closure always sees the latest highlights array.
         setScrollToHighlightStore((id: string) => {
-          const highlight = highlightsRef.current.find((h) => h.id === id)
-          if (highlight) {
-            utils.scrollToHighlight(highlight)
+          // Build a minimal Highlight object from the id since scrollToHighlight
+          // needs the full position data. Find in the ref that stays current.
+          const h = highlightsRef.current.find((h) => h.id === id)
+          if (h) {
+            utils.scrollToHighlight(h)
           }
         })
       }}
