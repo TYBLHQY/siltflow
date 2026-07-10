@@ -234,6 +234,8 @@ function SelectionTip() {
     })
     addItem(item)
     setPendingAnnotation(null)
+    // Clear text selection so the blue highlight disappears
+    window.getSelection()?.removeAllRanges()
   }, [pendingAnnotation, addItem, setPendingAnnotation])
 
   if (!pendingAnnotation) return null
