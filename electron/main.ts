@@ -80,6 +80,7 @@ function writeVaultConfig(vaultPath: string, config: Record<string, unknown>) {
 function ensureVaultStructure(vaultPath: string) {
   const dirs = [
     path.join(vaultPath, SILTFLOW_DIR),
+    path.join(vaultPath, SILTFLOW_DIR, 'tts-cache'),
     path.join(vaultPath, 'documents'),
   ]
   for (const dir of dirs) {
