@@ -1,4 +1,4 @@
-import type { AIConfig } from "@/stores/ai.store"
+import { type AIProfile } from "@/stores/ai.store"
 
 /** Standard Chat Completion request message. */
 export interface ChatMessage {
@@ -12,90 +12,47 @@ export interface ChatChunk {
   done: boolean
 }
 
-function buildHeaders(config: AIConfig): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-  if (config.apiKey) {
-    headers["Authorization"] = `Bearer ${config.apiKey}`
-  }
-  return headers
-}
-
-function buildBody(config: AIConfig, messages: ChatMessage[]) {
-  return {
-    model: config.model,
-    messages,
-    temperature: config.temperature,
-    max_tokens: config.maxTokens,
-    top_p: config.topP,
-    stream: true,
-  }
-}
-
 /**
- * Send a streaming Chat Completions request via fetch + ReadableStream.
- * Each chunk is yielded via the callback; the promise resolves when done.
+ * Send a streaming Chat Completions request via the OpenAI SDK.
+ * Uses response_format: json_object for structured output.
  */
 export async function chatCompletion(
-  config: AIConfig,
+  profile: AIProfile,
   messages: ChatMessage[],
   onChunk: (chunk: ChatChunk) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const url = `${config.baseUrl.replace(/\/+$/, "")}/chat/completions`
+  // Dynamic import so the SDK is lazy-loaded only on first AI call
+  const { OpenAI } = await import("openai")
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: buildHeaders(config),
-    body: JSON.stringify(buildBody(config, messages)),
-    signal,
+  const client = new OpenAI({
+    baseURL: profile.baseUrl,
+    apiKey: profile.apiKey || undefined,
+    dangerouslyAllowBrowser: true,
   })
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "Unknown error")
-    throw new Error(`OpenAI API error ${response.status}: ${errorText}`)
-  }
+  const stream = await client.chat.completions.create(
+    {
+      model: profile.model,
+      messages,
+      temperature: profile.temperature,
+      max_tokens: profile.maxTokens,
+      top_p: profile.topP,
+      stream: true,
+      response_format: { type: "json_object" },
+    },
+    { signal },
+  )
 
-  const reader = response.body?.getReader()
-  if (!reader) throw new Error("Response body is not readable (stream not supported)")
-
-  const decoder = new TextDecoder()
-  let buffer = ""
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split("\n")
-    buffer = lines.pop() ?? ""
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || !trimmed.startsWith("data: ")) continue
-      const payload = trimmed.slice(6)
-      if (payload === "[DONE]") {
-        onChunk({ content: "", done: true })
-        return
-      }
-      try {
-        const parsed = JSON.parse(payload)
-        const delta = parsed.choices?.[0]?.delta?.content
-        if (delta) {
-          onChunk({ content: delta, done: false })
-        }
-        // If finish_reason is present, this is the last chunk with content
-        if (parsed.choices?.[0]?.finish_reason) {
-          onChunk({ content: "", done: true })
-          return
-        }
-      } catch {
-        // Partial JSON line — skip
-      }
+  for await (const chunk of stream) {
+    const delta = chunk.choices?.[0]?.delta?.content
+    if (delta && delta !== null) {
+      onChunk({ content: delta, done: false })
+    }
+    if (chunk.choices?.[0]?.finish_reason) {
+      break
     }
   }
 
-  // Stream ended without [DONE]
   onChunk({ content: "", done: true })
 }

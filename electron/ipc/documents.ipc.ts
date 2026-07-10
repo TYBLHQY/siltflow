@@ -29,4 +29,10 @@ export function registerDocumentHandlers() {
       .returning()
       .get()
   })
+
+  ipcMain.handle("documents:delete", (_event, id: string) => {
+    const db = getDb()
+    if (!db) return
+    db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
+  })
 }

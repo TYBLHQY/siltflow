@@ -1,28 +1,35 @@
 import { create } from "zustand"
+import type { ScaledPosition, Content } from "react-pdf-highlighter-plus"
+import type { AIAnnotationData } from "@/lib/annotation-types"
+
+export interface AnnotationEmbedData {
+  position: ScaledPosition
+  content?: Content
+}
 
 export interface AnnotationItem {
   id: string
   documentId: string
   type: string
   text: string
+  /** 1-indexed page number, consistent with react-pdf-highlighter-plus */
   pageNumber: number
-  embedData: unknown
+  embedData: AnnotationEmbedData
+  /** AI analysis result — populated after translation request completes */
+  aiResult?: AIAnnotationData | null
 }
 
 interface AnnotationState {
   items: AnnotationItem[]
-  pendingDeletes: { id: string; pageNumber: number }[]
   setItems: (items: AnnotationItem[]) => void
   addItem: (item: AnnotationItem) => void
   removeItem: (id: string) => void
-  queueDelete: (id: string, pageNumber: number) => void
-  clearDeletes: () => void
+  updateItem: (id: string, patch: Partial<AnnotationItem>) => void
   clear: () => void
 }
 
 export const useAnnotationStore = create<AnnotationState>((set) => ({
   items: [],
-  pendingDeletes: [],
 
   setItems: (items) => set({ items }),
   addItem: (item) => set((s) => ({ items: [...s.items, item] })),
@@ -30,11 +37,10 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   removeItem: (id) =>
     set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
 
-  queueDelete: (id, pageNumber) =>
+  updateItem: (id, patch) =>
     set((s) => ({
-      pendingDeletes: [...s.pendingDeletes, { id, pageNumber }],
+      items: s.items.map((i) => (i.id === id ? { ...i, ...patch } : i)),
     })),
 
-  clearDeletes: () => set({ pendingDeletes: [] }),
-  clear: () => set({ items: [], pendingDeletes: [] }),
+  clear: () => set({ items: [] }),
 }))

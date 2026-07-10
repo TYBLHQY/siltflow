@@ -13,6 +13,7 @@ interface DocumentState {
   loaded: boolean
   addDocument: (doc: DocumentItem) => void
   setCurrentDocument: (doc: DocumentItem | null) => void
+  removeDocument: (id: string) => void
   loadFromDb: () => Promise<void>
   setLoading: (loading: boolean) => void
 }
@@ -29,6 +30,12 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     })),
 
   setCurrentDocument: (doc) => set({ currentDocument: doc }),
+
+  removeDocument: (id) =>
+    set((state) => ({
+      documents: state.documents.filter((d) => d.id !== id),
+      currentDocument: state.currentDocument?.id === id ? null : state.currentDocument,
+    })),
 
   loadFromDb: async () => {
     if (get().loaded) return

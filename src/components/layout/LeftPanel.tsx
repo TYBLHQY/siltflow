@@ -1,9 +1,15 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { FileText, Plus, Loader2, BookText, BookMarked } from "lucide-react"
-import { useDocumentStore } from "@/stores/document.store"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { FileText, Plus, Loader2, BookText, BookMarked, Trash2 } from "lucide-react"
+import { useDocumentStore, type DocumentItem } from "@/stores/document.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useDocumentOutline, DocumentOutline } from "react-pdf-highlighter-plus"
 
@@ -65,6 +71,7 @@ export function LeftPanel() {
     currentDocument,
     setCurrentDocument,
     addDocument,
+    removeDocument,
     loadFromDb,
     loading,
   } = useDocumentStore()
@@ -93,6 +100,22 @@ export function LeftPanel() {
     } catch (err) {
       console.error("Import failed:", err)
     }
+  }
+
+  const [contextMenu, setContextMenu] = useState<{ doc: DocumentItem; x: number; y: number } | null>(null)
+
+  // Close context menu on click outside
+  useEffect(() => {
+    if (!contextMenu) return
+    const handler = () => setContextMenu(null)
+    document.addEventListener("click", handler)
+    return () => document.removeEventListener("click", handler)
+  }, [contextMenu])
+
+  const handleDeleteDoc = async (doc: DocumentItem) => {
+    await window.siltflow.documents.delete(doc.id)
+    removeDocument(doc.id)
+    setContextMenu(null)
   }
 
   return (
@@ -133,19 +156,47 @@ export function LeftPanel() {
             ) : (
               <div className="space-y-0.5 px-1">
                 {documents.map((doc) => (
-                  <button
+                  <div
                     key={doc.id}
-                    onClick={() => setCurrentDocument(doc)}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                    className={`group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer ${
                       currentDocument?.id === doc.id
                         ? "bg-accent text-accent-foreground"
                         : "hover:bg-accent"
                     }`}
+                    onClick={() => setCurrentDocument(doc)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setContextMenu({ doc, x: e.clientX, y: e.clientY })
+                    }}
                   >
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{doc.title}</span>
-                  </button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex-1 truncate min-w-0 text-left">{doc.title}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" align="start">
+                          {doc.title}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 ))}
+              </div>
+            )}
+            {contextMenu && (
+              <div
+                className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
+                style={{ left: contextMenu.x, top: contextMenu.y }}
+              >
+                <button
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
+                  onClick={() => handleDeleteDoc(contextMenu.doc)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Delete
+                </button>
               </div>
             )}
           </ScrollArea>

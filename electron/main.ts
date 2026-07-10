@@ -62,10 +62,15 @@ function readVaultConfig(vaultPath: string): Record<string, unknown> {
 
 function writeVaultConfig(vaultPath: string, config: Record<string, unknown>) {
   const p = vaultConfigPath(vaultPath)
+  // Merge with existing config so we don't overwrite other keys
+  let existing: Record<string, unknown> = {}
+  try {
+    existing = JSON.parse(fs.readFileSync(p, 'utf-8'))
+  } catch { /* file doesn't exist yet */ }
   if (!fs.existsSync(path.dirname(p))) {
     fs.mkdirSync(path.dirname(p), { recursive: true })
   }
-  fs.writeFileSync(p, JSON.stringify(config, null, 2))
+  fs.writeFileSync(p, JSON.stringify({ ...existing, ...config }, null, 2))
 }
 
 function ensureVaultStructure(vaultPath: string) {
