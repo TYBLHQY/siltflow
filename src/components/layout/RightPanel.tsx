@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -21,8 +21,11 @@ import { useDocumentStore } from "@/stores/document.store"
 import { useStyleStore } from "@/stores/style.store"
 import { useToastStore } from "@/stores/toast.store"
 import { AITranslateCard } from "@/components/document/AITranslateCard"
+import { StudyPanel } from "@/components/document/StudyPanel"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { extractPageTexts, summarizeSelectedPages } from "@/lib/summarize"
+import { reviewAnnotation } from "@/stores/fsrs.store"
+import type { Grade } from "ts-fsrs"
 
 export function RightPanel() {
   const items = useAnnotationStore((s) => s.items)
@@ -42,6 +45,29 @@ export function RightPanel() {
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages)
   const style = useStyleStore((s) => s.style)
   const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight)
+
+  const [studyPanelOpen, setStudyPanelOpen] = useState(false)
+  const [studyingIndex, setStudyingIndex] = useState(0)
+  const [answerRevealed, setAnswerRevealed] = useState(false)
+
+  // Compute due annotations for the study panel
+  const dueItems = useMemo(
+    () =>
+      items.filter((item) => {
+        if (!item.fsrsCard) return true
+        try {
+          const d =
+            item.fsrsCard.due instanceof Date
+              ? item.fsrsCard.due
+              : new Date(item.fsrsCard.due)
+          return d <= new Date()
+        } catch {
+          return true
+        }
+      }),
+    [items],
+  )
+  const dueCount = dueItems.length
 
   /** Get the active profile from the store's raw state */
   const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null
@@ -175,6 +201,33 @@ export function RightPanel() {
 
         {/* ── Annotations tab ── */}
         <TabsContent value="annotations" className="flex-1 min-h-0 mt-0 flex flex-col">
+          {items.length > 0 && (
+            <div className="shrink-0 border-b px-3 py-2">
+              <button
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => {
+                  const d = dueItems
+                  if (d.length === 0) {
+                    showToast("No due annotations", "info")
+                    return
+                  }
+                  setStudyingIndex(0)
+                  setAnswerRevealed(false)
+                  setStudyPanelOpen(true)
+                }}
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Start Learning ({dueCount})
+              </button>
+            </div>
+          )}
+                }}
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Start Learning ({items.filter((i) => !i.fsrsCard || (() => { try { return (i.fsrsCard!.due instanceof Date ? i.fsrsCard!.due : new Date(i.fsrsCard!.due)) <= new Date() } catch { return true } })()).length})
+              </button>
+            </div>
+          )}
           {items.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
               <Highlighter className="h-8 w-8 mb-2" />
@@ -183,7 +236,43 @@ export function RightPanel() {
               </p>
             </div>
           ) : (
-            <ScrollArea className="flex-1">
+            <>
+              <div className="shrink-0 border-b px-3 py-2">
+                <button
+                  className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                  onClick={() => {
+                    setStudyingIndex(0)
+                    setAnswerRevealed(false)
+                    setStudyPanelOpen(true)
+                  }}
+                >
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  Start Learning ({dueCount})
+                </button>
+              </div>
+              {studyPanelOpen ? (
+                <StudyPanel
+                  items={dueItems}
+                  studyingIndex={studyingIndex}
+                  answerRevealed={answerRevealed}
+                  setAnswerRevealed={setAnswerRevealed}
+                  onRate={(grade) => {
+                    const item = dueItems[studyingIndex]
+                    if (item) {
+                      reviewAnnotation(item.id, grade as Grade)
+                    }
+                    if (studyingIndex + 1 < dueItems.length) {
+                      setStudyingIndex((i) => i + 1)
+                      setAnswerRevealed(false)
+                    } else {
+                      setStudyPanelOpen(false)
+                      showToast("Learning complete!", "info")
+                    }
+                  }}
+                  onBack={() => setStudyPanelOpen(false)}
+                />
+              ) : (
+                <ScrollArea className="flex-1">
               <div className="space-y-0">
                 {items.map((ann) => (
                   <AITranslateCard
@@ -227,7 +316,6 @@ export function RightPanel() {
               </div>
             </ScrollArea>
           )}
-          <Separator />
         </TabsContent>
 
         {/* ── Summary tab ── */}
