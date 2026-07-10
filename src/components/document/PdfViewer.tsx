@@ -109,14 +109,6 @@ function SiltflowHighlightContainer({
     isScrolledTo,
     highlightBindings,
   } = useHighlightContainerContext<SiltflowHighlight>()
-  const setScrolledHighlightId = usePdfViewerStore((s) => s.setScrolledHighlightId)
-
-  // Sync the library's scroll state → store so RightPanel cards light up
-  useEffect(() => {
-    if (isScrolledTo) {
-      setScrolledHighlightId(highlight.id)
-    }
-  }, [isScrolledTo, highlight.id, setScrolledHighlightId])
 
   const handleDelete = useCallback(
     () => deleteHighlight(highlight.id),
@@ -295,14 +287,12 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   // cleaning it in StrictMode's unmount/remount cycle would leave it null forever.
   const pdfDocumentCleanup = usePdfViewerStore((s) => s.setPdfDocument)
   const setScrollToHighlightCleanup = usePdfViewerStore((s) => s.setScrollToHighlight)
-  const setScrolledHighlightIdCleanup = usePdfViewerStore((s) => s.setScrolledHighlightId)
   useEffect(() => {
     return () => {
       pdfDocumentCleanup(null)
       setScrollToHighlightCleanup(null)
-      setScrolledHighlightIdCleanup(null)
     }
-  }, [documentId, pdfDocumentCleanup, setScrollToHighlightCleanup, setScrolledHighlightIdCleanup])
+  }, [documentId, pdfDocumentCleanup, setScrollToHighlightCleanup])
 
   return (
     <div className={className}>
@@ -354,7 +344,6 @@ function PdfHighlighterWrapper({
   const setSetViewerScale = usePdfViewerStore((s) => s.setSetViewerScale)
   const pdfScale = usePdfViewerStore((s) => s.pdfScale)
   const fitWidth = usePdfViewerStore((s) => s.fitWidth)
-  const setScrolledHighlightId = usePdfViewerStore((s) => s.setScrolledHighlightId)
   const setScrollToHighlightStore = usePdfViewerStore((s) => s.setScrollToHighlight)
 
   // Sync pdfDocument to store via effect
@@ -389,7 +378,6 @@ function PdfHighlighterWrapper({
       highlights={highlights}
       key={documentId}
       onSelection={onSelection}
-      onScrollAway={() => setScrolledHighlightId(null)}
       utilsRef={(utils: PdfHighlighterUtils) => {
         setGoToPage((pageNumber: number) => utils.goToPage(pageNumber))
 
@@ -404,10 +392,9 @@ function PdfHighlighterWrapper({
           if (viewer) viewer.currentScaleValue = value
         })
 
-        // Expose scrollToHighlight so RightPanel/LeftPanel can call it
+        // Expose scrollToHighlight so RightPanel can call it
         // Use a ref so the closure always sees the latest highlights array.
         setScrollToHighlightStore((id: string) => {
-          setScrolledHighlightId(id)
           const highlight = highlightsRef.current.find((h) => h.id === id)
           if (highlight) {
             utils.scrollToHighlight(highlight)
