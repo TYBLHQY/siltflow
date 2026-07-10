@@ -11,6 +11,24 @@ export const documents = sqliteTable("documents", {
   updatedAt: text("updated_at").notNull(),
 })
 
+export const summaries = sqliteTable(
+  "summaries",
+  {
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    isAiGenerated: integer("is_ai_generated", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.documentId] }),
+  })
+)
+
 export const annotations = sqliteTable(
   "annotations",
   {

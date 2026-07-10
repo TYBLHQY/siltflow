@@ -18,6 +18,11 @@ interface SiltflowAPI {
     save: (annotation: any) => Promise<any>
     delete: (id: string) => Promise<void>
   }
+  summaries: {
+    get: (documentId: string) => Promise<any | null>
+    save: (summary: { documentId: string; text: string; isAiGenerated: boolean }) => Promise<any>
+    delete: (documentId: string) => Promise<void>
+  }
 }
 
 interface Window {

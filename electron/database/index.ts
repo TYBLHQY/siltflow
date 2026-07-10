@@ -79,6 +79,18 @@ function createTables() {
   if (!hasFsrs) {
     sqlite.exec("ALTER TABLE annotations ADD COLUMN fsrs_card TEXT")
   }
+
+  // Create summaries table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS summaries (
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      text TEXT NOT NULL,
+      is_ai_generated INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (document_id)
+    );
+  `)
 }
 
 export function getDb() {

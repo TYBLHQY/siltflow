@@ -29,10 +29,9 @@ interface SummaryState {
   setSelectedPages: (documentId: string, pages: number[] | undefined) => void
 }
 
-const STORAGE_KEY = "documentSummaries"
 
-function persistSummaries(summaries: Record<string, DocSummary>) {
-  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: summaries })
+async function persistSummary(documentId: string, text: string, isAiGenerated: boolean) {
+  window.siltflow.summaries.save({ documentId, text, isAiGenerated })
 }
 
 export const useSummaryStore = create<SummaryState>((set) => ({
@@ -40,20 +39,21 @@ export const useSummaryStore = create<SummaryState>((set) => ({
   pageTexts: {},
   selectedPages: {},
 
-  setSummary: (documentId, text, isAiGenerated = false) =>
-    set((s) => {
-      const next = { ...s.summaries, [documentId]: { text, isAiGenerated } }
-      persistSummaries(next)
-      return { summaries: next }
-    }),
+  setSummary: (documentId, text, isAiGenerated = false) => {
+    persistSummary(documentId, text, isAiGenerated)
+    set((s) => ({
+      summaries: { ...s.summaries, [documentId]: { text, isAiGenerated } },
+    }))
+  },
 
-  clearSummary: (documentId) =>
+  clearSummary: (documentId) => {
+    window.siltflow.summaries.delete(documentId)
     set((s) => {
       const next = { ...s.summaries }
       delete next[documentId]
-      persistSummaries(next)
       return { summaries: next }
-    }),
+    })
+  },
 
   setPageTexts: (documentId, texts) =>
     set((s) => ({
@@ -66,13 +66,19 @@ export const useSummaryStore = create<SummaryState>((set) => ({
     })),
 }))
 
-/** Call once on app boot to restore summaries from vault. */
+/** Call once on app boot to restore summaries from backend. */
 export async function loadSummariesFromVault() {
+  // Load all documents' summaries one by one via the IPC.
+  // In the future this could be a bulk endpoint.
   try {
-    const cfg = await window.siltflow.vaultConfigGet()
-    const saved = (cfg as Record<string, unknown>)[STORAGE_KEY]
-    if (saved && typeof saved === "object") {
-      useSummaryStore.setState({ summaries: saved as Record<string, DocSummary> })
+    const docs = await window.siltflow.documents.list()
+    const summaries: Record<string, DocSummary> = {}
+    for (const doc of docs) {
+      const s = await window.siltflow.summaries.get(doc.id)
+      if (s) {
+        summaries[doc.id] = { text: s.text, isAiGenerated: !!s.is_ai_generated }
+      }
     }
+    useSummaryStore.setState({ summaries })
   } catch { /* ignore */ }
 }

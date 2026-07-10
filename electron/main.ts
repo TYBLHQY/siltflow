@@ -8,6 +8,7 @@ import path from 'node:path'
 import { initDatabase } from './database'
 import { registerDocumentHandlers } from './ipc/documents.ipc'
 import { registerAnnotationHandlers } from './ipc/annotations.ipc'
+import { registerSummaryHandlers } from './ipc/summaries.ipc'
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
@@ -157,6 +158,7 @@ ipcMain.handle('vault:select', async () => {
   initDatabase(vaultPath)
   registerDocumentHandlers()
   registerAnnotationHandlers()
+  registerSummaryHandlers()
   return vaultPath
 })
 
@@ -166,6 +168,7 @@ ipcMain.handle('vault:setPath', (_event, vaultPath: string) => {
   initDatabase(vaultPath)
   registerDocumentHandlers()
   registerAnnotationHandlers()
+  registerSummaryHandlers()
   return vaultPath
 })
 
