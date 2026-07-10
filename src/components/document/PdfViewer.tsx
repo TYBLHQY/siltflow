@@ -247,12 +247,6 @@ function SelectionTip() {
         <Plus className="h-3 w-3" />
         Add
       </button>
-      <button
-        className="text-[11px] text-primary-foreground/70 hover:text-primary-foreground"
-        onClick={() => setPendingAnnotation(null)}
-      >
-        ✕
-      </button>
     </div>
   )
 }
