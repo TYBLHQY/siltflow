@@ -399,7 +399,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                           sourceLang,
                           targetLang: effectiveTargetLang,
                           contextSentence: item.text,
-                          context: summary?.text ?? extractArticleContext(texts.map(t => t).join(" ")),
+                          context: summary?.text ?? extractArticleContext((texts ?? []).map(t => t).join(" ")),
                         })
                         updateItem(id, {
                           aiResult: result,

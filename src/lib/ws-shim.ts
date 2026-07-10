@@ -11,7 +11,7 @@
  * ignores them.
  */
 class BrowserWebSocket extends globalThis.WebSocket {
-  constructor(url: string, opts?: { headers?: Record<string, string> }) {
+  constructor(url: string, _opts?: { headers?: Record<string, string> }) {
     // Browser WebSocket only accepts string|string[] as 2nd arg (subprotocols).
     // Drop the options entirely — headers are not needed for the connection.
     super(url)

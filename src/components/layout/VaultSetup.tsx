@@ -8,7 +8,7 @@ interface VaultSetupProps {
 
 export function VaultSetup({ onReady }: VaultSetupProps) {
   const [loading, setLoading] = useState(true)
-  const [vaultPath, setVaultPath] = useState("")
+  const [, setVaultPath] = useState("")
 
   useEffect(() => {
     window.siltflow.vaultGetPath().then((p) => {
