@@ -22,6 +22,8 @@ export const annotations = sqliteTable(
     text: text("text"),
     pageNumber: integer("page_number"),
     embedData: text("embed_data").notNull(),
+    aiResult: text("ai_result"),
+    fsrsCard: text("fsrs_card"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
