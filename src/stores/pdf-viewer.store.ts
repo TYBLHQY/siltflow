@@ -86,7 +86,11 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
     }),
 
   quickAddEnabled: true,
-  setQuickAddEnabled: (v) => set({ quickAddEnabled: v }),
+  setQuickAddEnabled: (v) =>
+    set(() => {
+      window.siltflow.vaultConfigSet({ quickAddEnabled: v })
+      return { quickAddEnabled: v }
+    }),
 
   pendingAnnotation: null,
   setPendingAnnotation: (ann) => set({ pendingAnnotation: ann }),
@@ -96,9 +100,13 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 export async function loadLastPages() {
   try {
     const cfg = await window.siltflow.vaultConfigGet()
-    const saved = (cfg as Record<string, unknown>).lastPages as Record<string, number> | undefined
-    if (saved && typeof saved === "object") {
-      usePdfViewerStore.setState({ lastPageByDocId: saved })
+    const lastPages = (cfg as Record<string, unknown>).lastPages as Record<string, number> | undefined
+    if (lastPages && typeof lastPages === "object") {
+      usePdfViewerStore.setState({ lastPageByDocId: lastPages })
+    }
+    const quickAdd = (cfg as Record<string, unknown>).quickAddEnabled
+    if (typeof quickAdd === "boolean") {
+      usePdfViewerStore.setState({ quickAddEnabled: quickAdd })
     }
   } catch { /* ignore */ }
 }
