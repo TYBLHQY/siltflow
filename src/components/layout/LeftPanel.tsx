@@ -93,7 +93,6 @@ export function LeftPanel() {
         for (const doc of documents) {
           byDoc[doc.id] = { title: doc.title, cards: [] }
         }
-        // For each document fetch its FSRS cards in batch
         for (const doc of documents) {
           const rows = await window.siltflow.fsrsCards.listByDocument(doc.id)
           for (const row of rows) {
@@ -107,7 +106,6 @@ export function LeftPanel() {
           setDocMetrics(computeDocMetrics(byDoc))
         }
       } catch {
-        // fallback to store-based metrics
         if (!cancelled) {
           const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
           for (const doc of documents) {
@@ -154,7 +152,6 @@ export function LeftPanel() {
 
   const [contextMenu, setContextMenu] = useState<{ doc: DocumentItem; x: number; y: number } | null>(null)
 
-  // Close context menu on click outside
   useEffect(() => {
     if (!contextMenu) return
     const handler = () => setContextMenu(null)
@@ -177,10 +174,7 @@ export function LeftPanel() {
               <FileText className="h-3.5 w-3.5 mr-1" />
               Docs
             </TabsTrigger>
-            <TabsTrigger
-              value="review"
-              className="text-xs px-2 py-0.5 h-6"
-            >
+            <TabsTrigger value="review" className="text-xs px-2 py-0.5 h-6">
               <BrainCircuit className="h-3.5 w-3.5 mr-1" />
               Review
             </TabsTrigger>
@@ -195,33 +189,35 @@ export function LeftPanel() {
           </TabsList>
         </div>
 
+        {/* ── Docs tab ── */}
         <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
-          <div className="border-b px-3 py-2">
-            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs h-7" onClick={handleImport}>
+          <div className="shrink-0 border-b px-3 py-2">
+            <button
+              className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              onClick={handleImport}
+            >
               <Plus className="h-3.5 w-3.5" />
               Import PDF
-            </Button>
+            </button>
           </div>
-          <ScrollArea className="flex-1">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : documents.length === 0 ? (
-              <div className="flex flex-col items-center gap-1 py-8 text-muted-foreground px-4">
-                <FileText className="h-6 w-6" />
-                <p className="text-xs">No documents yet</p>
-                <p className="text-xs text-center">Click + to import a PDF</p>
-              </div>
-            ) : (
-              <div className="space-y-0.5 px-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
+              <FileText className="h-8 w-8 mb-2" />
+              <p className="text-xs text-center">No documents yet</p>
+              <p className="text-xs text-center">Click Import PDF to add one</p>
+            </div>
+          ) : (
+            <ScrollArea className="flex-1">
+              <div className="space-y-0">
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className={`group relative w-full min-w-0 rounded-md border border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer overflow-hidden ${
-                      currentDocument?.id === doc.id
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent"
+                    className={`group relative border-b border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
+                      currentDocument?.id === doc.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
                     }`}
                     onClick={() => setCurrentDocument(doc)}
                     onContextMenu={(e) => {
@@ -230,12 +226,12 @@ export function LeftPanel() {
                       setContextMenu({ doc, x: e.clientX, y: e.clientY })
                     }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="min-w-0 truncate flex-1 text-left block">{doc.title}</span>
+                            <span>{doc.title}</span>
                           </TooltipTrigger>
                           <TooltipContent side="top" align="start">
                             {doc.title}
@@ -246,96 +242,89 @@ export function LeftPanel() {
                   </div>
                 ))}
               </div>
-            )}
-            {contextMenu && (
-              <div
-                className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
-                style={{ left: contextMenu.x, top: contextMenu.y }}
+            </ScrollArea>
+          )}
+          {contextMenu && (
+            <div
+              className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
+                onClick={() => handleDeleteDoc(contextMenu.doc)}
               >
-                <button
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
-                  onClick={() => handleDeleteDoc(contextMenu.doc)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Delete
-                </button>
-              </div>
-            )}
-          </ScrollArea>
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </button>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="outline" className="flex-1 min-h-0 mt-0 flex flex-col pt-2">
+        {/* ── Outline tab ── */}
+        <TabsContent value="outline" className="flex-1 min-h-0 mt-0 flex flex-col">
           {pdfDocument ? (
             <DocumentOutlinePanel />
           ) : (
-            <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground px-4">
-              <BookText className="h-8 w-8" />
+            <div className="flex items-center justify-center h-full text-muted-foreground px-4">
               <p className="text-xs text-center">No document selected</p>
             </div>
           )}
         </TabsContent>
 
         {/* ── Review tab ── */}
-        <TabsContent value="review" className="flex-1 min-h-0 mt-0 flex flex-col pt-2">
-          <ScrollArea className="flex-1">
-            {docMetrics.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground px-4">
-                <BrainCircuit className="h-8 w-8" />
-                <p className="text-xs text-center">No review data yet</p>
-                <p className="text-xs text-center">Annotate and review cards to see per-document metrics</p>
-              </div>
-            ) : (
-              <div className="space-y-1 px-1">
+        <TabsContent value="review" className="flex-1 min-h-0 mt-0 flex flex-col">
+          {metricsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : docMetrics.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
+              <BrainCircuit className="h-8 w-8 mb-2" />
+              <p className="text-xs text-center">No review data yet</p>
+              <p className="text-xs text-center">Annotate and review cards to see per-document metrics</p>
+            </div>
+          ) : (
+            <ScrollArea className="flex-1">
+              <div className="space-y-0">
                 {docMetrics.map((m) => (
                   <div
                     key={m.documentId}
-                    className={`group flex flex-col gap-0.5 rounded-md px-2 py-2 text-sm transition-colors cursor-pointer ${
-                      currentDocument?.id === m.documentId
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent"
+                    className={`group relative border-b border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
+                      currentDocument?.id === m.documentId ? "bg-accent text-accent-foreground" : "hover:bg-accent"
                     }`}
                     onClick={() => {
                       const doc = documents.find((d) => d.id === m.documentId)
                       if (doc) setCurrentDocument(doc)
                     }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 truncate flex-1 text-xs">{m.documentTitle}</span>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span>{m.documentTitle}</span>
                     </div>
-                    <div className="flex items-center gap-2 pl-5.5">
-                      {m.dueNowCount > 0 && (
-                        <span className="rounded bg-red-500/10 px-1 py-0.5 text-[9px] font-medium text-red-600">
-                          {m.dueNowCount} due
-                        </span>
-                      )}
-                      {m.dueSoonCount > 0 && (
-                        <span className="rounded bg-orange-500/10 px-1 py-0.5 text-[9px] font-medium text-orange-600">
-                          {m.dueSoonCount} soon
-                        </span>
-                      )}
-                      {m.avgRetrievability > 0 && (
-                        <span className={`rounded px-1 py-0.5 text-[9px] font-medium ${
-                          m.avgRetrievability >= 90
-                            ? "bg-green-500/10 text-green-600"
-                            : m.avgRetrievability >= 75
-                              ? "bg-blue-500/10 text-blue-600"
-                              : m.avgRetrievability >= 50
-                                ? "bg-yellow-500/10 text-yellow-600"
-                                : "bg-red-500/10 text-red-600"
-                        }`}>
-                          {urgencyLabel(m.avgRetrievability)}
-                        </span>
-                      )}
-                      <span className="text-[9px] text-muted-foreground ml-auto">
-                        {m.totalCards}
-                      </span>
-                    </div>
+                    {m.totalCards > 0 && (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {m.dueNowCount > 0 && (
+                          <span className="rounded bg-red-500/10 px-1 py-0.5 text-[9px] font-medium text-red-600">{m.dueNowCount} due</span>
+                        )}
+                        {m.dueSoonCount > 0 && (
+                          <span className="rounded bg-orange-500/10 px-1 py-0.5 text-[9px] font-medium text-orange-600">{m.dueSoonCount} soon</span>
+                        )}
+                        {m.avgRetrievability > 0 && (
+                          <span className={`rounded px-1 py-0.5 text-[9px] font-medium ${
+                            m.avgRetrievability >= 90 ? "bg-green-500/10 text-green-600" :
+                            m.avgRetrievability >= 75 ? "bg-blue-500/10 text-blue-600" :
+                            m.avgRetrievability >= 50 ? "bg-yellow-500/10 text-yellow-600" :
+                            "bg-red-500/10 text-red-600"
+                          }`}>{urgencyLabel(m.avgRetrievability)}</span>
+                        )}
+                        <span className="text-[9px] text-muted-foreground ml-auto">{m.totalCards}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            )}
-          </ScrollArea>
+            </ScrollArea>
+          )}
         </TabsContent>
       </Tabs>
     </div>
