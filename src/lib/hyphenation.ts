@@ -417,17 +417,25 @@ export function hyphenateWord(word: string): string[] {
     return mapExceptionToOriginal(word, stripped, exception)
   }
 
-  // 2. Try known prefixes
+  // 2. Try known prefixes — both parts must have ≥3 letter characters
   for (const prefix of PREFIXES) {
-    if (lower.startsWith(prefix) && lower.length - prefix.length >= 3) {
+    if (
+      lower.startsWith(prefix) &&
+      lower.length - prefix.length >= 3 &&
+      prefix.length >= 3
+    ) {
       const splitAt = prefix.length
       return [word.slice(0, splitAt), word.slice(splitAt)]
     }
   }
 
-  // 3. Try known suffixes
+  // 3. Try known suffixes — both parts must have ≥3 letter characters
   for (const suffix of SUFFIXES) {
-    if (lower.endsWith(suffix) && lower.length - suffix.length >= 3) {
+    if (
+      lower.endsWith(suffix) &&
+      lower.length - suffix.length >= 3 &&
+      suffix.length >= 3
+    ) {
       const splitAt = lower.length - suffix.length
       return [word.slice(0, splitAt), word.slice(splitAt)]
     }
@@ -446,6 +454,9 @@ export function hyphenateText(text: string): string {
   return text.replace(/[^\s]+/g, (word) => {
     const parts = hyphenateWord(word)
     if (parts.length <= 1) return word
+    // Only hyphenate if every part has ≥3 letter characters
+    // (prevents orphan fragments like "In-" on a line alone)
+    if (parts.some((p) => p.replace(/[^a-zA-Z]/g, "").length < 3)) return word
     return parts.join("­")
   })
 }
@@ -467,7 +478,7 @@ export function canHyphenate(word: string): boolean {
  */
 function mapExceptionToOriginal(
   original: string,
-  stripped: string,
+  _stripped: string,
   exception: string[],
 ): string[] {
   const result: string[] = []

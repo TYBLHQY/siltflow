@@ -16,6 +16,7 @@ import type {
   GhostHighlight,
   LTWHP,
   PdfHighlighterUtils,
+  PdfScaleValue,
 } from "react-pdf-highlighter-plus"
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
@@ -334,7 +335,6 @@ function PdfHighlighterWrapper({
   const setGoToPage = usePdfViewerStore((s) => s.setGoToPage)
   const setCurrentPage = usePdfViewerStore((s) => s.setCurrentPage)
   const setPdfScale = usePdfViewerStore((s) => s.setPdfScale)
-  const setFitWidth = usePdfViewerStore((s) => s.setFitWidth)
   const setSetViewerScale = usePdfViewerStore((s) => s.setSetViewerScale)
   const pdfScale = usePdfViewerStore((s) => s.pdfScale)
   const fitWidth = usePdfViewerStore((s) => s.fitWidth)
@@ -352,7 +352,7 @@ function PdfHighlighterWrapper({
   // When fitWidth is active, pass "page-width" so the built-in ResizeObserver
   // keeps applying it (otherwise undefined → "auto" overrides).
   const numScale = pdfScale > 0 ? pdfScale : undefined
-  const pdfScaleValue: number | string | undefined = fitWidth ? "page-width" : numScale
+  const pdfScaleValue: PdfScaleValue | undefined = fitWidth ? "page-width" : numScale
 
   const handleZoomChange = useCallback(
     (scale: number) => {
