@@ -73,7 +73,7 @@ export function useTTS() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      window.ipcRenderer.removeAllListeners("tts:audio")
+      window.ipcRenderer?.removeAllListeners?.("tts:audio")
     }
   }, [])
 
