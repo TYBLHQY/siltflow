@@ -125,5 +125,7 @@ export function reviewAnnotation(annotationId: string, grade: Grade) {
 
 /** Get the next review date for a card, or undefined if never reviewed. */
 export function getNextReview(card?: Card): Date | undefined {
-  return card?.due
+  if (!card?.due) return undefined
+  // due may be a Date or an ISO string depending on serialization path
+  return card.due instanceof Date ? card.due : new Date(card.due)
 }
