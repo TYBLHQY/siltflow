@@ -104,28 +104,16 @@
   }
 }
 
-/* Fix pdfjs-dist textLayer rendering */
+/* Override library's pdf_viewer.css:
+     display:flex -> block (pdfjs v4 text spans are absolute-positioned, flex
+     crams them at the top of each page).
+     opacity: non-highlight text semi-transparent so highlights stand out.
+   Our import order (last) wins on equal-specificity. Library's opacity rule
+   uses a higher-specificity selector (html body .textLayer > div…), so
+   !important is needed there. */
 .textLayer {
-  position: absolute !important;
-  inset: 0 !important;
-  height: 100% !important;
-  width: 100% !important;
-  z-index: 2;
-  opacity: 1;
-  mix-blend-mode: multiply;
+  display: block;
 }
-.textLayer > :not(.PdfHighlighter__highlight-layer):not(.TextHighlight) {
-  opacity: 0.25;
-}
-.annotationLayer {
-  position: absolute;
-  top: 0;
-  z-index: 3;
-}
-/* Ensure PDF pages stack properly */
-.page {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  margin: 0 auto;
+.textLayer > div:not(.PdfHighlighter__highlight-layer):not(.TextHighlight) {
+  opacity: 0.25 !important;
 }
