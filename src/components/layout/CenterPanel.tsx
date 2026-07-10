@@ -1,11 +1,12 @@
 import { useRef, useEffect, useState, useCallback } from "react"
-import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit } from "lucide-react"
+import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useAnnotationStore, type AnnotationEmbedData } from "@/stores/annotation.store"
 import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store"
 import { useFSRSStore } from "@/stores/fsrs.store"
+import { useStyleStore } from "@/stores/style.store"
 
 // ---------------------------------------------------------------------------
 // Fit-to-width toggle button.  Uses setViewerScale directly so it can pass
@@ -50,11 +51,12 @@ function SettingsButton() {
   const [open, setOpen] = useState(false)
   const [aiConfigOpen, setAiConfigOpen] = useState(false)
   const [fsrsConfigOpen, setFsrsConfigOpen] = useState(false)
+  const [styleConfigOpen, setStyleConfigOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   // Close on outside click
   useEffect(() => {
-    if (!open && !aiConfigOpen && !fsrsConfigOpen) return
+    if (!open && !aiConfigOpen && !fsrsConfigOpen && !styleConfigOpen) return
     const id = setTimeout(() => document.addEventListener("click", handler), 0)
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -65,7 +67,7 @@ function SettingsButton() {
       clearTimeout(id)
       document.removeEventListener("click", handler)
     }
-  }, [open, aiConfigOpen, fsrsConfigOpen])
+  }, [open, aiConfigOpen, fsrsConfigOpen, styleConfigOpen])
 
   return (
     <div className="relative" ref={ref}>
@@ -79,7 +81,7 @@ function SettingsButton() {
         <Settings className="h-4 w-4" />
       </Button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded-md border bg-popover p-1 shadow-md">
+        <div className="absolute right-0 top-full z-50 mt-1 w-max min-w-36 rounded-md border bg-popover p-1 shadow-md">
           <button
             className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
             onClick={() => {
@@ -100,10 +102,21 @@ function SettingsButton() {
             <BrainCircuit className="h-3.5 w-3.5" />
             Spaced Repetition
           </button>
+          <button
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+            onClick={() => {
+              setStyleConfigOpen(true)
+              setOpen(false)
+            }}
+          >
+            <TextSelect className="h-3.5 w-3.5" />
+            Style
+          </button>
         </div>
       )}
       {aiConfigOpen && <AIConfigModal onClose={() => setAiConfigOpen(false)} />}
       {fsrsConfigOpen && <FSRSConfigModal onClose={() => setFsrsConfigOpen(false)} />}
+      {styleConfigOpen && <StyleConfigModal onClose={() => setStyleConfigOpen(false)} />}
     </div>
   )
 }
@@ -492,6 +505,183 @@ function FSRSConfigModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Style Config modal (paragraph font & font size)
+// ---------------------------------------------------------------------------
+// Use the Query List API to enumerate all installed fonts on the system.
+
+function useSystemFonts(): string[] {
+  const [fonts, setFonts] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!("queryLocalFonts" in self)) {
+      // Fallback: return a minimal list for browsers without the Font Access API
+      setFonts([
+        "system-ui, sans-serif",
+        "Inter, system-ui, sans-serif",
+        "Georgia, 'Times New Roman', serif",
+        "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+        "'Fira Code', monospace",
+      ])
+      return
+    }
+    let cancelled = false
+    ;(self as any)
+      .queryLocalFonts()
+      .then((items: any[]) => {
+        if (cancelled) return
+        const seen = new Set<string>()
+        const list: string[] = []
+        for (const item of items) {
+          const name = item.family as string
+          if (!seen.has(name)) {
+            seen.add(name)
+            list.push(name)
+          }
+        }
+        list.sort((a, b) => a.localeCompare(b))
+        setFonts(list)
+      })
+      .catch(() => {
+        // API not allowed or unavailable
+        if (!cancelled) setFonts(["Inter, system-ui, sans-serif", "Georgia, serif", "monospace"])
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  return fonts
+}
+
+function StyleConfigModal({ onClose }: { onClose: () => void }) {
+  const style = useStyleStore((s) => s.style)
+  const setFontFamily = useStyleStore((s) => s.setFontFamily)
+  const setFontSize = useStyleStore((s) => s.setFontSize)
+  const reset = useStyleStore((s) => s.reset)
+  const systemFonts = useSystemFonts()
+  const [search, setSearch] = useState("")
+
+  const filtered = search
+    ? systemFonts.filter((f) => f.toLowerCase().includes(search.toLowerCase()))
+    : systemFonts
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-lg border bg-background p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TextSelect className="h-5 w-5" />
+            <h2 className="text-base font-semibold">Paragraph Style</h2>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-5">
+          {/* Font family */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5">Font family</label>
+            <div className="relative mb-2">
+              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
+                placeholder="Search fonts…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="max-h-48 overflow-y-auto rounded-md border">
+              {filtered.map((font) => {
+                const isSelected = style.fontFamily === font
+                return (
+                  <button
+                    key={font}
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
+                      isSelected
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-accent text-foreground"
+                    }`}
+                    onClick={() => setFontFamily(font)}
+                  >
+                    <span
+                      className="flex-1 truncate"
+                      style={{ fontFamily: font }}
+                    >
+                      {font}
+                    </span>
+                    {isSelected && <span className="text-primary shrink-0">✓</span>}
+                  </button>
+                )
+              })}
+              {filtered.length === 0 && (
+                <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
+                  No fonts match &quot;{search}&quot;
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Font size */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5">
+              Font size: {style.fontSize}px
+            </label>
+            <input
+              type="range"
+              min="9"
+              max="24"
+              step="1"
+              className="w-full"
+              value={style.fontSize}
+              onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>9px</span>
+              <span>13px</span>
+              <span>24px</span>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className="rounded-md border bg-muted/30 p-3">
+            <p className="text-[10px] text-muted-foreground mb-1">Preview</p>
+            <p
+              className="text-muted-foreground/80"
+              style={{
+                fontFamily: style.fontFamily,
+                fontSize: style.fontSize,
+                lineHeight: 1.6,
+              }}
+            >
+              The quick brown fox jumps over the lazy dog. 敏捷的棕色狐狸跳过了懒惰的狗。
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t pt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs text-destructive"
+            onClick={reset}
+          >
+            Reset to defaults
+          </Button>
+          <Button size="sm" className="text-xs" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface CenterPanelProps {
   documentPath?: string | null
   documentId?: string | null
@@ -530,53 +720,48 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
     })
   }, [documentId, setItems])
 
-  if (!documentPath) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex h-10 items-center border-b px-3">
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleLeft}>
-            {leftCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
-          <h1 className="flex-1 text-sm font-medium text-center">Siltflow</h1>
+  const fileName = documentPath
+    ? documentPath.split("/").pop()?.split("\\").pop()
+    : null
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* ── unified toolbar ── */}
+      <div className="flex h-10 items-center gap-1 border-b px-3">
+        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onToggleLeft}>
+          {leftCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </Button>
+
+        <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
+          {fileName || "Siltflow"}
+        </h1>
+
+        <div className="flex items-center shrink-0">
+          {fileName && <FitWidthButton />}
           <SettingsButton />
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleRight}>
             {rightCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
           </Button>
         </div>
+      </div>
+
+      {/* ── content ── */}
+      {fileName ? (
+        <div className="flex-1 min-h-0 relative">
+          <PdfViewer
+            className="h-full w-full"
+            src={documentPath!}
+            documentId={documentId!}
+          />
+        </div>
+      ) : (
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <BookOpen className="h-12 w-12" />
             <p className="text-sm">Select a document to start reading</p>
           </div>
         </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-10 items-center gap-1 border-b px-3">
-        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onToggleLeft}>
-          {leftCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-        </Button>
-        <h1 className="flex-1 text-sm font-medium truncate text-center min-w-0">
-          {documentPath.split("/").pop()?.split("\\").pop()}
-        </h1>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <FitWidthButton />
-          <SettingsButton />
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleRight}>
-            {rightCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-      <div className="flex-1 min-h-0 relative">
-        <PdfViewer
-          className="h-full w-full"
-          src={documentPath!}
-          documentId={documentId!}
-        />
-      </div>
+      )}
     </div>
   )
 }

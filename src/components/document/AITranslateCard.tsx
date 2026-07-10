@@ -4,6 +4,7 @@ import { useState, useCallback } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
 import { reviewAnnotation, getNextReview } from "@/stores/fsrs.store"
 import type { Grade } from "ts-fsrs"
+import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 
 interface AITranslateCardProps {
   id: string
@@ -72,8 +73,11 @@ export function AITranslateCard({
         </Button>
       </div>
 
-      {/* Source text */}
-      <p className="text-sm leading-relaxed mb-1">{item.text}</p>
+      {/* Source text — Knuth-Plass optimal line-breaking */}
+      <KnuthPlassText
+        text={item.text}
+        className="text-sm mb-1"
+      />
 
       {/* AI state: loading / trigger / result */}
       {ai === null && (

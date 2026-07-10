@@ -3,6 +3,8 @@ import { VaultSetup } from "@/components/layout/VaultSetup"
 import { ThreeColumnLayout } from "@/components/layout/ThreeColumnLayout"
 import { loadFromVault, useAIStore } from "@/stores/ai.store"
 import { loadFSRSParams } from "@/stores/fsrs.store"
+import { loadSummariesFromVault } from "@/stores/summary.store"
+import { loadStyleFromVault } from "@/stores/style.store"
 import { useToastStore } from "@/stores/toast.store"
 import { Toast } from "@/components/Toast"
 
@@ -16,6 +18,8 @@ function App() {
     if (vaultReady && !aiLoaded) {
       loadFromVault()
       loadFSRSParams()
+      loadSummariesFromVault()
+      loadStyleFromVault()
     }
   }, [vaultReady, aiLoaded])
 
