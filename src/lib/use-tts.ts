@@ -1,80 +1,68 @@
 /**
- * TTS hook — delegates to the main process for Edge TTS audio streaming.
- * Main process uses Node.js WebSocket (ws library) which can set proper headers.
+ * TTS hook — delegates to main process which shells out to `edge-tts` (Python).
  */
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 export type TTSState = "idle" | "loading" | "playing" | "error"
 
-const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-
 export function useTTS() {
   const [state, setState] = useState<TTSState>("idle")
-  const audioQueueRef = useRef<Uint8Array[]>([])
-  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const speak = useCallback(async (text: string, voice = "en-US-EmmaMultilingualNeural") => {
-    setState("loading")
-    audioQueueRef.current = []
-
-    // Listen for audio chunks from main process
-    const handler = (_event: any, chunkData: number[]) => {
-      audioQueueRef.current.push(new Uint8Array(chunkData))
+    // Stop current playback
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ""
+      audioRef.current = null
     }
-    window.ipcRenderer.on("tts:audio", handler)
+
+    setState("loading")
 
     try {
-      await window.ipcRenderer.invoke("tts:speak", text, {
+      const audioData: number[] = await window.ipcRenderer.invoke("tts:speak", text, {
         voice,
         rate: "+0%",
         volume: "+0%",
         pitch: "+0Hz",
       })
 
-      // All audio received — decode and play
-      const totalLen = audioQueueRef.current.reduce((sum, c) => sum + c.length, 0)
-      const combined = new Uint8Array(totalLen)
-      let offset = 0
-      for (const c of audioQueueRef.current) {
-        combined.set(c, offset)
-        offset += c.length
-      }
-
-      if (combined.length === 0) {
+      if (!audioData || audioData.length === 0) {
         setState("error")
         return
       }
 
-      const audioBlob = new Blob([combined], { type: "audio/mpeg" })
-      const audioUrl = URL.createObjectURL(audioBlob)
-      const audio = new Audio(audioUrl)
+      const blob = new Blob([new Uint8Array(audioData)], { type: "audio/mpeg" })
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+
       audio.onended = () => {
-        URL.revokeObjectURL(audioUrl)
+        URL.revokeObjectURL(url)
+        audioRef.current = null
         setState("idle")
       }
       audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl)
+        URL.revokeObjectURL(url)
+        audioRef.current = null
         setState("error")
       }
+
       await audio.play()
       setState("playing")
     } catch (err) {
       console.error("[TTS] failed:", err)
       setState("error")
-    } finally {
-      window.ipcRenderer.removeListener("tts:audio", handler)
     }
   }, [])
 
   const stop = useCallback(() => {
-    setState("idle")
-  }, [])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      window.ipcRenderer?.removeAllListeners?.("tts:audio")
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ""
+      audioRef.current = null
     }
+    setState("idle")
   }, [])
 
   return { state, speak, stop }
