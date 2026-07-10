@@ -59,14 +59,17 @@ export async function chatCompletion(
 
   let content = choice.message?.content ?? ""
 
-  // Debug empty content
+  // Debug empty content — the debug log will show us exactly what the model returns
   if (!content) {
-    console.warn("[ai] empty content, inspecting message:", JSON.stringify(choice.message).slice(0, 500))
-    console.warn("[ai] full response:", JSON.stringify(response, null, 2).slice(0, 1000))
-    // Try deep search — sometimes the content is nested differently
-    const deep = (response as any)?.choices?.[0]?.delta?.content ||
-                 (response as any)?.choices?.[0]?.text ||
-                 ""
+    console.warn("[ai] empty content, inspecting choice.message:", JSON.stringify(choice.message).slice(0, 500))
+    console.warn("[ai] inspecting whole choice:", JSON.stringify(choice).slice(0, 1000))
+    console.warn("[ai] full response (first 2000):", JSON.stringify(response, null, 2).slice(0, 2000))
+
+    // Deep search fallback for providers that nest content differently
+    const deep =
+      (response as any)?.choices?.[0]?.delta?.content ||
+      (response as any)?.choices?.[0]?.text ||
+      ""
     if (deep) {
       console.warn("[ai] found content at alternate path:", deep.slice(0, 200))
       content = deep
