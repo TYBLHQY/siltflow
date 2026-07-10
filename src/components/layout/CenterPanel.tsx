@@ -1673,7 +1673,7 @@ function AboutContent() {
   const [latest, setLatest] = useState<string | null>(null)
   const [checking, setChecking] = useState(true)
 
-  const currentVersion = "0.0.1"
+  const currentVersion = "0.0.2"
   const releasesUrl = "https://github.com/TYBLHQY/siltflow/releases"
 
   useEffect(() => {
