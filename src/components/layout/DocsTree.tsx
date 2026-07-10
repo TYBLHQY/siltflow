@@ -383,7 +383,11 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
       }`}
       onClick={(e) => {
         e.stopPropagation()
-        if (data.type === "folder") node.toggle()
+        if (data.type === "folder") {
+          node.toggle()
+        } else if (data.type === "document" && data.doc) {
+          setCurrentDocument(data.doc)
+        }
       }}
       onContextMenu={(e) => onContextMenu(e, data)}
     >
