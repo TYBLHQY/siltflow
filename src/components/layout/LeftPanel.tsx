@@ -171,7 +171,7 @@ export function LeftPanel() {
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="review" className="flex flex-col flex-1 min-h-0">
-        <div className="flex items-center justify-between border-b px-3 py-1.5">
+        <div className="border-b px-3 py-1.5">
           <TabsList className="h-7">
             <TabsTrigger value="documents" className="text-xs px-2 py-0.5 h-6">
               <FileText className="h-3.5 w-3.5 mr-1" />
@@ -195,14 +195,14 @@ export function LeftPanel() {
           </TabsList>
         </div>
 
-        <TabsContent value="documents" className="flex-1 min-h-0 mt-0 pt-2">
-          <div className="px-3 pb-2">
+        <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
+          <div className="border-b px-3 py-2">
             <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs h-7" onClick={handleImport}>
               <Plus className="h-3.5 w-3.5" />
               Import PDF
             </Button>
           </div>
-          <ScrollArea className="h-full">
+          <ScrollArea className="flex-1">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -262,7 +262,7 @@ export function LeftPanel() {
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="outline" className="flex-1 min-h-0 mt-0 pt-2">
+        <TabsContent value="outline" className="flex-1 min-h-0 mt-0 flex flex-col pt-2">
           {pdfDocument ? (
             <DocumentOutlinePanel />
           ) : (
@@ -274,8 +274,8 @@ export function LeftPanel() {
         </TabsContent>
 
         {/* ── Review tab ── */}
-        <TabsContent value="review" className="flex-1 min-h-0 mt-0 pt-2">
-          <ScrollArea className="h-full">
+        <TabsContent value="review" className="flex-1 min-h-0 mt-0 flex flex-col pt-2">
+          <ScrollArea className="flex-1">
             {docMetrics.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground px-4">
                 <BrainCircuit className="h-8 w-8" />
