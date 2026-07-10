@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Highlighter, Trash2, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
+import { reviewAnnotation, getNextReview } from "@/stores/fsrs.store"
+import type { Grade } from "ts-fsrs"
 
 interface AITranslateCardProps {
   id: string
@@ -10,6 +12,13 @@ interface AITranslateCardProps {
   onTranslate: (id: string) => void
   className?: string
 }
+
+const GRADE_LABELS: { grade: Grade; label: string; color: string }[] = [
+  { grade: 1, label: "Again", color: "bg-red-500/10 text-red-600 hover:bg-red-500/20" },
+  { grade: 2, label: "Hard", color: "bg-orange-500/10 text-orange-600 hover:bg-orange-500/20" },
+  { grade: 3, label: "Good", color: "bg-green-500/10 text-green-600 hover:bg-green-500/20" },
+  { grade: 4, label: "Easy", color: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20" },
+]
 
 /** Renders a single annotation card, with AI result when available. */
 export function AITranslateCard({
@@ -21,10 +30,24 @@ export function AITranslateCard({
 }: AITranslateCardProps) {
   const ai = item.aiResult
   const [expanded, setExpanded] = useState(false)
+  const [reviewed, setReviewed] = useState(false)
   const isWord = ai?.type === "word" || ai?.type === "phrase"
   const isLong = ai?.type === "sentence" || ai?.type === "passage"
 
   const handleDelete = () => onDelete(id)
+
+  const handleReview = useCallback(
+    (grade: Grade) => {
+      reviewAnnotation(id, grade)
+      setReviewed(true)
+      setTimeout(() => setReviewed(false), 1500)
+    },
+    [id],
+  )
+
+  const card = item.fsrsCard
+  const nextReview = card ? getNextReview(card) : undefined
+  const isDue = nextReview ? nextReview <= new Date() : false
 
   return (
     <div
@@ -118,6 +141,27 @@ export function AITranslateCard({
                 {tag}
               </span>
             ))}
+          </div>
+
+          {/* FSRS review buttons */}
+          <div className="flex flex-wrap gap-1">
+            {GRADE_LABELS.map((g) => (
+              <button
+                key={g.grade}
+                className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${g.color}`}
+                onClick={() => handleReview(g.grade as Grade)}
+              >
+                {g.label}
+              </button>
+            ))}
+            {reviewed && (
+              <span className="text-[10px] text-muted-foreground italic self-center">✓</span>
+            )}
+            {nextReview && !reviewed && (
+              <span className={`text-[10px] self-center ${isDue ? "text-destructive" : "text-muted-foreground"}`}>
+                {formatDue(nextReview)}
+              </span>
+            )}
           </div>
 
           {/* Expand for details */}
@@ -231,4 +275,19 @@ export function AITranslateCard({
       )}
     </div>
   )
+}
+
+/** Format a due date as a relative string. */
+function formatDue(date: Date): string {
+  const now = new Date()
+  const diffMs = date.getTime() - now.getTime()
+  if (diffMs <= 0) return "Due"
+  const diffMin = Math.round(diffMs / 60000)
+  if (diffMin < 60) return `in ${diffMin}m`
+  const diffHour = Math.round(diffMin / 60)
+  if (diffHour < 24) return `in ${diffHour}h`
+  const diffDay = Math.round(diffHour / 24)
+  if (diffDay < 30) return `in ${diffDay}d`
+  const diffMonth = Math.round(diffDay / 30)
+  return `in ${diffMonth}mo`
 }

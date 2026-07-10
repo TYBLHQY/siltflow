@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import type { ScaledPosition, Content } from "react-pdf-highlighter-plus"
 import type { AIAnnotationData } from "@/lib/annotation-types"
+import type { Card } from "ts-fsrs"
 
 export interface AnnotationEmbedData {
   position: ScaledPosition
@@ -17,6 +18,8 @@ export interface AnnotationItem {
   embedData: AnnotationEmbedData
   /** AI analysis result — populated after translation request completes */
   aiResult?: AIAnnotationData | null
+  /** FSRS card state — set when first reviewed */
+  fsrsCard?: Card
 }
 
 interface AnnotationState {
