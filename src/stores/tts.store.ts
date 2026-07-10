@@ -67,14 +67,32 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
   refreshVoices: async () => {
     set({ loadingVoices: true })
     try {
-      const result: number[] = await window.siltflow.tts.speak("", {
-        // Dummy — we only use the side effect of listing voices.
-        // Actually we need a separate IPC call. Use edge-tts --list-voices
-        // via an IPC we'll add next.
-      })
-    } catch {}
-    // The actual voice list fetching will be done via IPC edge-tts --list-voices
-    set({ loadingVoices: false })
+      const config = get().config
+      const allVoices = await window.siltflow.tts.listVoices(config.binaryPath || undefined)
+
+      // Group by language prefix
+      const prefixMap: Record<string, string> = {
+        zh: "zh-",
+        en: "en-",
+        de: "de-",
+        ja: "ja-",
+        fr: "fr-",
+        es: "es-",
+      }
+      const lists: Record<string, string[]> = {}
+      for (const [langId, prefix] of Object.entries(prefixMap)) {
+        const filtered = allVoices.filter((v) => v.startsWith(prefix))
+        if (filtered.length > 0) lists[langId] = filtered
+      }
+
+      set((s) => ({
+        config: { ...s.config, voiceLists: lists },
+        loadingVoices: false,
+      }))
+      persist({ ...get().config, voiceLists: lists })
+    } catch {
+      set({ loadingVoices: false })
+    }
   },
 
   getVoice: (language?: string) => {

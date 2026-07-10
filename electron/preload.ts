@@ -37,7 +37,8 @@ export interface SiltflowAPI {
     delete: (annotationId: string, documentId: string) => Promise<void>
   }
   tts: {
-    speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string }) => Promise<number[]>
+    speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string; binaryPath?: string }) => Promise<number[]>
+    listVoices: (binaryPath?: string) => Promise<string[]>
   }
 }
 
@@ -77,6 +78,7 @@ const api: SiltflowAPI = {
   },
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),
+    listVoices: (binaryPath?: string) => ipcRenderer.invoke('tts:listVoices', binaryPath),
   },
 }
 

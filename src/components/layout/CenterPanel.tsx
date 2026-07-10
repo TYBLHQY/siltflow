@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState, useCallback } from "react"
-import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2 } from "lucide-react"
+import { useState, useCallback } from "react"
+import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
@@ -701,6 +701,17 @@ function StyleConfigModal({ onClose }: { onClose: () => void }) {
 function TTSConfigModal({ onClose }: { onClose: () => void }) {
   const config = useTTSStore((s) => s.config)
   const setConfig = useTTSStore((s) => s.setConfig)
+  const refreshVoices = useTTSStore((s) => s.refreshVoices)
+  const loadingVoices = useTTSStore((s) => s.loadingVoices)
+  const voiceLists = useTTSStore((s) => s.config.voiceLists)
+  const hasCachedLists = Object.keys(voiceLists).some((k) => voiceLists[k].length > 0)
+
+  // Auto-fetch voice list on first open if not cached
+  useEffect(() => {
+    if (!hasCachedLists) {
+      refreshVoices()
+    }
+  }, [])
 
   const langMeta = [
     { id: "zh", label: "简体中文" },
@@ -816,27 +827,79 @@ function TTSConfigModal({ onClose }: { onClose: () => void }) {
 
           {/* Per-language voices */}
           <div>
-            <label className="block text-xs font-medium mb-1.5">
-              Voices (per language)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium">
+                Voices (per language)
+              </label>
+              <button
+                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                onClick={() => refreshVoices()}
+                disabled={loadingVoices}
+                title="Refresh voice list from edge-tts --list-voices"
+              >
+                {loadingVoices ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <svg
+                    className="h-3 w-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+                  </svg>
+                )}
+                Refresh
+              </button>
+            </div>
             <div className="space-y-1.5">
-              {langMeta.map((lang) => (
-                <div key={lang.id} className="flex items-center gap-2">
-                  <span className="text-xs w-16 shrink-0">{lang.label}</span>
-                  <input
-                    className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
-                    value={config.perLanguageVoices[lang.id] ?? ""}
-                    onChange={(e) =>
-                      setConfig({
-                        perLanguageVoices: {
-                          ...config.perLanguageVoices,
-                          [lang.id]: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </div>
-              ))}
+              {langMeta.map((lang) => {
+                const list = config.voiceLists[lang.id]
+                const current = config.perLanguageVoices[lang.id] ?? ""
+                return (
+                  <div key={lang.id} className="flex items-center gap-2">
+                    <span className="text-xs w-16 shrink-0">{lang.label}</span>
+                    {list && list.length > 0 ? (
+                      <select
+                        className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
+                        value={list.includes(current) ? current : ""}
+                        onChange={(e) =>
+                          setConfig({
+                            perLanguageVoices: {
+                              ...config.perLanguageVoices,
+                              [lang.id]: e.target.value,
+                            },
+                          })
+                        }
+                      >
+                        {current && !list.includes(current) && (
+                          <option value={current}>{current}</option>
+                        )}
+                        {list.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
+                        value={current}
+                        onChange={(e) =>
+                          setConfig({
+                            perLanguageVoices: {
+                              ...config.perLanguageVoices,
+                              [lang.id]: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="auto"
+                      />
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 
