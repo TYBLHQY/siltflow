@@ -98,9 +98,9 @@ export function StudyPanel({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground px-4">
         <CheckSquare className="h-10 w-10" />
-        <p className="text-sm font-medium text-foreground">All caught up!</p>
+        <p className="font-medium text-foreground">All caught up!</p>
         <button
-          className="text-xs text-primary hover:underline"
+          className="text-primary hover:underline"
           onClick={onBack}
         >
           Back to annotations
@@ -128,13 +128,13 @@ export function StudyPanel({
       {/* Header: card X of Y + back */}
       <div className="flex items-center justify-between border-b px-3 py-1.5 shrink-0">
         <button
-          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
           onClick={onBack}
         >
           <ArrowLeft className="h-3 w-3" />
           Back
         </button>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-muted-foreground">
           {current} / {total}
         </span>
         <div className="w-8" />
@@ -149,11 +149,11 @@ export function StudyPanel({
           {/* Before reveal: show only the source text */}
           <KnuthPlassText
             text={item.text}
-            className="text-base font-medium text-center"
+            className="font-medium text-center"
           />
 
           {!answerRevealed && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-muted-foreground">
               Tap to reveal answer
             </p>
           )}
@@ -161,7 +161,8 @@ export function StudyPanel({
 
         {/* Answer (revealed) */}
         {answerRevealed && ai && (
-          <div className="border-t px-4 py-3 space-y-2 overflow-y-auto"
+          <div
+            className="border-t px-4 py-3 space-y-2 overflow-y-auto"
             style={{
               fontFamily: buildFontStack(style.fontFamilies),
               fontSize: style.fontSize,
@@ -169,7 +170,7 @@ export function StudyPanel({
           >
             {/* Translation */}
             {translation && (
-              <p className="text-sm font-medium text-primary">
+              <p className="font-medium text-primary leading-relaxed">
                 {translation}
               </p>
             )}
@@ -177,19 +178,19 @@ export function StudyPanel({
             {/* Lemma + POS + register */}
             {(ai.lemma || ai.pos || register) && (
               <div className="flex flex-wrap items-center gap-1.5">
-                {ai.lemma && <span className="font-semibold text-foreground text-sm">{ai.lemma}</span>}
+                {ai.lemma && <span className="font-semibold text-foreground">{ai.lemma}</span>}
                 {ai.pos && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-mono">{ai.pos}</span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground font-mono">{ai.pos}</span>
                 )}
                 {register && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{register}</span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">{register}</span>
                 )}
               </div>
             )}
 
             {/* IPA */}
             {ipa && (
-              <p className="text-xs text-muted-foreground/70 italic">
+              <p className="text-muted-foreground/70 italic leading-relaxed">
                 /{ipa}/
               </p>
             )}
@@ -198,12 +199,12 @@ export function StudyPanel({
             {(difficulty || (tags && tags.length > 0)) && (
               <div className="flex flex-wrap gap-1">
                 {difficulty && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
                     {difficulty}
                   </span>
                 )}
                 {tags?.slice(0, 3).map((tag) => (
-                  <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
                     {tag}
                   </span>
                 ))}
@@ -214,7 +215,7 @@ export function StudyPanel({
             {defs.length > 0 && (
               <div className="space-y-0.5">
                 {defs.slice(0, 5).map((d: any, i) => (
-                  <div key={i} className="text-xs leading-relaxed">
+                  <div key={i} className="leading-relaxed">
                     {d._legacyWord ? (
                       <>
                         <span className="font-medium">{d._legacyWord}</span>
@@ -235,8 +236,8 @@ export function StudyPanel({
             {/* Collocations */}
             {colls.length > 0 && (
               <div>
-                <span className="text-[10px] font-medium text-muted-foreground">Collocations</span>
-                <div className="space-y-0.5 text-xs">
+                <span className="text-[80%] font-medium text-muted-foreground">Collocations</span>
+                <div className="space-y-0.5 leading-relaxed">
                   {colls.map((c: any, i) => (
                     <div key={i}>
                       <span className="font-medium">{c.phrase}</span>
@@ -250,8 +251,8 @@ export function StudyPanel({
             {/* Examples */}
             {examples.length > 0 && (
               <div>
-                <span className="text-[10px] font-medium text-muted-foreground">Examples</span>
-                <ul className="space-y-1 text-xs text-muted-foreground">
+                <span className="text-[80%] font-medium text-muted-foreground">Examples</span>
+                <ul className="space-y-1 text-muted-foreground leading-relaxed">
                   {examples.slice(0, 5).map((ex: any, i) => (
                     <li key={i}>
                       {ex.sentence}
@@ -269,7 +270,7 @@ export function StudyPanel({
       <div className="border-t px-3 py-2 shrink-0 space-y-2">
         {/* TTS button */}
         <button
-          className={`flex items-center gap-1 text-[10px] transition-colors ${
+          className={`flex items-center gap-1 transition-colors ${
             tts.state === "playing"
               ? "text-primary"
               : "text-muted-foreground hover:text-foreground"
@@ -290,7 +291,7 @@ export function StudyPanel({
             {GRADE_LABELS.map((g) => (
               <button
                 key={g.grade}
-                className={`flex-1 rounded px-2 py-1 text-[10px] font-medium transition-colors ${g.color}`}
+                className={`flex-1 rounded px-2 py-1 font-medium transition-colors ${g.color}`}
                 onClick={(e) => {
                   e.stopPropagation()
                   onRate(g.grade)

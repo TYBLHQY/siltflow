@@ -25,11 +25,9 @@ function getTranslation(ai: NonNullable<AnnotationItem["aiResult"]>): string | u
 }
 
 function getDefinitions(ai: NonNullable<AnnotationItem["aiResult"]>) {
-  // New format: definitions[] with {pos, definition, gloss}
   if (ai.definitions && ai.definitions.length > 0) {
     return ai.definitions.filter(d => d.definition || d.gloss)
   }
-  // Old format: words[] with {word, pos, meaning}
   if (ai.words && ai.words.length > 0) {
     return ai.words.filter(w => w.word).map(w => ({
       pos: w.pos,
@@ -64,9 +62,7 @@ function getRegister(ai: NonNullable<AnnotationItem["aiResult"]>): string | unde
 }
 
 function getAlternatives(ai: NonNullable<AnnotationItem["aiResult"]>) {
-  // New format
   if (ai.alternatives && ai.alternatives.length > 0) return ai.alternatives
-  // Old format: words with pos === "syn"
   if (ai.words) {
     const syns = ai.words.filter(w => w.pos === "syn")
     if (syns.length > 0) return syns.map(s => ({ expression: s.word, register: undefined as string | undefined }))
@@ -76,7 +72,6 @@ function getAlternatives(ai: NonNullable<AnnotationItem["aiResult"]>) {
 
 function inferGranularity(ai: NonNullable<AnnotationItem["aiResult"]>, text: string): string {
   if (ai.granularity) return ai.granularity
-  // Fallback inference
   const t = text.trim()
   if (t.includes("\n") || (t.split(" ").length > 30 && t.includes("."))) return "passage"
   if (t.split(/[.!?;]+/).filter(Boolean).length > 1) return "sentence"
@@ -91,13 +86,11 @@ function hasDetails(ai: NonNullable<AnnotationItem["aiResult"]>): boolean {
   const exs = ai.examples
   const register = getRegister(ai)
   const contextSentence = ai.context_sentence
-
   if (coll.length > 0) return true
   if (alts.length > 0) return true
   if (exs && exs.length > 0) return true
   if (register) return true
   if (contextSentence) return true
-  // If we have definitions with gloss (multi-sense), details are useful
   if (defs.length > 1) return true
   return false
 }
@@ -166,7 +159,6 @@ export function AITranslateCard({
     onClick?.()
   }
 
-  // Resolve data with backward compat
   const translation = ai ? getTranslation(ai) : undefined
   const defs = ai ? getDefinitions(ai) : []
   const colls = ai ? getCollocations(ai) : []
@@ -192,10 +184,10 @@ export function AITranslateCard({
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
           <Highlighter className="h-3 w-3 text-yellow-500 shrink-0" />
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+          <span className="font-medium text-muted-foreground uppercase tracking-wider">
             {granularity}
           </span>
-          <span className="text-[11px] text-muted-foreground">p.{item.pageNumber}</span>
+          <span className="text-muted-foreground">p.{item.pageNumber}</span>
         </div>
       </div>
 
@@ -203,7 +195,7 @@ export function AITranslateCard({
       {editing ? (
         <textarea
           ref={inputRef}
-          className="w-full rounded border bg-background px-2 py-1 text-sm resize-none min-h-[60px]"
+          className="w-full rounded border bg-background px-2 py-1 resize-none min-h-[60px]"
           value={editText}
           onChange={(e) => setEditText(e.target.value)}
           onKeyDown={handleEditKeyDown}
@@ -212,14 +204,14 @@ export function AITranslateCard({
       ) : (
         <KnuthPlassText
           text={item.text}
-          className="text-sm mb-1"
+          className="mb-1"
         />
       )}
 
       {/* Action bar */}
       <div className="flex flex-wrap items-center gap-1.5 mt-1">
         <button
-          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium transition-colors ${
+          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium transition-colors ${
             editing
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -231,7 +223,7 @@ export function AITranslateCard({
           {editing ? "Save" : "Edit"}
         </button>
         <button
-          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium transition-colors ${
+          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium transition-colors ${
             tts.state === "playing"
               ? "bg-primary/10 text-primary"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -253,7 +245,7 @@ export function AITranslateCard({
 
         {ai === undefined && (
           <button
-            className="inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             onClick={(e) => {
               e.stopPropagation()
               onTranslate(id)
@@ -265,14 +257,14 @@ export function AITranslateCard({
         )}
 
         {ai === null && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
             Translating…
           </span>
         )}
 
         <button
-          className="ml-auto inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-accent hover:text-destructive transition-colors"
+          className="ml-auto inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-destructive transition-colors"
           onClick={handleDelete}
           title="Delete annotation"
         >
@@ -290,50 +282,45 @@ export function AITranslateCard({
             fontSize: style.fontSize,
           }}
         >
-          {/* Translation */}
           {translation && (
             <p className="font-medium text-primary leading-relaxed">{translation}</p>
           )}
 
-          {/* Lemma + POS chip */}
           {ai.lemma && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-semibold text-foreground">{ai.lemma}</span>
               {ai.pos && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground font-mono">
+                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground font-mono">
                   {ai.pos}
                 </span>
               )}
               {register && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
                   {register}
                 </span>
               )}
             </div>
           )}
 
-          {/* IPA pronunciation (word/phrase only) */}
           {ipa && isWord && (
             <p className="text-muted-foreground/70 italic leading-relaxed">{ipa}</p>
           )}
 
-          {/* Difficulty & tags */}
           {(difficulty || (tags && tags.length > 0)) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
                   {difficulty}
                 </span>
               )}
               {tags?.slice(0, 3).map((tag) => (
-                <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
                   {tag}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Definitions */}
           {defs.length > 0 && (
             <div className="space-y-0.5">
               {defs.slice(0, 5).map((d: any, i) => (
@@ -342,7 +329,7 @@ export function AITranslateCard({
                     <>
                       <span className="font-medium">{d._legacyWord}</span>
                       {d.pos && <span className="text-muted-foreground/60 ml-1">{d.pos}</span>}
-                      <span className="text-muted-foreground ml-1">— {d.gloss || d.meaning}</span>
+                      <span className="text-muted-foreground ml-1">{d.gloss || d.meaning}</span>
                     </>
                   ) : (
                     <>
@@ -355,17 +342,14 @@ export function AITranslateCard({
             </div>
           )}
 
-          {/* Context sentence collapsed preview — only when relevant */}
           {contextSentence && !expanded && (
-            <p className="text-[90%] text-muted-foreground/60 italic leading-relaxed truncate">
+            <p className="text-muted-foreground/60 italic leading-relaxed truncate">
               "{contextSentence}"
             </p>
           )}
 
-          {/* Expanded details */}
           {expanded && isDetailAvailable && (
             <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
-              {/* Examples */}
               {examples.length > 0 && (
                 <div>
                   <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
@@ -379,7 +363,7 @@ export function AITranslateCard({
                           <span className="text-muted-foreground block ml-0">
                             {ex.translation}
                             {ex.source === "context" && (
-                              <span className="text-[80%] text-muted-foreground/50 ml-1">(from text)</span>
+                              <span className="text-muted-foreground/50 ml-1">(from text)</span>
                             )}
                           </span>
                         )}
@@ -389,7 +373,6 @@ export function AITranslateCard({
                 </div>
               )}
 
-              {/* Collocations */}
               {colls.length > 0 && (
                 <div>
                   <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
@@ -406,7 +389,6 @@ export function AITranslateCard({
                 </div>
               )}
 
-              {/* Alternatives / synonyms */}
               {alts.length > 0 && (
                 <div>
                   <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
@@ -417,7 +399,7 @@ export function AITranslateCard({
                       <div key={i} className="leading-relaxed">
                         <span className="font-medium">{a.expression}</span>
                         {a.register && (
-                          <span className="text-muted-foreground/60 ml-1 text-[90%]">({a.register})</span>
+                          <span className="text-muted-foreground/60 ml-1">({a.register})</span>
                         )}
                       </div>
                     ))}
