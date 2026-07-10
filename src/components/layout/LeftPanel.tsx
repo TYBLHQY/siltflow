@@ -230,7 +230,7 @@ export function LeftPanel() {
                       setContextMenu({ doc, x: e.clientX, y: e.clientY })
                     }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <TooltipProvider>
                         <Tooltip>
@@ -299,9 +299,9 @@ export function LeftPanel() {
                       if (doc) setCurrentDocument(doc)
                     }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="flex-1 truncate text-xs">{m.documentTitle}</span>
+                      <span className="min-w-0 truncate flex-1 text-xs">{m.documentTitle}</span>
                     </div>
                     <div className="flex items-center gap-2 pl-5.5">
                       {m.dueNowCount > 0 && (
