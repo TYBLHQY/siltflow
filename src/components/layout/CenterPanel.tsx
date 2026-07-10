@@ -12,6 +12,61 @@ import { useShortcutsStore } from "@/stores/shortcuts.store"
 import { formatShortcut } from "@/lib/keyboard-keys"
 
 // ---------------------------------------------------------------------------
+// Page navigation — jump to page (only shown when a PDF is open)
+// ---------------------------------------------------------------------------
+function PageNav() {
+  const goToPage = usePdfViewerStore((s) => s.goToPage)
+  const currentPage = usePdfViewerStore((s) => s.currentPage)
+  const pdfDocument = usePdfViewerStore((s) => s.pdfDocument)
+  const [input, setInput] = useState("")
+  const [focused, setFocused] = useState(false)
+
+  const totalPages = pdfDocument?.numPages ?? 0
+
+  const handleJump = useCallback(() => {
+    const n = parseInt(input, 10)
+    if (isNaN(n) || n < 1 || n > totalPages || !goToPage) {
+      setInput("")
+      return
+    }
+    goToPage(n)
+    setInput("")
+  }, [input, totalPages, goToPage])
+
+  if (!pdfDocument || totalPages === 0) return null
+
+  return (
+    <div className="flex items-center h-full shrink-0">
+      <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 px-2 text-xs text-muted-foreground">
+        {focused ? (
+          <input
+            className="w-10 bg-transparent py-0.5 text-center outline-none"
+            value={input}
+            onChange={(e) => setInput(e.target.value.replace(/\D/g, ""))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleJump()
+              if (e.key === "Escape") { setInput(""); setFocused(false) }
+            }}
+            onBlur={() => { setFocused(false); setInput("") }}
+            autoFocus
+            placeholder={String(currentPage)}
+          />
+        ) : (
+          <button
+            className="rounded px-1 py-0.5 hover:bg-accent transition-colors"
+            onClick={() => setFocused(true)}
+            title="Jump to page"
+          >
+            {currentPage}
+          </button>
+        )}
+        <span className="opacity-60">/ {totalPages}</span>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Quick-add toggle button — placed left of fit-width in the toolbar.
 // ---------------------------------------------------------------------------
 function QuickAddToggle() {
@@ -1505,7 +1560,8 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
           {fileName || "Siltflow"}
         </h1>
 
-        <div className="flex items-center shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          {fileName && <PageNav />}
           {fileName && <QuickAddToggle />}
           {fileName && <FitWidthButton />}
           <SettingsButton />

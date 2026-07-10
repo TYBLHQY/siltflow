@@ -47,6 +47,17 @@ function App() {
     document.documentElement.style.fontFamily = systemFontStack
   }, [systemFontStack])
 
+  // Auto-detect OS dark mode and toggle .dark class
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)")
+    const update = () => {
+      document.documentElement.classList.toggle("dark", mq.matches)
+    }
+    update()
+    mq.addEventListener("change", update)
+    return () => mq.removeEventListener("change", update)
+  }, [])
+
   const handleReady = () => {
     setVaultReady(true)
   }

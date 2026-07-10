@@ -254,20 +254,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
                         {m.dueNowCount > 0 && (
-                          <span className="rounded bg-red-500/10 px-1 py-0.5 text-[9px] font-medium text-red-600">{m.dueNowCount} due</span>
+                          <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">{m.dueNowCount} due</span>
                         )}
                         {m.dueSoonCount > 0 && (
-                          <span className="rounded bg-orange-500/10 px-1 py-0.5 text-[9px] font-medium text-orange-600">{m.dueSoonCount} soon</span>
+                          <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">{m.dueSoonCount} soon</span>
                         )}
                         {m.avgRetrievability > 0 && (
-                          <span className={`rounded px-1 py-0.5 text-[9px] font-medium ${
+                          <span className={`rounded px-1 py-0.5 font-medium ${
                             m.avgRetrievability >= 90 ? "bg-green-500/10 text-green-600" :
                             m.avgRetrievability >= 75 ? "bg-blue-500/10 text-blue-600" :
                             m.avgRetrievability >= 50 ? "bg-yellow-500/10 text-yellow-600" :
                             "bg-red-500/10 text-red-600"
                           }`}>{urgencyLabel(m.avgRetrievability)}</span>
                         )}
-                        <span className="text-[9px] text-muted-foreground ml-auto">{m.totalCards}</span>
+                        <span className="text-muted-foreground ml-auto">{m.totalCards} cards</span>
                       </div>
                     )}
                   </div>
