@@ -9,7 +9,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.join(__dirname, 'src'),
-      'isomorphic-ws': path.join(__dirname, 'src/lib/ws-shim.ts'),
     },
   },
   optimizeDeps: {
