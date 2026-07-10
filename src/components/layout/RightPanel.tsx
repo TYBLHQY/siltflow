@@ -206,10 +206,11 @@ export function RightPanel() {
                       updateItem(id, { aiResult: null })
 
                       try {
-                        const { translateAnnotation } = await import("@/lib/translate")
+                        const { translateAnnotation, extractArticleContext } = await import("@/lib/translate")
                         const result = await translateAnnotation(profile, {
                           text: item.text,
                           targetLang: "zh",
+                          context: summary?.text ?? extractArticleContext(texts.map(t => t).join(" ")),
                         })
                         updateItem(id, { aiResult: result })
                       } catch (err) {
