@@ -41,9 +41,9 @@
 :root {
   --background: oklch(0.9578 0.0058 264.5322);
   --foreground: oklch(0.4355 0.0430 279.3250);
-  --card: oklch(0.8575 0.0145 268.4756);
+  --card: oklch(0.9578 0.0058 264.5322);
   --card-foreground: oklch(0.4355 0.0430 279.3250);
-  --popover: oklch(0.8575 0.0145 268.4756);
+  --popover: oklch(0.9578 0.0058 264.5322);
   --popover-foreground: oklch(0.4355 0.0430 279.3250);
   --primary: oklch(0.5547 0.2503 297.0156);
   --primary-foreground: oklch(0.9060 0.0117 264.5071);
@@ -70,9 +70,9 @@
 .catppuccin-latte {
   --background: oklch(0.9578 0.0058 264.5322);
   --foreground: oklch(0.4355 0.0430 279.3250);
-  --card: oklch(0.8575 0.0145 268.4756);
+  --card: oklch(0.9578 0.0058 264.5322);
   --card-foreground: oklch(0.4355 0.0430 279.3250);
-  --popover: oklch(0.8575 0.0145 268.4756);
+  --popover: oklch(0.9578 0.0058 264.5322);
   --popover-foreground: oklch(0.4355 0.0430 279.3250);
   --primary: oklch(0.5547 0.2503 297.0156);
   --primary-foreground: oklch(0.9060 0.0117 264.5071);
@@ -98,9 +98,9 @@
 .catppuccin-frappe {
   --background: oklch(0.3291 0.0324 274.7580);
   --foreground: oklch(0.8619 0.0526 273.3474);
-  --card: oklch(0.3949 0.0342 275.8999);
+  --card: oklch(0.3291 0.0324 274.7580);
   --card-foreground: oklch(0.8619 0.0526 273.3474);
-  --popover: oklch(0.3949 0.0342 275.8999);
+  --popover: oklch(0.3291 0.0324 274.7580);
   --popover-foreground: oklch(0.8619 0.0526 273.3474);
   --primary: oklch(0.7648 0.1108 311.7436);
   --primary-foreground: oklch(0.2720 0.0264 275.1154);
@@ -126,9 +126,9 @@
 .catppuccin-macchiato {
   --background: oklch(0.2788 0.0353 276.9368);
   --foreground: oklch(0.8708 0.0481 273.6651);
-  --card: oklch(0.3538 0.0369 275.9851);
+  --card: oklch(0.2788 0.0353 276.9368);
   --card-foreground: oklch(0.8708 0.0481 273.6651);
-  --popover: oklch(0.3538 0.0369 275.9851);
+  --popover: oklch(0.2788 0.0353 276.9368);
   --popover-foreground: oklch(0.8708 0.0481 273.6651);
   --primary: oklch(0.7715 0.1259 303.8984);
   --primary-foreground: oklch(0.2188 0.0255 280.6572);
@@ -154,9 +154,9 @@
 .catppuccin-mocha {
   --background: oklch(0.2429 0.0304 283.9110);
   --foreground: oklch(0.8787 0.0426 272.2767);
-  --card: oklch(0.3240 0.0319 281.9784);
+  --card: oklch(0.2429 0.0304 283.9110);
   --card-foreground: oklch(0.8787 0.0426 272.2767);
-  --popover: oklch(0.3240 0.0319 281.9784);
+  --popover: oklch(0.2429 0.0304 283.9110);
   --popover-foreground: oklch(0.8787 0.0426 272.2767);
   --primary: oklch(0.7871 0.1187 304.7693);
   --primary-foreground: oklch(0.1828 0.0204 284.2038);
