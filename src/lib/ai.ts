@@ -43,9 +43,13 @@ export async function chatCompletion(
     { signal },
   )
 
+  // Log raw response keys to help debug "empty response" issues
+  console.log("[ai] response keys:", Object.keys(response), "id:", response.id)
+
   const choice = response.choices?.[0]
   if (!choice) {
     const msg = JSON.stringify(response, null, 2)
+    console.error("[ai] no choices in response:", msg)
     throw new Error(`Empty response from AI model (no choices) — full response: ${msg}`)
   }
 
