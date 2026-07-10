@@ -1,5 +1,6 @@
 import { useCallback } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
+import { IconText } from "@/components/ui/icon-text"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { Volume2, ArrowLeft, CheckSquare } from "lucide-react"
 import { useTTS } from "@/lib/use-tts"
@@ -131,8 +132,7 @@ export function StudyPanel({
           className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
           onClick={onBack}
         >
-          <ArrowLeft className="h-3 w-3" />
-          Back
+          <IconText icon={ArrowLeft} size="xs">Back</IconText>
         </button>
         <span className="text-muted-foreground">
           {current} / {total}
@@ -180,10 +180,10 @@ export function StudyPanel({
               <div className="flex flex-wrap items-center gap-1.5">
                 {ai.lemma && <span className="font-semibold text-foreground">{ai.lemma}</span>}
                 {ai.pos && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground font-mono">{ai.pos}</span>
+                  <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach font-mono">{ai.pos}</span>
                 )}
                 {register && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">{register}</span>
+                  <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">{register}</span>
                 )}
               </div>
             )}
@@ -199,12 +199,12 @@ export function StudyPanel({
             {(difficulty || (tags && tags.length > 0)) && (
               <div className="flex flex-wrap gap-1">
                 {difficulty && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                  <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                     {difficulty}
                   </span>
                 )}
                 {tags?.slice(0, 3).map((tag) => (
-                  <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[80%] text-muted-foreground">
+                  <span key={tag} className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                     {tag}
                   </span>
                 ))}
@@ -224,7 +224,7 @@ export function StudyPanel({
                       </>
                     ) : (
                       <>
-                        <span className="text-muted-foreground">{d.definition}</span>
+                        <span className="text-foreground">{d.definition}</span>
                         {d.gloss && <span className="text-muted-foreground/70 ml-1">{d.gloss}</span>}
                       </>
                     )}
@@ -236,11 +236,13 @@ export function StudyPanel({
             {/* Collocations */}
             {colls.length > 0 && (
               <div>
-                <span className="text-[80%] font-medium text-muted-foreground">Collocations</span>
+                <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                  Collocations
+                </span>
                 <div className="space-y-0.5 leading-relaxed">
                   {colls.map((c: any, i) => (
                     <div key={i}>
-                      <span className="font-medium">{c.phrase}</span>
+                      <span className="font-medium text-foreground">{c.phrase}</span>
                       <span className="text-muted-foreground"> {c.translation}</span>
                     </div>
                   ))}
@@ -251,12 +253,21 @@ export function StudyPanel({
             {/* Examples */}
             {examples.length > 0 && (
               <div>
-                <span className="text-[80%] font-medium text-muted-foreground">Examples</span>
-                <ul className="space-y-1 text-muted-foreground leading-relaxed">
+                <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                  Examples
+                </span>
+                <ul className="space-y-1 leading-relaxed">
                   {examples.slice(0, 5).map((ex: any, i) => (
                     <li key={i}>
-                      {ex.sentence}
-                      {ex.translation && <span className="block ml-0">{ex.translation}</span>}
+                      <span className="text-foreground">{ex.sentence}</span>
+                      {ex.translation && (
+                        <span className="text-muted-foreground block ml-0">
+                          {ex.translation}
+                          {ex.source === "context" && (
+                            <span className="text-muted-foreground/50 ml-1">(from text)</span>
+                          )}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -281,8 +292,11 @@ export function StudyPanel({
             else tts.speak(item.text)
           }}
         >
-          <Volume2 className="h-3 w-3" />
-          {tts.state === "playing" ? "Stop" : "Listen"}
+          {tts.state === "loading" ? (
+            <IconText icon={Loader2} size="xs">Stop</IconText>
+          ) : (
+            <IconText icon={Volume2} size="xs">{tts.state === "playing" ? "Stop" : "Listen"}</IconText>
+          )}
         </button>
 
         {/* Rating buttons (only visible after reveal) */}

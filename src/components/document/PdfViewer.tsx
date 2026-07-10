@@ -244,7 +244,7 @@ function SelectionTip() {
   return (
     <div className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 shadow-lg">
       <button
-        className="flex items-center gap-1 text-[11px] font-medium text-primary-foreground hover:opacity-80 transition-opacity"
+        className="flex items-center gap-1 text-xs font-medium text-primary-foreground hover:opacity-80 transition-opacity"
         onClick={handleAdd}
       >
         <Plus className="h-3 w-3" />

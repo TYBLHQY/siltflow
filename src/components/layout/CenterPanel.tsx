@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard, PenLine, MousePointer2 } from "lucide-react"
+import { IconText } from "@/components/ui/icon-text"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
@@ -38,7 +39,7 @@ function PageNav() {
 
   return (
     <div className="flex items-center h-full shrink-0">
-      <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 px-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 px-2 text-xs text-foreground">
         {focused ? (
           <input
             className="w-10 bg-transparent py-0.5 text-center outline-none"
@@ -190,8 +191,9 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
           <div className="flex items-center gap-2 px-2 py-3">
-            <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-semibold">Settings</span>
+            <IconText icon={Settings} size="md">
+              <span className="text-xs font-semibold">Settings</span>
+            </IconText>
           </div>
           <nav className="flex flex-col gap-0.5 mt-1">
             {SETTINGS_TABS.map((t) => {
@@ -202,12 +204,11 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
                   className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-xs text-left transition-colors ${
                     tab === t.id
                       ? "bg-accent text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      : "text-foreground hover:text-foreground hover:bg-accent/50"
                   }`}
                   onClick={() => setTab(t.id)}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {t.label}
+                  <IconText icon={Icon} size="md">{t.label}</IconText>
                 </button>
               )
             })}
@@ -309,14 +310,14 @@ function AIConfigContent() {
               <div className="flex items-center gap-1 shrink-0">
                 {!profile.active && (
                   <button
-                    className="text-[11px] text-primary hover:underline"
+                    className="text-xs text-primary hover:underline"
                     onClick={() => setActiveProfile(profile.id)}
                   >
                     Activate
                   </button>
                 )}
                 <button
-                  className="text-[11px] text-muted-foreground hover:text-foreground"
+                  className="text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     setRenameId(profile.id)
                     setRenameValue(profile.name)
@@ -325,7 +326,7 @@ function AIConfigContent() {
                   Rename
                 </button>
                 <button
-                  className="text-[11px] text-destructive hover:underline"
+                  className="text-xs text-destructive hover:underline"
                   onClick={() => removeProfile(profile.id)}
                 >
                   Delete
@@ -407,7 +408,7 @@ function AIConfigContent() {
                 </div>
               </>
             ) : (
-              <div className="flex gap-2 text-[11px] text-muted-foreground">
+              <div className="flex gap-2 text-xs text-muted-foreground">
                 <span className="truncate">{profile.baseUrl}</span>
                 <span>·</span>
                 <span>{profile.model}</span>

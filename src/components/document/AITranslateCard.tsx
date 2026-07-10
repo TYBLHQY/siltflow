@@ -1,6 +1,7 @@
 import { Highlighter, Trash2, Sparkles, Loader2, Volume2, Pencil } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
+import { IconText } from "@/components/ui/icon-text"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { useTTS } from "@/lib/use-tts"
 import { useAnnotationStore } from "@/stores/annotation.store"
@@ -175,7 +176,7 @@ export function AITranslateCard({
 
   return (
     <div
-      className={`w-full min-w-0 rounded-lg border border-border/80 bg-card shadow-sm p-3 transition-colors cursor-pointer ${
+      className={`w-full min-w-0 rounded-lg border border-border/80 bg-base shadow-sm p-3 transition-colors cursor-pointer ${
         scrolled ? "bg-accent/40 border-accent" : "hover:border-accent"
       } ${className}`}
       onClick={handleCardClick}
@@ -183,10 +184,11 @@ export function AITranslateCard({
       {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
-          <Highlighter className="h-3 w-3 text-yellow-500 shrink-0" />
-          <span className="font-medium text-muted-foreground uppercase tracking-wider">
-            {granularity}
-          </span>
+          <IconText icon={Highlighter} size="xs">
+            <span className="font-medium text-muted-foreground uppercase tracking-wider">
+              {granularity}
+            </span>
+          </IconText>
           <span className="text-muted-foreground">p.{item.pageNumber}</span>
         </div>
       </div>
@@ -208,68 +210,78 @@ export function AITranslateCard({
         />
       )}
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+      {/* Action bar — icon-only buttons */}
+      <div className="flex flex-wrap items-center gap-1 mt-1.5">
         <button
-          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium transition-colors ${
+          className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
             editing
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              ? "text-primary"
+              : "text-maroon hover:bg-accent"
           }`}
           onClick={handleEditToggle}
-          title={editing ? "Save" : "Edit text"}
+          title={editing ? "Save" : "Edit"}
         >
-          <Pencil className="h-3 w-3" />
-          {editing ? "Save" : "Edit"}
+          <Pencil className="h-3.5 w-3.5" />
         </button>
+
         <button
-          className={`inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium transition-colors ${
+          className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
             tts.state === "playing"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              ? "text-primary"
+              : "text-maroon hover:bg-accent"
           }`}
           onClick={(e) => {
             e.stopPropagation()
             if (tts.state === "playing") tts.stop()
             else tts.speak(item.text)
           }}
-          title="Read aloud"
+          title={tts.state === "playing" ? "Stop" : "Read aloud"}
         >
           {tts.state === "loading" ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Volume2 className="h-3 w-3" />
+            <Volume2 className="h-3.5 w-3.5" />
           )}
-          {tts.state === "playing" ? "Stop" : "Listen"}
         </button>
 
         {ai === undefined && (
           <button
-            className="inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 text-maroon hover:bg-accent transition-colors"
             onClick={(e) => {
               e.stopPropagation()
               onTranslate(id)
             }}
+            title="Translate"
           >
-            <Sparkles className="h-3 w-3" />
-            Translate
+            <Sparkles className="h-3.5 w-3.5" />
           </button>
         )}
 
         {ai === null && (
-          <span className="inline-flex items-center gap-1 text-muted-foreground">
+          <span className="inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 text-maroon/60">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Translating…
           </span>
         )}
 
+        {ai !== undefined && ai !== null && (
+          <button
+            className="inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 text-maroon hover:bg-accent transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              onTranslate(id)
+            }}
+            title="Re-translate"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+          </button>
+        )}
+
         <button
-          className="ml-auto inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-2 py-0.5 font-medium text-muted-foreground hover:bg-accent hover:text-destructive transition-colors"
+          className="ml-auto inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 text-maroon hover:bg-accent hover:text-destructive transition-colors"
           onClick={handleDelete}
-          title="Delete annotation"
+          title="Delete"
         >
-          <Trash2 className="h-3 w-3" />
-          Delete
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
 

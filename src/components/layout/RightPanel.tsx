@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { IconText } from "@/components/ui/icon-text"
 import {
   Highlighter,
   Sparkles,
@@ -257,19 +258,17 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="annotations" value={activeTab ?? undefined} onValueChange={onTabChange} className="flex flex-col flex-1 min-h-0">
-        <div className="border-b px-3 py-1.5">
-          <TabsList className="h-7">
-            <TabsTrigger value="annotations" className="text-xs px-2 py-0.5 h-6">
-              <Highlighter className="h-3.5 w-3.5 mr-1" />
-              Annotations
+        <div className="flex h-10 items-center border-b px-3">
+          <TabsList className="w-full h-7 text-foreground">
+            <TabsTrigger value="annotations" className="flex-1 text-xs px-2 py-0.5 h-6">
+              <IconText icon={Highlighter} size="xs">Annotations</IconText>
             </TabsTrigger>
             <TabsTrigger
               value="summary"
-              className="text-xs px-2 py-0.5 h-6"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
               disabled={!docId}
             >
-              <FileText className="h-3.5 w-3.5 mr-1" />
-              Summary
+              <IconText icon={FileText} size="xs">Summary</IconText>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -279,30 +278,28 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           {items.length > 0 && (
             <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
               <button
-                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={handleStartLearning}
               >
-                <CheckSquare className="h-3.5 w-3.5" />
-                Start Learning ({dueCount})
+                <IconText icon={CheckSquare} size="xs" className="gap-0">Start Learning ({dueCount})</IconText>
               </button>
               <button
-                className="flex w-full items-center justify-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
                 onClick={handleBatchTranslate}
                 disabled={batchTranslating}
                 title="Translate all untranslated annotations"
               >
-                <Sparkles className="h-3.5 w-3.5" />
-                {batchTranslating ? "Translating..." : "Batch Translate"}
+                <IconText icon={Sparkles} size="xs" className="gap-0">{batchTranslating ? "Translating..." : "Batch Translate"}</IconText>
               </button>
             </div>
           )}
           {items.length > 0 && docId && (
-            <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-[11px]">
+            <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-xs">
               {/* Source language — select */}
               <span className="flex items-center gap-1 text-muted-foreground">
                 <span className="font-medium">Source:</span>
                 <select
-                  className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-[11px]"
+                  className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-xs"
                   value={sourceLang}
                   onChange={(e) => {
                     if (docId && summary) {
@@ -325,7 +322,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
               <span className="flex items-center gap-1 text-muted-foreground">
                 <span className="font-medium">Target:</span>
                 <select
-                  className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-[11px]"
+                  className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-xs"
                   value={effectiveTargetLang}
                   onChange={(e) => {
                     const val = e.target.value
@@ -452,9 +449,9 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                   onClick={toggleAll}
                 >
                   {allSelected ? (
-                    <CheckSquare className="h-3.5 w-3.5 text-primary" />
+                    <CheckSquare className="h-3.5 w-3.5 text-primary shrink-0" />
                   ) : (
-                    <Square className="h-3.5 w-3.5" />
+                    <Square className="h-3.5 w-3.5 shrink-0" />
                   )}
                   {numPages} pages
                   {selPages !== undefined && (
@@ -486,20 +483,15 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                 </ScrollArea>
 
                 <button
-                  className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 w-full justify-center"
+                  className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 w-full justify-center"
                   onClick={handleSummarize}
                   disabled={summarizing || !activeProfile}
                 >
                   {summarizing ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <IconText icon={Loader2} size="xs" className="gap-0">Summarizing…</IconText>
                   ) : (
-                    <Sparkles className="h-3 w-3" />
+                    <IconText icon={Sparkles} size="xs" className="gap-0">{summary ? "Regenerate" : "AI Summarize"}</IconText>
                   )}
-                  {summarizing
-                    ? "Summarizing…"
-                    : summary
-                      ? "Regenerate"
-                      : "AI Summarize"}
                 </button>
               </div>
 

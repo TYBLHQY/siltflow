@@ -432,7 +432,7 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
           }}
         />
       ) : (
-        <span className="truncate min-w-0 flex-1 text-sm" style={{ width: 0 }}>{data.name}</span>
+        <span className="truncate min-w-0 flex-1 text-sm" style={{ width: 0 }} title={data.name}>{data.name}</span>
       )}
     </div>
   )

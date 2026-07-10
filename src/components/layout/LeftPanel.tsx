@@ -1,11 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { IconText } from "@/components/ui/icon-text"
 import { FileText, Plus, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
@@ -157,23 +152,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="review" value={activeTab ?? undefined} onValueChange={onTabChange} className="flex flex-col flex-1 min-h-0">
-        <div className="border-b px-3 py-1.5">
-          <TabsList className="h-7">
-            <TabsTrigger value="documents" className="text-xs px-2 py-0.5 h-6">
-              <FileText className="h-3.5 w-3.5 mr-1" />
-              Docs
+        <div className="flex h-10 items-center border-b px-3">
+          <TabsList className="w-full h-7 text-foreground">
+            <TabsTrigger value="documents" className="flex-1 text-xs px-2 py-0.5 h-6">
+              <IconText icon={FileText} size="xs">Docs</IconText>
             </TabsTrigger>
-            <TabsTrigger value="review" className="text-xs px-2 py-0.5 h-6">
-              <BrainCircuit className="h-3.5 w-3.5 mr-1" />
-              Review
+            <TabsTrigger value="review" className="flex-1 text-xs px-2 py-0.5 h-6">
+              <IconText icon={BrainCircuit} size="xs">Review</IconText>
             </TabsTrigger>
             <TabsTrigger
               value="outline"
-              className="text-xs px-2 py-0.5 h-6"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
               disabled={!currentDocument || !pdfDocument}
             >
-              <BookMarked className="h-3.5 w-3.5 mr-1" />
-              Outlines
+              <IconText icon={BookMarked} size="xs">Outlines</IconText>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -183,18 +175,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           <div className="shrink-0 border-b px-3 py-2">
             <div className="flex gap-2">
               <button
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={handleImport}
               >
-                <Plus className="h-3.5 w-3.5" />
-                Import PDF
+                <IconText icon={Plus} size="xs" className="gap-0">
+                  Import PDF
+                </IconText>
               </button>
               <button
-                className="flex items-center justify-center gap-1 rounded-md border border-border/50 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-accent transition-colors"
+                className="flex items-center justify-center gap-1 rounded-md border border-border/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
                 onClick={() => docsTreeRef.current?.createFolder()}
               >
-                <FolderPlus className="h-3.5 w-3.5" />
-                Folder
+                <IconText icon={FolderPlus} size="xs" className="gap-0">
+                  Folder
+                </IconText>
               </button>
             </div>
           </div>
@@ -231,7 +225,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   <div
                     key={m.documentId}
                     className={`group relative border-b border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
-                      currentDocument?.id === m.documentId ? "bg-accent text-accent-foreground" : "hover:bg-accent"
+                      currentDocument?.id === m.documentId ? "bg-accent" : "hover:bg-accent"
                     }`}
                     onClick={() => {
                       const doc = documents.find((d) => d.id === m.documentId)
@@ -240,16 +234,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="truncate min-w-0 flex-1">{m.documentTitle}</span>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" align="start">
-                            {m.documentTitle}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <span className="truncate min-w-0 flex-1" title={m.documentTitle}>{m.documentTitle}</span>
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">

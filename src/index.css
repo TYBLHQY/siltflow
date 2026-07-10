@@ -118,7 +118,7 @@
   --secondary-foreground: var(--text);
   --muted: var(--surface0);
   --muted-foreground: var(--overlay0);
-  --accent: var(--blue);
+  --accent: var(--surface0);
   --accent-foreground: var(--crust);
   --destructive: var(--red);
   --destructive-foreground: var(--crust);
@@ -171,7 +171,7 @@
   --secondary-foreground: var(--text);
   --muted: var(--surface0);
   --muted-foreground: var(--overlay0);
-  --accent: var(--blue);
+  --accent: var(--surface0);
   --accent-foreground: var(--crust);
   --destructive: var(--red);
   --destructive-foreground: var(--crust);
@@ -224,7 +224,7 @@
   --secondary-foreground: var(--text);
   --muted: var(--surface0);
   --muted-foreground: var(--overlay0);
-  --accent: var(--blue);
+  --accent: var(--surface0);
   --accent-foreground: var(--crust);
   --destructive: var(--red);
   --destructive-foreground: var(--crust);
@@ -277,7 +277,7 @@
   --secondary-foreground: var(--text);
   --muted: var(--surface0);
   --muted-foreground: var(--overlay0);
-  --accent: var(--blue);
+  --accent: var(--surface0);
   --accent-foreground: var(--crust);
   --destructive: var(--red);
   --destructive-foreground: var(--crust);
