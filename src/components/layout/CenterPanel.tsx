@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
-import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard, PenLine, MousePointer2 } from "lucide-react"
+import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard, PenLine, MousePointer2, Info, ExternalLink, Download } from "lucide-react"
 import { IconText } from "@/components/ui/icon-text"
 import { Button } from "@/components/ui/button"
 import { PdfViewer } from "@/components/document/PdfViewer"
@@ -128,7 +128,7 @@ function FitWidthButton() {
 // Unified Settings modal — left sidebar navigation, right panel content
 // ---------------------------------------------------------------------------
 
-type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts"
+type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "about"
 
 const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
   { id: "ai", icon: Bot, label: "AI" },
@@ -136,6 +136,7 @@ const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
   { id: "style", icon: TextSelect, label: "Style" },
   { id: "tts", icon: Volume2, label: "TTS" },
   { id: "shortcuts", icon: Keyboard, label: "Shortcuts" },
+  { id: "about", icon: Info, label: "About" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -232,6 +233,7 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
             {tab === "style" && <StyleConfigContent />}
             {tab === "tts" && <TTSConfigContent />}
             {tab === "shortcuts" && <ShortcutsContent />}
+            {tab === "about" && <AboutContent />}
           </div>
         </div>
       </div>
@@ -1660,6 +1662,104 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// About content (inside unified settings)
+// ---------------------------------------------------------------------------
+function AboutContent() {
+  const [latest, setLatest] = useState<string | null>(null)
+  const [checking, setChecking] = useState(true)
+
+  const currentVersion = "0.0.1"
+  const releasesUrl = "https://github.com/TYBLHQY/siltflow/releases"
+
+  useEffect(() => {
+    let cancelled = false
+    setChecking(true)
+    fetch("https://api.github.com/repos/TYBLHQY/siltflow/releases/latest", {
+      signal: AbortSignal.timeout(8000),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return
+        if (data?.tag_name) {
+          setLatest(data.tag_name.startsWith("v") ? data.tag_name.slice(1) : data.tag_name)
+        } else {
+          setLatest(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLatest(null)
+      })
+      .finally(() => {
+        if (!cancelled) setChecking(false)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const hasUpdate = latest && latest !== currentVersion
+
+  const handleDownload = () => {
+    window.open(releasesUrl, "_blank")
+  }
+
+  return (
+    <div className="space-y-5 pt-3">
+      {/* App info */}
+      <div>
+        <h3 className="text-sm font-semibold mb-2">Siltflow</h3>
+        <p className="text-xs text-muted-foreground">
+          A language learning document reader with spaced repetition and AI translation.
+        </p>
+      </div>
+
+      {/* Version */}
+      <div className="space-y-1">
+        <label className="block text-xs font-medium">Current Version</label>
+        <p className="text-sm">{currentVersion}</p>
+      </div>
+
+      {/* Update check */}
+      <div className="space-y-2">
+        <label className="block text-xs font-medium">Updates</label>
+        {checking ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Checking for updates…
+          </div>
+        ) : hasUpdate ? (
+          <div className="rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2">
+            <p className="text-xs font-medium text-green-600 mb-1">
+              v{latest} is available
+            </p>
+            <button
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              onClick={handleDownload}
+            >
+              <Download className="h-3 w-3" />
+              Download
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">You are on the latest version.</p>
+        )}
+      </div>
+
+      {/* View on GitHub */}
+      <div className="pt-2">
+        <a
+          href={releasesUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+        >
+          <ExternalLink className="h-3 w-3" />
+          View all releases on GitHub
+        </a>
+      </div>
     </div>
   )
 }
