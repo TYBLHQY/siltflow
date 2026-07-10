@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button"
-import { Highlighter, Trash2, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react"
+import { Highlighter, Trash2, Sparkles, Loader2, ChevronDown, ChevronRight, Volume2 } from "lucide-react"
 import { useState, useCallback } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
 import { reviewAnnotation, getNextReview } from "@/stores/fsrs.store"
 import type { Grade } from "ts-fsrs"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
+import { useTTS } from "@/lib/use-tts"
 
 interface AITranslateCardProps {
   id: string
@@ -34,6 +35,7 @@ export function AITranslateCard({
   const [reviewed, setReviewed] = useState(false)
   const isWord = ai?.type === "word" || ai?.type === "phrase"
   const isLong = ai?.type === "sentence" || ai?.type === "passage"
+  const tts = useTTS()
 
   const handleDelete = () => onDelete(id)
 
@@ -78,6 +80,29 @@ export function AITranslateCard({
         text={item.text}
         className="text-sm mb-1"
       />
+
+      {/* TTS: read aloud */}
+      <button
+        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground mb-1"
+        onClick={(e) => {
+          e.stopPropagation()
+          if (tts.state === "playing") {
+            tts.stop()
+          } else {
+            tts.speak(item.text)
+          }
+        }}
+        title="Read aloud (Edge TTS)"
+      >
+        {tts.state === "loading" ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : tts.state === "playing" ? (
+          <Volume2 className="h-3 w-3 text-primary" />
+        ) : (
+          <Volume2 className="h-3 w-3" />
+        )}
+        {tts.state === "playing" ? "Stop" : "Listen"}
+      </button>
 
       {/* AI state: loading / trigger / result */}
       {ai === null && (
