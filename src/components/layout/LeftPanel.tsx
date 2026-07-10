@@ -226,12 +226,12 @@ export function LeftPanel() {
                       setContextMenu({ doc, x: e.clientX, y: e.clientY })
                     }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 overflow-hidden">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span>{doc.title}</span>
+                            <span className="overflow-hidden text-ellipsis whitespace-nowrap">{doc.title}</span>
                           </TooltipTrigger>
                           <TooltipContent side="top" align="start">
                             {doc.title}
@@ -297,9 +297,9 @@ export function LeftPanel() {
                       if (doc) setCurrentDocument(doc)
                     }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 overflow-hidden">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span>{m.documentTitle}</span>
+                      <span className="overflow-hidden text-ellipsis whitespace-nowrap">{m.documentTitle}</span>
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
