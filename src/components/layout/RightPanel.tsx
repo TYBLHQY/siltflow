@@ -220,6 +220,7 @@ export function RightPanel() {
                 Start Learning ({dueCount})
               </button>
             </div>
+          )}
           {items.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
               <Highlighter className="h-8 w-8 mb-2" />
