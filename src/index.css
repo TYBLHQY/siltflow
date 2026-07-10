@@ -37,59 +37,150 @@
     "Liberation Mono", "Courier New", monospace;
 }
 
+/* ── Default fallback (used when no theme flavor is set yet) ── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0.042 265.755);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.965 0.001 286.375);
-  --secondary-foreground: oklch(0.205 0.042 265.755);
-  --muted: oklch(0.965 0.001 286.375);
-  --muted-foreground: oklch(0.45 0.019 286.375);
-  --accent: oklch(0.965 0.001 286.375);
-  --accent-foreground: oklch(0.205 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 286.375);
-  --input: oklch(0.922 0.004 286.375);
-  --ring: oklch(0.205 0.042 265.755);
+  --background: oklch(0.92 0.01 90);          /* Latte Base */
+  --foreground: oklch(0.27 0.02 250);          /* Latte Text */
+  --card: oklch(0.92 0.01 90);                 /* Latte Base */
+  --card-foreground: oklch(0.27 0.02 250);     /* Latte Text */
+  --popover: oklch(0.92 0.01 90);
+  --popover-foreground: oklch(0.27 0.02 250);
+  --primary: oklch(0.44 0.13 270);             /* Mauve */
+  --primary-foreground: oklch(0.92 0.01 90);
+  --secondary: oklch(0.88 0.01 90);
+  --secondary-foreground: oklch(0.39 0.02 250);
+  --muted: oklch(0.88 0.01 90);
+  --muted-foreground: oklch(0.52 0.02 250);
+  --accent: oklch(0.55 0.18 240);              /* Blue */
+  --accent-foreground: oklch(0.92 0.01 90);
+  --destructive: oklch(0.55 0.18 30);          /* Red */
+  --destructive-foreground: oklch(0.92 0.01 90);
+  --border: oklch(0.77 0.02 250);
+  --input: oklch(0.77 0.02 250);
+  --ring: oklch(0.55 0.18 240);
   --radius: 0.625rem;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --chart-1: oklch(0.55 0.18 240);
+  --chart-2: oklch(0.52 0.16 145);
+  --chart-3: oklch(0.55 0.18 30);
+  --chart-4: oklch(0.60 0.18 85);
+  --chart-5: oklch(0.60 0.18 200);
 }
 
+/* ── Catppuccin Latte (light) ── */
+.catppuccin-latte {
+  --background: oklch(0.92 0.01 90);
+  --foreground: oklch(0.27 0.02 250);
+  --card: oklch(0.92 0.01 90);
+  --card-foreground: oklch(0.27 0.02 250);
+  --popover: oklch(0.92 0.01 90);
+  --popover-foreground: oklch(0.27 0.02 250);
+  --primary: oklch(0.44 0.13 270);
+  --primary-foreground: oklch(0.92 0.01 90);
+  --secondary: oklch(0.88 0.01 90);
+  --secondary-foreground: oklch(0.39 0.02 250);
+  --muted: oklch(0.88 0.01 90);
+  --muted-foreground: oklch(0.52 0.02 250);
+  --accent: oklch(0.55 0.18 240);
+  --accent-foreground: oklch(0.92 0.01 90);
+  --destructive: oklch(0.55 0.18 30);
+  --destructive-foreground: oklch(0.92 0.01 90);
+  --border: oklch(0.77 0.02 250);
+  --input: oklch(0.77 0.02 250);
+  --ring: oklch(0.55 0.18 240);
+  --chart-1: oklch(0.55 0.18 240);
+  --chart-2: oklch(0.52 0.16 145);
+  --chart-3: oklch(0.55 0.18 30);
+  --chart-4: oklch(0.60 0.18 85);
+  --chart-5: oklch(0.60 0.18 200);
+}
+
+/* ── Shared dark class ── */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0.042 265.755);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0.042 265.755);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0.004 286.375);
-  --primary-foreground: oklch(0.205 0.042 265.755);
-  --secondary: oklch(0.269 0.015 286.375);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0.015 286.375);
-  --muted-foreground: oklch(0.65 0.01 286.375);
-  --accent: oklch(0.269 0.015 286.375);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0.019 286.375);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* placeholder — the flavor-specific classes override these */
+}
+
+/* ── Catppuccin Frappé ── */
+.catppuccin-frappe {
+  --background: oklch(0.23 0.01 250);
+  --foreground: oklch(0.86 0.02 250);
+  --card: oklch(0.23 0.01 250);
+  --card-foreground: oklch(0.86 0.02 250);
+  --popover: oklch(0.23 0.01 250);
+  --popover-foreground: oklch(0.86 0.02 250);
+  --primary: oklch(0.66 0.20 300);
+  --primary-foreground: oklch(0.20 0.01 250);
+  --secondary: oklch(0.20 0.01 250);
+  --secondary-foreground: oklch(0.72 0.02 250);
+  --muted: oklch(0.28 0.02 250);
+  --muted-foreground: oklch(0.52 0.02 250);
+  --accent: oklch(0.54 0.17 240);
+  --accent-foreground: oklch(0.20 0.01 250);
+  --destructive: oklch(0.60 0.20 30);
+  --destructive-foreground: oklch(0.20 0.01 250);
+  --border: oklch(0.52 0.02 250);
+  --input: oklch(0.52 0.02 250);
+  --ring: oklch(0.54 0.17 240);
+  --chart-1: oklch(0.54 0.17 240);
+  --chart-2: oklch(0.57 0.17 145);
+  --chart-3: oklch(0.60 0.20 30);
+  --chart-4: oklch(0.64 0.18 85);
+  --chart-5: oklch(0.60 0.18 200);
+}
+
+/* ── Catppuccin Macchiato ── */
+.catppuccin-macchiato {
+  --background: oklch(0.20 0.01 250);
+  --foreground: oklch(0.85 0.02 250);
+  --card: oklch(0.20 0.01 250);
+  --card-foreground: oklch(0.85 0.02 250);
+  --popover: oklch(0.20 0.01 250);
+  --popover-foreground: oklch(0.85 0.02 250);
+  --primary: oklch(0.64 0.22 300);
+  --primary-foreground: oklch(0.17 0.01 250);
+  --secondary: oklch(0.17 0.01 250);
+  --secondary-foreground: oklch(0.70 0.02 250);
+  --muted: oklch(0.25 0.02 250);
+  --muted-foreground: oklch(0.50 0.02 250);
+  --accent: oklch(0.52 0.18 240);
+  --accent-foreground: oklch(0.17 0.01 250);
+  --destructive: oklch(0.58 0.22 30);
+  --destructive-foreground: oklch(0.17 0.01 250);
+  --border: oklch(0.50 0.02 250);
+  --input: oklch(0.50 0.02 250);
+  --ring: oklch(0.52 0.18 240);
+  --chart-1: oklch(0.52 0.18 240);
+  --chart-2: oklch(0.55 0.18 145);
+  --chart-3: oklch(0.58 0.22 30);
+  --chart-4: oklch(0.62 0.19 85);
+  --chart-5: oklch(0.58 0.19 200);
+}
+
+/* ── Catppuccin Mocha ── */
+.catppuccin-mocha {
+  --background: oklch(0.17 0.01 250);
+  --foreground: oklch(0.83 0.02 250);
+  --card: oklch(0.17 0.01 250);
+  --card-foreground: oklch(0.83 0.02 250);
+  --popover: oklch(0.17 0.01 250);
+  --popover-foreground: oklch(0.83 0.02 250);
+  --primary: oklch(0.62 0.24 300);
+  --primary-foreground: oklch(0.14 0.01 250);
+  --secondary: oklch(0.14 0.01 250);
+  --secondary-foreground: oklch(0.68 0.02 250);
+  --muted: oklch(0.22 0.02 250);
+  --muted-foreground: oklch(0.48 0.02 250);
+  --accent: oklch(0.50 0.18 240);
+  --accent-foreground: oklch(0.14 0.01 250);
+  --destructive: oklch(0.56 0.24 30);
+  --destructive-foreground: oklch(0.14 0.01 250);
+  --border: oklch(0.48 0.02 250);
+  --input: oklch(0.48 0.02 250);
+  --ring: oklch(0.50 0.18 240);
+  --chart-1: oklch(0.50 0.18 240);
+  --chart-2: oklch(0.53 0.19 145);
+  --chart-3: oklch(0.56 0.24 30);
+  --chart-4: oklch(0.60 0.20 85);
+  --chart-5: oklch(0.56 0.20 200);
 }
 
 @layer base {
@@ -139,10 +230,7 @@
 /* Override library's pdf_viewer.css:
      display:flex -> block (pdfjs v4 text spans are absolute-positioned, flex
      crams them at the top of each page).
-     opacity: non-highlight text semi-transparent so highlights stand out.
-   Our import order (last) wins on equal-specificity. Library's opacity rule
-   uses a higher-specificity selector (html body .textLayer > div…), so
-   !important is needed there. */
+     opacity: non-highlight text semi-transparent so highlights stand out. */
 .textLayer {
   display: block;
 }
@@ -150,22 +238,21 @@
   opacity: 0.25 !important;
 }
 
-/* In dark mode, invert PDF canvas so white-background PDFs become readable */
-.dark .PdfHighlighter :is(canvas, .textLayer) {
+/* PDF invert in dark mode — controlled by data-pdf-dark-invert attribute */
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter :is(canvas, .textLayer) {
   filter: invert(1) hue-rotate(180deg);
 }
-.dark .PdfHighlighter .PdfHighlighter__highlight-layer,
-.dark .PdfHighlighter .TextHighlight,
-.dark .PdfHighlighter .AreaHighlight,
-.dark .PdfHighlighter .DrawingHighlight,
-.dark .PdfHighlighter .ShapeHighlight,
-.dark .PdfHighlighter .FreetextHighlight,
-.dark .PdfHighlighter .ImageHighlight {
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .PdfHighlighter__highlight-layer,
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .TextHighlight,
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .AreaHighlight,
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .DrawingHighlight,
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .ShapeHighlight,
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .FreetextHighlight,
+html[data-pdf-dark-invert="true"].dark .PdfHighlighter .ImageHighlight {
   filter: invert(1) hue-rotate(180deg);
 }
 
 /* PdfHighlighter: scrollbar controlled by data-pdf-scrollbar attribute */
-/* When enabled: thin floating overlay */
 div[data-pdf-scrollbar="true"] .PdfHighlighter {
   scrollbar-width: thin !important;
   scrollbar-color: hsl(var(--border)) transparent !important;
@@ -187,7 +274,6 @@ div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-track-piece {
   background: transparent !important;
   border: none !important;
 }
-/* When disabled: no scrollbar */
 div[data-pdf-scrollbar="false"] .PdfHighlighter {
   scrollbar-width: none !important;
 }

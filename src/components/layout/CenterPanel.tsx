@@ -9,6 +9,7 @@ import { useFSRSStore } from "@/stores/fsrs.store"
 import { useStyleStore } from "@/stores/style.store"
 import { useTTSStore, MIMO_PRESET_VOICES, MIMO_MODELS } from "@/stores/tts.store"
 import { useShortcutsStore } from "@/stores/shortcuts.store"
+import { useThemeStore } from "@/stores/theme.store"
 import { formatShortcut } from "@/lib/keyboard-keys"
 
 // ---------------------------------------------------------------------------
@@ -669,6 +670,11 @@ function StyleConfigContent() {
   const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily)
   const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily)
   const reset = useStyleStore((s) => s.reset)
+  const themeConfig = useThemeStore((s) => s.config)
+  const setLightTheme = useThemeStore((s) => s.setLightTheme)
+  const setDarkTheme = useThemeStore((s) => s.setDarkTheme)
+  const setThemeMode = useThemeStore((s) => s.setThemeMode)
+  const setPdfDarkInvert = useThemeStore((s) => s.setPdfDarkInvert)
   const systemFonts = useSystemFonts()
   const [search, setSearch] = useState("")
   const [showFontList, setShowFontList] = useState(false)
@@ -973,6 +979,71 @@ function StyleConfigContent() {
         <label htmlFor="pdfScrollbar" className="text-xs">
           Show PDF scrollbar (floating overlay)
         </label>
+      </div>
+
+      {/* ── Theme settings ── */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-xs font-semibold mb-3">Theme</h3>
+
+        {/* Theme mode */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1.5">Light/Dark mode</label>
+          <div className="flex gap-2">
+            {(["auto", "light", "dark"] as const).map((mode) => (
+              <button
+                key={mode}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  themeConfig.themeMode === mode
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border/50 text-muted-foreground hover:bg-accent"
+                }`}
+                onClick={() => setThemeMode(mode)}
+              >
+                {mode === "auto" ? "Auto" : mode === "light" ? "Light" : "Dark"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Light flavor */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1">Light theme</label>
+          <select
+            className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+            value={themeConfig.lightTheme}
+            onChange={(e) => setLightTheme(e.target.value as any)}
+          >
+            <option value="latte">Latte</option>
+          </select>
+        </div>
+
+        {/* Dark flavor */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1">Dark theme</label>
+          <select
+            className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+            value={themeConfig.darkTheme}
+            onChange={(e) => setDarkTheme(e.target.value as any)}
+          >
+            <option value="frappe">Frappé</option>
+            <option value="macchiato">Macchiato</option>
+            <option value="mocha">Mocha</option>
+          </select>
+        </div>
+
+        {/* PDF dark invert */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="pdfDarkInvert"
+            className="rounded"
+            checked={themeConfig.pdfDarkInvert}
+            onChange={(e) => setPdfDarkInvert(e.target.checked)}
+          />
+          <label htmlFor="pdfDarkInvert" className="text-xs">
+            Invert PDF in dark mode
+          </label>
+        </div>
       </div>
 
       <div className="mt-4 border-t pt-3">
