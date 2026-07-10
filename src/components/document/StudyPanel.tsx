@@ -191,7 +191,7 @@ export function StudyPanel({
             {/* IPA */}
             {ipa && (
               <p className="text-muted-foreground/70 italic leading-relaxed">
-                /{ipa}/
+                {ipa.startsWith("/") ? ipa : `/${ipa}/`}
               </p>
             )}
 

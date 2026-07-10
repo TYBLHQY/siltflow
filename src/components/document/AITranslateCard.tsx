@@ -315,7 +315,7 @@ export function AITranslateCard({
           )}
 
           {ipa && isWord && (
-            <p className="text-muted-foreground/70 italic leading-relaxed">{ipa}</p>
+            <p className="text-muted-foreground/70 italic leading-relaxed">{ipa.startsWith("/") ? ipa : `/${ipa}/`}</p>
           )}
 
           {(difficulty || (tags && tags.length > 0)) && (

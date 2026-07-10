@@ -353,7 +353,14 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           ) : (
             <ScrollArea className="flex-1">
               <div className="space-y-2 p-3" style={{ width: 0, minWidth: "100%" }}>
-                {items.map((ann) => (
+                {[...items]
+                  .sort((a, b) => {
+                    if (a.pageNumber !== b.pageNumber) return a.pageNumber - b.pageNumber
+                    const topA = a.embedData?.position?.boundingRect?.y1 ?? 0
+                    const topB = b.embedData?.position?.boundingRect?.y1 ?? 0
+                    return topA - topB
+                  })
+                  .map((ann) => (
                   <AITranslateCard
                     key={ann.id}
                     id={ann.id}
