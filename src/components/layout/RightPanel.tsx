@@ -293,66 +293,71 @@ export function RightPanel() {
                 </button>
               </div>
 
+              {/* Summary toolbar (fixed at top when summary exists) */}
+              {summary && (
+                <div className="flex items-center gap-2 border-b px-3 py-1.5 shrink-0">
+                  {editingSummary ? (
+                    <>
+                      <button
+                        className="ml-auto rounded-md px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                        onClick={() => setEditingSummary(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
+                        onClick={() => setEditingSummary(false)}
+                      >
+                        Save
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                        onClick={() => setEditingSummary(true)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </button>
+                      {summary.isAiGenerated && (
+                        <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                          <Bot className="h-2.5 w-2.5" />
+                          AI-generated
+                        </span>
+                      )}
+                      <button
+                        className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive"
+                        onClick={handleClearSummary}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Clear
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Summary content */}
               <div className="flex-1 min-h-0">
                 {summary ? (
                   editingSummary ? (
-                    <div className="flex flex-col h-full">
-                      <textarea
-                        className="flex-1 w-full resize-none rounded-md border bg-background p-3 leading-relaxed min-h-0"
-                        style={{
-                          fontFamily: style.fontFamily,
-                          fontSize: style.fontSize,
-                        }}
-                        value={summary.text}
-                        onChange={(e) => handleEditSummary(e.target.value)}
-                        autoFocus
-                      />
-                      <div className="flex items-center justify-end gap-2 border-t px-3 py-2 shrink-0">
-                        <button
-                          className="rounded-md px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                          onClick={() => setEditingSummary(false)}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
-                          onClick={() => setEditingSummary(false)}
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
+                    <textarea
+                      className="h-full w-full resize-none border-0 bg-background p-3 leading-relaxed"
+                      style={{
+                        fontFamily: style.fontFamily,
+                        fontSize: style.fontSize,
+                      }}
+                      value={summary.text}
+                      onChange={(e) => handleEditSummary(e.target.value)}
+                      autoFocus
+                    />
                   ) : (
-                    <div className="flex flex-col h-full overflow-y-auto px-3 py-3">
-                      <div className="flex-1 min-h-0">
-                        <KnuthPlassText
-                          text={summary.text}
-                          className="text-xs text-foreground rounded-md border border-transparent px-2 py-1.5"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2 pt-1 shrink-0">
-                        <button
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-                          onClick={() => setEditingSummary(true)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                          Edit
-                        </button>
-                        {summary.isAiGenerated && (
-                          <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                            <Bot className="h-2.5 w-2.5" />
-                            AI-generated
-                          </span>
-                        )}
-                        <button
-                          className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive"
-                          onClick={handleClearSummary}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Clear
-                        </button>
-                      </div>
+                    <div className="h-full overflow-y-auto px-3 py-3">
+                      <KnuthPlassText
+                        text={summary.text}
+                        className="text-xs text-foreground rounded-md border border-transparent px-2 py-1.5"
+                      />
                     </div>
                   )
                 ) : (
