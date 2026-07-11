@@ -2,10 +2,11 @@ import { useCallback } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
 import { IconText } from "@/components/ui/icon-text"
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
-import { Volume2, ArrowLeft, CheckSquare, Loader2 } from "lucide-react"
+import { Volume2, ArrowLeft, CheckSquare, Loader2, ExternalLink } from "lucide-react"
 import { useTTS } from "@/lib/use-tts"
 import { useShortcut } from "@/hooks/useShortcut"
 import { useStyleStore, buildFontStack } from "@/stores/style.store"
+import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { renderBoldText } from "@/lib/render-bold"
 
 interface StudyPanelProps {
@@ -87,6 +88,7 @@ export function StudyPanel({
   const item = items[studyingIndex]
   const tts = useTTS()
   const style = useStyleStore((s) => s.style)
+  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight)
 
   const handleReveal = useCallback(() => {
     if (!answerRevealed) setAnswerRevealed(true)
@@ -102,6 +104,13 @@ export function StudyPanel({
     if (tts.state === "playing") tts.stop()
     else tts.speak(item.text, undefined, item.aiResult?.source_lang)
   }, [item, tts])
+
+  const handleGoToHighlight = useCallback(() => {
+    if (!item) return
+    onBack()
+    // Small delay so the modal closes before scrolling
+    requestAnimationFrame(() => scrollToHighlight?.(item.id))
+  }, [item, onBack, scrollToHighlight])
 
   // Learning mode shortcuts (only active when item exists)
   useShortcut("revealCard", handleReveal, { enabled: !!item && !answerRevealed })
@@ -156,7 +165,13 @@ export function StudyPanel({
         <span className="text-muted-foreground">
           {current} / {total}
         </span>
-        <div className="w-8" />
+        <button
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          onClick={handleGoToHighlight}
+          title="Go to highlight in PDF"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       {/* Card area — click/tap to reveal */}
