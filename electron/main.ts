@@ -384,7 +384,11 @@ autoUpdater.on('error', (err) => {
 })
 
 ipcMain.handle('update:check', async () => {
-  autoUpdater.checkForUpdates()
+  try {
+    await autoUpdater.checkForUpdates()
+  } catch (err: any) {
+    sendUpdateEvent('update:error', err?.message ?? String(err))
+  }
 })
 
 ipcMain.handle('update:download', async () => {
