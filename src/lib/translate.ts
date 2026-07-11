@@ -129,7 +129,6 @@ export async function translateAnnotation(
   let systemContent = buildTranslatePrompt(
     sourceLang,
     targetLang,
-    options.contextSentence,
   );
 
   // Append article context to system prompt for disambiguation
