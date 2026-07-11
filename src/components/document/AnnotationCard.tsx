@@ -1,15 +1,15 @@
-import { Button } from "@/components/ui/button"
-import { Highlighter, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { Highlighter, Trash2 } from "lucide-react";
 
 interface AnnotationCardProps {
-  id: string
-  type: string
-  text: string
-  pageNumber: number
-  onDelete: (id: string) => void
-  className?: string
-  textSize?: "xs" | "sm"
-  lineClamp?: 2 | 3
+  id: string;
+  type: string;
+  text: string;
+  pageNumber: number;
+  onDelete: (id: string) => void;
+  className?: string;
+  textSize?: "xs" | "sm";
+  lineClamp?: 2 | 3;
 }
 
 export function AnnotationCard({
@@ -37,7 +37,9 @@ export function AnnotationCard({
               p.{pageNumber}
             </span>
           </div>
-          <p className={`leading-relaxed ${textSize === "xs" ? "text-xs" : "text-sm"} ${lineClamp === 2 ? "line-clamp-2" : "line-clamp-3"}`}>
+          <p
+            className={`leading-relaxed ${textSize === "xs" ? "text-xs" : "text-sm"} ${lineClamp === 2 ? "line-clamp-2" : "line-clamp-3"}`}
+          >
             {text || `${type} on page ${pageNumber}`}
           </p>
         </div>
@@ -51,5 +53,5 @@ export function AnnotationCard({
         </Button>
       </div>
     </div>
-  )
+  );
 }

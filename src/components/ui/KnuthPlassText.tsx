@@ -1,9 +1,9 @@
-import { memo } from "react"
-import { useStyleStore, buildFontStack } from "@/stores/style.store"
+import { memo } from "react";
+import { useStyleStore, buildFontStack } from "@/stores/style.store";
 
 export interface KnuthPlassTextProps {
-  text: string
-  className?: string
+  text: string;
+  className?: string;
 }
 
 /**
@@ -14,9 +14,9 @@ export const KnuthPlassText = memo(function KnuthPlassText({
   text,
   className = "",
 }: KnuthPlassTextProps) {
-  const style = useStyleStore((s) => s.style)
+  const style = useStyleStore((s) => s.style);
 
-  if (!text) return null
+  if (!text) return null;
 
   return (
     <p
@@ -31,5 +31,5 @@ export const KnuthPlassText = memo(function KnuthPlassText({
     >
       {text}
     </p>
-  )
-})
+  );
+});

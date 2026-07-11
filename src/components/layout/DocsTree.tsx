@@ -1,9 +1,14 @@
-import { useMemo, useState, useEffect, useCallback, forwardRef, useImperativeHandle, useRef } from "react"
-import type {
-  NodeRendererProps,
-  TreeApi,
-} from "react-arborist"
-import { Tree } from "react-arborist"
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from "react";
+import type { NodeRendererProps, TreeApi } from "react-arborist";
+import { Tree } from "react-arborist";
 import {
   ChevronRight,
   FileText,
@@ -12,9 +17,9 @@ import {
   Plus,
   Trash2,
   Pencil,
-} from "lucide-react"
-import { useDocumentStore, type DocumentItem } from "@/stores/document.store"
-import { useFolderStore, type FolderItem } from "@/stores/folder.store"
+} from "lucide-react";
+import { useDocumentStore, type DocumentItem } from "@/stores/document.store";
+import { useFolderStore, type FolderItem } from "@/stores/folder.store";
 import {
   Dialog,
   DialogContent,
@@ -22,33 +27,36 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 // ---------------------------------------------------------------------------
 // Tree node data
 // ---------------------------------------------------------------------------
 
-type NodeType = "folder" | "document"
+type NodeType = "folder" | "document";
 
 interface NodeData {
-  id: string
-  name: string
-  children?: NodeData[]
-  type: NodeType
-  originalId: string
-  doc?: DocumentItem
-  folder?: FolderItem
+  id: string;
+  name: string;
+  children?: NodeData[];
+  type: NodeType;
+  originalId: string;
+  doc?: DocumentItem;
+  folder?: FolderItem;
 }
 
 // ---------------------------------------------------------------------------
 // Build tree
 // ---------------------------------------------------------------------------
 
-function buildTree(folders: FolderItem[], documents: DocumentItem[]): NodeData[] {
+function buildTree(
+  folders: FolderItem[],
+  documents: DocumentItem[],
+): NodeData[] {
   function buildSubTree(folder: FolderItem): NodeData {
-    const children: NodeData[] = []
+    const children: NodeData[] = [];
     for (const sf of folders.filter((f) => f.parentId === folder.id)) {
-      children.push(buildSubTree(sf))
+      children.push(buildSubTree(sf));
     }
     for (const doc of documents.filter((d) => d.folderId === folder.id)) {
       children.push({
@@ -57,7 +65,7 @@ function buildTree(folders: FolderItem[], documents: DocumentItem[]): NodeData[]
         type: "document",
         originalId: doc.id,
         doc,
-      })
+      });
     }
     return {
       id: `folder:${folder.id}`,
@@ -66,12 +74,12 @@ function buildTree(folders: FolderItem[], documents: DocumentItem[]): NodeData[]
       type: "folder",
       originalId: folder.id,
       folder,
-    }
+    };
   }
 
-  const nodes: NodeData[] = []
+  const nodes: NodeData[] = [];
   for (const f of folders.filter((f) => !f.parentId)) {
-    nodes.push(buildSubTree(f))
+    nodes.push(buildSubTree(f));
   }
   for (const doc of documents.filter((d) => !d.folderId)) {
     nodes.push({
@@ -80,9 +88,9 @@ function buildTree(folders: FolderItem[], documents: DocumentItem[]): NodeData[]
       type: "document",
       originalId: doc.id,
       doc,
-    })
+    });
   }
-  return nodes
+  return nodes;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,236 +100,269 @@ function buildTree(folders: FolderItem[], documents: DocumentItem[]): NodeData[]
 type ContextMenu =
   | { type: "document"; target: DocumentItem; x: number; y: number }
   | { type: "folder"; target: FolderItem; x: number; y: number }
-  | { type: "empty"; x: number; y: number }
+  | { type: "empty"; x: number; y: number };
 
 // ---------------------------------------------------------------------------
 // DocsTree component
 // ---------------------------------------------------------------------------
 
 export interface DocsTreeHandle {
-  createFolder: () => void
+  createFolder: () => void;
   /** Open parent folders and scroll/scroll to the document with the given id. */
-  revealDocument: (docId: string) => void
+  revealDocument: (docId: string) => void;
 }
 
 interface DocsTreeProps {
-  defaultParentId?: string | null
+  defaultParentId?: string | null;
 }
 
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
   function DocsTree(_props: DocsTreeProps, ref) {
-    const documents = useDocumentStore((s) => s.documents)
-    const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
-    const removeDocument = useDocumentStore((s) => s.removeDocument)
-    const updateDocument = useDocumentStore((s) => s.updateDocument)
-    const folders = useFolderStore((s) => s.folders)
-    const { createFolder, renameFolder, deleteFolder, moveDocuments, moveFolder } =
-      useFolderStore()
-    const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
-    const [deleteConfirm, setDeleteConfirm] = useState<FolderItem | null>(null)
-    const [tree, setTree] = useState<TreeApi<NodeData> | null>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
-    const [treeHeight, setTreeHeight] = useState(200)
+    const documents = useDocumentStore((s) => s.documents);
+    const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
+    const removeDocument = useDocumentStore((s) => s.removeDocument);
+    const updateDocument = useDocumentStore((s) => s.updateDocument);
+    const folders = useFolderStore((s) => s.folders);
+    const {
+      createFolder,
+      renameFolder,
+      deleteFolder,
+      moveDocuments,
+      moveFolder,
+    } = useFolderStore();
+    const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<FolderItem | null>(null);
+    const [tree, setTree] = useState<TreeApi<NodeData> | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [treeHeight, setTreeHeight] = useState(200);
 
     // Measure container height for react-arborist
     useEffect(() => {
-      const el = containerRef.current
-      if (!el) return
+      const el = containerRef.current;
+      if (!el) return;
       const ro = new ResizeObserver((entries) => {
         for (const entry of entries) {
-          setTreeHeight(entry.contentRect.height)
+          setTreeHeight(entry.contentRect.height);
         }
-      })
-      ro.observe(el)
-      return () => ro.disconnect()
-    }, [])
+      });
+      ro.observe(el);
+      return () => ro.disconnect();
+    }, []);
 
     // Load folders
     useEffect(() => {
-      useFolderStore.getState().loadFolders()
-    }, [])
+      useFolderStore.getState().loadFolders();
+    }, []);
 
     // Tree data
-    const treeData = useMemo(() => buildTree(folders, documents), [folders, documents])
+    const treeData = useMemo(
+      () => buildTree(folders, documents),
+      [folders, documents],
+    );
 
     // Refresh both folders and docs
     const refreshAll = useCallback(async () => {
-      await useFolderStore.getState().loadFolders(true)
-      const freshDocs = await window.siltflow.documents.list()
-      useDocumentStore.getState().setDocuments(freshDocs || [])
-    }, [])
+      await useFolderStore.getState().loadFolders(true);
+      const freshDocs = await window.siltflow.documents.list();
+      useDocumentStore.getState().setDocuments(freshDocs || []);
+    }, []);
 
     // Create a folder directly, then trigger inline rename on it
-    const createDirectFolder = useCallback(async (parentFolderId: string | null) => {
-      const folder = await createFolder("", parentFolderId)
-      if (!folder) return
-      // Reload to get the new folder into state
-      await refreshAll()
-      // Find the newly created folder node and start editing
-      const treeNodes = tree?.visibleNodes ?? []
-      for (const n of treeNodes) {
-        if (n.id === `folder:${folder.id}`) {
-          n.edit()
-          break
+    const createDirectFolder = useCallback(
+      async (parentFolderId: string | null) => {
+        const folder = await createFolder("", parentFolderId);
+        if (!folder) return;
+        // Reload to get the new folder into state
+        await refreshAll();
+        // Find the newly created folder node and start editing
+        const treeNodes = tree?.visibleNodes ?? [];
+        for (const n of treeNodes) {
+          if (n.id === `folder:${folder.id}`) {
+            n.edit();
+            break;
+          }
         }
-      }
-    }, [createFolder, tree, refreshAll])
+      },
+      [createFolder, tree, refreshAll],
+    );
 
     // Ref: expose createFolder, revealDocument
     useImperativeHandle(
       ref,
       () => ({
         createFolder: async () => {
-          await createDirectFolder(null)
+          await createDirectFolder(null);
         },
         revealDocument: (docId: string) => {
-          if (!tree) return
+          if (!tree) return;
           // Find the doc in the documents list to learn its folderId
-          const doc = documents.find((d) => d.id === docId)
-          if (!doc) return
+          const doc = documents.find((d) => d.id === docId);
+          if (!doc) return;
           // Open all parent folders
           if (doc.folderId) {
             const openParents = (folderId: string) => {
-              const folder = folders.find((f) => f.id === folderId)
-              if (!folder) return
-              tree.open(`folder:${folderId}`)
-              if (folder.parentId) openParents(folder.parentId)
-            }
-            openParents(doc.folderId)
+              const folder = folders.find((f) => f.id === folderId);
+              if (!folder) return;
+              tree.open(`folder:${folderId}`);
+              if (folder.parentId) openParents(folder.parentId);
+            };
+            openParents(doc.folderId);
           }
           // Select and scroll to the document
-          tree.select(`doc:${docId}`, { align: "center" })
+          tree.select(`doc:${docId}`, { align: "center" });
         },
       }),
       [createDirectFolder, tree, documents, folders],
-    )
+    );
 
     // onRename: persist the new name for folders and documents
     const handleRename = useCallback(
       async ({ id, name }: { id: string; name: string }) => {
-        const trimmed = name.trim()
-        if (!trimmed) return
+        const trimmed = name.trim();
+        if (!trimmed) return;
         if (id.startsWith("folder:")) {
-          await renameFolder(id.slice(7), trimmed)
+          await renameFolder(id.slice(7), trimmed);
         } else if (id.startsWith("doc:")) {
-          const docId = id.slice(4)
-          await window.siltflow.documents.rename({ id: docId, title: trimmed })
-          updateDocument(docId, { title: trimmed })
+          const docId = id.slice(4);
+          await window.siltflow.documents.rename({ id: docId, title: trimmed });
+          updateDocument(docId, { title: trimmed });
         }
       },
       [renameFolder, updateDocument],
-    )
+    );
 
     // onCreate: required by react-arborist for tree.create() — we don't use it
-    const handleCreate = useCallback(
-      () => null as NodeData | null,
-      [],
-    )
+    const handleCreate = useCallback(() => null as NodeData | null, []);
 
     // onMove: drag-and-drop
     const handleMove = useCallback(
-      async ({ dragIds, parentId }: { dragIds: string[]; parentId: string | null; index: number }) => {
-        const targetFolderId = parentId?.startsWith("folder:") ? parentId.slice(7) : null
-        const docIds: string[] = []
-        const folderIds: string[] = []
+      async ({
+        dragIds,
+        parentId,
+      }: {
+        dragIds: string[];
+        parentId: string | null;
+        index: number;
+      }) => {
+        const targetFolderId = parentId?.startsWith("folder:")
+          ? parentId.slice(7)
+          : null;
+        const docIds: string[] = [];
+        const folderIds: string[] = [];
         for (const id of dragIds) {
-          if (id.startsWith("doc:")) docIds.push(id.slice(4))
-          if (id.startsWith("folder:")) folderIds.push(id.slice(7))
+          if (id.startsWith("doc:")) docIds.push(id.slice(4));
+          if (id.startsWith("folder:")) folderIds.push(id.slice(7));
         }
-        if (docIds.length > 0) await moveDocuments(docIds, targetFolderId)
-        for (const fid of folderIds) await moveFolder(fid, targetFolderId)
+        if (docIds.length > 0) await moveDocuments(docIds, targetFolderId);
+        for (const fid of folderIds) await moveFolder(fid, targetFolderId);
       },
       [moveDocuments, moveFolder],
-    )
+    );
 
     // Context menu actions
     const handleDeleteDoc = useCallback(
       async (doc: DocumentItem) => {
-        await window.siltflow.documents.delete(doc.id)
-        removeDocument(doc.id)
-        setContextMenu(null)
+        await window.siltflow.documents.delete(doc.id);
+        removeDocument(doc.id);
+        setContextMenu(null);
       },
       [removeDocument],
-    )
+    );
     const handleDeleteFolder = useCallback(
       (folder: FolderItem) => {
-        setContextMenu(null)
+        setContextMenu(null);
         // Count docs in this folder
-        const docCount = documents.filter((d) => d.folderId === folder.id).length
+        const docCount = documents.filter(
+          (d) => d.folderId === folder.id,
+        ).length;
         // Count subfolders recursively
-        let subFolderCount = 0
+        let subFolderCount = 0;
         const countSubfolders = (parentId: string) => {
           for (const f of folders) {
             if (f.parentId === parentId) {
-              subFolderCount++
-              countSubfolders(f.id)
+              subFolderCount++;
+              countSubfolders(f.id);
             }
           }
-        }
-        countSubfolders(folder.id)
+        };
+        countSubfolders(folder.id);
         // If folder is empty, delete without confirmation
         if (docCount === 0 && subFolderCount === 0) {
-          deleteFolder(folder.id)
+          deleteFolder(folder.id);
         } else {
-          setDeleteConfirm(folder)
+          setDeleteConfirm(folder);
         }
       },
       [documents, folders, deleteFolder],
-    )
+    );
     const handleRenameFolder = useCallback(
       (folder: FolderItem) => {
         for (const n of tree?.visibleNodes ?? []) {
           if (n.id === `folder:${folder.id}`) {
-            n.edit()
-            break
+            n.edit();
+            break;
           }
         }
-        setContextMenu(null)
+        setContextMenu(null);
       },
       [tree],
-    )
+    );
     const handleNewSubfolder = useCallback(
       (folder: FolderItem) => {
-        createDirectFolder(folder.id)
-        setContextMenu(null)
+        createDirectFolder(folder.id);
+        setContextMenu(null);
       },
       [createDirectFolder],
-    )
+    );
     const handleNewFolder = useCallback(() => {
-      createDirectFolder(null)
-      setContextMenu(null)
-    }, [createDirectFolder])
+      createDirectFolder(null);
+      setContextMenu(null);
+    }, [createDirectFolder]);
 
     // Dismiss context menu
     useEffect(() => {
-      if (!contextMenu) return
-      const handler = () => setContextMenu(null)
-      document.addEventListener("click", handler)
-      return () => document.removeEventListener("click", handler)
-    }, [contextMenu])
+      if (!contextMenu) return;
+      const handler = () => setContextMenu(null);
+      document.addEventListener("click", handler);
+      return () => document.removeEventListener("click", handler);
+    }, [contextMenu]);
 
     // Node right-click
     const onNodeContextMenu = useCallback(
       (e: React.MouseEvent, nodeData: NodeData) => {
-        e.preventDefault()
-        e.stopPropagation()
+        e.preventDefault();
+        e.stopPropagation();
         if (nodeData.type === "document" && nodeData.doc) {
-          setContextMenu({ type: "document", target: nodeData.doc, x: e.clientX, y: e.clientY })
+          setContextMenu({
+            type: "document",
+            target: nodeData.doc,
+            x: e.clientX,
+            y: e.clientY,
+          });
         } else if (nodeData.type === "folder" && nodeData.folder) {
-          setContextMenu({ type: "folder", target: nodeData.folder, x: e.clientX, y: e.clientY })
+          setContextMenu({
+            type: "folder",
+            target: nodeData.folder,
+            x: e.clientX,
+            y: e.clientY,
+          });
         }
       },
       [],
-    )
+    );
 
     // Empty area right-click on the tree container
     const onContainerContextMenu = useCallback((e: React.MouseEvent) => {
       // Only handle right-click on the container itself, not on tree items
-      setContextMenu({ type: "empty", x: e.clientX, y: e.clientY })
-    }, [])
+      setContextMenu({ type: "empty", x: e.clientX, y: e.clientY });
+    }, []);
 
     return (
-      <div ref={containerRef} className="flex-1 min-h-0 relative overflow-hidden" onContextMenu={onContainerContextMenu}>
+      <div
+        ref={containerRef}
+        className="flex-1 min-h-0 relative overflow-hidden"
+        onContextMenu={onContainerContextMenu}
+      >
         <div className="absolute inset-0">
           <Tree
             data={treeData}
@@ -330,9 +371,9 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             onCreate={handleCreate}
             onActivate={(node) => {
               if (node.id.startsWith("doc:")) {
-                const found = documents.find((d) => d.id === node.id.slice(4))
+                const found = documents.find((d) => d.id === node.id.slice(4));
                 if (found) {
-                  setCurrentDocument(found)
+                  setCurrentDocument(found);
                 }
               }
             }}
@@ -350,66 +391,90 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         </div>
 
         {contextMenu?.type === "document" && (
-          <div className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
-            style={{ left: contextMenu.x, top: contextMenu.y }}>
-            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+          <div
+            className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
               onClick={() => {
                 // Find the tree node and trigger inline edit
                 for (const n of tree?.visibleNodes ?? []) {
                   if (n.id === `doc:${contextMenu.target.id}`) {
-                    n.edit()
-                    break
+                    n.edit();
+                    break;
                   }
                 }
-                setContextMenu(null)
-              }}>
+                setContextMenu(null);
+              }}
+            >
               <Pencil className="h-3 w-3" /> Rename
             </button>
             <hr className="my-1 border-border/50" />
-            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
-              onClick={() => handleDeleteDoc(contextMenu.target)}>
+            <button
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
+              onClick={() => handleDeleteDoc(contextMenu.target)}
+            >
               <Trash2 className="h-3 w-3" /> Delete
             </button>
           </div>
         )}
 
         {contextMenu?.type === "folder" && (
-          <div className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
-            style={{ left: contextMenu.x, top: contextMenu.y }}>
-            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
-              onClick={() => handleNewSubfolder(contextMenu.target)}>
+          <div
+            className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              onClick={() => handleNewSubfolder(contextMenu.target)}
+            >
               <Plus className="h-3 w-3" /> Subfolder
             </button>
-            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
-              onClick={() => handleRenameFolder(contextMenu.target)}>
+            <button
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              onClick={() => handleRenameFolder(contextMenu.target)}
+            >
               <Pencil className="h-3 w-3" /> Rename
             </button>
             <hr className="my-1 border-border/50" />
-            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
-              onClick={() => handleDeleteFolder(contextMenu.target)}>
+            <button
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
+              onClick={() => handleDeleteFolder(contextMenu.target)}
+            >
               <Trash2 className="h-3 w-3" /> Delete
             </button>
           </div>
         )}
 
         {contextMenu?.type === "empty" && (
-          <div className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
-            style={{ left: contextMenu.x, top: contextMenu.y }}>
-            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
-              onClick={() => handleNewFolder()}>
+          <div
+            className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              onClick={() => handleNewFolder()}
+            >
               <Plus className="h-3 w-3" /> New Folder
             </button>
           </div>
         )}
 
         {/* ── Delete folder confirmation dialog ── */}
-        <Dialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null) }}>
+        <Dialog
+          open={!!deleteConfirm}
+          onOpenChange={(open) => {
+            if (!open) setDeleteConfirm(null);
+          }}
+        >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Delete Folder</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete <strong>{deleteConfirm?.name}</strong>?
-                All documents and subfolders inside it will be permanently deleted.
+                Are you sure you want to delete{" "}
+                <strong>{deleteConfirm?.name}</strong>? All documents and
+                subfolders inside it will be permanently deleted.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -423,8 +488,8 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
                 className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
                 onClick={async () => {
                   if (deleteConfirm) {
-                    await deleteFolder(deleteConfirm.id)
-                    setDeleteConfirm(null)
+                    await deleteFolder(deleteConfirm.id);
+                    setDeleteConfirm(null);
                   }
                 }}
               >
@@ -434,68 +499,86 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
           </DialogContent>
         </Dialog>
       </div>
-    )
+    );
   },
-)
+);
 
 // ---------------------------------------------------------------------------
 // Node renderer
 // ---------------------------------------------------------------------------
 
 interface DocTreeNodeProps extends NodeRendererProps<NodeData> {
-  onContextMenu: (e: React.MouseEvent, nodeData: NodeData) => void
+  onContextMenu: (e: React.MouseEvent, nodeData: NodeData) => void;
 }
 
-function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProps) {
-  const data = node.data
-  if (!data) return null
+function DocTreeNode({
+  node,
+  style,
+  dragHandle,
+  onContextMenu,
+}: DocTreeNodeProps) {
+  const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
 
-  const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
-
-  // For folder rename/esccape
+  // For folder rename/escape
   const handleDeleteFolder = useCallback(
     (folderId: string) => useFolderStore.getState().deleteFolder(folderId),
     [],
-  )
+  );
+
+  const data = node.data;
+  if (!data) return null;
 
   return (
     <div
-      style={{ ...style, height: "100%", display: "flex", alignItems: "center", gap: "6px" }}
+      style={{
+        ...style,
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+      }}
       ref={dragHandle}
       className="w-full cursor-pointer hover:bg-accent/50"
       onPointerDown={(e) => {
         // Prevent react-arborist's native selection on click
-        e.stopPropagation()
+        e.stopPropagation();
       }}
       onClick={(e) => {
         // Let modifier clicks (Ctrl/Cmd, Shift) propagate to react-arborist's built-in multi-select handler
         if (e.ctrlKey || e.metaKey || e.shiftKey) {
-          return
+          return;
         }
-        e.stopPropagation()
+        e.stopPropagation();
         if (data.type === "folder") {
-          node.toggle()
+          node.toggle();
         } else if (data.type === "document" && data.doc) {
-          setCurrentDocument(data.doc)
+          setCurrentDocument(data.doc);
         }
       }}
       onContextMenu={(e) => onContextMenu(e, data)}
     >
       {data.type === "folder" ? (
         <button
-          onClick={(e) => { e.stopPropagation(); node.toggle() }}
+          onClick={(e) => {
+            e.stopPropagation();
+            node.toggle();
+          }}
           className="flex items-center justify-center h-5 w-5 rounded hover:bg-accent shrink-0"
         >
-          <ChevronRight className={`h-3.5 w-3.5 transition-transform text-muted-foreground ${node.isOpen ? "rotate-90" : ""}`} />
+          <ChevronRight
+            className={`h-3.5 w-3.5 transition-transform text-muted-foreground ${node.isOpen ? "rotate-90" : ""}`}
+          />
         </button>
       ) : (
         <span className="inline-block w-5 shrink-0" />
       )}
 
       {data.type === "folder" ? (
-        node.isOpen
-          ? <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-          : <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+        node.isOpen ? (
+          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+        )
       ) : (
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
@@ -506,36 +589,42 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
           defaultValue={data.name}
           autoFocus
           onBlur={(e) => {
-            const val = e.target.value.trim()
+            const val = e.target.value.trim();
             if (val) {
-              node.submit(val)
+              node.submit(val);
             } else {
               // Revert to original name on blur
-              node.reset()
+              node.reset();
             }
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              const val = (e.target as HTMLInputElement).value.trim()
+              const val = (e.target as HTMLInputElement).value.trim();
               if (!val) {
-                e.preventDefault()
-                return // ignore empty name on Enter
+                e.preventDefault();
+                return; // ignore empty name on Enter
               }
-              node.submit(val)
+              node.submit(val);
             }
             if (e.key === "Escape") {
-              const id = node.id
-              node.reset()
+              const id = node.id;
+              node.reset();
               // If it's a newly created folder (empty name), delete it
               if (id.startsWith("folder:") && !data.name && data.folder) {
-                handleDeleteFolder(id.slice(7))
+                handleDeleteFolder(id.slice(7));
               }
             }
           }}
         />
       ) : (
-        <span className="truncate min-w-0 flex-1 text-sm" style={{ width: 0 }} title={data.name}>{data.name}</span>
+        <span
+          className="truncate min-w-0 flex-1 text-sm"
+          style={{ width: 0 }}
+          title={data.name}
+        >
+          {data.name}
+        </span>
       )}
     </div>
-  )
+  );
 }

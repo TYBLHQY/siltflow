@@ -366,30 +366,133 @@ const HYPHEN_EXCEPTIONS: Record<string, string[]> = {
   withstand: ["with", "stand"],
   wonderful: ["won", "der", "ful"],
   worldwide: ["world", "wide"],
-}
+};
 
 // ---------------------------------------------------------------------------
 // Known prefixes and suffixes for rule-based hyphenation
 // ---------------------------------------------------------------------------
 const PREFIXES = [
-  "anti", "auto", "be", "bi", "co", "com", "con", "contra", "counter",
-  "de", "dis", "down", "em", "en", "ex", "extra", "fore", "hyper",
-  "il", "im", "in", "inter", "intra", "ir", "macro", "mal", "micro",
-  "mid", "mis", "mono", "multi", "non", "omni", "out", "over", "para",
-  "poly", "post", "pre", "pro", "pseudo", "quasi", "re", "retro",
-  "semi", "step", "sub", "super", "sur", "tele", "trans", "tri",
-  "ultra", "un", "under", "up",
-].sort((a, b) => b.length - a.length) // longest first
+  "anti",
+  "auto",
+  "be",
+  "bi",
+  "co",
+  "com",
+  "con",
+  "contra",
+  "counter",
+  "de",
+  "dis",
+  "down",
+  "em",
+  "en",
+  "ex",
+  "extra",
+  "fore",
+  "hyper",
+  "il",
+  "im",
+  "in",
+  "inter",
+  "intra",
+  "ir",
+  "macro",
+  "mal",
+  "micro",
+  "mid",
+  "mis",
+  "mono",
+  "multi",
+  "non",
+  "omni",
+  "out",
+  "over",
+  "para",
+  "poly",
+  "post",
+  "pre",
+  "pro",
+  "pseudo",
+  "quasi",
+  "re",
+  "retro",
+  "semi",
+  "step",
+  "sub",
+  "super",
+  "sur",
+  "tele",
+  "trans",
+  "tri",
+  "ultra",
+  "un",
+  "under",
+  "up",
+].sort((a, b) => b.length - a.length); // longest first
 
 const SUFFIXES = [
-  "able", "age", "al", "ance", "ant", "ard", "arian", "ary", "ation",
-  "dom", " edged", "en", "ence", "ent", "er", "ern", "ery", "ese",
-  "esque", "est", "etic", "ful", "fy", "hood", "ial", "ian", "ible",
-  "ic", "ical", "ing", "ion", "ious", "ise", "ish", "ism", "ist",
-  "ite", "ity", "ive", "ize", "less", "let", "ling", "ly", "ment",
-  "ness", "oid", "or", "ory", "ous", "ship", "sion", "some", "tion",
-  "ture", "ty", "ure", "ward", "ware", "wise", "y",
-].sort((a, b) => b.length - a.length) // longest first
+  "able",
+  "age",
+  "al",
+  "ance",
+  "ant",
+  "ard",
+  "arian",
+  "ary",
+  "ation",
+  "dom",
+  " edged",
+  "en",
+  "ence",
+  "ent",
+  "er",
+  "ern",
+  "ery",
+  "ese",
+  "esque",
+  "est",
+  "etic",
+  "ful",
+  "fy",
+  "hood",
+  "ial",
+  "ian",
+  "ible",
+  "ic",
+  "ical",
+  "ing",
+  "ion",
+  "ious",
+  "ise",
+  "ish",
+  "ism",
+  "ist",
+  "ite",
+  "ity",
+  "ive",
+  "ize",
+  "less",
+  "let",
+  "ling",
+  "ly",
+  "ment",
+  "ness",
+  "oid",
+  "or",
+  "ory",
+  "ous",
+  "ship",
+  "sion",
+  "some",
+  "tion",
+  "ture",
+  "ty",
+  "ure",
+  "ward",
+  "ware",
+  "wise",
+  "y",
+].sort((a, b) => b.length - a.length); // longest first
 
 // ---------------------------------------------------------------------------
 // Main hyphenation entry point
@@ -405,16 +508,16 @@ export function hyphenateWord(word: string): string[] {
   const stripped = word.replace(
     /[.,;:!?"'""'--\-–—(){}[\]<>/\\@#$%^&*+=~`|]/g,
     "",
-  )
-  if (stripped.length < 5) return [word]
+  );
+  if (stripped.length < 5) return [word];
 
-  const lower = stripped.toLowerCase()
+  const lower = stripped.toLowerCase();
 
   // 1. Check exceptions dictionary
-  const exception = HYPHEN_EXCEPTIONS[lower]
+  const exception = HYPHEN_EXCEPTIONS[lower];
   if (exception) {
     // Map back to the original word (preserve capitalization)
-    return mapExceptionToOriginal(word, stripped, exception)
+    return mapExceptionToOriginal(word, stripped, exception);
   }
 
   // 2. Try known prefixes — both parts must have ≥3 letter characters
@@ -424,8 +527,8 @@ export function hyphenateWord(word: string): string[] {
       lower.length - prefix.length >= 3 &&
       prefix.length >= 3
     ) {
-      const splitAt = prefix.length
-      return [word.slice(0, splitAt), word.slice(splitAt)]
+      const splitAt = prefix.length;
+      return [word.slice(0, splitAt), word.slice(splitAt)];
     }
   }
 
@@ -436,13 +539,13 @@ export function hyphenateWord(word: string): string[] {
       lower.length - suffix.length >= 3 &&
       suffix.length >= 3
     ) {
-      const splitAt = lower.length - suffix.length
-      return [word.slice(0, splitAt), word.slice(splitAt)]
+      const splitAt = lower.length - suffix.length;
+      return [word.slice(0, splitAt), word.slice(splitAt)];
     }
   }
 
   // 4. Fallback: no hyphenation
-  return [word]
+  return [word];
 }
 
 /**
@@ -452,20 +555,20 @@ export function hyphenateWord(word: string): string[] {
 export function hyphenateText(text: string): string {
   // Split on word boundaries (keep delimiters)
   return text.replace(/[^\s]+/g, (word) => {
-    const parts = hyphenateWord(word)
-    if (parts.length <= 1) return word
+    const parts = hyphenateWord(word);
+    if (parts.length <= 1) return word;
     // Only hyphenate if every part has ≥3 letter characters
     // (prevents orphan fragments like "In-" on a line alone)
-    if (parts.some((p) => p.replace(/[^a-zA-Z]/g, "").length < 3)) return word
-    return parts.join("­")
-  })
+    if (parts.some((p) => p.replace(/[^a-zA-Z]/g, "").length < 3)) return word;
+    return parts.join("­");
+  });
 }
 
 /**
  * Test whether a word should be hyphenated (for external use).
  */
 export function canHyphenate(word: string): boolean {
-  return hyphenateWord(word).length > 1
+  return hyphenateWord(word).length > 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -481,17 +584,17 @@ function mapExceptionToOriginal(
   _stripped: string,
   exception: string[],
 ): string[] {
-  const result: string[] = []
-  let pos = 0
+  const result: string[] = [];
+  let pos = 0;
   for (const part of exception) {
-    const match = original.slice(pos, pos + part.length)
-    result.push(match)
-    pos += part.length
+    const match = original.slice(pos, pos + part.length);
+    result.push(match);
+    pos += part.length;
   }
   // Append any remaining punctuation that was stripped
   if (pos < original.length) {
     // Attach trailing punctuation to the last part
-    result[result.length - 1] += original.slice(pos)
+    result[result.length - 1] += original.slice(pos);
   }
-  return result
+  return result;
 }

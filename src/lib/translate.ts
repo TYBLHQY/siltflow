@@ -7,9 +7,9 @@
  * (Migaku, Readlang, LingQ, DeepL, Wiktextract).
  */
 
-import type { AIProfile } from "@/stores/ai.store"
-import { chatCompletion } from "@/lib/ai"
-import type { AIAnnotationData } from "@/lib/annotation-types"
+import type { AIProfile } from "@/stores/ai.store";
+import { chatCompletion } from "@/lib/ai";
+import type { AIAnnotationData } from "@/lib/annotation-types";
 
 // ===========================================================================
 // Types
@@ -17,17 +17,17 @@ import type { AIAnnotationData } from "@/lib/annotation-types"
 
 export interface TranslateOptions {
   /** The selected text to translate / analyse. */
-  text: string
+  text: string;
   /** The sentence from the document that contains this text. */
-  contextSentence?: string
+  contextSentence?: string;
   /** Source language code (ISO 639-1). Auto-detected if omitted. */
-  sourceLang?: string
+  sourceLang?: string;
   /** Target language code. Default: "zh" */
-  targetLang: string
+  targetLang: string;
   /** Optional article background context (see extractArticleContext). */
-  context?: string
+  context?: string;
   /** AbortSignal for cancellation. */
-  signal?: AbortSignal
+  signal?: AbortSignal;
 }
 
 // ===========================================================================
@@ -37,9 +37,8 @@ export interface TranslateOptions {
 function buildTranslatePrompt(
   sourceLang: string,
   targetLang: string,
-  _contextSentence?: string,
 ): string {
-  const isSameLanguage = sourceLang === targetLang
+  const isSameLanguage = sourceLang === targetLang;
 
   const BASE_SCHEMA = `{
   "translation": "<natural translation>",
@@ -67,7 +66,7 @@ function buildTranslatePrompt(
     "tags": ["<domain tag>"]
   },
   "context_sentence": "<context sentence if provided, else omit>"
-}`
+}`;
 
   if (isSameLanguage) {
     return `You are a professional lexicographer. Explain the given word or phrase in ${targetLang}, providing definitions, usage examples, synonyms, and collocations.
@@ -90,7 +89,7 @@ CONSTRAINTS:
 - POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
 - Use ISO 639-1 language codes.
 - cleaned_input: normalize whitespace, remove artifacts.
-Source language: ${sourceLang}. Target language: ${targetLang}.`
+Source language: ${sourceLang}. Target language: ${targetLang}.`;
   } else {
     return `You are a professional bilingual lexicographer. Given a text selection and optional article context, provide translation and lexical analysis.
 
@@ -112,7 +111,7 @@ CONSTRAINTS:
 - POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
 - Use ISO 639-1 language codes.
 - cleaned_input: normalize whitespace, remove artifacts.
-Source language: ${sourceLang}. Target language: ${targetLang}.`
+Source language: ${sourceLang}. Target language: ${targetLang}.`;
   }
 }
 
@@ -124,23 +123,27 @@ export async function translateAnnotation(
   profile: AIProfile,
   options: TranslateOptions,
 ): Promise<AIAnnotationData> {
-  const sourceLang = options.sourceLang ?? "auto"
-  const targetLang = options.targetLang ?? "zh"
+  const sourceLang = options.sourceLang ?? "auto";
+  const targetLang = options.targetLang ?? "zh";
 
-  let systemContent = buildTranslatePrompt(sourceLang, targetLang, options.contextSentence)
+  let systemContent = buildTranslatePrompt(
+    sourceLang,
+    targetLang,
+    options.contextSentence,
+  );
 
   // Append article context to system prompt for disambiguation
   if (options.context) {
-    systemContent += `\n\nCONTEXT (article excerpt for disambiguation):\n${options.context}`
+    systemContent += `\n\nCONTEXT (article excerpt for disambiguation):\n${options.context}`;
   }
 
   // Build user message: text + context sentence hint
-  let userContent = options.text
+  let userContent = options.text;
   if (options.contextSentence) {
-    userContent += `\n\nCONTEXT SENTENCE:\n${options.contextSentence}`
+    userContent += `\n\nCONTEXT SENTENCE:\n${options.contextSentence}`;
   }
 
-  let fullResponse = ""
+  let fullResponse = "";
 
   await chatCompletion(
     profile,
@@ -149,21 +152,29 @@ export async function translateAnnotation(
       { role: "user", content: userContent },
     ],
     (chunk) => {
-      fullResponse += chunk.content
+      fullResponse += chunk.content;
     },
     options.signal,
-  )
+  );
 
   if (!fullResponse) {
-    throw new Error("Empty response from AI model")
+    throw new Error("Empty response from AI model");
   }
 
-  console.log("[translate] raw response length:", fullResponse.length, "preview:", fullResponse.slice(0, 200))
+  console.log(
+    "[translate] raw response length:",
+    fullResponse.length,
+    "preview:",
+    fullResponse.slice(0, 200),
+  );
 
-  const rawJson = fullResponse.trim()
-  const cleaned = rawJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
+  const rawJson = fullResponse.trim();
+  const cleaned = rawJson
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
 
-  return JSON.parse(cleaned) as AIAnnotationData
+  return JSON.parse(cleaned) as AIAnnotationData;
 }
 
 // ===========================================================================
@@ -175,41 +186,43 @@ export async function translateAnnotation(
  * translation background context.
  */
 export function extractArticleContext(pdfText: string): string {
-  const lines = pdfText.split("\n")
-  const result: string[] = []
-  let remaining = 3000
+  const lines = pdfText.split("\n");
+  const result: string[] = [];
+  let remaining = 3000;
 
   // 1. First block (up to 2000 chars)
-  const firstBlock = pdfText.slice(0, 2000).replace(/\s+/g, " ").trim()
-  result.push(firstBlock)
-  remaining -= firstBlock.length
+  const firstBlock = pdfText.slice(0, 2000).replace(/\s+/g, " ").trim();
+  result.push(firstBlock);
+  remaining -= firstBlock.length;
 
-  if (remaining <= 0) return result.join("\n\n")
+  if (remaining <= 0) return result.join("\n\n");
 
   // 2 & 3. Scan for heading-like lines and grab the first sentence after each
-  const headingRe = /^#{1,3}\s|^(?:Abstract|Introduction|Background|Method|Result|Discussion|Conclusion|References)\b/i
+  const headingRe =
+    /^#{1,3}\s|^(?:Abstract|Introduction|Background|Method|Result|Discussion|Conclusion|References)\b/i;
 
   for (let i = 0; i < lines.length && remaining > 0; i++) {
-    const line = lines[i]!.trim()
-    if (!line) continue
+    const line = lines[i]!.trim();
+    if (!line) continue;
     if (headingRe.test(line)) {
-      result.push(line)
-      remaining -= line.length
+      result.push(line);
+      remaining -= line.length;
 
-      let sentence = ""
+      let sentence = "";
       for (let j = i + 1; j < Math.min(lines.length, i + 5); j++) {
-        const next = lines[j]!.trim()
-        if (!next) break
-        sentence = next
-        break
+        const next = lines[j]!.trim();
+        if (!next) break;
+        sentence = next;
+        break;
       }
       if (sentence) {
-        const snippet = sentence.length > 500 ? sentence.slice(0, 500) + "…" : sentence
-        result.push(snippet)
-        remaining -= snippet.length
+        const snippet =
+          sentence.length > 500 ? sentence.slice(0, 500) + "…" : sentence;
+        result.push(snippet);
+        remaining -= snippet.length;
       }
     }
   }
 
-  return result.join("\n\n").replace(/\s+/g, " ").trim()
+  return result.join("\n\n").replace(/\s+/g, " ").trim();
 }

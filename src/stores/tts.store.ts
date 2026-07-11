@@ -1,50 +1,50 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
-export type TTSProvider = "edge-tts" | "mimo"
+export type TTSProvider = "edge-tts" | "mimo";
 
 export interface TTSConfig {
   /** Active TTS provider */
-  provider: TTSProvider
+  provider: TTSProvider;
   // ── edge-tts settings ──
   /** Absolute path to edge-tts binary, or "" to search via PATH. */
-  binaryPath: string
+  binaryPath: string;
   /** Speech rate string, e.g. "+0%", "-10%", "+50%". */
-  rate: string
+  rate: string;
   /** Volume string, e.g. "+0%", "-20%", "+30%". */
-  volume: string
+  volume: string;
   /** Pitch string, e.g. "+0Hz", "-10Hz", "+20Hz". */
-  pitch: string
+  pitch: string;
   /** Default voice for general use (usually en-US). */
-  defaultVoice: string
+  defaultVoice: string;
   /** Per-language voice overrides: { "zh": "zh-CN-XiaoxiaoNeural", ... } */
-  perLanguageVoices: Record<string, string>
+  perLanguageVoices: Record<string, string>;
   /** Cached voice lists from edge-tts --list-voices, keyed by language id. */
-  voiceLists: Record<string, string[]>
+  voiceLists: Record<string, string[]>;
   // ── MiMo settings ──
   /** MiMo API key */
-  mimoApiKey: string
+  mimoApiKey: string;
   /** MiMo voice ID (e.g. "冰糖", "Chloe") */
-  mimoVoice: string
+  mimoVoice: string;
   /** MiMo model */
-  mimoModel: string
+  mimoModel: string;
   /** MiMo style — natural language tone instruction (sent in user role) */
-  mimoStylePrompt: string
+  mimoStylePrompt: string;
   /** MiMo inline audio tags — inserted at start of assistant content (e.g. "(温柔)") */
-  mimoInlineTag: string
+  mimoInlineTag: string;
   /** Whether auto-TTS after AI translation is enabled. */
-  autoTts: boolean
+  autoTts: boolean;
 }
 
 interface TTSStoreState {
-  config: TTSConfig
-  loaded: boolean
-  loadingVoices: boolean
-  setConfig: (patch: Partial<TTSConfig>) => void
-  refreshVoices: () => Promise<void>
-  getVoice: (language?: string) => string
+  config: TTSConfig;
+  loaded: boolean;
+  loadingVoices: boolean;
+  setConfig: (patch: Partial<TTSConfig>) => void;
+  refreshVoices: () => Promise<void>;
+  getVoice: (language?: string) => string;
 }
 
-const STORAGE_KEY = "ttsConfig"
+const STORAGE_KEY = "ttsConfig";
 
 const DEFAULT_CONFIG: TTSConfig = {
   provider: "edge-tts",
@@ -68,7 +68,7 @@ const DEFAULT_CONFIG: TTSConfig = {
   mimoStylePrompt: "",
   mimoInlineTag: "",
   autoTts: false,
-}
+};
 
 export const MIMO_PRESET_VOICES = [
   { id: "冰糖", label: "冰糖 (Chinese, Female)" },
@@ -79,16 +79,22 @@ export const MIMO_PRESET_VOICES = [
   { id: "Chloe", label: "Chloe (English, Female)" },
   { id: "Milo", label: "Milo (English, Male)" },
   { id: "Dean", label: "Dean (English, Male)" },
-]
+];
 
 export const MIMO_MODELS = [
   { id: "mimo-v2.5-tts", label: "mimo-v2.5-tts (Preset voices)" },
-  { id: "mimo-v2.5-tts-voicedesign", label: "mimo-v2.5-tts-voicedesign (Voice design)" },
-  { id: "mimo-v2.5-tts-voiceclone", label: "mimo-v2.5-tts-voiceclone (Voice clone)" },
-]
+  {
+    id: "mimo-v2.5-tts-voicedesign",
+    label: "mimo-v2.5-tts-voicedesign (Voice design)",
+  },
+  {
+    id: "mimo-v2.5-tts-voiceclone",
+    label: "mimo-v2.5-tts-voiceclone (Voice clone)",
+  },
+];
 
 function persist(config: TTSConfig) {
-  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config })
+  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });
 }
 
 export const useTTSStore = create<TTSStoreState>((set, get) => ({
@@ -98,16 +104,18 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
 
   setConfig: (patch) =>
     set((s) => {
-      const next = { ...s.config, ...patch }
-      persist(next)
-      return { config: next }
+      const next = { ...s.config, ...patch };
+      persist(next);
+      return { config: next };
     }),
 
   refreshVoices: async () => {
-    set({ loadingVoices: true })
+    set({ loadingVoices: true });
     try {
-      const config = get().config
-      const allVoices = await window.siltflow.tts.listVoices(config.binaryPath || undefined)
+      const config = get().config;
+      const allVoices = await window.siltflow.tts.listVoices(
+        config.binaryPath || undefined,
+      );
 
       // Group by language prefix
       const prefixMap: Record<string, string> = {
@@ -117,44 +125,46 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
         ja: "ja-",
         fr: "fr-",
         es: "es-",
-      }
-      const lists: Record<string, string[]> = {}
+      };
+      const lists: Record<string, string[]> = {};
       for (const [langId, prefix] of Object.entries(prefixMap)) {
-        const filtered = allVoices.filter((v) => v.startsWith(prefix))
-        if (filtered.length > 0) lists[langId] = filtered
+        const filtered = allVoices.filter((v) => v.startsWith(prefix));
+        if (filtered.length > 0) lists[langId] = filtered;
       }
 
-      const current = get().config
-      const next = { ...current, voiceLists: lists }
-      persist(next)
-      set({ config: next, loadingVoices: false })
+      const current = get().config;
+      const next = { ...current, voiceLists: lists };
+      persist(next);
+      set({ config: next, loadingVoices: false });
     } catch {
-      set({ loadingVoices: false })
+      set({ loadingVoices: false });
     }
   },
 
   getVoice: (language?: string) => {
-    const { config } = get()
-    if (config.provider === "mimo") return config.mimoVoice
+    const { config } = get();
+    if (config.provider === "mimo") return config.mimoVoice;
     if (language && config.perLanguageVoices[language]) {
-      return config.perLanguageVoices[language]
+      return config.perLanguageVoices[language];
     }
-    return config.defaultVoice
+    return config.defaultVoice;
   },
-}))
+}));
 
 /** Call once on app boot to restore TTS config from vault. */
 export async function loadTTSConfigFromVault() {
   try {
-    const cfg = await window.siltflow.vaultConfigGet()
-    const saved = (cfg as Record<string, unknown>)[STORAGE_KEY]
+    const cfg = await window.siltflow.vaultConfigGet();
+    const saved = (cfg as Record<string, unknown>)[STORAGE_KEY];
     if (saved && typeof saved === "object") {
       useTTSStore.setState({
         config: { ...DEFAULT_CONFIG, ...(saved as Partial<TTSConfig>) },
         loaded: true,
-      })
-      return
+      });
+      return;
     }
-  } catch { /* ignore */ }
-  useTTSStore.setState({ loaded: true })
+  } catch {
+    /* ignore */
+  }
+  useTTSStore.setState({ loaded: true });
 }

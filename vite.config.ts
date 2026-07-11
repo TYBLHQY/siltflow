@@ -4,7 +4,6 @@ import fs from 'node:fs'
 import electron from 'vite-plugin-electron/simple'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { visualizer } from 'rollup-plugin-visualizer'
 
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 

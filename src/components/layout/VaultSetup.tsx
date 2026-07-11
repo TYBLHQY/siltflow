@@ -1,43 +1,43 @@
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { FolderOpen, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { FolderOpen, Loader2 } from "lucide-react";
 
 interface VaultSetupProps {
-  onReady: () => void
+  onReady: () => void;
 }
 
 export function VaultSetup({ onReady }: VaultSetupProps) {
-  const [loading, setLoading] = useState(true)
-  const [, setVaultPath] = useState("")
+  const [loading, setLoading] = useState(true);
+  const [, setVaultPath] = useState("");
 
   useEffect(() => {
     window.siltflow.vaultGetPath().then((p) => {
       if (p) {
-        setVaultPath(p)
-        onReady()
+        setVaultPath(p);
+        onReady();
       } else {
-        setLoading(false)
+        setLoading(false);
       }
-    })
-  }, [onReady])
+    });
+  }, [onReady]);
 
   const handleSelect = async () => {
-    setLoading(true)
-    const path = await window.siltflow.vaultSelect()
+    setLoading(true);
+    const path = await window.siltflow.vaultSelect();
     if (path) {
-      setVaultPath(path)
-      onReady()
+      setVaultPath(path);
+      onReady();
     } else {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   return (
@@ -49,8 +49,8 @@ export function VaultSetup({ onReady }: VaultSetupProps) {
         <div>
           <h1 className="text-xl font-semibold mb-2">Welcome to Siltflow</h1>
           <p className="text-sm text-muted-foreground">
-            Choose a vault directory to store your documents, annotations, and learning data.
-            You can change this later in settings.
+            Choose a vault directory to store your documents, annotations, and
+            learning data. You can change this later in settings.
           </p>
         </div>
         <Button onClick={handleSelect} className="w-full">
@@ -59,5 +59,5 @@ export function VaultSetup({ onReady }: VaultSetupProps) {
         </Button>
       </div>
     </div>
-  )
+  );
 }

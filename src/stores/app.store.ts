@@ -1,36 +1,40 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
 interface AppSettingsState {
-  loaded: boolean
-  checkUpdateOnStartup: boolean
-  setCheckUpdateOnStartup: (v: boolean) => void
+  loaded: boolean;
+  checkUpdateOnStartup: boolean;
+  setCheckUpdateOnStartup: (v: boolean) => void;
 }
 
-const STORAGE_KEY = "appSettings"
+const STORAGE_KEY = "appSettings";
 
 export const useAppSettingsStore = create<AppSettingsState>()((set) => ({
   loaded: false,
   checkUpdateOnStartup: true,
 
   setCheckUpdateOnStartup: (v) => {
-    set({ checkUpdateOnStartup: v })
-    window.siltflow.vaultConfigSet({ [STORAGE_KEY]: { checkUpdateOnStartup: v } })
+    set({ checkUpdateOnStartup: v });
+    window.siltflow.vaultConfigSet({
+      [STORAGE_KEY]: { checkUpdateOnStartup: v },
+    });
   },
-}))
+}));
 
 /** Call once on app boot to restore app settings from vault. */
 export async function loadAppSettingsFromVault() {
   try {
-    const cfg = await window.siltflow.vaultConfigGet()
+    const cfg = await window.siltflow.vaultConfigGet();
     const saved = (cfg as Record<string, unknown>)[STORAGE_KEY] as
-      | Partial<AppSettingsState>
-      | undefined
+      Partial<AppSettingsState> | undefined;
     if (saved && typeof saved === "object") {
-      const patch: Partial<AppSettingsState> = {}
-      if (typeof saved.checkUpdateOnStartup === "boolean") patch.checkUpdateOnStartup = saved.checkUpdateOnStartup
-      useAppSettingsStore.setState({ ...patch, loaded: true })
-      return
+      const patch: Partial<AppSettingsState> = {};
+      if (typeof saved.checkUpdateOnStartup === "boolean")
+        patch.checkUpdateOnStartup = saved.checkUpdateOnStartup;
+      useAppSettingsStore.setState({ ...patch, loaded: true });
+      return;
     }
-  } catch { /* ignore */ }
-  useAppSettingsStore.setState({ loaded: true })
+  } catch {
+    /* ignore */
+  }
+  useAppSettingsStore.setState({ loaded: true });
 }

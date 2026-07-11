@@ -1,44 +1,73 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from "react"
-import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard, PenLine, MousePointer2, Info, ExternalLink, Download } from "lucide-react"
-import { IconText } from "@/components/ui/icon-text"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { PdfViewer } from "@/components/document/PdfViewer"
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
-import { useAnnotationStore, type AnnotationEmbedData } from "@/stores/annotation.store"
-import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store"
-import { useFSRSStore } from "@/stores/fsrs.store"
-import { useStyleStore } from "@/stores/style.store"
-import { useTTSStore, MIMO_PRESET_VOICES, MIMO_MODELS } from "@/stores/tts.store"
-import { useShortcutsStore } from "@/stores/shortcuts.store"
-import { useThemeStore } from "@/stores/theme.store"
-import { formatShortcut } from "@/lib/keyboard-keys"
-import { useAppSettingsStore } from "@/stores/app.store"
-import { useDocumentStore } from "@/stores/document.store"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import {
+  BookOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Maximize,
+  Minimize,
+  Settings,
+  Bot,
+  X,
+  BrainCircuit,
+  TextSelect,
+  Search,
+  Volume2,
+  Loader2,
+  Keyboard,
+  PenLine,
+  MousePointer2,
+  Info,
+  ExternalLink,
+  Download,
+} from "lucide-react";
+import { IconText } from "@/components/ui/icon-text";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { PdfViewer } from "@/components/document/PdfViewer";
+import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import {
+  useAnnotationStore,
+  type AnnotationEmbedData,
+} from "@/stores/annotation.store";
+import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store";
+import { useFSRSStore } from "@/stores/fsrs.store";
+import { useStyleStore } from "@/stores/style.store";
+import {
+  useTTSStore,
+  MIMO_PRESET_VOICES,
+  MIMO_MODELS,
+} from "@/stores/tts.store";
+import { useShortcutsStore } from "@/stores/shortcuts.store";
+import { useThemeStore } from "@/stores/theme.store";
+import { formatShortcut } from "@/lib/keyboard-keys";
+import { useAppSettingsStore } from "@/stores/app.store";
+import { useDocumentStore } from "@/stores/document.store";
 
 // ---------------------------------------------------------------------------
 // Page navigation — jump to page (only shown when a PDF is open)
 // ---------------------------------------------------------------------------
 function PageNav() {
-  const goToPage = usePdfViewerStore((s) => s.goToPage)
-  const currentPage = usePdfViewerStore((s) => s.currentPage)
-  const pdfDocument = usePdfViewerStore((s) => s.pdfDocument)
-  const [input, setInput] = useState("")
-  const [focused, setFocused] = useState(false)
+  const goToPage = usePdfViewerStore((s) => s.goToPage);
+  const currentPage = usePdfViewerStore((s) => s.currentPage);
+  const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
+  const [input, setInput] = useState("");
+  const [focused, setFocused] = useState(false);
 
-  const totalPages = pdfDocument?.numPages ?? 0
+  const totalPages = pdfDocument?.numPages ?? 0;
 
   const handleJump = useCallback(() => {
-    const n = parseInt(input, 10)
+    const n = parseInt(input, 10);
     if (isNaN(n) || n < 1 || n > totalPages || !goToPage) {
-      setInput("")
-      return
+      setInput("");
+      return;
     }
-    goToPage(n)
-    setInput("")
-  }, [input, totalPages, goToPage])
+    goToPage(n);
+    setInput("");
+  }, [input, totalPages, goToPage]);
 
-  if (!pdfDocument || totalPages === 0) return null
+  if (!pdfDocument || totalPages === 0) return null;
 
   return (
     <div className="flex items-center h-full shrink-0">
@@ -49,10 +78,16 @@ function PageNav() {
             value={input}
             onChange={(e) => setInput(e.target.value.replace(/\D/g, ""))}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleJump()
-              if (e.key === "Escape") { setInput(""); setFocused(false) }
+              if (e.key === "Enter") handleJump();
+              if (e.key === "Escape") {
+                setInput("");
+                setFocused(false);
+              }
             }}
-            onBlur={() => { setFocused(false); setInput("") }}
+            onBlur={() => {
+              setFocused(false);
+              setInput("");
+            }}
             autoFocus
             placeholder={String(currentPage)}
           />
@@ -68,15 +103,15 @@ function PageNav() {
         <span className="opacity-60">/ {totalPages}</span>
       </div>
     </div>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Quick-add toggle button — placed left of fit-width in the toolbar.
 // ---------------------------------------------------------------------------
 function QuickAddToggle() {
-  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled)
-  const setQuickAddEnabled = usePdfViewerStore((s) => s.setQuickAddEnabled)
+  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled);
+  const setQuickAddEnabled = usePdfViewerStore((s) => s.setQuickAddEnabled);
 
   return (
     <Button
@@ -84,11 +119,19 @@ function QuickAddToggle() {
       size="icon"
       className={`h-6 w-6 ${quickAddEnabled ? "bg-accent" : ""}`}
       onClick={() => setQuickAddEnabled(!quickAddEnabled)}
-      title={quickAddEnabled ? "Quick-add mode (selection auto-annotates)" : "Manual mode (selection shows add button)"}
+      title={
+        quickAddEnabled
+          ? "Quick-add mode (selection auto-annotates)"
+          : "Manual mode (selection shows add button)"
+      }
     >
-      {quickAddEnabled ? <PenLine className="h-4 w-4" /> : <MousePointer2 className="h-4 w-4" />}
+      {quickAddEnabled ? (
+        <PenLine className="h-4 w-4" />
+      ) : (
+        <MousePointer2 className="h-4 w-4" />
+      )}
     </Button>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -97,22 +140,22 @@ function QuickAddToggle() {
 // numeric pdfScaleValue prop (which must stay a number for proximity-check).
 // ---------------------------------------------------------------------------
 function FitWidthButton() {
-  const fitWidth = usePdfViewerStore((s) => s.fitWidth)
-  const setFitWidth = usePdfViewerStore((s) => s.setFitWidth)
-  const setViewerScale = usePdfViewerStore((s) => s.setViewerScale)
-  const setPdfScale = usePdfViewerStore((s) => s.setPdfScale)
+  const fitWidth = usePdfViewerStore((s) => s.fitWidth);
+  const setFitWidth = usePdfViewerStore((s) => s.setFitWidth);
+  const setViewerScale = usePdfViewerStore((s) => s.setViewerScale);
+  const setPdfScale = usePdfViewerStore((s) => s.setPdfScale);
 
   const toggle = useCallback(() => {
-    if (!setViewerScale) return
+    if (!setViewerScale) return;
     if (fitWidth) {
-      setViewerScale("auto")
-      setFitWidth(false)
-      setPdfScale(0) // back to auto mode
+      setViewerScale("auto");
+      setFitWidth(false);
+      setPdfScale(0); // back to auto mode
     } else {
-      setViewerScale("page-width")
-      setFitWidth(true)
+      setViewerScale("page-width");
+      setFitWidth(true);
     }
-  }, [fitWidth, setViewerScale, setFitWidth, setPdfScale])
+  }, [fitWidth, setViewerScale, setFitWidth, setPdfScale]);
 
   return (
     <Button
@@ -122,16 +165,20 @@ function FitWidthButton() {
       onClick={toggle}
       title={fitWidth ? "Auto zoom" : "Fit to width"}
     >
-      {fitWidth ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+      {fitWidth ? (
+        <Minimize className="h-4 w-4" />
+      ) : (
+        <Maximize className="h-4 w-4" />
+      )}
     </Button>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Unified Settings modal — left sidebar navigation, right panel content
 // ---------------------------------------------------------------------------
 
-type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "about"
+type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "about";
 
 const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
   { id: "ai", icon: Bot, label: "AI" },
@@ -140,20 +187,21 @@ const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
   { id: "tts", icon: Volume2, label: "TTS" },
   { id: "shortcuts", icon: Keyboard, label: "Shortcuts" },
   { id: "about", icon: Info, label: "About" },
-]
+];
 
 // ---------------------------------------------------------------------------
 // Settings button — opens unified settings dialog
 // ---------------------------------------------------------------------------
 function SettingsButton() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   // Listen for the shortcut-triggered settings toggle event
   useEffect(() => {
-    const handler = () => setOpen((c) => !c)
-    window.addEventListener("siltflow:toggle-settings", handler)
-    return () => window.removeEventListener("siltflow:toggle-settings", handler)
-  }, [])
+    const handler = () => setOpen((c) => !c);
+    window.addEventListener("siltflow:toggle-settings", handler);
+    return () =>
+      window.removeEventListener("siltflow:toggle-settings", handler);
+  }, []);
 
   return (
     <>
@@ -168,24 +216,38 @@ function SettingsButton() {
       </Button>
       <UnifiedSettingsModal open={open} onClose={() => setOpen(false)} />
     </>
-  )
+  );
 }
 
-function UnifiedSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [tab, setTab] = useState<SettingsTab>("ai")
+function UnifiedSettingsModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<SettingsTab>("ai");
 
   // Close on Escape key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
-    }
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
-  }, [onClose])
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   return (
-    <Dialog open={open} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent hideClose className="flex w-full max-w-3xl min-h-[500px] rounded-lg border bg-background shadow-xl p-0 gap-0">
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        hideClose
+        className="flex w-full max-w-3xl min-h-[500px] rounded-lg border bg-background shadow-xl p-0 gap-0"
+      >
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
           <div className="flex items-center gap-2 px-2 py-3">
@@ -195,7 +257,7 @@ function UnifiedSettingsModal({ open, onClose }: { open: boolean; onClose: () =>
           </div>
           <nav className="flex flex-col gap-0.5 mt-1">
             {SETTINGS_TABS.map((t) => {
-              const Icon = t.icon
+              const Icon = t.icon;
               return (
                 <button
                   key={t.id}
@@ -206,9 +268,11 @@ function UnifiedSettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   }`}
                   onClick={() => setTab(t.id)}
                 >
-                  <IconText icon={Icon} size="md">{t.label}</IconText>
+                  <IconText icon={Icon} size="md">
+                    {t.label}
+                  </IconText>
                 </button>
-              )
+              );
             })}
           </nav>
         </div>
@@ -235,27 +299,28 @@ function UnifiedSettingsModal({ open, onClose }: { open: boolean; onClose: () =>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // AI Config content (inside unified settings)
 // ---------------------------------------------------------------------------
 function AIConfigContent() {
-  const profiles = useAIStore((s) => s.profiles)
-  const addProfile = useAIStore((s) => s.addProfile)
-  const removeProfile = useAIStore((s) => s.removeProfile)
-  const updateProfile = useAIStore((s) => s.updateProfile)
-  const setActiveProfile = useAIStore((s) => s.setActiveProfile)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [renameId, setRenameId] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState("")
+  const profiles = useAIStore((s) => s.profiles);
+  const addProfile = useAIStore((s) => s.addProfile);
+  const removeProfile = useAIStore((s) => s.removeProfile);
+  const updateProfile = useAIStore((s) => s.updateProfile);
+  const setActiveProfile = useAIStore((s) => s.setActiveProfile);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   // All built-in providers not yet configured
-  const usedKeys = new Set(profiles.map((p) => p.providerKey))
+  const usedKeys = new Set(profiles.map((p) => p.providerKey));
   const availableProviders = BUILTIN_PROVIDERS.filter(
-    (p: { key: string; editable?: boolean }) => !usedKeys.has(p.key) || p.editable,
-  )
+    (p: { key: string; editable?: boolean }) =>
+      !usedKeys.has(p.key) || p.editable,
+  );
 
   return (
     <>
@@ -285,22 +350,26 @@ function AIConfigContent() {
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => {
                       if (renameValue.trim()) {
-                        updateProfile(profile.id, { name: renameValue.trim() })
+                        updateProfile(profile.id, { name: renameValue.trim() });
                       }
-                      setRenameId(null)
+                      setRenameId(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         if (renameValue.trim()) {
-                          updateProfile(profile.id, { name: renameValue.trim() })
+                          updateProfile(profile.id, {
+                            name: renameValue.trim(),
+                          });
                         }
-                        setRenameId(null)
+                        setRenameId(null);
                       }
-                      if (e.key === "Escape") setRenameId(null)
+                      if (e.key === "Escape") setRenameId(null);
                     }}
                   />
                 ) : (
-                  <span className="text-sm font-medium truncate">{profile.name}</span>
+                  <span className="text-sm font-medium truncate">
+                    {profile.name}
+                  </span>
                 )}
                 <span className="text-[10px] text-muted-foreground uppercase">
                   {profile.providerKey}
@@ -318,8 +387,8 @@ function AIConfigContent() {
                 <button
                   className="text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    setRenameId(profile.id)
-                    setRenameValue(profile.name)
+                    setRenameId(profile.id);
+                    setRenameValue(profile.name);
                   }}
                 >
                   Rename
@@ -338,34 +407,48 @@ function AIConfigContent() {
               <>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Base URL</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                      Base URL
+                    </label>
                     <input
                       className="w-full rounded border bg-background px-2 py-1 text-xs"
                       value={profile.baseUrl}
-                      onChange={(e) => updateProfile(profile.id, { baseUrl: e.target.value })}
+                      onChange={(e) =>
+                        updateProfile(profile.id, { baseUrl: e.target.value })
+                      }
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Model</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                      Model
+                    </label>
                     <input
                       className="w-full rounded border bg-background px-2 py-1 text-xs"
                       value={profile.model}
-                      onChange={(e) => updateProfile(profile.id, { model: e.target.value })}
+                      onChange={(e) =>
+                        updateProfile(profile.id, { model: e.target.value })
+                      }
                     />
                   </div>
                 </div>
                 <div className="mb-2">
-                  <label className="block text-[10px] text-muted-foreground mb-0.5">API Key</label>
+                  <label className="block text-[10px] text-muted-foreground mb-0.5">
+                    API Key
+                  </label>
                   <input
                     type="password"
                     className="w-full rounded border bg-background px-2 py-1 text-xs"
                     value={profile.apiKey}
-                    onChange={(e) => updateProfile(profile.id, { apiKey: e.target.value })}
+                    onChange={(e) =>
+                      updateProfile(profile.id, { apiKey: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Temperature</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                      Temperature
+                    </label>
                     <input
                       type="range"
                       min="0"
@@ -374,24 +457,32 @@ function AIConfigContent() {
                       className="w-full"
                       value={profile.temperature}
                       onChange={(e) =>
-                        updateProfile(profile.id, { temperature: parseFloat(e.target.value) })
+                        updateProfile(profile.id, {
+                          temperature: parseFloat(e.target.value),
+                        })
                       }
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Max Tokens</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                      Max Tokens
+                    </label>
                     <input
                       type="number"
                       min="1"
                       className="w-full rounded border bg-background px-2 py-1 text-xs"
                       value={profile.maxTokens}
                       onChange={(e) =>
-                        updateProfile(profile.id, { maxTokens: parseInt(e.target.value, 10) || 512 })
+                        updateProfile(profile.id, {
+                          maxTokens: parseInt(e.target.value, 10) || 512,
+                        })
                       }
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Top P</label>
+                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                      Top P
+                    </label>
                     <input
                       type="range"
                       min="0"
@@ -400,7 +491,9 @@ function AIConfigContent() {
                       className="w-full"
                       value={profile.topP}
                       onChange={(e) =>
-                        updateProfile(profile.id, { topP: parseFloat(e.target.value) })
+                        updateProfile(profile.id, {
+                          topP: parseFloat(e.target.value),
+                        })
                       }
                     />
                   </div>
@@ -417,7 +510,9 @@ function AIConfigContent() {
             {/* Toggle config edit */}
             <button
               className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
-              onClick={() => setEditingId(editingId === profile.id ? null : profile.id)}
+              onClick={() =>
+                setEditingId(editingId === profile.id ? null : profile.id)
+              }
             >
               {editingId === profile.id ? "Collapse" : "Edit params"}
             </button>
@@ -431,17 +526,19 @@ function AIConfigContent() {
           + Add provider
         </summary>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {availableProviders.map((provider: { key: string; label: string }) => (
-            <button
-              key={provider.key}
-              className="rounded-md border bg-background px-2.5 py-1 text-xs transition-colors hover:bg-accent"
-              onClick={() => {
-                addProfile(provider.key)
-              }}
-            >
-              {provider.label}
-            </button>
-          ))}
+          {availableProviders.map(
+            (provider: { key: string; label: string }) => (
+              <button
+                key={provider.key}
+                className="rounded-md border bg-background px-2.5 py-1 text-xs transition-colors hover:bg-accent"
+                onClick={() => {
+                  addProfile(provider.key);
+                }}
+              >
+                {provider.label}
+              </button>
+            ),
+          )}
         </div>
       </details>
 
@@ -453,7 +550,9 @@ function AIConfigContent() {
         <select
           className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
           value={useAIStore.getState().defaultTargetLang}
-          onChange={(e) => useAIStore.getState().setDefaultTargetLang(e.target.value)}
+          onChange={(e) =>
+            useAIStore.getState().setDefaultTargetLang(e.target.value)
+          }
         >
           <option value="zh">中文</option>
           <option value="en">English</option>
@@ -469,16 +568,16 @@ function AIConfigContent() {
         </p>
       </div>
     </>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // FSRS Config modal
 // ---------------------------------------------------------------------------
 function FSRSConfigContent() {
-  const params = useFSRSStore((s) => s.params)
-  const updateParam = useFSRSStore((s) => s.updateParam)
-  const resetParams = useFSRSStore((s) => s.resetParams)
+  const params = useFSRSStore((s) => s.params);
+  const updateParam = useFSRSStore((s) => s.updateParam);
+  const resetParams = useFSRSStore((s) => s.resetParams);
 
   return (
     <>
@@ -500,7 +599,9 @@ function FSRSConfigContent() {
             step="0.01"
             className="w-full"
             value={params.request_retention}
-            onChange={(e) => updateParam("request_retention", parseFloat(e.target.value))}
+            onChange={(e) =>
+              updateParam("request_retention", parseFloat(e.target.value))
+            }
           />
           <p className="text-[10px] text-muted-foreground mt-0.5">
             Higher = more reviews, better retention. Default: 85%
@@ -519,7 +620,9 @@ function FSRSConfigContent() {
             step="30"
             className="w-full"
             value={params.maximum_interval}
-            onChange={(e) => updateParam("maximum_interval", parseInt(e.target.value, 10))}
+            onChange={(e) =>
+              updateParam("maximum_interval", parseInt(e.target.value, 10))
+            }
           />
           <p className="text-[10px] text-muted-foreground mt-0.5">
             Max days between reviews. Default: 365
@@ -557,11 +660,13 @@ function FSRSConfigContent() {
         {/* Learning steps (shown when enable_short_term) */}
         {params.enable_short_term && (
           <div>
-            <label className="block text-xs font-medium mb-1">Learning steps</label>
+            <label className="block text-xs font-medium mb-1">
+              Learning steps
+            </label>
             <div className="flex gap-2">
               {[0, 1].map((idx) => {
-                const raw = (params.learning_steps as string[])[idx] ?? "1m"
-                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 1
+                const raw = (params.learning_steps as string[])[idx] ?? "1m";
+                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 1;
                 return (
                   <div key={idx} className="flex-1 flex items-center gap-1">
                     <input
@@ -570,15 +675,17 @@ function FSRSConfigContent() {
                       className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
                       value={val}
                       onChange={(e) => {
-                        const n = parseInt(e.target.value, 10) || 1
-                        const arr = [...(params.learning_steps as string[])]
-                        arr[idx] = `${n}m`
-                        updateParam("learning_steps" as const, arr as any)
+                        const n = parseInt(e.target.value, 10) || 1;
+                        const arr = [...(params.learning_steps as string[])];
+                        arr[idx] = `${n}m`;
+                        updateParam("learning_steps" as const, arr as any);
                       }}
                     />
-                    <span className="text-xs text-muted-foreground shrink-0">m</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      m
+                    </span>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -587,11 +694,13 @@ function FSRSConfigContent() {
         {/* Relearning steps */}
         {params.enable_short_term && (
           <div>
-            <label className="block text-xs font-medium mb-1">Relearning steps</label>
+            <label className="block text-xs font-medium mb-1">
+              Relearning steps
+            </label>
             <div className="flex gap-2">
               {[0].map((idx) => {
-                const raw = (params.relearning_steps as string[])[idx] ?? "10m"
-                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 10
+                const raw = (params.relearning_steps as string[])[idx] ?? "10m";
+                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 10;
                 return (
                   <div key={idx} className="flex-1 flex items-center gap-1">
                     <input
@@ -600,14 +709,16 @@ function FSRSConfigContent() {
                       className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
                       value={val}
                       onChange={(e) => {
-                        const n = parseInt(e.target.value, 10) || 10
-                        const arr = [`${n}m`]
-                        updateParam("relearning_steps" as const, arr as any)
+                        const n = parseInt(e.target.value, 10) || 10;
+                        const arr = [`${n}m`];
+                        updateParam("relearning_steps" as const, arr as any);
                       }}
                     />
-                    <span className="text-xs text-muted-foreground shrink-0">m</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      m
+                    </span>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -625,7 +736,7 @@ function FSRSConfigContent() {
         </Button>
       </div>
     </>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -634,7 +745,7 @@ function FSRSConfigContent() {
 // Use the Query List API to enumerate all installed fonts on the system.
 
 function useSystemFonts(): string[] {
-  const [fonts, setFonts] = useState<string[]>([])
+  const [fonts, setFonts] = useState<string[]>([]);
 
   useEffect(() => {
     if (!("queryLocalFonts" in self)) {
@@ -645,66 +756,73 @@ function useSystemFonts(): string[] {
         "Georgia, 'Times New Roman', serif",
         "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
         "'Fira Code', monospace",
-      ])
-      return
+      ]);
+      return;
     }
-    let cancelled = false
-    ;(self as any)
+    let cancelled = false;
+    (self as any)
       .queryLocalFonts()
       .then((items: any[]) => {
-        if (cancelled) return
-        const seen = new Set<string>()
-        const list: string[] = []
+        if (cancelled) return;
+        const seen = new Set<string>();
+        const list: string[] = [];
         for (const item of items) {
-          const name = item.family as string
+          const name = item.family as string;
           if (!seen.has(name)) {
-            seen.add(name)
-            list.push(name)
+            seen.add(name);
+            list.push(name);
           }
         }
-        list.sort((a, b) => a.localeCompare(b))
-        setFonts(list)
+        list.sort((a, b) => a.localeCompare(b));
+        setFonts(list);
       })
       .catch(() => {
         // API not allowed or unavailable
-        if (!cancelled) setFonts(["Inter, system-ui, sans-serif", "Georgia, serif", "monospace"])
-      })
-    return () => { cancelled = true }
-  }, [])
+        if (!cancelled)
+          setFonts([
+            "Inter, system-ui, sans-serif",
+            "Georgia, serif",
+            "monospace",
+          ]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  return fonts
+  return fonts;
 }
 
 function StyleConfigContent() {
-  const style = useStyleStore((s) => s.style)
-  const setFontFamilies = useStyleStore((s) => s.setFontFamilies)
-  const addFontFamily = useStyleStore((s) => s.addFontFamily)
-  const removeFontFamily = useStyleStore((s) => s.removeFontFamily)
-  const setFontSize = useStyleStore((s) => s.setFontSize)
-  const setGlobalFontSize = useStyleStore((s) => s.setGlobalFontSize)
-  const setPdfScrollbar = useStyleStore((s) => s.setPdfScrollbar)
-  const setSystemFontFamilies = useStyleStore((s) => s.setSystemFontFamilies)
-  const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily)
-  const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily)
-  const reset = useStyleStore((s) => s.reset)
-  const themeConfig = useThemeStore((s) => s.config)
-  const setLightTheme = useThemeStore((s) => s.setLightTheme)
-  const setDarkTheme = useThemeStore((s) => s.setDarkTheme)
-  const setThemeMode = useThemeStore((s) => s.setThemeMode)
-  const setPdfDarkInvert = useThemeStore((s) => s.setPdfDarkInvert)
-  const systemFonts = useSystemFonts()
-  const [search, setSearch] = useState("")
-  const [showFontList, setShowFontList] = useState(false)
-  const [showSystemFontList, setShowSystemFontList] = useState(false)
-  const [search2, setSearch2] = useState("")
+  const style = useStyleStore((s) => s.style);
+  const setFontFamilies = useStyleStore((s) => s.setFontFamilies);
+  const addFontFamily = useStyleStore((s) => s.addFontFamily);
+  const removeFontFamily = useStyleStore((s) => s.removeFontFamily);
+  const setFontSize = useStyleStore((s) => s.setFontSize);
+  const setGlobalFontSize = useStyleStore((s) => s.setGlobalFontSize);
+  const setPdfScrollbar = useStyleStore((s) => s.setPdfScrollbar);
+  const setSystemFontFamilies = useStyleStore((s) => s.setSystemFontFamilies);
+  const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily);
+  const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily);
+  const reset = useStyleStore((s) => s.reset);
+  const themeConfig = useThemeStore((s) => s.config);
+  const setLightTheme = useThemeStore((s) => s.setLightTheme);
+  const setDarkTheme = useThemeStore((s) => s.setDarkTheme);
+  const setThemeMode = useThemeStore((s) => s.setThemeMode);
+  const setPdfDarkInvert = useThemeStore((s) => s.setPdfDarkInvert);
+  const systemFonts = useSystemFonts();
+  const [search, setSearch] = useState("");
+  const [showFontList, setShowFontList] = useState(false);
+  const [showSystemFontList, setShowSystemFontList] = useState(false);
+  const [search2, setSearch2] = useState("");
 
   const filtered = search
     ? systemFonts.filter((f) => f.toLowerCase().includes(search.toLowerCase()))
-    : systemFonts
+    : systemFonts;
 
   const filtered2 = search2
     ? systemFonts.filter((f) => f.toLowerCase().includes(search2.toLowerCase()))
-    : systemFonts
+    : systemFonts;
 
   return (
     <>
@@ -723,8 +841,13 @@ function StyleConfigContent() {
           {/* Current font list */}
           <div className="space-y-1 mb-2">
             {style.fontFamilies.map((f, i) => (
-              <div key={i} className="flex items-center gap-1 rounded-md border bg-background px-2 py-1">
-                <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}.</span>
+              <div
+                key={i}
+                className="flex items-center gap-1 rounded-md border bg-background px-2 py-1"
+              >
+                <span className="text-xs text-muted-foreground w-4 shrink-0">
+                  {i + 1}.
+                </span>
                 <span
                   className="flex-1 truncate text-xs"
                   style={{ fontFamily: f }}
@@ -742,9 +865,9 @@ function StyleConfigContent() {
                   <button
                     className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
-                      const arr = [...style.fontFamilies]
-                      ;[arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]
-                      setFontFamilies(arr)
+                      const arr = [...style.fontFamilies];
+                      [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                      setFontFamilies(arr);
                     }}
                   >
                     ↑
@@ -754,9 +877,9 @@ function StyleConfigContent() {
                   <button
                     className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
-                      const arr = [...style.fontFamilies]
-                      ;[arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]
-                      setFontFamilies(arr)
+                      const arr = [...style.fontFamilies];
+                      [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                      setFontFamilies(arr);
                     }}
                   >
                     ↓
@@ -781,7 +904,7 @@ function StyleConfigContent() {
               </div>
               <div className="max-h-40 overflow-y-auto rounded-md border">
                 {filtered.map((font) => {
-                  const isAdded = style.fontFamilies.includes(font)
+                  const isAdded = style.fontFamilies.includes(font);
                   return (
                     <button
                       key={font}
@@ -792,10 +915,10 @@ function StyleConfigContent() {
                       }`}
                       onClick={() => {
                         if (!isAdded) {
-                          addFontFamily(font)
-                          setShowFontList(false)
+                          addFontFamily(font);
+                          setShowFontList(false);
                         }
-                        setSearch("")
+                        setSearch("");
                       }}
                     >
                       <span
@@ -804,9 +927,11 @@ function StyleConfigContent() {
                       >
                         {font}
                       </span>
-                      {isAdded && <span className="text-primary shrink-0">✓</span>}
+                      {isAdded && (
+                        <span className="text-primary shrink-0">✓</span>
+                      )}
                     </button>
-                  )
+                  );
                 })}
                 {filtered.length === 0 && (
                   <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
@@ -816,7 +941,10 @@ function StyleConfigContent() {
               </div>
               <button
                 className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
-                onClick={() => { setShowFontList(false); setSearch("") }}
+                onClick={() => {
+                  setShowFontList(false);
+                  setSearch("");
+                }}
               >
                 Cancel
               </button>
@@ -831,127 +959,140 @@ function StyleConfigContent() {
           )}
         </div>
 
-      {/* System font stack for UI — same style as font family list */}
-      <div>
-        <label className="block text-xs font-medium mb-1.5">
-          System font family
-        </label>
+        {/* System font stack for UI — same style as font family list */}
+        <div>
+          <label className="block text-xs font-medium mb-1.5">
+            System font family
+          </label>
 
-        {/* Current system font list */}
-        <div className="space-y-1 mb-2">
-          {style.systemFontFamilies.map((f, i) => (
-            <div key={i} className="flex items-center gap-1 rounded-md border bg-background px-2 py-1">
-              <span className="text-xs text-muted-foreground w-4 shrink-0">{i + 1}.</span>
-              <span
-                className="flex-1 truncate text-xs"
-                style={{ fontFamily: f }}
+          {/* Current system font list */}
+          <div className="space-y-1 mb-2">
+            {style.systemFontFamilies.map((f, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1 rounded-md border bg-background px-2 py-1"
               >
-                {f}
-              </span>
-              <button
-                className="text-[10px] text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
-                onClick={() => removeSystemFontFamily(i)}
-                disabled={style.systemFontFamilies.length <= 1}
-              >
-                ✕
-              </button>
-              {i > 0 && (
-                <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
-                  onClick={() => {
-                    const arr = [...style.systemFontFamilies]
-                    ;[arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]
-                    setSystemFontFamilies(arr)
-                  }}
+                <span className="text-xs text-muted-foreground w-4 shrink-0">
+                  {i + 1}.
+                </span>
+                <span
+                  className="flex-1 truncate text-xs"
+                  style={{ fontFamily: f }}
                 >
-                  ↑
-                </button>
-              )}
-              {i < style.systemFontFamilies.length - 1 && (
+                  {f}
+                </span>
                 <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
-                  onClick={() => {
-                    const arr = [...style.systemFontFamilies]
-                    ;[arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]
-                    setSystemFontFamilies(arr)
-                  }}
+                  className="text-[10px] text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                  onClick={() => removeSystemFontFamily(i)}
+                  disabled={style.systemFontFamilies.length <= 1}
                 >
-                  ↓
+                  ✕
                 </button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Add system font */}
-        {showSystemFontList ? (
-          <>
-            <div className="relative mb-2">
-              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
-                placeholder="Search fonts…"
-                value={search2}
-                onChange={(e) => setSearch2(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="max-h-40 overflow-y-auto rounded-md border">
-              {filtered2.map((font) => {
-                const isAdded = style.systemFontFamilies.includes(font)
-                return (
+                {i > 0 && (
                   <button
-                    key={font}
-                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
-                      isAdded
-                        ? "text-muted-foreground cursor-default"
-                        : "hover:bg-accent text-foreground"
-                    }`}
+                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
-                      if (!isAdded) {
-                        addSystemFontFamily(font)
-                        setShowSystemFontList(false)
-                      }
-                      setSearch2("")
+                      const arr = [...style.systemFontFamilies];
+                      [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                      setSystemFontFamilies(arr);
                     }}
                   >
-                    <span
-                      className="flex-1 truncate"
-                      style={{ fontFamily: font }}
-                    >
-                      {font}
-                    </span>
-                    {isAdded && <span className="text-primary shrink-0">✓</span>}
+                    ↑
                   </button>
-                )
-              })}
-              {filtered2.length === 0 && (
-                <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
-                  No fonts match &quot;{search2}&quot;
-                </p>
-              )}
-            </div>
-            <button
-              className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
-              onClick={() => { setShowSystemFontList(false); setSearch2("") }}
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
-          <button
-            className="flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            onClick={() => { setShowSystemFontList(true); setSearch2("") }}
-          >
-            + Add font
-          </button>
-        )}
-        <p className="text-[10px] text-muted-foreground mt-1">
-          Controls all UI text (buttons, bars, lists, panels).
-        </p>
-      </div>
+                )}
+                {i < style.systemFontFamilies.length - 1 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    onClick={() => {
+                      const arr = [...style.systemFontFamilies];
+                      [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                      setSystemFontFamilies(arr);
+                    }}
+                  >
+                    ↓
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
 
-      {/* Font size */}
+          {/* Add system font */}
+          {showSystemFontList ? (
+            <>
+              <div className="relative mb-2">
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
+                  placeholder="Search fonts…"
+                  value={search2}
+                  onChange={(e) => setSearch2(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-40 overflow-y-auto rounded-md border">
+                {filtered2.map((font) => {
+                  const isAdded = style.systemFontFamilies.includes(font);
+                  return (
+                    <button
+                      key={font}
+                      className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
+                        isAdded
+                          ? "text-muted-foreground cursor-default"
+                          : "hover:bg-accent text-foreground"
+                      }`}
+                      onClick={() => {
+                        if (!isAdded) {
+                          addSystemFontFamily(font);
+                          setShowSystemFontList(false);
+                        }
+                        setSearch2("");
+                      }}
+                    >
+                      <span
+                        className="flex-1 truncate"
+                        style={{ fontFamily: font }}
+                      >
+                        {font}
+                      </span>
+                      {isAdded && (
+                        <span className="text-primary shrink-0">✓</span>
+                      )}
+                    </button>
+                  );
+                })}
+                {filtered2.length === 0 && (
+                  <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
+                    No fonts match &quot;{search2}&quot;
+                  </p>
+                )}
+              </div>
+              <button
+                className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setShowSystemFontList(false);
+                  setSearch2("");
+                }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              className="flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              onClick={() => {
+                setShowSystemFontList(true);
+                setSearch2("");
+              }}
+            >
+              + Add font
+            </button>
+          )}
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Controls all UI text (buttons, bars, lists, panels).
+          </p>
+        </div>
+
+        {/* Font size */}
         <div>
           <label className="block text-xs font-medium mb-1.5">
             Font size: {style.fontSize}px
@@ -1004,7 +1145,9 @@ function StyleConfigContent() {
 
         {/* Theme mode */}
         <div className="mb-3">
-          <label className="block text-xs font-medium mb-1.5">Light/Dark mode</label>
+          <label className="block text-xs font-medium mb-1.5">
+            Light/Dark mode
+          </label>
           <div className="flex gap-2">
             {(["auto", "light", "dark"] as const).map((mode) => (
               <button
@@ -1074,26 +1217,28 @@ function StyleConfigContent() {
         </Button>
       </div>
     </>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // TTS Config content (inside unified settings)
 // ---------------------------------------------------------------------------
 function TTSConfigContent() {
-  const config = useTTSStore((s) => s.config)
-  const setConfig = useTTSStore((s) => s.setConfig)
-  const refreshVoices = useTTSStore((s) => s.refreshVoices)
-  const loadingVoices = useTTSStore((s) => s.loadingVoices)
-  const voiceLists = useTTSStore((s) => s.config.voiceLists)
-  const hasCachedLists = Object.keys(voiceLists).some((k) => voiceLists[k].length > 0)
+  const config = useTTSStore((s) => s.config);
+  const setConfig = useTTSStore((s) => s.setConfig);
+  const refreshVoices = useTTSStore((s) => s.refreshVoices);
+  const loadingVoices = useTTSStore((s) => s.loadingVoices);
+  const voiceLists = useTTSStore((s) => s.config.voiceLists);
+  const hasCachedLists = Object.keys(voiceLists).some(
+    (k) => voiceLists[k].length > 0,
+  );
 
   // Auto-fetch voice list on first open if not cached
   useEffect(() => {
     if (!hasCachedLists) {
-      refreshVoices()
+      refreshVoices();
     }
-  }, [])
+  }, [hasCachedLists, refreshVoices]);
 
   const langMeta = [
     { id: "zh", label: "简体中文" },
@@ -1102,13 +1247,15 @@ function TTSConfigContent() {
     { id: "ja", label: "日本語" },
     { id: "fr", label: "Français" },
     { id: "es", label: "Español" },
-  ]
+  ];
 
   return (
     <>
       <div className="mb-4 flex items-center gap-2">
         <Volume2 className="h-5 w-5" />
-        <h2 className="text-base font-semibold">TTS{config.provider === "mimo" ? " (MiMo)" : " (Edge-TTS)"}</h2>
+        <h2 className="text-base font-semibold">
+          TTS{config.provider === "mimo" ? " (MiMo)" : " (Edge-TTS)"}
+        </h2>
       </div>
 
       <div className="space-y-4">
@@ -1158,7 +1305,9 @@ function TTSConfigContent() {
           <>
             {/* Binary path */}
             <div>
-              <label className="block text-xs font-medium mb-1">Binary path</label>
+              <label className="block text-xs font-medium mb-1">
+                Binary path
+              </label>
               <input
                 className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
                 value={config.binaryPath}
@@ -1173,40 +1322,52 @@ function TTSConfigContent() {
             {/* Rate / Volume / Pitch */}
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium mb-1">Rate: {config.rate}</label>
+                <label className="block text-xs font-medium mb-1">
+                  Rate: {config.rate}
+                </label>
                 <input
-                  type="range" min="-50" max="50"
+                  type="range"
+                  min="-50"
+                  max="50"
                   value={parseInt(config.rate.replace(/[+%]/g, ""))}
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10)
-                    const sign = v >= 0 ? "+" : ""
-                    setConfig({ rate: `${sign}${v}%` })
+                    const v = parseInt(e.target.value, 10);
+                    const sign = v >= 0 ? "+" : "";
+                    setConfig({ rate: `${sign}${v}%` });
                   }}
                   className="w-full"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Volume: {config.volume}</label>
+                <label className="block text-xs font-medium mb-1">
+                  Volume: {config.volume}
+                </label>
                 <input
-                  type="range" min="-50" max="50"
+                  type="range"
+                  min="-50"
+                  max="50"
                   value={parseInt(config.volume.replace(/[+%]/g, ""))}
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10)
-                    const sign = v >= 0 ? "+" : ""
-                    setConfig({ volume: `${sign}${v}%` })
+                    const v = parseInt(e.target.value, 10);
+                    const sign = v >= 0 ? "+" : "";
+                    setConfig({ volume: `${sign}${v}%` });
                   }}
                   className="w-full"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Pitch: {config.pitch}</label>
+                <label className="block text-xs font-medium mb-1">
+                  Pitch: {config.pitch}
+                </label>
                 <input
-                  type="range" min="-50" max="50"
+                  type="range"
+                  min="-50"
+                  max="50"
                   value={parseInt(config.pitch.replace(/[+Hz]/g, ""))}
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10)
-                    const sign = v >= 0 ? "+" : ""
-                    setConfig({ pitch: `${sign}${v}Hz` })
+                    const v = parseInt(e.target.value, 10);
+                    const sign = v >= 0 ? "+" : "";
+                    setConfig({ pitch: `${sign}${v}Hz` });
                   }}
                   className="w-full"
                 />
@@ -1216,15 +1377,25 @@ function TTSConfigContent() {
             {/* Per-language voices */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium">Voices (per language)</label>
+                <label className="block text-xs font-medium">
+                  Voices (per language)
+                </label>
                 <button
                   className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-50"
                   onClick={() => refreshVoices()}
                   disabled={loadingVoices}
                   title="Refresh voice list from edge-tts --list-voices"
                 >
-                  {loadingVoices ? <Loader2 className="h-3 w-3 animate-spin" /> : (
-                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {loadingVoices ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <svg
+                      className="h-3 w-3"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
                     </svg>
                   )}
@@ -1233,36 +1404,59 @@ function TTSConfigContent() {
               </div>
               <div className="space-y-1.5">
                 {langMeta.map((lang) => {
-                  const list = config.voiceLists[lang.id]
-                  const current = config.perLanguageVoices[lang.id] ?? ""
+                  const list = config.voiceLists[lang.id];
+                  const current = config.perLanguageVoices[lang.id] ?? "";
                   return (
                     <div key={lang.id} className="flex items-center gap-2">
-                      <span className="text-xs w-16 shrink-0">{lang.label}</span>
+                      <span className="text-xs w-16 shrink-0">
+                        {lang.label}
+                      </span>
                       {list && list.length > 0 ? (
                         <select
                           className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
                           value={list.includes(current) ? current : ""}
-                          onChange={(e) => setConfig({ perLanguageVoices: { ...config.perLanguageVoices, [lang.id]: e.target.value } })}
+                          onChange={(e) =>
+                            setConfig({
+                              perLanguageVoices: {
+                                ...config.perLanguageVoices,
+                                [lang.id]: e.target.value,
+                              },
+                            })
+                          }
                         >
-                          {current && !list.includes(current) && <option value={current}>{current}</option>}
-                          {list.map((v) => <option key={v} value={v}>{v}</option>)}
+                          {current && !list.includes(current) && (
+                            <option value={current}>{current}</option>
+                          )}
+                          {list.map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
                         </select>
                       ) : (
                         <input
                           className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
                           value={current}
-                          onChange={(e) => setConfig({ perLanguageVoices: { ...config.perLanguageVoices, [lang.id]: e.target.value } })}
+                          onChange={(e) =>
+                            setConfig({
+                              perLanguageVoices: {
+                                ...config.perLanguageVoices,
+                                [lang.id]: e.target.value,
+                              },
+                            })
+                          }
                           placeholder="auto"
                         />
                       )}
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
 
             <p className="text-[10px] text-muted-foreground">
-              Requires <code>pip install edge-tts</code> · Voices provided by Microsoft Edge online TTS.
+              Requires <code>pip install edge-tts</code> · Voices provided by
+              Microsoft Edge online TTS.
             </p>
           </>
         )}
@@ -1282,7 +1476,14 @@ function TTSConfigContent() {
               />
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 Get your API key from{" "}
-                <a className="underline" href="https://mimo.mi.com" target="_blank" rel="noopener noreferrer">mimo.mi.com</a>
+                <a
+                  className="underline"
+                  href="https://mimo.mi.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  mimo.mi.com
+                </a>
               </p>
             </div>
 
@@ -1295,7 +1496,9 @@ function TTSConfigContent() {
                 onChange={(e) => setConfig({ mimoModel: e.target.value })}
               >
                 {MIMO_MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -1305,14 +1508,20 @@ function TTSConfigContent() {
               <label className="block text-xs font-medium mb-1">Voice</label>
               <select
                 className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
-                value={MIMO_PRESET_VOICES.some((v) => v.id === config.mimoVoice) ? config.mimoVoice : "custom"}
+                value={
+                  MIMO_PRESET_VOICES.some((v) => v.id === config.mimoVoice)
+                    ? config.mimoVoice
+                    : "custom"
+                }
                 onChange={(e) => {
-                  if (e.target.value === "custom") return
-                  setConfig({ mimoVoice: e.target.value })
+                  if (e.target.value === "custom") return;
+                  setConfig({ mimoVoice: e.target.value });
                 }}
               >
                 {MIMO_PRESET_VOICES.map((v) => (
-                  <option key={v.id} value={v.id}>{v.label}</option>
+                  <option key={v.id} value={v.id}>
+                    {v.label}
+                  </option>
                 ))}
                 {!MIMO_PRESET_VOICES.some((v) => v.id === config.mimoVoice) && (
                   <option value="custom">{config.mimoVoice}</option>
@@ -1333,7 +1542,9 @@ function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">
                 Style prompt{" "}
-                <span className="text-[10px] text-muted-foreground font-normal">(tone description)</span>
+                <span className="text-[10px] text-muted-foreground font-normal">
+                  (tone description)
+                </span>
               </label>
               <textarea
                 className="w-full rounded-md border bg-background px-3 py-1.5 text-xs resize-none"
@@ -1343,7 +1554,8 @@ function TTSConfigContent() {
                 placeholder="e.g. Bright, bouncy tone."
               />
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Sent as a <code>user</code> message before the text. Use <strong>Director Mode</strong> for detailed control:{" "}
+                Sent as a <code>user</code> message before the text. Use{" "}
+                <strong>Director Mode</strong> for detailed control:{" "}
                 <code>{"【角色】... 【场景】... 【指导】..."}</code>
               </p>
             </div>
@@ -1352,7 +1564,9 @@ function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">
                 Inline tag{" "}
-                <span className="text-[10px] text-muted-foreground font-normal">(prepended to text)</span>
+                <span className="text-[10px] text-muted-foreground font-normal">
+                  (prepended to text)
+                </span>
               </label>
               <input
                 className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
@@ -1361,17 +1575,40 @@ function TTSConfigContent() {
                 placeholder="e.g. (温柔) or (紧张，深呼吸)"
               />
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Wrap in parentheses. Examples: <code>(开心)</code> <code>(颤抖)</code> <code>(轻声笑)</code>.
+                Wrap in parentheses. Examples: <code>(开心)</code>{" "}
+                <code>(颤抖)</code> <code>(轻声笑)</code>.
               </p>
               <details className="mt-1">
-                <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">Quick tags</summary>
+                <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                  Quick tags
+                </summary>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {[
-                    "开心", "悲伤", "愤怒", "温柔", "活泼", "严肃", "慵懒", "俏皮",
-                    "紧张", "激动", "疲惫", "委屈", "撒娇", "害怕",
-                    "颤抖", "气声", "鼻音", "沙哑",
-                    "轻笑", "哽咽", "抽泣",
-                    "吸气", "深呼吸", "叹气", "喘息",
+                    "开心",
+                    "悲伤",
+                    "愤怒",
+                    "温柔",
+                    "活泼",
+                    "严肃",
+                    "慵懒",
+                    "俏皮",
+                    "紧张",
+                    "激动",
+                    "疲惫",
+                    "委屈",
+                    "撒娇",
+                    "害怕",
+                    "颤抖",
+                    "气声",
+                    "鼻音",
+                    "沙哑",
+                    "轻笑",
+                    "哽咽",
+                    "抽泣",
+                    "吸气",
+                    "深呼吸",
+                    "叹气",
+                    "喘息",
                   ].map((tag) => (
                     <button
                       key={tag}
@@ -1380,7 +1617,14 @@ function TTSConfigContent() {
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
-                      onClick={() => setConfig({ mimoInlineTag: config.mimoInlineTag === `(${tag})` ? "" : `(${tag})` })}
+                      onClick={() =>
+                        setConfig({
+                          mimoInlineTag:
+                            config.mimoInlineTag === `(${tag})`
+                              ? ""
+                              : `(${tag})`,
+                        })
+                      }
                     >
                       ({tag})
                     </button>
@@ -1391,113 +1635,120 @@ function TTSConfigContent() {
 
             <p className="text-[10px] text-muted-foreground">
               Powered by XiaoMi MiMo API ·{" "}
-              <a className="underline" href="https://mimo.mi.com" target="_blank" rel="noopener noreferrer">mimo.mi.com</a>
+              <a
+                className="underline"
+                href="https://mimo.mi.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                mimo.mi.com
+              </a>
             </p>
           </>
         )}
       </div>
     </>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Keyboard Shortcuts content (inside unified settings)
 // ---------------------------------------------------------------------------
 function ShortcutsContent() {
-  const shortcuts = useShortcutsStore((s) => s.shortcuts)
-  const setShortcutKeys = useShortcutsStore((s) => s.setShortcutKeys)
-  const resetShortcut = useShortcutsStore((s) => s.resetShortcut)
-  const resetAllShortcuts = useShortcutsStore((s) => s.resetAllShortcuts)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [capturing, setCapturing] = useState(false)
+  const shortcuts = useShortcutsStore((s) => s.shortcuts);
+  const setShortcutKeys = useShortcutsStore((s) => s.setShortcutKeys);
+  const resetShortcut = useShortcutsStore((s) => s.resetShortcut);
+  const resetAllShortcuts = useShortcutsStore((s) => s.resetAllShortcuts);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
 
   // Group shortcuts by context
   const groups = useMemo(() => {
-    const map: Record<string, typeof shortcuts> = {}
+    const map: Record<string, typeof shortcuts> = {};
     for (const s of shortcuts) {
-      const context = s.context
-      if (!map[context]) map[context] = []
-      map[context].push(s)
+      const context = s.context;
+      if (!map[context]) map[context] = [];
+      map[context].push(s);
     }
-    return map
-  }, [shortcuts])
+    return map;
+  }, [shortcuts]);
 
   const contextLabels: Record<string, string> = {
     global: "Global (app-wide)",
     "pdf-open": "PDF Viewer",
     "annotations-tab": "Annotations Tab",
     "learning-mode": "Learning Mode",
-  }
+  };
 
   const handleStartCapture = (actionId: string) => {
-    setEditingId(actionId)
-    setCapturing(true)
-  }
+    setEditingId(actionId);
+    setCapturing(true);
+  };
 
   useEffect(() => {
-    if (!capturing || !editingId) return
+    if (!capturing || !editingId) return;
 
     const handler = (e: KeyboardEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
 
       if (e.key === "Escape") {
-        setEditingId(null)
-        setCapturing(false)
-        return
+        setEditingId(null);
+        setCapturing(false);
+        return;
       }
 
       // Build shortcut string from the event
-      const parts: string[] = []
-      if (e.altKey) parts.push("alt")
-      if (e.ctrlKey) parts.push("ctrl")
-      if (e.shiftKey) parts.push("shift")
-      if (e.metaKey) parts.push("meta")
+      const parts: string[] = [];
+      if (e.altKey) parts.push("alt");
+      if (e.ctrlKey) parts.push("ctrl");
+      if (e.shiftKey) parts.push("shift");
+      if (e.metaKey) parts.push("meta");
 
       // Handle special keys
-      const key = e.key.toLowerCase()
-      if (["alt", "ctrl", "shift", "meta"].includes(key)) return // modifier-only
+      const key = e.key.toLowerCase();
+      if (["alt", "ctrl", "shift", "meta"].includes(key)) return; // modifier-only
 
       if (key === " ") {
-        parts.push("space")
+        parts.push("space");
       } else if (key === ",") {
-        parts.push("comma")
+        parts.push("comma");
       } else if (key === "[") {
-        parts.push("[")
+        parts.push("[");
       } else if (key === "]") {
-        parts.push("]")
+        parts.push("]");
       } else if (e.code?.startsWith("Numpad") && /^[0-9]$/.test(key)) {
-        parts.push(`num${key}`) // num1, num2, etc.
+        parts.push(`num${key}`); // num1, num2, etc.
       } else if (/^[a-z0-9]$/.test(key)) {
-        parts.push(key)
+        parts.push(key);
       } else if (key.startsWith("arrow")) {
-        parts.push(key)
+        parts.push(key);
       } else if (key === "enter") {
-        parts.push("enter")
+        parts.push("enter");
       } else if (key === "escape") {
-        return // handled above
+        return; // handled above
       } else if (key === "tab") {
-        parts.push("tab")
+        parts.push("tab");
       } else if (key === "delete" || key === "backspace") {
-        parts.push("delete")
+        parts.push("delete");
       } else if (key === "home") {
-        parts.push("home")
+        parts.push("home");
       } else if (key === "end") {
-        parts.push("end")
+        parts.push("end");
       } else {
-        parts.push(key)
+        parts.push(key);
       }
 
       if (parts.length > 0) {
-        setShortcutKeys(editingId as any, parts.join("+"))
+        setShortcutKeys(editingId as any, parts.join("+"));
       }
-      setEditingId(null)
-      setCapturing(false)
-    }
+      setEditingId(null);
+      setCapturing(false);
+    };
 
-    document.addEventListener("keydown", handler, true)
-    return () => document.removeEventListener("keydown", handler, true)
-  }, [capturing, editingId, setShortcutKeys])
+    document.addEventListener("keydown", handler, true);
+    return () => document.removeEventListener("keydown", handler, true);
+  }, [capturing, editingId, setShortcutKeys]);
 
   return (
     <>
@@ -1514,8 +1765,8 @@ function ShortcutsContent() {
 
       <div className="space-y-4">
         {Object.entries(groups).map(([context, items]) => {
-          const visible = items.filter((s) => !s.locked)
-          if (visible.length === 0) return null
+          const visible = items.filter((s) => !s.locked);
+          if (visible.length === 0) return null;
           return (
             <div key={context}>
               <h3 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
@@ -1527,7 +1778,9 @@ function ShortcutsContent() {
                     key={s.actionId}
                     className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent transition-colors text-xs gap-2"
                   >
-                    <span className="text-foreground min-w-0 flex-1">{s.label}</span>
+                    <span className="text-foreground min-w-0 flex-1">
+                      {s.label}
+                    </span>
                     <div className="flex items-center gap-1 shrink-0">
                       {editingId === s.actionId ? (
                         <span className="inline-flex items-center rounded border border-primary bg-primary/10 px-2 py-0.5 text-[10px] font-mono">
@@ -1559,7 +1812,7 @@ function ShortcutsContent() {
                 ))}
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -1574,48 +1827,59 @@ function ShortcutsContent() {
         </Button>
       </div>
     </>
-  )
+  );
 }
 
 interface CenterPanelProps {
-  documentPath?: string | null
-  documentId?: string | null
-  leftCollapsed?: boolean
-  rightCollapsed?: boolean
-  onToggleLeft?: () => void
-  onToggleRight?: () => void
+  documentPath?: string | null;
+  documentId?: string | null;
+  leftCollapsed?: boolean;
+  rightCollapsed?: boolean;
+  onToggleLeft?: () => void;
+  onToggleRight?: () => void;
 }
 
-export function CenterPanel({ documentPath, documentId, leftCollapsed, rightCollapsed, onToggleLeft, onToggleRight }: CenterPanelProps) {
-  const setItems = useAnnotationStore((s) => s.setItems)
-  const loadedDocRef = useRef<string | null>(null)
-  const currentDocument = useDocumentStore((s) => s.currentDocument)
+export function CenterPanel({
+  documentPath,
+  documentId,
+  leftCollapsed,
+  rightCollapsed,
+  onToggleLeft,
+  onToggleRight,
+}: CenterPanelProps) {
+  const setItems = useAnnotationStore((s) => s.setItems);
+  const loadedDocRef = useRef<string | null>(null);
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
 
   // Load annotations from Electron backend when document changes
   useEffect(() => {
     if (!documentId) {
-      setItems([])
-      loadedDocRef.current = null
-      return
+      setItems([]);
+      loadedDocRef.current = null;
+      return;
     }
 
-    loadedDocRef.current = documentId
+    loadedDocRef.current = documentId;
 
     window.siltflow.annotations.list(documentId).then(async (saved) => {
-      if (loadedDocRef.current !== documentId) return
+      if (loadedDocRef.current !== documentId) return;
 
       // Load ai_results and fsrs_cards for all annotations in batch
-      const aiResults = new Map<string, any>()
-      const fsrsCards = new Map<string, any>()
+      const aiResults = new Map<string, any>();
+      const fsrsCards = new Map<string, any>();
       for (const a of saved || []) {
         try {
-          const r = await window.siltflow.aiResults.get(a.id, a.documentId)
-          if (r) aiResults.set(a.id, JSON.parse(r))
-        } catch { /* not found */ }
+          const r = await window.siltflow.aiResults.get(a.id, a.documentId);
+          if (r) aiResults.set(a.id, JSON.parse(r));
+        } catch {
+          /* not found */
+        }
         try {
-          const c = await window.siltflow.fsrsCards.get(a.id, a.documentId)
-          if (c) fsrsCards.set(a.id, JSON.parse(c))
-        } catch { /* not found */ }
+          const c = await window.siltflow.fsrsCards.get(a.id, a.documentId);
+          if (c) fsrsCards.set(a.id, JSON.parse(c));
+        } catch {
+          /* not found */
+        }
       }
 
       setItems(
@@ -1629,18 +1893,27 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
           aiResult: aiResults.get(a.id) ?? undefined,
           fsrsCard: fsrsCards.get(a.id) ?? undefined,
         })),
-      )
-    })
-  }, [documentId, setItems])
+      );
+    });
+  }, [documentId, setItems]);
 
-  const docTitle = currentDocument?.title ?? null
+  const docTitle = currentDocument?.title ?? null;
 
   return (
     <div className="flex h-full flex-col">
       {/* ── unified toolbar ── */}
       <div className="flex h-10 items-center gap-1 border-b px-3">
-        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onToggleLeft}>
-          {leftCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0"
+          onClick={onToggleLeft}
+        >
+          {leftCollapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
         </Button>
 
         <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
@@ -1652,8 +1925,17 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
           {docTitle && <QuickAddToggle />}
           {docTitle && <FitWidthButton />}
           <SettingsButton />
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleRight}>
-            {rightCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onToggleRight}
+          >
+            {rightCollapsed ? (
+              <PanelRightOpen className="h-4 w-4" />
+            ) : (
+              <PanelRightClose className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -1676,7 +1958,7 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1684,64 +1966,84 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
 // ---------------------------------------------------------------------------
 function AboutContent() {
   const [updateState, setUpdateState] = useState<
-    "idle" | "checking" | "available" | "latest" | "downloading" | "downloaded" | "error"
-  >("idle")
-  const [progress, setProgress] = useState(0)
-  const [latestVersion, setLatestVersion] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+    | "idle"
+    | "checking"
+    | "available"
+    | "latest"
+    | "downloading"
+    | "downloaded"
+    | "error"
+  >("idle");
+  const [progress, setProgress] = useState(0);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const checkUpdateOnStartup = useAppSettingsStore((s) => s.checkUpdateOnStartup)
-  const setCheckUpdateOnStartup = useAppSettingsStore((s) => s.setCheckUpdateOnStartup)
+  const checkUpdateOnStartup = useAppSettingsStore(
+    (s) => s.checkUpdateOnStartup,
+  );
+  const setCheckUpdateOnStartup = useAppSettingsStore(
+    (s) => s.setCheckUpdateOnStartup,
+  );
 
-  const currentVersion = __APP_VERSION__
-  const releasesUrl = "https://github.com/TYBLHQY/siltflow/releases"
+  const currentVersion = __APP_VERSION__;
+  const releasesUrl = "https://github.com/TYBLHQY/siltflow/releases";
 
   useEffect(() => {
-    const unsubs: (() => void)[] = []
+    const unsubs: (() => void)[] = [];
 
-    unsubs.push(window.siltflow.update.onAvailable((info: any) => {
-      const tag = info?.version || info?.tag_name || ""
-      setLatestVersion(tag.startsWith("v") ? tag.slice(1) : tag)
-      setUpdateState("available")
-    }))
+    unsubs.push(
+      window.siltflow.update.onAvailable((info: any) => {
+        const tag = info?.version || info?.tag_name || "";
+        setLatestVersion(tag.startsWith("v") ? tag.slice(1) : tag);
+        setUpdateState("available");
+      }),
+    );
 
-    unsubs.push(window.siltflow.update.onNotAvailable(() => {
-      setLatestVersion(null)
-      setUpdateState("latest")
-    }))
+    unsubs.push(
+      window.siltflow.update.onNotAvailable(() => {
+        setLatestVersion(null);
+        setUpdateState("latest");
+      }),
+    );
 
-    unsubs.push(window.siltflow.update.onDownloadProgress((p) => {
-      setProgress(p.percent)
-      setUpdateState("downloading")
-    }))
+    unsubs.push(
+      window.siltflow.update.onDownloadProgress((p) => {
+        setProgress(p.percent);
+        setUpdateState("downloading");
+      }),
+    );
 
-    unsubs.push(window.siltflow.update.onDownloaded(() => {
-      setUpdateState("downloaded")
-    }))
+    unsubs.push(
+      window.siltflow.update.onDownloaded(() => {
+        setUpdateState("downloaded");
+      }),
+    );
 
-    unsubs.push(window.siltflow.update.onError((msg) => {
-      setErrorMsg(msg)
-      setUpdateState("error")
-    }))
+    unsubs.push(
+      window.siltflow.update.onError((msg) => {
+        setErrorMsg(msg);
+        setUpdateState("error");
+      }),
+    );
 
-    return () => unsubs.forEach((fn) => fn())
-  }, [])
+    return () => unsubs.forEach((fn) => fn());
+  }, []);
 
   const handleCheck = () => {
-    setUpdateState("checking")
-    setErrorMsg(null)
-    window.siltflow.update.check()
-  }
+    setUpdateState("checking");
+    setErrorMsg(null);
+    window.siltflow.update.check();
+  };
 
   const handleDownload = () => {
-    setUpdateState("downloading")
-    setProgress(0)
-    window.siltflow.update.download()
-  }
+    setUpdateState("downloading");
+    setProgress(0);
+    window.siltflow.update.download();
+  };
 
   const handleInstall = () => {
-    window.siltflow.update.install()
-  }
+    window.siltflow.update.install();
+  };
 
   return (
     <div className="space-y-5 pt-3">
@@ -1749,7 +2051,8 @@ function AboutContent() {
       <div>
         <h3 className="text-sm font-semibold mb-2">Siltflow</h3>
         <p className="text-xs text-muted-foreground">
-          A language learning document reader with spaced repetition and AI translation.
+          A language learning document reader with spaced repetition and AI
+          translation.
         </p>
       </div>
 
@@ -1800,14 +2103,20 @@ function AboutContent() {
         )}
 
         {updateState === "latest" && (
-          <p className="text-xs text-muted-foreground">You are on the latest version.</p>
+          <p className="text-xs text-muted-foreground">
+            You are on the latest version.
+          </p>
         )}
 
         {updateState === "downloading" && (
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Downloading…</span>
-              <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+              <span className="text-xs text-muted-foreground">
+                Downloading…
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {Math.round(progress)}%
+              </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
@@ -1835,7 +2144,9 @@ function AboutContent() {
 
         {updateState === "error" && (
           <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2">
-            <p className="text-xs font-medium text-red-600 mb-1">Update check failed</p>
+            <p className="text-xs font-medium text-red-600 mb-1">
+              Update check failed
+            </p>
             <p className="text-xs text-red-500 mb-1.5">{errorMsg}</p>
             <button
               className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -1870,5 +2181,5 @@ function AboutContent() {
         </a>
       </div>
     </div>
-  )
+  );
 }

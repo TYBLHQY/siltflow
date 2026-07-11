@@ -12,24 +12,24 @@
  * 4. overdue_depth     — how far past-due cards are on average (elapsed/scheduled)
  * 5. avg_retrievability — average retrievability of non-new cards (lower = more urgent)
  */
-import type { Card } from "ts-fsrs"
-import { State } from "ts-fsrs"
+import type { Card } from "ts-fsrs";
+import { State } from "ts-fsrs";
 
 export interface CardWithDoc {
-  card: Card
-  documentId: string
+  card: Card;
+  documentId: string;
 }
 
 export interface DocReviewMetrics {
-  documentId: string
-  documentTitle: string
-  totalCards: number
-  newCardsCount: number
-  dueNowCount: number
-  dueSoonCount: number // within 7 days
-  avgRetrievability: number
-  avgOverdueRatio: number
-  compositeScore: number
+  documentId: string;
+  documentTitle: string;
+  totalCards: number;
+  newCardsCount: number;
+  dueNowCount: number;
+  dueSoonCount: number; // within 7 days
+  avgRetrievability: number;
+  avgOverdueRatio: number;
+  compositeScore: number;
 }
 
 /**
@@ -37,10 +37,10 @@ export interface DocReviewMetrics {
  * Default w[20] = 0.1542 (FSRS-5) — a reasonable approximation.
  */
 function retrievability(stability: number, elapsedDays: number): number {
-  if (stability <= 0 || elapsedDays < 0) return 0
-  const w20 = 0.1542
-  const factor = Math.pow(0.9, -1 / w20) - 1
-  return Math.pow(1 + factor * elapsedDays / stability, -w20)
+  if (stability <= 0 || elapsedDays < 0) return 0;
+  const w20 = 0.1542;
+  const factor = Math.pow(0.9, -1 / w20) - 1;
+  return Math.pow(1 + (factor * elapsedDays) / stability, -w20);
 }
 
 /**
@@ -49,9 +49,9 @@ function retrievability(stability: number, elapsedDays: number): number {
 export function computeDocMetrics(
   annotationsByDoc: Record<string, { title: string; cards: Card[] }>,
 ): DocReviewMetrics[] {
-  const now = Date.now()
-  const dayMs = 86400000
-  const results: DocReviewMetrics[] = []
+  const now = Date.now();
+  const dayMs = 86400000;
+  const results: DocReviewMetrics[] = [];
 
   for (const [docId, { title, cards }] of Object.entries(annotationsByDoc)) {
     if (cards.length === 0) {
@@ -65,62 +65,64 @@ export function computeDocMetrics(
         avgRetrievability: 0,
         avgOverdueRatio: 0,
         compositeScore: -1, // no cards → lowest priority
-      })
-      continue
+      });
+      continue;
     }
 
-    let dueNowCount = 0
-    let dueSoonCount = 0
-    let newCardsCount = 0
-    let nonNewCount = 0
-    let retrievabilitySum = 0
-    let overdueRatioSum = 0
-    let overdueCount = 0
+    let dueNowCount = 0;
+    let dueSoonCount = 0;
+    let newCardsCount = 0;
+    let nonNewCount = 0;
+    let retrievabilitySum = 0;
+    let overdueRatioSum = 0;
+    let overdueCount = 0;
 
     for (const card of cards) {
       // Count new cards (state === New) — annotated but not yet studied
       if (card.state === State.New) {
-        newCardsCount++
-        continue
+        newCardsCount++;
+        continue;
       }
 
-      nonNewCount++
+      nonNewCount++;
 
       // Normalize due date
-      const due = card.due instanceof Date ? card.due : new Date(card.due)
-      const dueMs = due.getTime()
-      const elapsedDays = now > dueMs ? (now - dueMs) / dayMs : 0
+      const due = card.due instanceof Date ? card.due : new Date(card.due);
+      const dueMs = due.getTime();
+      const elapsedDays = now > dueMs ? (now - dueMs) / dayMs : 0;
 
       // Retrievability (only for non-new cards)
       if (card.stability > 0) {
-        retrievabilitySum += retrievability(card.stability, elapsedDays)
+        retrievabilitySum += retrievability(card.stability, elapsedDays);
       }
 
       // Due now — include overdue depth
       if (dueMs <= now) {
-        dueNowCount++
+        dueNowCount++;
         if (card.scheduled_days > 0 && elapsedDays > 0) {
-          overdueRatioSum += elapsedDays / card.scheduled_days
-          overdueCount++
+          overdueRatioSum += elapsedDays / card.scheduled_days;
+          overdueCount++;
         }
       }
 
       // Due within 7 days
       if (dueMs > now && dueMs <= now + 7 * dayMs) {
-        dueSoonCount++
+        dueSoonCount++;
       }
     }
 
-    const total = cards.length
-    const avgRetrievability = nonNewCount > 0 ? retrievabilitySum / nonNewCount : 0
-    const avgOverdueRatio = overdueCount > 0 ? overdueRatioSum / overdueCount : 0
+    const total = cards.length;
+    const avgRetrievability =
+      nonNewCount > 0 ? retrievabilitySum / nonNewCount : 0;
+    const avgOverdueRatio =
+      overdueCount > 0 ? overdueRatioSum / overdueCount : 0;
 
     // Composite score: higher = more urgent
     // Weights: due_now ×200, new ×50, due_soon ×15
     // Overdue depth: each day overdue beyond scheduled boosts score
     // Retrievability penalty: only matters when avgR drops below 90%
-    const overdueDepthPenalty = avgOverdueRatio * 50
-    const retrievabilityPenalty = Math.max(0, 0.9 - avgRetrievability) * 30
+    const overdueDepthPenalty = avgOverdueRatio * 50;
+    const retrievabilityPenalty = Math.max(0, 0.9 - avgRetrievability) * 30;
 
     results.push({
       documentId: docId,
@@ -131,22 +133,31 @@ export function computeDocMetrics(
       dueSoonCount,
       avgRetrievability: Math.round(avgRetrievability * 100),
       avgOverdueRatio: Math.round(avgOverdueRatio * 100),
-      compositeScore: dueNowCount * 200 + newCardsCount * 50 + dueSoonCount * 15 + retrievabilityPenalty + overdueDepthPenalty,
-    })
+      compositeScore:
+        dueNowCount * 200 +
+        newCardsCount * 50 +
+        dueSoonCount * 15 +
+        retrievabilityPenalty +
+        overdueDepthPenalty,
+    });
   }
 
   // Sort by composite score descending (most urgent first), then by title for stability
-  results.sort((a, b) => b.compositeScore - a.compositeScore || a.documentTitle.localeCompare(b.documentTitle))
+  results.sort(
+    (a, b) =>
+      b.compositeScore - a.compositeScore ||
+      a.documentTitle.localeCompare(b.documentTitle),
+  );
 
-  return results
+  return results;
 }
 
 /**
  * Label for retrieval urgency.
  */
 export function urgencyLabel(avgRetrievability: number): string {
-  if (avgRetrievability >= 90) return "Fresh"
-  if (avgRetrievability >= 75) return "Good"
-  if (avgRetrievability >= 50) return "Aging"
-  return "Stale"
+  if (avgRetrievability >= 90) return "Fresh";
+  if (avgRetrievability >= 75) return "Good";
+  if (avgRetrievability >= 50) return "Aging";
+  return "Stale";
 }

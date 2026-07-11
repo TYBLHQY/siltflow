@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react"
-import type { AnnotationItem } from "@/stores/annotation.store"
-import { StudyPanel } from "@/components/document/StudyPanel"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { useEffect, useState } from "react";
+import type { AnnotationItem } from "@/stores/annotation.store";
+import { StudyPanel } from "@/components/document/StudyPanel";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface LearningModalProps {
-  items: AnnotationItem[]
-  studyingIndex: number
-  answerRevealed: boolean
-  setAnswerRevealed: (v: boolean) => void
-  onRate: (grade: number) => void
-  onClose: () => void
+  items: AnnotationItem[];
+  studyingIndex: number;
+  answerRevealed: boolean;
+  setAnswerRevealed: (v: boolean) => void;
+  onRate: (grade: number) => void;
+  onClose: () => void;
 }
 
 /**
@@ -25,26 +25,34 @@ export function LearningModal({
   onRate,
   onClose,
 }: LearningModalProps) {
-  const [open, setOpen] = useState(items.length > 0)
+  const [open, setOpen] = useState(items.length > 0);
 
   // Safety-net ESC close (StudyPanel also handles ESC via shortcut system)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
-    }
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
-  }, [onClose])
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   // Open when items become available, start exit animation when items become empty
   useEffect(() => {
-    if (items.length > 0) setOpen(true)
-    else setOpen(false)
-  }, [items.length])
+    if (items.length > 0) setOpen(true);
+    else setOpen(false);
+  }, [items.length]);
 
   return (
-    <Dialog open={open} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent hideClose className="flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0">
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        hideClose
+        className="flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0"
+      >
         {items.length > 0 && (
           <StudyPanel
             items={items}
@@ -57,5 +65,5 @@ export function LearningModal({
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

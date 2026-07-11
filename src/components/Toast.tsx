@@ -1,37 +1,48 @@
-import { useToastStore } from "@/stores/toast.store"
-import { CheckCircle2, AlertCircle, Info } from "lucide-react"
-import { useEffect, useState, useRef } from "react"
+import { useToastStore } from "@/stores/toast.store";
+import { CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 
 export function Toast() {
-  const message = useToastStore((s) => s.message)
-  const type = useToastStore((s) => s.type)
-  const [displayed, setDisplayed] = useState<{ message: string; type: string } | null>(null)
-  const [visible, setVisible] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const message = useToastStore((s) => s.message);
+  const type = useToastStore((s) => s.type);
+  const [displayed, setDisplayed] = useState<{
+    message: string;
+    type: string;
+  } | null>(null);
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (message) {
-      setDisplayed({ message, type })
+      setDisplayed({ message, type });
       // Trigger enter animation on next frame
-      requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => setVisible(true)),
+      );
     } else if (displayed) {
       // Start exit animation
-      setVisible(false)
+      setVisible(false);
       // Remove DOM after animation completes
-      timerRef.current = setTimeout(() => setDisplayed(null), 300)
+      timerRef.current = setTimeout(() => setDisplayed(null), 300);
     }
-    return () => clearTimeout(timerRef.current)
-  }, [message])
+    return () => clearTimeout(timerRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message]);
 
-  if (!displayed) return null
+  if (!displayed) return null;
 
-  const Icon = displayed.type === "info" ? Info : displayed.type === "success" ? CheckCircle2 : AlertCircle
+  const Icon =
+    displayed.type === "info"
+      ? Info
+      : displayed.type === "success"
+        ? CheckCircle2
+        : AlertCircle;
 
   const darkColorMap = {
     info: "border-blue-600 bg-blue-950/90 text-blue-200 backdrop-blur-sm",
     success: "border-green-600 bg-green-950/90 text-green-200 backdrop-blur-sm",
     error: "border-red-600 bg-red-950/90 text-red-200 backdrop-blur-sm",
-  }
+  };
 
   return (
     <div className="fixed top-4 left-1/2 z-[100] -translate-x-1/2 pointer-events-none">
@@ -46,5 +57,5 @@ export function Toast() {
         <span>{displayed.message}</span>
       </div>
     </div>
-  )
+  );
 }

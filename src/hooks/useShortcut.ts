@@ -9,14 +9,14 @@
  * so user customizations apply automatically.
  */
 
-import { useEffect, useRef } from "react"
-import { useShortcutsStore } from "@/stores/shortcuts.store"
-import { parseShortcut, matchShortcut } from "@/lib/keyboard-keys"
-import type { ShortcutActionId } from "@/stores/shortcuts.store"
+import { useEffect, useRef } from "react";
+import { useShortcutsStore } from "@/stores/shortcuts.store";
+import { parseShortcut, matchShortcut } from "@/lib/keyboard-keys";
+import type { ShortcutActionId } from "@/stores/shortcuts.store";
 
 interface UseShortcutOptions {
   /** When false, the handler won't fire (default: true) */
-  enabled?: boolean
+  enabled?: boolean;
 }
 
 export function useShortcut(
@@ -24,25 +24,25 @@ export function useShortcut(
   handler: () => void,
   options?: UseShortcutOptions,
 ) {
-  const enabled = options?.enabled ?? true
+  const enabled = options?.enabled ?? true;
   // Subscribe to the exact key string so the effect re-runs when the shortcut changes
-  const keys = useShortcutsStore((s) => s.getKeys(actionId))
-  const handlerRef = useRef(handler)
+  const keys = useShortcutsStore((s) => s.getKeys(actionId));
+  const handlerRef = useRef(handler);
 
   // Keep the handler ref current (avoids stale closure issues)
   useEffect(() => {
-    handlerRef.current = handler
-  }, [handler])
+    handlerRef.current = handler;
+  }, [handler]);
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) return;
 
-    const parsed = parseShortcut(keys)
-    if (!parsed) return
+    const parsed = parseShortcut(keys);
+    if (!parsed) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       // Ignore when typing in input/textarea/select/contenteditable
-      const tag = (e.target as HTMLElement)?.tagName
+      const tag = (e.target as HTMLElement)?.tagName;
       if (
         tag === "INPUT" ||
         tag === "TEXTAREA" ||
@@ -51,19 +51,19 @@ export function useShortcut(
       ) {
         // But allow global ctrl+ shortcuts that aren't for text input
         // (like ctrl+e for fit-width) even in inputs
-        if (!e.ctrlKey && !e.metaKey) return
+        if (!e.ctrlKey && !e.metaKey) return;
       }
 
       if (matchShortcut(parsed, e)) {
-        e.preventDefault()
-        e.stopPropagation()
-        handlerRef.current()
+        e.preventDefault();
+        e.stopPropagation();
+        handlerRef.current();
       }
-    }
+    };
 
-    document.addEventListener("keydown", onKeyDown, true)
+    document.addEventListener("keydown", onKeyDown, true);
     return () => {
-      document.removeEventListener("keydown", onKeyDown, true)
-    }
-  }, [actionId, enabled, keys])
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, [actionId, enabled, keys]);
 }

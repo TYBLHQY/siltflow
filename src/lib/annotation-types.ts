@@ -19,53 +19,53 @@
 // Definitions entry
 // ---------------------------------------------------------------------------
 export interface DefinitionEntry {
-  pos?: string
+  pos?: string;
   /** Explanation in the source language. */
-  definition: string
+  definition: string;
   /** Explanation in the target language. */
-  gloss?: string
+  gloss?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Example sentence
 // ---------------------------------------------------------------------------
 export interface ExampleEntry {
-  sentence: string
-  translation: string
+  sentence: string;
+  translation: string;
   /** "context" = from user's own text, "dictionary" = AI-generated. */
-  source: "context" | "dictionary"
+  source: "context" | "dictionary";
 }
 
 // ---------------------------------------------------------------------------
 // Collocation / frequent pattern
 // ---------------------------------------------------------------------------
 export interface CollocationEntry {
-  phrase: string
-  translation: string
+  phrase: string;
+  translation: string;
 }
 
 // ---------------------------------------------------------------------------
 // Alternative expression (synonym / rephrase)
 // ---------------------------------------------------------------------------
 export interface AlternativeEntry {
-  expression: string
-  register?: string
+  expression: string;
+  register?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Pronunciation
 // ---------------------------------------------------------------------------
 export interface PronunciationInfo {
-  ipa?: string
+  ipa?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Metadata
 // ---------------------------------------------------------------------------
 export interface AITranslateMetadata {
-  difficulty?: string       // CEFR: A1-C2 / native
-  register?: string         // formal | casual | neutral | academic | literary
-  tags?: string[]           // domain tags
+  difficulty?: string; // CEFR: A1-C2 / native
+  register?: string; // formal | casual | neutral | academic | literary
+  tags?: string[]; // domain tags
 }
 
 // ---------------------------------------------------------------------------
@@ -73,62 +73,66 @@ export interface AITranslateMetadata {
 // ---------------------------------------------------------------------------
 export interface AIAnnotationData {
   /** Natural translation. */
-  translation: string
+  translation: string;
   /** Source language code (ISO 639-1). */
-  source_lang: string
+  source_lang: string;
   /** Target language code. */
-  target_lang: string
+  target_lang: string;
   /** Normalized user input. */
-  cleaned_input: string
+  cleaned_input: string;
 
   /** Base/dictionary form (for inflected words). */
-  lemma?: string
+  lemma?: string;
   /** Part-of-speech tag. */
-  pos?: string
+  pos?: string;
 
   /** Multi-sense definitions. */
-  definitions: DefinitionEntry[]
+  definitions: DefinitionEntry[];
   /** Example sentences. */
-  examples: ExampleEntry[]
+  examples: ExampleEntry[];
   /** Common collocations / usage patterns. */
-  collocations: CollocationEntry[]
+  collocations: CollocationEntry[];
   /** Synonyms / alternative phrasings by register. */
-  alternatives: AlternativeEntry[]
+  alternatives: AlternativeEntry[];
 
   /** Pronunciation information. */
-  pronunciation?: PronunciationInfo
+  pronunciation?: PronunciationInfo;
 
   /** Metadata (CEFR, register, domain tags). */
-  metadata?: AITranslateMetadata
+  metadata?: AITranslateMetadata;
 
   /** The sentence from the user's document where this text appears. */
-  context_sentence?: string
+  context_sentence?: string;
 
   // ── Backward compat (old fields kept for existing annotations) ──
   /** @deprecated Use translation. */
-  translate?: string
+  translate?: string;
   /** @deprecated Use definitions. */
-  words?: Array<{ word: string; pos?: string; meaning: string }>
+  words?: Array<{ word: string; pos?: string; meaning: string }>;
   /** @deprecated Use collocations. */
-  frequently?: Array<{ phrase: string; translation: string }>
+  frequently?: Array<{ phrase: string; translation: string }>;
   /** @deprecated Use examples. */
-  usage_examples?: string[]
+  usage_examples?: string[];
   /** @deprecated Use metadata.difficulty. */
-  difficulty_level?: string
+  difficulty_level?: string;
   /** @deprecated Use metadata.tags. */
-  category_tags?: string[]
+  category_tags?: string[];
   /** @deprecated Use pronunciation.ipa. */
-  phonetic?: string
+  phonetic?: string;
   /** @deprecated Not used in new schema. */
-  granularity?: string
+  granularity?: string;
   /** @deprecated Not used in new schema. */
-  usage_notes?: string
+  usage_notes?: string;
   /** @deprecated Not used in new schema. */
-  grammar_notes?: string
+  grammar_notes?: string;
   /** @deprecated Not used in new schema. */
-  gist?: string
+  gist?: string;
   /** @deprecated Not used in new schema. */
-  key_terms?: Array<{ term: string; explanation: string }>
+  key_terms?: Array<{ term: string; explanation: string }>;
   /** @deprecated Not used in new schema. */
-  related_terms?: Array<{ term: string; relation: string; term_local?: string }>
+  related_terms?: Array<{
+    term: string;
+    relation: string;
+    term_local?: string;
+  }>;
 }
