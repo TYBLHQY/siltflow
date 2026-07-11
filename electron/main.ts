@@ -4,6 +4,8 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { autoUpdater } from 'electron-updater'
+
 import { initDatabase } from './database'
 import { registerDocumentHandlers } from './ipc/documents.ipc'
 import { registerAnnotationHandlers } from './ipc/annotations.ipc'
@@ -217,30 +219,69 @@ ipcMain.handle('dialog:selectPdf', async () => {
   const result = await dialog.showOpenDialog(win, {
     title: 'Select PDF',
     filters: [{ name: 'PDF Documents', extensions: ['pdf'] }],
-    properties: ['openFile'],
+    properties: ['openFile', 'multiSelections'],
   })
   if (result.canceled || result.filePaths.length === 0) return null
 
-  const srcPath = result.filePaths[0]
-  const fileName = path.basename(srcPath)
-  const docId = crypto.randomUUID()
-  const docDir = path.join(vaultPath, 'documents', docId)
-  const dest = path.join(docDir, fileName)
+  return result.filePaths.map((srcPath) => {
+    const fileName = path.basename(srcPath)
+    const docId = crypto.randomUUID()
+    const docDir = path.join(vaultPath, 'documents', docId)
+    const dest = path.join(docDir, fileName)
 
-  fs.mkdirSync(docDir, { recursive: true })
-  fs.copyFileSync(srcPath, dest)
+    fs.mkdirSync(docDir, { recursive: true })
+    fs.copyFileSync(srcPath, dest)
 
-  return {
-    id: docId,
-    fileName,
-    filePath: `siltflow://documents/${docId}/${fileName}`,
-    title: fileName.replace(/\.pdf$/i, ''),
-  }
+    return {
+      id: docId,
+      fileName,
+      filePath: `siltflow://documents/${docId}/${fileName}`,
+      title: fileName.replace(/\.pdf$/i, ''),
+    }
+  })
 })
 
 // Custom protocol → serve files from vault
 ipcMain.handle('file:load', async (_event, filePath: string) => {
   return fs.readFileSync(filePath).buffer
+})
+
+// ── Auto-update ────────────────────────────────────────────────────
+autoUpdater.autoDownload = false
+autoUpdater.forceDevUpdateConfig = true
+autoUpdater.logger = null
+
+function sendUpdateEvent(channel: string, data: unknown) {
+  win?.webContents.send(channel, data)
+}
+
+autoUpdater.on('update-available', (info) => {
+  sendUpdateEvent('update:available', info)
+})
+autoUpdater.on('update-not-available', () => {
+  sendUpdateEvent('update:not-available', null)
+})
+autoUpdater.on('download-progress', (progress) => {
+  sendUpdateEvent('update:download-progress', progress)
+})
+autoUpdater.on('update-downloaded', () => {
+  sendUpdateEvent('update:downloaded', null)
+})
+autoUpdater.on('error', (err) => {
+  sendUpdateEvent('update:error', err.message)
+})
+
+ipcMain.handle('update:check', async () => {
+  autoUpdater.checkForUpdates()
+})
+
+ipcMain.handle('update:download', async () => {
+  autoUpdater.downloadUpdate()
+})
+
+ipcMain.handle('update:install', async () => {
+  win?.destroy()
+  autoUpdater.quitAndInstall()
 })
 
 // ── App Bootstrap ─────────────────────────────────────────────────

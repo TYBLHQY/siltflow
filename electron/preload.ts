@@ -6,8 +6,20 @@ export interface SiltflowAPI {
   vaultSetPath: (vaultPath: string) => Promise<string>
   vaultConfigGet: () => Promise<Record<string, unknown>>
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>
-  selectPdf: () => Promise<{ id: string; fileName: string; filePath: string; title: string } | null>
+  selectPdf: () => Promise<{ id: string; fileName: string; filePath: string; title: string }[] | null>
   loadFile: (filePath: string) => Promise<ArrayBuffer>
+
+  // Updates
+  update: {
+    check: () => Promise<void>
+    download: () => Promise<void>
+    install: () => Promise<void>
+    onAvailable: (fn: (info: unknown) => void) => () => void
+    onNotAvailable: (fn: () => void) => () => void
+    onDownloadProgress: (fn: (progress: { percent: number; bytesPerSecond: number; total: number; transferred: number }) => void) => () => void
+    onDownloaded: (fn: () => void) => () => void
+    onError: (fn: (message: string) => void) => () => void
+  }
 
   // Database
   documents: {
@@ -61,6 +73,38 @@ const api: SiltflowAPI = {
   vaultConfigSet: (config) => ipcRenderer.invoke('vault:config:set', config),
   selectPdf: () => ipcRenderer.invoke('dialog:selectPdf'),
   loadFile: (filePath: string) => ipcRenderer.invoke('file:load', filePath),
+
+  // Updates
+  update: {
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    onAvailable: (fn) => {
+      const cb = (_: unknown, info: unknown) => fn(info)
+      ipcRenderer.on('update:available', cb)
+      return () => ipcRenderer.removeListener('update:available', cb)
+    },
+    onNotAvailable: (fn) => {
+      const cb = () => fn()
+      ipcRenderer.on('update:not-available', cb)
+      return () => ipcRenderer.removeListener('update:not-available', cb)
+    },
+    onDownloadProgress: (fn) => {
+      const cb = (_: unknown, progress: { percent: number; bytesPerSecond: number; total: number; transferred: number }) => fn(progress)
+      ipcRenderer.on('update:download-progress', cb)
+      return () => ipcRenderer.removeListener('update:download-progress', cb)
+    },
+    onDownloaded: (fn) => {
+      const cb = () => fn()
+      ipcRenderer.on('update:downloaded', cb)
+      return () => ipcRenderer.removeListener('update:downloaded', cb)
+    },
+    onError: (fn) => {
+      const cb = (_: unknown, message: string) => fn(message)
+      ipcRenderer.on('update:error', cb)
+      return () => ipcRenderer.removeListener('update:error', cb)
+    },
+  },
   documents: {
     list: () => ipcRenderer.invoke('documents:list'),
     get: (id) => ipcRenderer.invoke('documents:get', id),

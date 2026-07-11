@@ -129,19 +129,22 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
   const handleImport = async () => {
     try {
-      const result = await window.siltflow.selectPdf()
-      if (!result) return
-      await window.siltflow.documents.save({
-        id: result.id,
-        title: result.title,
-        fileName: result.fileName,
-        filePath: result.filePath,
-      })
-      addDocument({
-        id: result.id,
-        title: result.title,
-        filePath: result.filePath,
-      })
+      const results = await window.siltflow.selectPdf()
+      if (!results || results.length === 0) return
+
+      for (const result of results) {
+        await window.siltflow.documents.save({
+          id: result.id,
+          title: result.title,
+          fileName: result.fileName,
+          filePath: result.filePath,
+        })
+        addDocument({
+          id: result.id,
+          title: result.title,
+          filePath: result.filePath,
+        })
+      }
     } catch (err) {
       console.error("Import failed:", err)
     }

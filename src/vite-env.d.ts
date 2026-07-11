@@ -7,8 +7,20 @@ interface SiltflowAPI {
   vaultSelect: () => Promise<string>
   vaultConfigGet: () => Promise<Record<string, unknown>>
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>
-  selectPdf: () => Promise<{ id: string; fileName: string; filePath: string; title: string } | null>
+  selectPdf: () => Promise<{ id: string; fileName: string; filePath: string; title: string }[] | null>
   loadFile: (filePath: string) => Promise<ArrayBuffer>
+
+  // Updates
+  update: {
+    check: () => Promise<void>
+    download: () => Promise<void>
+    install: () => Promise<void>
+    onAvailable: (fn: (info: unknown) => void) => () => void
+    onNotAvailable: (fn: () => void) => () => void
+    onDownloadProgress: (fn: (progress: { percent: number; bytesPerSecond: number; total: number; transferred: number }) => void) => () => void
+    onDownloaded: (fn: () => void) => () => void
+    onError: (fn: (message: string) => void) => () => void
+  }
   documents: {
     list: () => Promise<any[]>
     get: (id: string) => Promise<any | null>
