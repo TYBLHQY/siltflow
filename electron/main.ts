@@ -7,7 +7,7 @@ import path from 'node:path'
 import { autoUpdater } from 'electron-updater'
 
 import { initDatabase, getSqlite } from './database'
-import { registerDocumentHandlers } from './ipc/documents.ipc'
+import { registerDocumentHandlers, setVaultPathForDocuments } from './ipc/documents.ipc'
 import { registerAnnotationHandlers } from './ipc/annotations.ipc'
 import { registerSummaryHandlers } from './ipc/summaries.ipc'
 import { registerAiResultHandlers } from './ipc/ai-results.ipc'
@@ -154,6 +154,7 @@ function registerAllHandlers(vaultPath: string) {
   handlersRegistered = true
   initDatabase(vaultPath)
   registerDocumentHandlers()
+  setVaultPathForDocuments(vaultPath)
   registerAnnotationHandlers()
   registerSummaryHandlers()
   registerAiResultHandlers()

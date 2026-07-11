@@ -1,6 +1,14 @@
 import { ipcMain } from "electron"
 import { getDb, schema } from "../database"
 import { eq } from "drizzle-orm"
+import fs from "node:fs"
+import path from "node:path"
+
+let vaultPath = ""
+
+export function setVaultPathForDocuments(p: string) {
+  vaultPath = p
+}
 
 export function registerDocumentHandlers() {
   ipcMain.handle("documents:list", () => {
@@ -33,6 +41,13 @@ export function registerDocumentHandlers() {
   ipcMain.handle("documents:delete", (_event, id: string) => {
     const db = getDb()
     if (!db) return
+    // Delete file from disk
+    if (vaultPath) {
+      const docDir = path.join(vaultPath, 'documents', id)
+      if (fs.existsSync(docDir)) {
+        fs.rmSync(docDir, { recursive: true, force: true })
+      }
+    }
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
   })
 }
