@@ -461,6 +461,9 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
+                        {m.newCardsCount > 0 && (
+                          <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">{m.newCardsCount} new</span>
+                        )}
                         {m.dueNowCount > 0 && (
                           <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">{m.dueNowCount} due</span>
                         )}

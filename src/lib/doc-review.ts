@@ -13,6 +13,7 @@
  * 5. total_cards       — tiebreaker (more annotated content = higher rank)
  */
 import type { Card } from "ts-fsrs"
+import { State } from "ts-fsrs"
 
 export interface CardWithDoc {
   card: Card
@@ -23,6 +24,7 @@ export interface DocReviewMetrics {
   documentId: string
   documentTitle: string
   totalCards: number
+  newCardsCount: number
   dueNowCount: number
   dueSoonCount: number // within 7 days
   avgRetrievability: number
@@ -57,6 +59,7 @@ export function computeDocMetrics(
         documentId: docId,
         documentTitle: title,
         totalCards: 0,
+        newCardsCount: 0,
         dueNowCount: 0,
         dueSoonCount: 0,
         avgRetrievability: 0,
@@ -68,11 +71,19 @@ export function computeDocMetrics(
 
     let dueNowCount = 0
     let dueSoonCount = 0
+    let newCardsCount = 0
     let retrievabilitySum = 0
     let overdueRatioSum = 0
     let overdueCount = 0
 
     for (const card of cards) {
+      // Count new cards (state === New) — annotated but not yet studied
+      if (card.state === State.New) {
+        newCardsCount++
+        // Don't count new cards into retrievability metrics
+        continue
+      }
+
       // Normalize due date
       const due = card.due instanceof Date ? card.due : new Date(card.due)
       const dueMs = due.getTime()
@@ -104,7 +115,7 @@ export function computeDocMetrics(
     const avgOverdueRatio = overdueCount > 0 ? overdueRatioSum / overdueCount : 0
 
     // Composite score: higher = more urgent
-    // Weights: due_now * 100, due_soon * 10, retrievability penalty, overdue bonus
+    // Weights: due_now * 100, due_soon * 10, new * 20, retrievability penalty, overdue bonus
     const retrievabilityPenalty = Math.max(0, 0.5 - avgRetrievability) * 50
     const overdueBonus = avgOverdueRatio * 20
 
@@ -112,11 +123,12 @@ export function computeDocMetrics(
       documentId: docId,
       documentTitle: title,
       totalCards: total,
+      newCardsCount,
       dueNowCount,
       dueSoonCount,
       avgRetrievability: Math.round(avgRetrievability * 100),
       avgOverdueRatio: Math.round(avgOverdueRatio * 100),
-      compositeScore: dueNowCount * 100 + dueSoonCount * 10 + retrievabilityPenalty + overdueBonus,
+      compositeScore: dueNowCount * 100 + dueSoonCount * 10 + newCardsCount * 20 + retrievabilityPenalty + overdueBonus,
     })
   }
 
