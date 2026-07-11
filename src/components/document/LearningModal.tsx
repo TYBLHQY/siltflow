@@ -35,7 +35,7 @@ export function LearningModal({
   }, [onClose])
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open={!!items.length} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent hideClose className="flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0">
         <StudyPanel
           items={items}

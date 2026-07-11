@@ -8,7 +8,7 @@ interface AppSettingsState {
 
 const STORAGE_KEY = "appSettings"
 
-export const useAppSettingsStore = create<AppSettingsState>()((set, get) => ({
+export const useAppSettingsStore = create<AppSettingsState>()((set) => ({
   loaded: false,
   checkUpdateOnStartup: true,
 

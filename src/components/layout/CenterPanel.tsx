@@ -165,12 +165,12 @@ function SettingsButton() {
       >
         <Settings className="h-4 w-4" />
       </Button>
-      {open && <UnifiedSettingsModal onClose={() => setOpen(false)} />}
+      <UnifiedSettingsModal open={open} onClose={() => setOpen(false)} />
     </>
   )
 }
 
-function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
+function UnifiedSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [tab, setTab] = useState<SettingsTab>("ai")
 
   // Close on Escape key
@@ -183,7 +183,7 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open={open} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent hideClose className="flex w-full max-w-3xl min-h-[500px] rounded-lg border bg-background shadow-xl p-0 gap-0">
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">

@@ -33,7 +33,6 @@ function App() {
   const [updateDialog, setUpdateDialog] = useState<
     { latestVersion: string } | "checking" | "latest" | "error" | null
   >(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [downloading, setDownloading] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
@@ -88,8 +87,7 @@ function App() {
         setDownloaded(true)
         setDownloading(false)
       })
-      const unsubError = window.siltflow.update.onError((msg) => {
-        setErrorMsg(msg)
+      const unsubError = window.siltflow.update.onError(() => {
         setUpdateDialog("error")
       })
 

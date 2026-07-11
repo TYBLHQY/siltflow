@@ -418,28 +418,26 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           )}
 
           {/* Start Learning overlay modal */}
-          {studyPanelOpen && (
-            <LearningModal
-              items={dueItems}
-              studyingIndex={studyingIndex}
-              answerRevealed={answerRevealed}
-              setAnswerRevealed={setAnswerRevealed}
-              onRate={(grade) => {
-                const item = dueItems[studyingIndex]
-                if (item) {
-                  reviewAnnotation(item.id, grade as Grade)
-                }
-                if (studyingIndex + 1 < dueItems.length) {
-                  setStudyingIndex((i) => i + 1)
-                  setAnswerRevealed(false)
-                } else {
-                  setStudyPanelOpen(false)
-                  showToast("Learning complete!", "info")
-                }
-              }}
-              onClose={() => setStudyPanelOpen(false)}
-            />
-          )}
+          <LearningModal
+            items={studyPanelOpen ? dueItems : []}
+            studyingIndex={studyingIndex}
+            answerRevealed={answerRevealed}
+            setAnswerRevealed={setAnswerRevealed}
+            onRate={(grade) => {
+              const item = dueItems[studyingIndex]
+              if (item) {
+                reviewAnnotation(item.id, grade as Grade)
+              }
+              if (studyingIndex + 1 < dueItems.length) {
+                setStudyingIndex((i) => i + 1)
+                setAnswerRevealed(false)
+              } else {
+                setStudyPanelOpen(false)
+                showToast("Learning complete!", "info")
+              }
+            }}
+            onClose={() => setStudyPanelOpen(false)}
+          />
       </TabsContent>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
           {extracting ? (
