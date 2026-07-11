@@ -209,6 +209,20 @@ function App() {
             </button>
           </div>
 
+          {/* Auto-check toggle */}
+          <div className="flex items-center gap-2 px-2 pb-1">
+            <input
+              type="checkbox"
+              id="autoCheckToggle"
+              className="rounded"
+              checked={checkUpdateOnStartup}
+              onChange={() => setCheckUpdateOnStartup(!checkUpdateOnStartup)}
+            />
+            <label htmlFor="autoCheckToggle" className="text-xs text-muted-foreground">
+              Check for updates on startup
+            </label>
+          </div>
+
           {downloading && (
             <div className="space-y-1 px-2">
               <div className="flex items-center justify-between">
@@ -225,18 +239,6 @@ function App() {
           )}
 
           <DialogFooter className="flex-col items-start gap-3">
-            <div className="flex items-center gap-2 w-full">
-              <input
-                type="checkbox"
-                id="autoCheckToggle"
-                className="rounded"
-                checked={checkUpdateOnStartup}
-                onChange={() => setCheckUpdateOnStartup(!checkUpdateOnStartup)}
-              />
-              <label htmlFor="autoCheckToggle" className="text-xs text-muted-foreground">
-                Check for updates on startup
-              </label>
-            </div>
             {downloaded ? (
               <button
                 className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
