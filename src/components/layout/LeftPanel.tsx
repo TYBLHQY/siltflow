@@ -106,7 +106,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   )
 
   // Load per-document FSRS metrics from backend
-  const metricsInitRef = useRef(false)
 
   // Full load from backend + annotations (used once at startup)
   const loadMetricsFull = useCallback(async () => {
@@ -238,7 +237,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   // Incremental update from in-memory items — no flash, debounced
   const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>()
   useEffect(() => {
-    if (!metricsInitRef.current) return
     if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current)
     metricsDebounceRef.current = setTimeout(() => {
       computeMetricsFromItems()
