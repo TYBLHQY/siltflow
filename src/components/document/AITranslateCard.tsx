@@ -6,6 +6,7 @@ import { KnuthPlassText } from "@/components/ui/KnuthPlassText"
 import { useTTS } from "@/lib/use-tts"
 import { useAnnotationStore } from "@/stores/annotation.store"
 import { useStyleStore, buildFontStack } from "@/stores/style.store"
+import { renderBoldText } from "@/lib/render-bold"
 
 interface AITranslateCardProps {
   id: string
@@ -295,7 +296,7 @@ export function AITranslateCard({
           }}
         >
           {translation && (
-            <p className="font-medium text-primary leading-relaxed">{translation}</p>
+            <p className="font-medium text-primary leading-relaxed">{renderBoldText(translation)}</p>
           )}
 
           {ai.lemma && (
@@ -356,7 +357,7 @@ export function AITranslateCard({
 
           {contextSentence && !expanded && (
             <p className="text-muted-foreground/80 italic leading-relaxed truncate">
-              "{contextSentence}"
+              "{renderBoldText(contextSentence)}"
             </p>
           )}
 
@@ -364,16 +365,16 @@ export function AITranslateCard({
             <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
               {examples.length > 0 && (
                 <div>
-                  <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                  <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
                     Examples
                   </span>
                   <ul className="space-y-1">
                     {examples.slice(0, 5).map((ex: any, i) => (
                       <li key={i}>
-                        <span className="text-foreground">{ex.sentence}</span>
+                        <span className="text-foreground">{renderBoldText(ex.sentence)}</span>
                         {ex.translation && (
                           <span className="text-muted-foreground block ml-0">
-                            {ex.translation}
+                            {renderBoldText(ex.translation)}
                             {ex.source === "context" && (
                               <span className="text-muted-foreground/50 ml-1">(from text)</span>
                             )}
@@ -387,7 +388,7 @@ export function AITranslateCard({
 
               {colls.length > 0 && (
                 <div>
-                  <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                  <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
                     Collocations
                   </span>
                   <div className="space-y-0.5">
@@ -403,7 +404,7 @@ export function AITranslateCard({
 
               {alts.length > 0 && (
                 <div>
-                  <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                  <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
                     Alternatives
                   </span>
                   <div className="space-y-0.5">

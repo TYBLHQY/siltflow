@@ -6,6 +6,7 @@ import { Volume2, ArrowLeft, CheckSquare, Loader2 } from "lucide-react"
 import { useTTS } from "@/lib/use-tts"
 import { useShortcut } from "@/hooks/useShortcut"
 import { useStyleStore, buildFontStack } from "@/stores/style.store"
+import { renderBoldText } from "@/lib/render-bold"
 
 interface StudyPanelProps {
   items: AnnotationItem[]
@@ -66,6 +67,15 @@ function getRegister(ai: NonNullable<AnnotationItem["aiResult"]>): string | unde
   return ai.metadata?.register
 }
 
+function getAlternatives(ai: NonNullable<AnnotationItem["aiResult"]>) {
+  if (ai.alternatives && ai.alternatives.length > 0) return ai.alternatives
+  if (ai.words) {
+    const syns = ai.words.filter(w => w.pos === "syn")
+    if (syns.length > 0) return syns.map(s => ({ expression: s.word, register: undefined as string | undefined }))
+  }
+  return []
+}
+
 export function StudyPanel({
   items,
   studyingIndex,
@@ -123,6 +133,8 @@ export function StudyPanel({
   const tags = ai ? getTags(ai) : undefined
   const register = ai ? getRegister(ai) : undefined
   const examples = ai?.examples ?? []
+  const alts = ai ? getAlternatives(ai) : []
+  const contextSentence = ai?.context_sentence
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
@@ -171,7 +183,7 @@ export function StudyPanel({
             {/* Translation */}
             {translation && (
               <p className="font-medium text-primary leading-relaxed">
-                {translation}
+                {renderBoldText(translation)}
               </p>
             )}
 
@@ -233,10 +245,34 @@ export function StudyPanel({
               </div>
             )}
 
+            {/* Examples */}
+            {examples.length > 0 && (
+              <div>
+                <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+                  Examples
+                </span>
+                <ul className="space-y-1 leading-relaxed">
+                  {examples.slice(0, 5).map((ex: any, i) => (
+                    <li key={i}>
+                      <span className="text-foreground">{renderBoldText(ex.sentence)}</span>
+                      {ex.translation && (
+                        <span className="text-muted-foreground block ml-0">
+                          {renderBoldText(ex.translation)}
+                          {ex.source === "context" && (
+                            <span className="text-muted-foreground/50 ml-1">(from text)</span>
+                          )}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Collocations */}
             {colls.length > 0 && (
               <div>
-                <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
+                <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
                   Collocations
                 </span>
                 <div className="space-y-0.5 leading-relaxed">
@@ -250,28 +286,30 @@ export function StudyPanel({
               </div>
             )}
 
-            {/* Examples */}
-            {examples.length > 0 && (
+            {/* Alternatives */}
+            {alts.length > 0 && (
               <div>
-                <span className="font-medium text-foreground flex items-center justify-center mb-0.5 text-center">
-                  Examples
+                <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+                  Alternatives
                 </span>
-                <ul className="space-y-1 leading-relaxed">
-                  {examples.slice(0, 5).map((ex: any, i) => (
-                    <li key={i}>
-                      <span className="text-foreground">{ex.sentence}</span>
-                      {ex.translation && (
-                        <span className="text-muted-foreground block ml-0">
-                          {ex.translation}
-                          {ex.source === "context" && (
-                            <span className="text-muted-foreground/50 ml-1">(from text)</span>
-                          )}
-                        </span>
+                <div className="space-y-0.5 leading-relaxed">
+                  {alts.map((a: any, i) => (
+                    <div key={i}>
+                      <span className="font-medium text-foreground">{a.expression}</span>
+                      {a.register && (
+                        <span className="text-muted-foreground/60 ml-1">({a.register})</span>
                       )}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
+            )}
+
+            {/* Context sentence */}
+            {contextSentence && (
+              <p className="text-muted-foreground/80 italic leading-relaxed truncate">
+                "{renderBoldText(contextSentence)}"
+              </p>
             )}
           </div>
         )}
