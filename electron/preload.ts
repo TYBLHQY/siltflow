@@ -6,6 +6,7 @@ export interface SiltflowAPI {
   vaultSetPath: (vaultPath: string) => Promise<string>
   vaultConfigGet: () => Promise<Record<string, unknown>>
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>
+  openExternal: (url: string) => Promise<void>
   selectPdf: () => Promise<{ id: string; title: string }[] | null>
   importPdfFolder: () => Promise<{
     docs: { id: string; title: string; folderId: string | null }[]
@@ -76,6 +77,7 @@ const api: SiltflowAPI = {
   vaultSetPath: (vaultPath: string) => ipcRenderer.invoke('vault:setPath', vaultPath),
   vaultConfigGet: () => ipcRenderer.invoke('vault:config:get'),
   vaultConfigSet: (config) => ipcRenderer.invoke('vault:config:set', config),
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   selectPdf: () => ipcRenderer.invoke('dialog:selectPdf'),
   importPdfFolder: () => ipcRenderer.invoke('dialog:importPdfFolder'),
   loadFile: (filePath: string) => ipcRenderer.invoke('file:load', filePath),

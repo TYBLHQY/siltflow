@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
@@ -120,6 +120,12 @@ function createWindow() {
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString())
+  })
+
+  // Open external links in system browser
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
   })
 
   if (VITE_DEV_SERVER_URL) {
@@ -398,6 +404,11 @@ ipcMain.handle('update:download', async () => {
 ipcMain.handle('update:install', async () => {
   win?.destroy()
   autoUpdater.quitAndInstall()
+})
+
+// Open external URL in system browser
+ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+  shell.openExternal(url)
 })
 
 // ── App Bootstrap ─────────────────────────────────────────────────

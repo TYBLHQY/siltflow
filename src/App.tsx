@@ -51,6 +51,21 @@ function App() {
     }
   }, [vaultReady, aiLoaded])
 
+  // Intercept <a target="_blank"> clicks → open in system browser
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const anchor = target.closest?.("a")
+      if (!anchor?.href || anchor.target !== "_blank") return
+      // Skip blob: and javascript: URLs
+      if (anchor.href.startsWith("blob:") || anchor.href.startsWith("javascript:")) return
+      e.preventDefault()
+      window.siltflow.openExternal(anchor.href)
+    }
+    document.addEventListener("click", handler)
+    return () => document.removeEventListener("click", handler)
+  }, [])
+
   // Check for updates on startup if enabled
   useEffect(() => {
     if (!vaultReady || !appSettingsLoaded || !checkUpdateOnStartup) return
@@ -185,14 +200,12 @@ function App() {
               <span className="text-muted-foreground">New version</span>
               <span className="font-medium text-green-600">v{(updateDialog as any)?.latestVersion}</span>
             </div>
-            <a
-              href={`https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => window.siltflow.openExternal(`https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`)}
               className="block text-xs text-primary hover:underline mt-1"
             >
               View release notes →
-            </a>
+            </button>
           </div>
 
           {downloading && (

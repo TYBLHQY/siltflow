@@ -7,6 +7,7 @@ interface SiltflowAPI {
   vaultSelect: () => Promise<string>
   vaultConfigGet: () => Promise<Record<string, unknown>>
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>
+  openExternal: (url: string) => Promise<void>
   selectPdf: () => Promise<{ id: string; title: string }[] | null>
   importPdfFolder: () => Promise<{
     docs: { id: string; title: string; folderId: string | null }[]
