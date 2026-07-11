@@ -133,6 +133,9 @@ function createTables() {
   if (!docCols.some((c: any) => c.name === 'sort_order')) {
     sqlite.exec("ALTER TABLE documents ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
   }
+  if (!docCols.some((c: any) => c.name === 'original_name')) {
+    sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT")
+  }
 }
 
 export function getDb() {

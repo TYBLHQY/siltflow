@@ -226,19 +226,20 @@ ipcMain.handle('dialog:selectPdf', async () => {
   if (result.canceled || result.filePaths.length === 0) return null
 
   return result.filePaths.map((srcPath) => {
-    const fileName = path.basename(srcPath)
+    const originalName = path.basename(srcPath)
     const docId = crypto.randomUUID()
     const docDir = path.join(vaultPath, 'documents', docId)
-    const dest = path.join(docDir, fileName)
+    const dest = path.join(docDir, 'data.pdf')
 
     fs.mkdirSync(docDir, { recursive: true })
     fs.copyFileSync(srcPath, dest)
 
     return {
       id: docId,
-      fileName,
-      filePath: `siltflow://documents/${docId}/${fileName}`,
-      title: fileName.replace(/\.pdf$/i, ''),
+      fileName: 'data.pdf',
+      originalName,
+      filePath: `siltflow://documents/${docId}/data.pdf`,
+      title: originalName.replace(/\.pdf$/i, ''),
     }
   })
 })
@@ -298,7 +299,7 @@ ipcMain.handle('dialog:importPdfFolder', async () => {
     `INSERT INTO folders (id, name, parent_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)`
   )
   const insertDoc = sql.prepare(
-    `INSERT INTO documents (id, title, file_name, file_path, folder_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?)`
+    `INSERT INTO documents (id, title, file_name, original_name, file_path, folder_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`
   )
 
   // Create root folder named after the imported directory
@@ -321,16 +322,16 @@ ipcMain.handle('dialog:importPdfFolder', async () => {
     return folderId
   }
 
-  const importedDocs: { id: string; fileName: string; filePath: string; title: string; folderId: string | null }[] = []
+  const importedDocs: { id: string; fileName: string; originalName?: string; filePath: string; title: string; folderId: string | null }[] = []
 
   for (const dirEntry of dirs) {
     const folderId = ensureFolder(dirEntry.relativeDir)
 
     for (const srcPath of dirEntry.pdfFiles) {
-      const fileName = path.basename(srcPath)
+      const originalName = path.basename(srcPath)
       const docId = crypto.randomUUID()
       const docDir = path.join(vaultPath, 'documents', docId)
-      const dest = path.join(docDir, fileName)
+      const dest = path.join(docDir, 'data.pdf')
 
       try {
         fs.mkdirSync(docDir, { recursive: true })
@@ -338,9 +339,10 @@ ipcMain.handle('dialog:importPdfFolder', async () => {
 
         insertDoc.run(
           docId,
-          fileName.replace(/\.pdf$/i, ''),
-          fileName,
-          `siltflow://documents/${docId}/${fileName}`,
+          originalName.replace(/\.pdf$/i, ''),
+          'data.pdf',
+          originalName,
+          `siltflow://documents/${docId}/data.pdf`,
           folderId,
           now,
           now,
@@ -348,9 +350,10 @@ ipcMain.handle('dialog:importPdfFolder', async () => {
 
         importedDocs.push({
           id: docId,
-          fileName,
-          filePath: `siltflow://documents/${docId}/${fileName}`,
-          title: fileName.replace(/\.pdf$/i, ''),
+          fileName: 'data.pdf',
+          originalName,
+          filePath: `siltflow://documents/${docId}/data.pdf`,
+          title: originalName.replace(/\.pdf$/i, ''),
           folderId,
         })
       } catch (err) {
