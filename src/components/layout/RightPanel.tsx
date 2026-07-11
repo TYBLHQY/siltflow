@@ -89,9 +89,9 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     setStudyPanelOpen(true)
   }, [dueItems, showToast])
 
-  // Shortcut: ctrl+s to start learning from annotations tab
-  const annotationsActive = activeTab === "annotations" && !studyPanelOpen
-  useShortcut("startLearning", handleStartLearning, { enabled: annotationsActive })
+  // Shortcut: ctrl+s to start learning when a PDF is open
+  const hasPdf = !!currentDocument?.id
+  useShortcut("startLearning", handleStartLearning, { enabled: hasPdf && !studyPanelOpen })
 
   /** Get the active profile from the store's raw state */
   const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null

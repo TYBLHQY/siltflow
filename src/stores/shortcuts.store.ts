@@ -76,7 +76,7 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   // PDF open
   { actionId: "toggleFitWidth",       label: "Toggle fit width",     context: "pdf-open",         defaultKeys: "ctrl+e",      keys: "ctrl+e" },
   // Annotations tab
-  { actionId: "startLearning",         label: "Start Learning",      context: "annotations-tab",  defaultKeys: "ctrl+s",      keys: "ctrl+s" },
+  { actionId: "startLearning",         label: "Start Learning",      context: "pdf-open",  defaultKeys: "ctrl+s",      keys: "ctrl+s" },
   // Learning mode
   { actionId: "revealCard",           label: "Reveal / flip card",   context: "learning-mode",    defaultKeys: "space",       keys: "space" },
   { actionId: "gradeAgain",           label: "Again (grade 1)",      context: "learning-mode",    defaultKeys: "num1",        keys: "num1" },
