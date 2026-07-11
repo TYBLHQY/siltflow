@@ -86,10 +86,11 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           VERSION="${TAG#v}"
 
-          # Create release
+          # Create release (published, not draft)
           gh release create "$TAG" \
             --title "Siltflow $VERSION" \
-            --generate-notes
+            --generate-notes \
+            --latest
 
           # Collect and upload all installer files
           find artifacts -type f \
