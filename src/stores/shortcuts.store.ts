@@ -39,6 +39,7 @@ export type ShortcutActionId =
   | "gradeGood"
   | "gradeEasy"
   | "backFromLearning"
+  | "listenCardAudio"
 
 // ── Shortcut entry ──────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { actionId: "toggleDocsTab",        label: "Docs tab",             context: "global",           defaultKeys: "alt+1",       keys: "alt+1" },
   { actionId: "toggleReviewTab",      label: "Review tab",           context: "global",           defaultKeys: "alt+2",       keys: "alt+2" },
   { actionId: "toggleOutlinesTab",    label: "Outlines tab",         context: "global",           defaultKeys: "alt+3",       keys: "alt+3" },
-  { actionId: "toggleAnnotationsTab", label: "Annotations tab",      context: "global",           defaultKeys: "alt+a",       keys: "alt+a" },
+  { actionId: "toggleAnnotationsTab", label: "Annotations tab",      context: "global",           defaultKeys: "alt+shift+a", keys: "alt+shift+a" },
   { actionId: "toggleSummaryTab",     label: "Summary tab",          context: "global",           defaultKeys: "alt+s",       keys: "alt+s" },
   // Global — panels
   { actionId: "toggleLeftPanel",      label: "Toggle left panel",    context: "global",           defaultKeys: "alt+[",       keys: "alt+[" },
@@ -77,13 +78,12 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   // Annotations tab
   { actionId: "startLearning",         label: "Start Learning",      context: "annotations-tab",  defaultKeys: "ctrl+s",      keys: "ctrl+s" },
   // Learning mode
-  { actionId: "revealCard",           label: "Reveal / flip card",  context: "learning-mode",    defaultKeys: "space",       keys: "space" },
-  { actionId: "gradeAgain",           label: "Again (grade 1)",     context: "learning-mode",    defaultKeys: "num1",        keys: "num1" },
-  { actionId: "gradeHard",            label: "Hard (grade 2)",      context: "learning-mode",    defaultKeys: "num2",        keys: "num2" },
-  { actionId: "gradeGood",            label: "Good (grade 3)",      context: "learning-mode",    defaultKeys: "num3",        keys: "num3" },
-  { actionId: "gradeEasy",            label: "Easy (grade 4)",      context: "learning-mode",    defaultKeys: "num4",        keys: "num4" },
-  // NOT user-configurable
-  { actionId: "backFromLearning",      label: "Back from learning", context: "learning-mode",    defaultKeys: "escape",      keys: "escape", locked: true },
+  { actionId: "revealCard",           label: "Reveal / flip card",   context: "learning-mode",    defaultKeys: "space",       keys: "space" },
+  { actionId: "gradeAgain",           label: "Again (grade 1)",      context: "learning-mode",    defaultKeys: "num1",        keys: "num1" },
+  { actionId: "gradeHard",            label: "Hard (grade 2)",       context: "learning-mode",    defaultKeys: "num2",        keys: "num2" },
+  { actionId: "gradeGood",            label: "Good (grade 3)",       context: "learning-mode",    defaultKeys: "num3",        keys: "num3" },
+  { actionId: "gradeEasy",            label: "Easy (grade 4)",       context: "learning-mode",    defaultKeys: "num4",        keys: "num4" },
+  { actionId: "listenCardAudio",      label: "Listen / stop audio",  context: "learning-mode",    defaultKeys: "alt+a",      keys: "alt+a" },
 ]
 
 const VAULT_KEY = "shortcuts"

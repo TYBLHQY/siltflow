@@ -97,6 +97,12 @@ export function StudyPanel({
   const handleGradeGood = useCallback(() => onRate(3), [onRate])
   const handleGradeEasy = useCallback(() => onRate(4), [onRate])
 
+  const handleListen = useCallback(() => {
+    if (!item) return
+    if (tts.state === "playing") tts.stop()
+    else tts.speak(item.text)
+  }, [item, tts])
+
   // Learning mode shortcuts (only active when item exists)
   useShortcut("revealCard", handleReveal, { enabled: !!item && !answerRevealed })
   useShortcut("gradeAgain", handleGradeAgain, { enabled: !!item && answerRevealed })
@@ -104,6 +110,7 @@ export function StudyPanel({
   useShortcut("gradeGood", handleGradeGood, { enabled: !!item && answerRevealed })
   useShortcut("gradeEasy", handleGradeEasy, { enabled: !!item && answerRevealed })
   useShortcut("backFromLearning", onBack, { enabled: !!item })
+  useShortcut("listenCardAudio", handleListen, { enabled: !!item })
 
   if (!item) {
     return (
