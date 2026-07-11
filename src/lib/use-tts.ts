@@ -106,8 +106,9 @@ export function useTTS() {
       // ── Edge-TTS ──
       setState("loading")
       try {
+        const resolvedVoice = voice || useTTSStore.getState().getVoice()
         const audioData: number[] = await window.siltflow.tts.speak(text, {
-          voice: voice || config.defaultVoice,
+          voice: resolvedVoice,
           rate: config.rate,
           volume: config.volume,
           pitch: config.pitch,
