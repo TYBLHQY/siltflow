@@ -83,19 +83,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const [metricsLoading, setMetricsLoading] = useState(false)
   const [reviewSearch, setReviewSearch] = useState("")
   const reviewSearchRef = useRef<HTMLInputElement>(null)
+  const activeTabRef = useRef(activeTab)
+  activeTabRef.current = activeTab
 
-  // Ctrl+F in review tab → focus search input
+  // Ctrl+F in review tab → focus search input (mount-once with ref to avoid listener churn)
   useEffect(() => {
-    if (activeTab !== "review") return
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+      if (activeTabRef.current === "review" && (e.ctrlKey || e.metaKey) && e.key === "f") {
         e.preventDefault()
         reviewSearchRef.current?.focus()
       }
     }
     document.addEventListener("keydown", handler)
     return () => document.removeEventListener("keydown", handler)
-  }, [activeTab])
+  }, [])
 
   // Only recompute when docMetrics change, not on every render
   const filteredMetrics = useMemo(
