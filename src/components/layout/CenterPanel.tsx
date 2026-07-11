@@ -14,6 +14,7 @@ import { useShortcutsStore } from "@/stores/shortcuts.store"
 import { useThemeStore } from "@/stores/theme.store"
 import { formatShortcut } from "@/lib/keyboard-keys"
 import { useAppSettingsStore } from "@/stores/app.store"
+import { useDocumentStore } from "@/stores/document.store"
 
 // ---------------------------------------------------------------------------
 // Page navigation — jump to page (only shown when a PDF is open)
@@ -1588,6 +1589,7 @@ interface CenterPanelProps {
 export function CenterPanel({ documentPath, documentId, leftCollapsed, rightCollapsed, onToggleLeft, onToggleRight }: CenterPanelProps) {
   const setItems = useAnnotationStore((s) => s.setItems)
   const loadedDocRef = useRef<string | null>(null)
+  const currentDocument = useDocumentStore((s) => s.currentDocument)
 
   // Load annotations from Electron backend when document changes
   useEffect(() => {
@@ -1631,9 +1633,7 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
     })
   }, [documentId, setItems])
 
-  const fileName = documentPath
-    ? documentPath.split("/").pop()?.split("\\").pop()
-    : null
+  const docTitle = currentDocument?.title ?? null
 
   return (
     <div className="flex h-full flex-col">
@@ -1644,13 +1644,13 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
         </Button>
 
         <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
-          {fileName || "Siltflow"}
+          {docTitle || "Siltflow"}
         </h1>
 
         <div className="flex items-center gap-2 shrink-0">
-          {fileName && <PageNav />}
-          {fileName && <QuickAddToggle />}
-          {fileName && <FitWidthButton />}
+          {docTitle && <PageNav />}
+          {docTitle && <QuickAddToggle />}
+          {docTitle && <FitWidthButton />}
           <SettingsButton />
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggleRight}>
             {rightCollapsed ? <PanelRightOpen className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
@@ -1659,7 +1659,7 @@ export function CenterPanel({ documentPath, documentId, leftCollapsed, rightColl
       </div>
 
       {/* ── content ── */}
-      {fileName ? (
+      {docTitle ? (
         <div className="flex-1 min-h-0 relative">
           <PdfViewer
             className="h-full w-full"
