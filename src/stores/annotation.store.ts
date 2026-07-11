@@ -61,9 +61,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   removeItem: (id) => {
     const current = useAnnotationStore.getState().items.find((i) => i.id === id)
     if (current) {
-      // Delete from backend cascade
-      window.siltflow.fsrsCards.delete(id, current.documentId).catch(() => {})
-      window.siltflow.aiResults.delete(id, current.documentId).catch(() => {})
+      // Backend deletes in a single transaction (annotation + ai_results + fsrs_cards)
       window.siltflow.annotations.delete(id, current.documentId).catch(() => {})
     }
     set((s) => ({ items: s.items.filter((i) => i.id !== id) }))
