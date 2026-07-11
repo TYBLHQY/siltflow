@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconText } from "@/components/ui/icon-text"
-import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Trash2, Search, CheckSquare } from "lucide-react"
+import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Trash2, X, Search } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
 import { useFolderStore } from "@/stores/folder.store"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
@@ -284,7 +284,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
   const docsTreeRef = useRef<DocsTreeHandle>(null)
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
-  const [selectMode, setSelectMode] = useState(false)
   const [deleteBatchConfirm, setDeleteBatchConfirm] = useState(false)
 
   const handleSelectionChange = useCallback((ids: string[]) => {
@@ -302,15 +301,9 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     useDocumentStore.getState().setDocuments(docs || [])
   }
 
-  const handleToggleSelectMode = useCallback(() => {
-    setSelectMode((prev) => {
-      if (prev) {
-        // Exiting select mode: clear selection
-        setSelectedDocIds([])
-        docsTreeRef.current?.clearSelection()
-      }
-      return !prev
-    })
+  const handleCancelSelection = useCallback(() => {
+    setSelectedDocIds([])
+    docsTreeRef.current?.clearSelection()
   }, [])
 
   // When switching to the docs tab with a current document, reveal it in the tree
@@ -393,28 +386,9 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={`flex size-7 items-center justify-center rounded-md transition-colors ${
-                        selectMode
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                      onClick={handleToggleSelectMode}
-                    >
-                      <CheckSquare className="size-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={6}>
-                    <p className="text-xs">Toggle Select Mode</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </div>
           </div>
-          {selectedDocIds.length > 0 && selectMode && (
+          {selectedDocIds.length > 0 && (
             <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-xs text-foreground">
               <span className="font-medium">{selectedDocIds.length} selected</span>
               <span className="text-border">·</span>
@@ -424,9 +398,16 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               >
                 <Trash2 className="size-3" /> Delete
               </button>
+              <span className="flex-1" />
+              <button
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent transition-colors"
+                onClick={handleCancelSelection}
+              >
+                <X className="size-3" /> Cancel
+              </button>
             </div>
           )}
-          <DocsTree ref={docsTreeRef} selectMode={selectMode} onSelectionChange={handleSelectionChange} />
+          <DocsTree ref={docsTreeRef} onSelectionChange={handleSelectionChange} />
 
           {/* ── Batch delete confirmation ── */}
           <Dialog open={deleteBatchConfirm} onOpenChange={setDeleteBatchConfirm}>

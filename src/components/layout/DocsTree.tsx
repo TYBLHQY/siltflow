@@ -110,12 +110,11 @@ export interface DocsTreeHandle {
 interface DocsTreeProps {
   defaultParentId?: string | null
   onSelectionChange?: (docIds: string[]) => void
-  selectMode?: boolean
 }
 
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
   function DocsTree(_props: DocsTreeProps, ref) {
-    const { onSelectionChange, selectMode = false } = _props
+    const { onSelectionChange } = _props
     const documents = useDocumentStore((s) => s.documents)
     const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
     const removeDocument = useDocumentStore((s) => s.removeDocument)
@@ -371,7 +370,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             ref={(t) => setTree(t ?? null)}
           >
             {(props: NodeRendererProps<NodeData>) => (
-              <DocTreeNode {...props} selectMode={selectMode} onContextMenu={onNodeContextMenu} />
+              <DocTreeNode {...props} onContextMenu={onNodeContextMenu} />
             )}
           </Tree>
         </div>
@@ -471,10 +470,9 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
 
 interface DocTreeNodeProps extends NodeRendererProps<NodeData> {
   onContextMenu: (e: React.MouseEvent, nodeData: NodeData) => void
-  selectMode?: boolean
 }
 
-function DocTreeNode({ node, style, dragHandle, onContextMenu, selectMode }: DocTreeNodeProps) {
+function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProps) {
   const data = node.data
   if (!data) return null
 
@@ -491,23 +489,25 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu, selectMode }: Doc
       style={{ ...style, height: "100%", display: "flex", alignItems: "center", gap: "6px" }}
       ref={dragHandle}
       className={`w-full cursor-pointer ${
-        node.isSelected ? "bg-accent" : "hover:bg-accent/50"
+        node.isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
       }`}
       onPointerDown={(e) => {
-        if (!selectMode) {
-          // Normal mode: prevent tree selection, navigate on click
+        // Only Shift+Click propagates to react-arborist for range selection.
+        // Regular/Ctrl clicks should select nothing in the tree.
+        if (!e.shiftKey) {
           e.stopPropagation()
         }
       }}
       onClick={(e) => {
+        // Shift+Click: selection mode only, don't navigate
+        if (e.shiftKey) return
+
+        // Regular or Ctrl+Click: open doc / toggle folder
         e.stopPropagation()
         if (data.type === "folder") {
           node.toggle()
         } else if (data.type === "document" && data.doc) {
-          if (!selectMode) {
-            setCurrentDocument(data.doc)
-          }
-          // In select mode, let the tree handle selection natively
+          setCurrentDocument(data.doc)
         }
       }}
       onContextMenu={(e) => onContextMenu(e, data)}
