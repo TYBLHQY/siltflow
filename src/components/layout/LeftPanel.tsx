@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconText } from "@/components/ui/icon-text"
-import { FileText, Plus, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus } from "lucide-react"
+import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
 import { useFolderStore } from "@/stores/folder.store"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useDocumentOutline, DocumentOutline } from "react-pdf-highlighter-plus"
 import { useAnnotationStore } from "@/stores/annotation.store"
@@ -195,31 +196,48 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         {/* ── Docs tab ── */}
         <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
           <div className="shrink-0 border-b px-3 py-2">
-            <div className="flex gap-2">
-              <button
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                onClick={handleImport}
-              >
-                <IconText icon={Plus} size="xs" className="gap-0">
-                  Import PDF
-                </IconText>
-              </button>
-              <button
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border/50 bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                onClick={handleImportFolder}
-              >
-                <IconText icon={FolderPlus} size="xs" className="gap-0">
-                  Import Folder
-                </IconText>
-              </button>
-              <button
-                className="flex items-center justify-center gap-1 rounded-md border border-border/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent transition-colors"
-                onClick={() => docsTreeRef.current?.createFolder()}
-              >
-                <IconText icon={FolderPlus} size="xs" className="gap-0">
-                  Folder
-                </IconText>
-              </button>
+            <div className="flex gap-1.5">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      onClick={handleImport}
+                    >
+                      <FileUp className="size-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6}>
+                    <p className="text-xs">Import PDF</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      onClick={handleImportFolder}
+                    >
+                      <FolderUp className="size-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6}>
+                    <p className="text-xs">Import Folder</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      onClick={() => docsTreeRef.current?.createFolder()}
+                    >
+                      <FolderPlus className="size-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6}>
+                    <p className="text-xs">New Folder</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           <DocsTree ref={docsTreeRef} />
