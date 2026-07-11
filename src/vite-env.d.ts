@@ -30,6 +30,7 @@ interface SiltflowAPI {
     save: (doc: any) => Promise<any>
     delete: (id: string) => Promise<void>
     deleteBatch: (ids: string[]) => Promise<void>
+    rename: (params: { id: string; title: string }) => Promise<void>
   }
   annotations: {
     list: (documentId: string) => Promise<any[]>

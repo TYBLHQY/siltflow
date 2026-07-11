@@ -191,11 +191,15 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       [createDirectFolder, tree, onSelectionChange],
     )
 
-    // onRename: persist the new name for existing folders
+    // onRename: persist the new name for folders and documents
     const handleRename = useCallback(
       async ({ id, name }: { id: string; name: string }) => {
+        const trimmed = name.trim()
+        if (!trimmed) return
         if (id.startsWith("folder:")) {
-          await renameFolder(id.slice(7), name)
+          await renameFolder(id.slice(7), trimmed)
+        } else if (id.startsWith("doc:")) {
+          await window.siltflow.documents.rename({ id: id.slice(4), title: trimmed })
         }
       },
       [renameFolder],
@@ -359,6 +363,20 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         {contextMenu?.type === "document" && (
           <div className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
             style={{ left: contextMenu.x, top: contextMenu.y }}>
+            <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              onClick={() => {
+                // Find the tree node and trigger inline edit
+                for (const n of tree?.visibleNodes ?? []) {
+                  if (n.id === `doc:${contextMenu.target.id}`) {
+                    n.edit()
+                    break
+                  }
+                }
+                setContextMenu(null)
+              }}>
+              <Pencil className="h-3 w-3" /> Rename
+            </button>
+            <hr className="my-1 border-border/50" />
             <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
               onClick={() => handleDeleteDoc(contextMenu.target)}>
               <Trash2 className="h-3 w-3" /> Delete

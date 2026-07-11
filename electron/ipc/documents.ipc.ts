@@ -63,4 +63,11 @@ export function registerDocumentHandlers() {
       db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
     }
   })
+
+  ipcMain.handle("documents:rename", (_event, { id, title }: { id: string; title: string }) => {
+    const db = getDb()
+    if (!db) return null
+    const now = new Date().toISOString()
+    db.update(schema.documents).set({ title, updatedAt: now }).where(eq(schema.documents.id, id)).run()
+  })
 }
