@@ -334,7 +334,6 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
    */
   const deleteHighlight = useCallback(
     (id: string) => {
-      window.siltflow.annotations.delete(id)
       removeItem(id)
     },
     [removeItem],

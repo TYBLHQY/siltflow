@@ -59,7 +59,13 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   },
 
   removeItem: (id) => {
-    // Cascade delete in DB handles FK, but still good hygiene
+    const current = useAnnotationStore.getState().items.find((i) => i.id === id)
+    if (current) {
+      // Delete from backend cascade
+      window.siltflow.fsrsCards.delete(id, current.documentId).catch(() => {})
+      window.siltflow.aiResults.delete(id, current.documentId).catch(() => {})
+      window.siltflow.annotations.delete(id).catch(() => {})
+    }
     set((s) => ({ items: s.items.filter((i) => i.id !== id) }))
   },
 

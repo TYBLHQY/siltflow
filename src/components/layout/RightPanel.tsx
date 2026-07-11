@@ -369,10 +369,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                     expanded={expandedCardId === ann.id}
                     onToggleExpand={(id) => setExpandedCardId(id)}
                     onClick={() => scrollToHighlight?.(ann.id)}
-                    onDelete={(id) => {
-                      window.siltflow.annotations.delete(id)
-                      removeItem(id)
-                    }}
+                    onDelete={(id) => { removeItem(id) }}
                     onTranslate={async (id) => {
                       const item = items.find((i) => i.id === id)
                       if (!item || item.aiResult !== undefined) return
