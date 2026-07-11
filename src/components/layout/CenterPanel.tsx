@@ -561,20 +561,29 @@ function FSRSConfigContent() {
         {params.enable_short_term && (
           <div>
             <label className="block text-xs font-medium mb-1">Learning steps</label>
-            <input
-              className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
-              value={(params.learning_steps as string[]).join(", ")}
-              onChange={(e) =>
-                updateParam(
-                  "learning_steps" as const,
-                  e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean) as any,
+            <div className="flex gap-2">
+              {[0, 1].map((idx) => {
+                const raw = (params.learning_steps as string[])[idx] ?? "1m"
+                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 1
+                return (
+                  <div key={idx} className="flex-1 flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={1}
+                      className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
+                      value={val}
+                      onChange={(e) => {
+                        const n = parseInt(e.target.value, 10) || 1
+                        const arr = [...(params.learning_steps as string[])]
+                        arr[idx] = `${n}m`
+                        updateParam("learning_steps" as const, arr as any)
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">m</span>
+                  </div>
                 )
-              }
-              placeholder="1m, 10m"
-            />
+              })}
+            </div>
           </div>
         )}
 
@@ -582,20 +591,28 @@ function FSRSConfigContent() {
         {params.enable_short_term && (
           <div>
             <label className="block text-xs font-medium mb-1">Relearning steps</label>
-            <input
-              className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
-              value={(params.relearning_steps as string[]).join(", ")}
-              onChange={(e) =>
-                updateParam(
-                  "relearning_steps" as const,
-                  e.target.value
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean) as any,
+            <div className="flex gap-2">
+              {[0].map((idx) => {
+                const raw = (params.relearning_steps as string[])[idx] ?? "10m"
+                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 10
+                return (
+                  <div key={idx} className="flex-1 flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={1}
+                      className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
+                      value={val}
+                      onChange={(e) => {
+                        const n = parseInt(e.target.value, 10) || 10
+                        const arr = [`${n}m`]
+                        updateParam("relearning_steps" as const, arr as any)
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">m</span>
+                  </div>
                 )
-              }
-              placeholder="10m"
-            />
+              })}
+            </div>
           </div>
         )}
       </div>
