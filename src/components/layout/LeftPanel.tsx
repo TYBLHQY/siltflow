@@ -432,8 +432,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                 {filteredMetrics.map((m) => (
                   <div
                     key={m.documentId}
-                    className={`group relative border-b border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
-                      currentDocument?.id === m.documentId ? "bg-accent" : "hover:bg-accent"
+                    className={`group relative border-b border-border/50 pl-3 py-2.5 pr-3 text-sm transition-colors cursor-pointer ${
+                      currentDocument?.id === m.documentId ? "border-l-[5px] border-l-foreground pl-[7px]" : "hover:bg-accent"
                     }`}
                     onClick={() => {
                       const doc = documents.find((d) => d.id === m.documentId)
