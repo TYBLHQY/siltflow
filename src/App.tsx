@@ -193,7 +193,7 @@ function App() {
           <div className="space-y-2 px-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Current version</span>
-              <span className="font-medium">{__APP_VERSION__}</span>
+              <span className="font-medium">{__APP_VERSION__.startsWith('v') ? __APP_VERSION__ : `v${__APP_VERSION__}`}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">New version</span>
