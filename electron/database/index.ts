@@ -34,6 +34,7 @@ function createTables() {
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       file_name TEXT NOT NULL,
+      original_name TEXT,
       file_path TEXT NOT NULL,
       total_pages INTEGER,
       metadata TEXT,
@@ -134,7 +135,9 @@ function createTables() {
     sqlite.exec("ALTER TABLE documents ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
   }
   if (!docCols.some((c: any) => c.name === 'original_name')) {
-    sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT")
+    try {
+      sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT")
+    } catch { /* column may already exist if CREATE TABLE already included it */ }
   }
 }
 
