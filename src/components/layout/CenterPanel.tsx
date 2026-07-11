@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { BookOpen, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize, Minimize, Settings, Bot, X, BrainCircuit, TextSelect, Search, Volume2, Loader2, Keyboard, PenLine, MousePointer2, Info, ExternalLink, Download } from "lucide-react"
 import { IconText } from "@/components/ui/icon-text"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { PdfViewer } from "@/components/document/PdfViewer"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useAnnotationStore, type AnnotationEmbedData } from "@/stores/annotation.store"
@@ -182,14 +183,8 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-10"
-      onClick={onClose}
-    >
-      <div
-        className="relative flex w-full max-w-3xl min-h-[500px] rounded-lg border bg-background shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent hideClose className="flex w-full max-w-3xl min-h-[500px] rounded-lg border bg-background shadow-xl p-0 gap-0">
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
           <div className="flex items-center gap-2 px-2 py-3">
@@ -237,8 +232,8 @@ function UnifiedSettingsModal({ onClose }: { onClose: () => void }) {
             {tab === "about" && <AboutContent />}
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

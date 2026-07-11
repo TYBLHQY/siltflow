@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
 import { StudyPanel } from "@/components/document/StudyPanel"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 interface LearningModalProps {
   items: AnnotationItem[]
@@ -34,14 +35,8 @@ export function LearningModal({
   }, [onClose])
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-    >
-      <div
-        className="relative flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent hideClose className="flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0">
         <StudyPanel
           items={items}
           studyingIndex={studyingIndex}
@@ -50,7 +45,7 @@ export function LearningModal({
           onRate={onRate}
           onBack={onClose}
         />
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
