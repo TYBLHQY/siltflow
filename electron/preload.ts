@@ -30,6 +30,7 @@ export interface SiltflowAPI {
     list: () => Promise<any[]>
     get: (id: string) => Promise<any | null>
     save: (doc: any) => Promise<any>
+    updateMetadata: (params: { id: string; totalPages: number; metadata: string }) => Promise<void>
     delete: (id: string) => Promise<void>
     deleteBatch: (ids: string[]) => Promise<void>
     rename: (params: { id: string; title: string }) => Promise<void>
@@ -117,6 +118,7 @@ const api: SiltflowAPI = {
     list: () => ipcRenderer.invoke('documents:list'),
     get: (id) => ipcRenderer.invoke('documents:get', id),
     save: (doc) => ipcRenderer.invoke('documents:save', doc),
+    updateMetadata: (params) => ipcRenderer.invoke('documents:updateMetadata', params),
     delete: (id) => ipcRenderer.invoke('documents:delete', id),
     deleteBatch: (ids) => ipcRenderer.invoke('documents:deleteBatch', ids),
     rename: (params) => ipcRenderer.invoke('documents:rename', params),

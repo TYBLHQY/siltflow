@@ -29,6 +29,7 @@ interface SiltflowAPI {
     list: () => Promise<any[]>
     get: (id: string) => Promise<any | null>
     save: (doc: any) => Promise<any>
+    updateMetadata: (params: { id: string; totalPages: number; metadata: string }) => Promise<void>
     delete: (id: string) => Promise<void>
     deleteBatch: (ids: string[]) => Promise<void>
     rename: (params: { id: string; title: string }) => Promise<void>

@@ -70,4 +70,11 @@ export function registerDocumentHandlers() {
     const now = new Date().toISOString()
     db.update(schema.documents).set({ title, updatedAt: now }).where(eq(schema.documents.id, id)).run()
   })
+
+  ipcMain.handle("documents:updateMetadata", (_event, { id, totalPages, metadata }: { id: string; totalPages: number; metadata: string }) => {
+    const db = getDb()
+    if (!db) return null
+    const now = new Date().toISOString()
+    db.update(schema.documents).set({ totalPages, metadata, updatedAt: now }).where(eq(schema.documents.id, id)).run()
+  })
 }

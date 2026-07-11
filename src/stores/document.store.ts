@@ -3,6 +3,7 @@ import { create } from "zustand"
 export interface DocumentItem {
   id: string
   title: string
+  totalPages?: number | null
   folderId?: string | null
   sortOrder?: number
 }

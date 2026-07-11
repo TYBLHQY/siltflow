@@ -410,11 +410,26 @@ function PdfHighlighterWrapper({
   const pdfScrollbar = useStyleStore((s) => s.style.pdfScrollbar)
   const setLastPage = usePdfViewerStore((s) => s.setLastPage)
   const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled)
+  const updateDoc = useDocumentStore((s) => s.updateDocument)
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
     setPdfDocument(pdfDocument)
   }, [pdfDocument, setPdfDocument])
+
+  // Save totalPages + metadata to DB and store when the PDF finishes loading
+  useEffect(() => {
+    const totalPages = pdfDocument.numPages
+    if (!totalPages) return
+
+    // Update local store immediately
+    updateDoc(documentId, { totalPages })
+
+    pdfDocument.getMetadata().then((meta) => {
+      const metadata = JSON.stringify(meta)
+      window.siltflow.documents.updateMetadata({ id: documentId, totalPages, metadata })
+    })
+  }, [pdfDocument, documentId, updateDoc])
 
   // Example pattern: pdfScaleValue is always numeric (or undefined = auto).
 

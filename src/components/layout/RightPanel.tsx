@@ -105,7 +105,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
 
   const [summarizing, setSummarizing] = useState(false)
   const [editingSummary, setEditingSummary] = useState(false)
-  const [extracting, setExtracting] = useState(false)
+  const setExtracting = useState(false)[1]
   const [batchTranslating, setBatchTranslating] = useState(false)
 
   // Batch translate all untranslated annotations
@@ -160,25 +160,35 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     }
   }, [items, activeProfile, summary, texts, updateItem, showToast, onTabChange])
 
-  const extractedRef = useRef<string | null>(null)
+  // Extract page texts when a new pdfDocument arrives.
+  // Only depend on pdfDocument — docId flips before the PDF settles and
+  // does not need to re-trigger extraction.
+  const docIdRef = useRef(docId)
+  docIdRef.current = docId
+  const extractGen = useRef(0)
 
-  // Extract page texts when document changes
   useEffect(() => {
-    if (!docId || !pdfDocument) return
-    if (pageTexts[docId]) return // already cached
-    if (extractedRef.current === docId) return
+    if (!pdfDocument) return
+    const id = docIdRef.current
+    if (!id) return
+    if (pageTexts[id]) return // already cached — nothing to do
 
-    extractedRef.current = docId
+    const gen = ++extractGen.current
     setExtracting(true)
+
     extractPageTexts(pdfDocument)
       .then((texts) => {
-        setPageTexts(docId, texts)
+        if (gen !== extractGen.current) return
+        setPageTexts(id, texts)
       })
       .catch((err) => {
+        if (gen !== extractGen.current) return
         console.error("Failed to extract page texts:", err)
       })
-      .finally(() => setExtracting(false))
-  }, [docId, pdfDocument, pageTexts, setPageTexts])
+      .finally(() => {
+        if (gen === extractGen.current) setExtracting(false)
+      })
+  }, [pdfDocument, pageTexts, setExtracting, setPageTexts])
 
   // When page texts are first loaded, select only the first page by default
   useEffect(() => {
@@ -187,28 +197,30 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     }
   }, [docId, texts, selectedPages, setSelectedPages])
 
-  const allSelected = texts && selPages && selPages.length === texts.length
+  const numPages = currentDocument?.totalPages ?? texts?.length ?? 0
+
+  const allSelected = selPages === undefined || selPages.length === numPages
 
   const togglePage = useCallback(
     (pageNum: number) => {
-      if (!docId || !texts) return
-      const current = selPages ?? texts.map((_, i) => i + 1)
+      if (!docId || !numPages) return
+      const current = selPages ?? Array.from({ length: numPages }, (_, i) => i + 1)
       const next = current.includes(pageNum)
         ? current.filter((p) => p !== pageNum)
         : [...current, pageNum].sort((a, b) => a - b)
-      setSelectedPages(docId, next.length === texts.length ? undefined : next)
+      setSelectedPages(docId, next.length === numPages ? undefined : next)
     },
-    [docId, texts, selPages, setSelectedPages],
+    [docId, numPages, selPages, setSelectedPages],
   )
 
   const toggleAll = useCallback(() => {
-    if (!docId || !texts) return
+    if (!docId || !numPages) return
     if (allSelected) {
       setSelectedPages(docId, [])
     } else {
-      setSelectedPages(docId, texts.map((_, i) => i + 1))
+      setSelectedPages(docId, Array.from({ length: numPages }, (_, i) => i + 1))
     }
-  }, [docId, texts, allSelected, setSelectedPages])
+  }, [docId, numPages, allSelected, setSelectedPages])
 
   const handleSummarize = useCallback(async () => {
     if (!docId || !texts) {
@@ -252,8 +264,6 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     clearSummary(docId)
     setEditingSummary(false)
   }, [docId, clearSummary])
-
-  const numPages = texts?.length ?? 0
 
   return (
     <div className="flex h-full flex-col">
@@ -436,14 +446,9 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           />
       </TabsContent>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
-          {extracting ? (
-            <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Extracting page text…
-            </div>
-          ) : texts && texts.length > 0 ? (
+          {numPages > 0 ? (
             <div className="flex flex-col flex-1 min-h-0">
-              {/* Page selection */}
+              {/* Page selection — available immediately from totalPages */}
               <div className="border-b px-3 py-2 space-y-1">
                 <button
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -463,7 +468,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                 </button>
                 <ScrollArea className="max-h-32">
                   <div className="flex flex-wrap gap-1">
-                    {texts.map((_, i) => {
+                    {Array.from({ length: numPages }, (_, i) => {
                       const p = i + 1
                       const selected = selPages === undefined || selPages.includes(p)
                       return (
