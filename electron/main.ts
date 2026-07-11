@@ -6,7 +6,7 @@ import path from 'node:path'
 
 import { autoUpdater } from 'electron-updater'
 
-import { initDatabase } from './database'
+import { initDatabase, getSqlite } from './database'
 import { registerDocumentHandlers } from './ipc/documents.ipc'
 import { registerAnnotationHandlers } from './ipc/annotations.ipc'
 import { registerSummaryHandlers } from './ipc/summaries.ipc'
@@ -239,6 +239,125 @@ ipcMain.handle('dialog:selectPdf', async () => {
       title: fileName.replace(/\.pdf$/i, ''),
     }
   })
+})
+
+// Import PDFs from a folder (recursive), mirroring directory structure as folders
+ipcMain.handle('dialog:importPdfFolder', async () => {
+  if (!win) return null
+  const vaultPath = getVaultPath()
+  if (!vaultPath) return null
+
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Import PDF Folder',
+    properties: ['openDirectory'],
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+
+  const rootDir = result.filePaths[0]
+  const rootName = path.basename(rootDir)
+  const now = new Date().toISOString()
+
+  // Walk directory recursively, collecting PDFs per relative directory
+  interface DirEntry {
+    relativeDir: string
+    pdfFiles: string[]
+  }
+  const dirs: DirEntry[] = [{ relativeDir: '', pdfFiles: [] }]
+  const dirMap = new Map<string, DirEntry>()
+  dirMap.set('', dirs[0])
+
+  function walk(dir: string, relativeDir: string) {
+    let entries
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch { return }
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name)
+      const relPath = relativeDir ? `${relativeDir}/${entry.name}` : entry.name
+      if (entry.isDirectory()) {
+        const dirEntry: DirEntry = { relativeDir: relPath, pdfFiles: [] }
+        dirMap.set(relPath, dirEntry)
+        dirs.push(dirEntry)
+        walk(fullPath, relPath)
+      } else if (entry.isFile() && /\.pdf$/i.test(entry.name)) {
+        const parentEntry = dirMap.get(relativeDir)!
+        parentEntry.pdfFiles.push(fullPath)
+      }
+    }
+  }
+  walk(rootDir, '')
+
+  // Build folder path → folderId map, creating DB folders parent-first
+  const sql = getSqlite()
+  if (!sql) return null
+
+  const folderPathToId = new Map<string, string>()
+  const insertFolder = sql.prepare(
+    `INSERT INTO folders (id, name, parent_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)`
+  )
+  const insertDoc = sql.prepare(
+    `INSERT INTO documents (id, title, file_name, file_path, folder_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?)`
+  )
+
+  // Create root folder named after the imported directory
+  const rootFolderId = crypto.randomUUID()
+  insertFolder.run(rootFolderId, rootName, null, now, now)
+  folderPathToId.set('', rootFolderId)
+
+  function ensureFolder(relativeDir: string): string | null {
+    if (relativeDir === '') return rootFolderId
+    const existing = folderPathToId.get(relativeDir)
+    if (existing) return existing
+
+    const parentRel = path.dirname(relativeDir)
+    const parentId = ensureFolder(parentRel === '.' ? '' : parentRel)
+    const folderId = crypto.randomUUID()
+    const folderName = path.basename(relativeDir)
+
+    insertFolder.run(folderId, folderName, parentId, now, now)
+    folderPathToId.set(relativeDir, folderId)
+    return folderId
+  }
+
+  const importedDocs: { id: string; fileName: string; filePath: string; title: string; folderId: string | null }[] = []
+
+  for (const dirEntry of dirs) {
+    const folderId = ensureFolder(dirEntry.relativeDir)
+
+    for (const srcPath of dirEntry.pdfFiles) {
+      const fileName = path.basename(srcPath)
+      const docId = crypto.randomUUID()
+      const docDir = path.join(vaultPath, 'documents', docId)
+      const dest = path.join(docDir, fileName)
+
+      try {
+        fs.mkdirSync(docDir, { recursive: true })
+        fs.copyFileSync(srcPath, dest)
+
+        insertDoc.run(
+          docId,
+          fileName.replace(/\.pdf$/i, ''),
+          fileName,
+          `siltflow://documents/${docId}/${fileName}`,
+          folderId,
+          now,
+          now,
+        )
+
+        importedDocs.push({
+          id: docId,
+          fileName,
+          filePath: `siltflow://documents/${docId}/${fileName}`,
+          title: fileName.replace(/\.pdf$/i, ''),
+          folderId,
+        })
+      } catch (err) {
+        console.error(`Failed to import ${srcPath}:`, err)
+      }
+    }
+  }
+
+  return { docs: importedDocs }
 })
 
 // Custom protocol → serve files from vault

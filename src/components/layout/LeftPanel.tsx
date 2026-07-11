@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconText } from "@/components/ui/icon-text"
 import { FileText, Plus, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
+import { useFolderStore } from "@/stores/folder.store"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useDocumentOutline, DocumentOutline } from "react-pdf-highlighter-plus"
 import { useAnnotationStore } from "@/stores/annotation.store"
@@ -150,6 +151,24 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     }
   }
 
+  const handleImportFolder = async () => {
+    try {
+      const result = await window.siltflow.importPdfFolder()
+      if (!result || result.docs.length === 0) return
+
+      // Reload folders from backend to get all newly created ones
+      await useFolderStore.getState().loadFolders(true)
+
+      // Reload documents — force because loaded flag is set
+      useDocumentStore.getState().setLoading(true)
+      const docs = await window.siltflow.documents.list()
+      useDocumentStore.getState().setDocuments(docs || [])
+      useDocumentStore.getState().setLoading(false)
+    } catch (err) {
+      console.error("Folder import failed:", err)
+    }
+  }
+
   const docsTreeRef = useRef<DocsTreeHandle>(null)
 
   return (
@@ -183,6 +202,14 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               >
                 <IconText icon={Plus} size="xs" className="gap-0">
                   Import PDF
+                </IconText>
+              </button>
+              <button
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border/50 bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                onClick={handleImportFolder}
+              >
+                <IconText icon={FolderPlus} size="xs" className="gap-0">
+                  Import Folder
                 </IconText>
               </button>
               <button

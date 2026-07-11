@@ -14,6 +14,7 @@ interface DocumentState {
   loading: boolean
   loaded: boolean
   addDocument: (doc: DocumentItem) => void
+  addDocuments: (docs: DocumentItem[]) => void
   setCurrentDocument: (doc: DocumentItem | null) => void
   removeDocument: (id: string) => void
   setDocuments: (docs: DocumentItem[]) => void
@@ -30,6 +31,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   addDocument: (doc) =>
     set((state) => ({
       documents: [...state.documents, doc],
+    })),
+  addDocuments: (docs) =>
+    set((state) => ({
+      documents: [...state.documents, ...docs],
     })),
 
   setCurrentDocument: (doc) => set({ currentDocument: doc }),

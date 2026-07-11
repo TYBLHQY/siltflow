@@ -51,6 +51,10 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       return null
     }
   },
+  addFolders: (newFolders: FolderItem[]) =>
+    set((state) => ({
+      folders: [...state.folders, ...newFolders],
+    })),
 
   renameFolder: async (id, name) => {
     await window.siltflow.folders.rename({ id, name })
