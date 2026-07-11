@@ -703,7 +703,7 @@ function StyleConfigContent() {
         {/* Font family — ordered list */}
         <div>
           <label className="block text-xs font-medium mb-1.5">
-            Font family stack
+            Font Family
           </label>
 
           {/* Current font list */}
@@ -820,7 +820,7 @@ function StyleConfigContent() {
       {/* System font stack for UI — same style as font family list */}
       <div>
         <label className="block text-xs font-medium mb-1.5">
-          System Font (UI)
+          System font family
         </label>
 
         {/* Current system font list */}
@@ -944,7 +944,7 @@ function StyleConfigContent() {
           </label>
           <input
             type="range"
-            min="9"
+            min="12"
             max="24"
             step="1"
             className="w-full"
@@ -953,15 +953,15 @@ function StyleConfigContent() {
           />
         </div>
 
-        {/* Global font size */}
+        {/* System font size */}
         <div>
           <label className="block text-xs font-medium mb-1.5">
-            Global UI size: {style.globalFontSize}px
+            System Font size: {style.globalFontSize}px
           </label>
           <input
             type="range"
             min="12"
-            max="20"
+            max="24"
             step="1"
             className="w-full"
             value={style.globalFontSize}
