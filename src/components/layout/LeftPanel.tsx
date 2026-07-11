@@ -196,34 +196,38 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         {/* ── Docs tab ── */}
         <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
           <div className="shrink-0 border-b px-3 py-2">
-            <div className="flex justify-between">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1.5">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        onClick={handleImport}
+                      >
+                        <FileUp className="size-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={6}>
+                      <p className="text-xs">Import PDF</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        onClick={handleImportFolder}
+                      >
+                        <FolderUp className="size-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={6}>
+                      <p className="text-xs">Import Folder</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                      onClick={handleImport}
-                    >
-                      <FileUp className="size-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={6}>
-                    <p className="text-xs">Import PDF</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                      onClick={handleImportFolder}
-                    >
-                      <FolderUp className="size-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={6}>
-                    <p className="text-xs">Import Folder</p>
-                  </TooltipContent>
-                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
