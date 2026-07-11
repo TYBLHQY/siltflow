@@ -10,14 +10,33 @@ import { useToastStore } from "@/stores/toast.store"
 import { loadShortcutsFromVault } from "@/stores/shortcuts.store"
 import { loadLastPages } from "@/stores/pdf-viewer.store"
 import { loadThemeFromVault, useThemeStore } from "@/stores/theme.store"
+import { loadAppSettingsFromVault, useAppSettingsStore } from "@/stores/app.store"
 import { Toast } from "@/components/Toast"
+import { Download } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 function App() {
   const [vaultReady, setVaultReady] = useState(false)
   const aiLoaded = useAIStore((s) => s.loaded)
   const showToast = useToastStore((s) => s.show)
+  const appSettingsLoaded = useAppSettingsStore((s) => s.loaded)
+  const checkUpdateOnStartup = useAppSettingsStore((s) => s.checkUpdateOnStartup)
 
-  // Load persisted state when vault is ready
+  const [updateDialog, setUpdateDialog] = useState<
+    { latestVersion: string } | "checking" | "latest" | "error" | null
+  >(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [downloading, setDownloading] = useState(false)
+  const [downloaded, setDownloaded] = useState(false)
+
   useEffect(() => {
     if (vaultReady && !aiLoaded) {
       loadFromVault()
@@ -28,8 +47,49 @@ function App() {
       loadShortcutsFromVault()
       loadLastPages()
       loadThemeFromVault()
+      loadAppSettingsFromVault()
     }
   }, [vaultReady, aiLoaded])
+
+  // Check for updates on startup if enabled
+  useEffect(() => {
+    if (!vaultReady || !appSettingsLoaded || !checkUpdateOnStartup) return
+
+    const timer = setTimeout(() => {
+      setUpdateDialog("checking")
+
+      const unsubAvailable = window.siltflow.update.onAvailable((info: any) => {
+        const tag = info?.version || info?.tag_name || ""
+        setUpdateDialog({ latestVersion: tag.startsWith("v") ? tag.slice(1) : tag })
+      })
+      const unsubNotAvail = window.siltflow.update.onNotAvailable(() => {
+        setUpdateDialog("latest")
+      })
+      const unsubProgress = window.siltflow.update.onDownloadProgress((p) => {
+        setProgress(p.percent)
+      })
+      const unsubDownloaded = window.siltflow.update.onDownloaded(() => {
+        setDownloaded(true)
+        setDownloading(false)
+      })
+      const unsubError = window.siltflow.update.onError((msg) => {
+        setErrorMsg(msg)
+        setUpdateDialog("error")
+      })
+
+      window.siltflow.update.check()
+
+      return () => {
+        unsubAvailable()
+        unsubNotAvail()
+        unsubProgress()
+        unsubDownloaded()
+        unsubError()
+      }
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [vaultReady, appSettingsLoaded, checkUpdateOnStartup])
 
   // Show toast on mount if no profiles
   useEffect(() => {
@@ -96,6 +156,74 @@ function App() {
     <>
       <Toast />
       <ThreeColumnLayout />
+
+      {/* ── Update dialog (startup check) ── */}
+      <Dialog
+        open={
+          updateDialog !== null &&
+          updateDialog !== "checking" &&
+          updateDialog !== "latest"
+        }
+        onOpenChange={() => setUpdateDialog(null)}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Available</DialogTitle>
+            <DialogDescription>
+              {downloaded
+                ? `Version ${(updateDialog as any)?.latestVersion} has been downloaded and is ready to install.`
+                : `Version ${(updateDialog as any)?.latestVersion} is available. Would you like to download it?`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {downloading && (
+            <div className="space-y-1 px-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Downloading…</span>
+                <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {downloaded ? (
+              <button
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => window.siltflow.update.install()}
+              >
+                Restart &amp; Install
+              </button>
+            ) : downloading ? (
+              <span className="text-xs text-muted-foreground">Downloading…</span>
+            ) : (
+              <div className="flex gap-2 w-full">
+                <button
+                  className="flex-1 rounded-md border border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+                  onClick={() => { setUpdateDialog(null); setDownloaded(false); setDownloading(false); setProgress(0) }}
+                >
+                  Later
+                </button>
+                <button
+                  className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                  onClick={() => {
+                    setDownloading(true)
+                    window.siltflow.update.download()
+                  }}
+                >
+                  <Download className="h-4 w-4 inline mr-1" />
+                  Download
+                </button>
+              </div>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

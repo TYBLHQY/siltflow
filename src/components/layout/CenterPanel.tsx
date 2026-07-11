@@ -12,6 +12,7 @@ import { useTTSStore, MIMO_PRESET_VOICES, MIMO_MODELS } from "@/stores/tts.store
 import { useShortcutsStore } from "@/stores/shortcuts.store"
 import { useThemeStore } from "@/stores/theme.store"
 import { formatShortcut } from "@/lib/keyboard-keys"
+import { useAppSettingsStore } from "@/stores/app.store"
 
 // ---------------------------------------------------------------------------
 // Page navigation — jump to page (only shown when a PDF is open)
@@ -1694,6 +1695,9 @@ function AboutContent() {
   const [latestVersion, setLatestVersion] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  const checkUpdateOnStartup = useAppSettingsStore((s) => s.checkUpdateOnStartup)
+  const setCheckUpdateOnStartup = useAppSettingsStore((s) => s.setCheckUpdateOnStartup)
+
   const currentVersion = __APP_VERSION__
   const releasesUrl = "https://github.com/TYBLHQY/siltflow/releases"
 
@@ -1763,6 +1767,20 @@ function AboutContent() {
       {/* Update */}
       <div className="space-y-2">
         <label className="block text-xs font-medium">Updates</label>
+
+        {/* Auto-check toggle */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="checkUpdateOnStartup"
+            className="rounded"
+            checked={checkUpdateOnStartup}
+            onChange={(e) => setCheckUpdateOnStartup(e.target.checked)}
+          />
+          <label htmlFor="checkUpdateOnStartup" className="text-xs">
+            Check for updates on startup
+          </label>
+        </div>
 
         {updateState === "checking" && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
