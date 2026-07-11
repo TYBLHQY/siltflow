@@ -101,20 +101,16 @@ type ContextMenu =
 
 export interface DocsTreeHandle {
   createFolder: () => void
-  selectedDocIds: () => string[]
-  clearSelection: () => void
-  /** Open parent folders and scroll/select to the document with the given id. */
+  /** Open parent folders and scroll/scroll to the document with the given id. */
   revealDocument: (docId: string) => void
 }
 
 interface DocsTreeProps {
   defaultParentId?: string | null
-  onSelectionChange?: (docIds: string[]) => void
 }
 
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
   function DocsTree(_props: DocsTreeProps, ref) {
-    const { onSelectionChange } = _props
     const documents = useDocumentStore((s) => s.documents)
     const currentDocument = useDocumentStore((s) => s.currentDocument)
     const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
@@ -173,22 +169,12 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       }
     }, [createFolder, tree, refreshAll])
 
-    // Ref: expose createFolder, selectedDocIds, clearSelection, revealDocument
+    // Ref: expose createFolder, revealDocument
     useImperativeHandle(
       ref,
       () => ({
         createFolder: async () => {
           await createDirectFolder(null)
-        },
-        selectedDocIds: () => {
-          if (!tree) return []
-          return [...tree.selectedIds]
-            .filter((id) => id.startsWith("doc:"))
-            .map((id) => id.slice(4))
-        },
-        clearSelection: () => {
-          tree?.deselectAll()
-          onSelectionChange?.([])
         },
         revealDocument: (docId: string) => {
           if (!tree) return
@@ -209,7 +195,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
           tree.select(`doc:${docId}`, { align: "center" })
         },
       }),
-      [createDirectFolder, tree, onSelectionChange, documents, folders],
+      [createDirectFolder, tree, documents, folders],
     )
 
     // onRename: persist the new name for folders and documents
@@ -255,7 +241,6 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       const docIds = nodes
         .filter((n) => n.id.startsWith("doc:"))
         .map((n) => n.id.slice(4))
-      onSelectionChange?.(docIds)
       // Single-click on a single document opens it
       if (docIds.length === 1) {
         const found = documents.find((d) => d.id === docIds[0])
@@ -264,7 +249,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         }
       }
     },
-    [documents, currentDocument, setCurrentDocument, onSelectionChange],
+    [documents, currentDocument, setCurrentDocument],
   )
 
     // Context menu actions

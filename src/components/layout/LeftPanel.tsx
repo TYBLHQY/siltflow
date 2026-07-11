@@ -1,18 +1,10 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconText } from "@/components/ui/icon-text"
-import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Trash2, MoveRight, Search } from "lucide-react"
+import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Search } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
 import { useFolderStore } from "@/stores/folder.store"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { useDocumentOutline, DocumentOutline } from "react-pdf-highlighter-plus"
 import { useAnnotationStore } from "@/stores/annotation.store"
@@ -283,38 +275,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   }
 
   const docsTreeRef = useRef<DocsTreeHandle>(null)
-  const folders = useFolderStore((s) => s.folders)
-  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
-  const [deleteBatchConfirm, setDeleteBatchConfirm] = useState(false)
-  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-  const [moveTargetId, setMoveTargetId] = useState<string | null>(null)
-
-  const handleSelectionChange = useCallback((ids: string[]) => {
-    setSelectedDocIds(ids)
-  }, [])
-
-  const handleBatchDelete = async () => {
-    if (selectedDocIds.length === 0) return
-    await window.siltflow.documents.deleteBatch(selectedDocIds)
-    setDeleteBatchConfirm(false)
-    setSelectedDocIds([])
-    docsTreeRef.current?.clearSelection()
-    // Reload docs from DB
-    const docs = await window.siltflow.documents.list()
-    useDocumentStore.getState().setDocuments(docs || [])
-  }
-
-  const handleBatchMove = async () => {
-    if (selectedDocIds.length === 0) return
-    await window.siltflow.folders.moveDocuments({ docIds: selectedDocIds, targetFolderId: moveTargetId ?? null })
-    setMoveDialogOpen(false)
-    setMoveTargetId(null)
-    setSelectedDocIds([])
-    docsTreeRef.current?.clearSelection()
-    // Reload docs from DB
-    const docs = await window.siltflow.documents.list()
-    useDocumentStore.getState().setDocuments(docs || [])
-  }
 
   // When switching to the docs tab with a current document, reveal it in the tree
   useEffect(() => {
@@ -398,98 +358,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               </TooltipProvider>
             </div>
           </div>
-          {selectedDocIds.length > 0 && (
-            <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-xs text-muted-foreground">
-              <span className="font-medium">{selectedDocIds.length} selected</span>
-              <span className="text-border">·</span>
-              <button
-                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-destructive hover:bg-destructive/10 transition-colors"
-                onClick={() => setDeleteBatchConfirm(true)}
-              >
-                <Trash2 className="size-3" /> Delete
-              </button>
-              <button
-                className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent transition-colors"
-                onClick={() => {
-                  setMoveTargetId(null)
-                  setMoveDialogOpen(true)
-                }}
-              >
-                <MoveRight className="size-3" /> Move to…
-              </button>
-            </div>
-          )}
-          <DocsTree ref={docsTreeRef} onSelectionChange={handleSelectionChange} />
+          <DocsTree ref={docsTreeRef} />
 
-          {/* ── Batch delete confirmation ── */}
-          <Dialog open={deleteBatchConfirm} onOpenChange={setDeleteBatchConfirm}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Delete Documents</DialogTitle>
-                <DialogDescription>
-                  Delete {selectedDocIds.length} document{selectedDocIds.length > 1 ? 's' : ''}?
-                  This cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <button
-                  className="rounded-md border border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
-                  onClick={() => setDeleteBatchConfirm(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
-                  onClick={handleBatchDelete}
-                >
-                  Delete
-                </button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* ── Move to folder dialog ── */}
-          <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
-            <DialogContent className="sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Move to Folder</DialogTitle>
-                <DialogDescription>
-                  Select a destination folder for {selectedDocIds.length} document{selectedDocIds.length > 1 ? 's' : ''}.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-1 py-2">
-                <button
-                  className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${moveTargetId === null ? 'bg-accent font-medium' : 'hover:bg-accent/50 text-muted-foreground'}`}
-                  onClick={() => setMoveTargetId(null)}
-                >
-                  (Root)
-                </button>
-                {folders.map((f) => (
-                  <button
-                    key={f.id}
-                    className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${moveTargetId === f.id ? 'bg-accent font-medium' : 'hover:bg-accent/50 text-muted-foreground'}`}
-                    onClick={() => setMoveTargetId(f.id)}
-                  >
-                    {f.name}
-                  </button>
-                ))}
-              </div>
-              <DialogFooter>
-                <button
-                  className="rounded-md border border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
-                  onClick={() => setMoveDialogOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                  onClick={handleBatchMove}
-                >
-                  Move
-                </button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </TabsContent>
 
         {/* ── Outline tab ── */}
