@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import type { AnnotationItem } from "@/stores/annotation.store"
 import { StudyPanel } from "@/components/document/StudyPanel"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
@@ -25,6 +25,8 @@ export function LearningModal({
   onRate,
   onClose,
 }: LearningModalProps) {
+  const [open, setOpen] = useState(true)
+
   // Safety-net ESC close (StudyPanel also handles ESC via shortcut system)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -34,17 +36,24 @@ export function LearningModal({
     return () => window.removeEventListener("keydown", handler)
   }, [onClose])
 
+  // When parent closes us (items becomes empty), start exit animation
+  useEffect(() => {
+    if (items.length === 0) setOpen(false)
+  }, [items.length])
+
   return (
-    <Dialog open={!!items.length} onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open={open} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent hideClose className="flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0">
-        <StudyPanel
-          items={items}
-          studyingIndex={studyingIndex}
-          answerRevealed={answerRevealed}
-          setAnswerRevealed={setAnswerRevealed}
-          onRate={onRate}
-          onBack={onClose}
-        />
+        {items.length > 0 && (
+          <StudyPanel
+            items={items}
+            studyingIndex={studyingIndex}
+            answerRevealed={answerRevealed}
+            setAnswerRevealed={setAnswerRevealed}
+            onRate={onRate}
+            onBack={onClose}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

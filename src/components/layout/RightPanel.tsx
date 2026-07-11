@@ -432,8 +432,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                 setStudyingIndex((i) => i + 1)
                 setAnswerRevealed(false)
               } else {
-                setStudyPanelOpen(false)
-                showToast("Learning complete!", "info")
+                showToast("All cards reviewed! Good job!", "success")
               }
             }}
             onClose={() => setStudyPanelOpen(false)}
