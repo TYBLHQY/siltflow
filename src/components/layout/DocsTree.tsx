@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect, useCallback, forwardRef, useImperativeHan
 import type {
   NodeRendererProps,
   TreeApi,
-  NodeApi,
 } from "react-arborist"
 import { Tree } from "react-arborist"
 import {
@@ -112,7 +111,6 @@ interface DocsTreeProps {
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
   function DocsTree(_props: DocsTreeProps, ref) {
     const documents = useDocumentStore((s) => s.documents)
-    const currentDocument = useDocumentStore((s) => s.currentDocument)
     const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
     const removeDocument = useDocumentStore((s) => s.removeDocument)
     const updateDocument = useDocumentStore((s) => s.updateDocument)
@@ -236,22 +234,6 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       [moveDocuments, moveFolder],
     )
 
-  const handleSelect = useCallback(
-    (nodes: NodeApi<NodeData>[]) => {
-      const docIds = nodes
-        .filter((n) => n.id.startsWith("doc:"))
-        .map((n) => n.id.slice(4))
-      // Single-click on a single document opens it
-      if (docIds.length === 1) {
-        const found = documents.find((d) => d.id === docIds[0])
-        if (found && found.id !== currentDocument?.id) {
-          setCurrentDocument(found)
-        }
-      }
-    },
-    [documents, currentDocument, setCurrentDocument],
-  )
-
     // Context menu actions
     const handleDeleteDoc = useCallback(
       async (doc: DocumentItem) => {
@@ -346,7 +328,6 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             onMove={handleMove}
             onRename={handleRename}
             onCreate={handleCreate}
-            onSelect={handleSelect}
             onActivate={(node) => {
               if (node.id.startsWith("doc:")) {
                 const found = documents.find((d) => d.id === node.id.slice(4))
@@ -481,9 +462,11 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
     <div
       style={{ ...style, height: "100%", display: "flex", alignItems: "center", gap: "6px" }}
       ref={dragHandle}
-      className={`w-full cursor-pointer ${
-        node.isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-      }`}
+      className="w-full cursor-pointer hover:bg-accent/50"
+      onPointerDown={(e) => {
+        // Prevent react-arborist's native selection on click
+        e.stopPropagation()
+      }}
       onClick={(e) => {
         // Let modifier clicks (Ctrl/Cmd, Shift) propagate to react-arborist's built-in multi-select handler
         if (e.ctrlKey || e.metaKey || e.shiftKey) {
