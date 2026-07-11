@@ -16,6 +16,14 @@ import {
 } from "lucide-react"
 import { useDocumentStore, type DocumentItem } from "@/stores/document.store"
 import { useFolderStore, type FolderItem } from "@/stores/folder.store"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 // ---------------------------------------------------------------------------
 // Tree node data
@@ -108,6 +116,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     const { createFolder, renameFolder, deleteFolder, moveDocuments, moveFolder } =
       useFolderStore()
     const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
+    const [deleteConfirm, setDeleteConfirm] = useState<FolderItem | null>(null)
     const [tree, setTree] = useState<TreeApi<NodeData> | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [treeHeight, setTreeHeight] = useState(200)
@@ -226,10 +235,10 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     )
     const handleDeleteFolder = useCallback(
       async (folder: FolderItem) => {
-        await deleteFolder(folder.id)
+        setDeleteConfirm(folder)
         setContextMenu(null)
       },
-      [deleteFolder],
+      [],
     )
     const handleRenameFolder = useCallback(
       (folder: FolderItem) => {
@@ -351,6 +360,38 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             </button>
           </div>
         )}
+
+        {/* ── Delete folder confirmation dialog ── */}
+        <Dialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null) }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Folder</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete <strong>{deleteConfirm?.name}</strong>?
+                All documents and subfolders inside it will be permanently deleted.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <button
+                className="rounded-md border border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+                onClick={() => setDeleteConfirm(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                onClick={async () => {
+                  if (deleteConfirm) {
+                    await deleteFolder(deleteConfirm.id)
+                    setDeleteConfirm(null)
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   },

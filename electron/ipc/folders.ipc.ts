@@ -2,6 +2,14 @@ import { ipcMain } from "electron"
 import { getDb, schema } from "../database"
 import { eq } from "drizzle-orm"
 import crypto from "crypto"
+import fs from "node:fs"
+import path from "node:path"
+
+let vaultPath = ""
+
+export function setVaultPathForFolders(p: string) {
+  vaultPath = p
+}
 
 function getFullDb() {
   const db = getDb()
@@ -34,7 +42,7 @@ export function registerFolderHandlers() {
     db.update(schema.folders).set({ name, updatedAt: new Date().toISOString() }).where(eq(schema.folders.id, id)).run()
   })
 
-  // ── Delete a folder (recursive — moves descendants to root) ──
+  // ── Delete a folder (recursive — deletes all descendant docs + folders) ──
   ipcMain.handle("folders:delete", (_event, id: string) => {
     const db = getFullDb()
 
@@ -51,12 +59,31 @@ export function registerFolderHandlers() {
 
     const allIds = [id, ...collectIds(id)]
 
-    // Move documents in those folders to root
+    // Collect all document ids in those folders
+    const docIds: string[] = []
     for (const fid of allIds) {
-      db.update(schema.documents).set({ folderId: null }).where(eq(schema.documents.folderId, fid)).run()
+      const docs = db.select({ id: schema.documents.id }).from(schema.documents).where(eq(schema.documents.folderId, fid)).all()
+      for (const d of docs) {
+        docIds.push(d.id)
+      }
     }
 
-    // Delete folders (deepest first is safe since we just need to remove them)
+    // Delete document files from disk
+    if (vaultPath) {
+      for (const docId of docIds) {
+        const docDir = path.join(vaultPath, 'documents', docId)
+        if (fs.existsSync(docDir)) {
+          fs.rmSync(docDir, { recursive: true, force: true })
+        }
+      }
+    }
+
+    // Delete documents from DB (cascade deletes annotations, summaries, etc.)
+    for (const docId of docIds) {
+      db.delete(schema.documents).where(eq(schema.documents.id, docId)).run()
+    }
+
+    // Delete folders (deepest first)
     for (const fid of allIds) {
       db.delete(schema.folders).where(eq(schema.folders.id, fid)).run()
     }
