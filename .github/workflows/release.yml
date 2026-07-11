@@ -37,7 +37,7 @@ jobs:
       - name: Bump package.json version to match tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          node -e "const p=require('./package.json'); p.version='$VERSION'; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n')"
 
       - name: Install system deps (Linux)
         if: matrix.target == 'linux'
