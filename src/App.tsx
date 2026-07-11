@@ -172,9 +172,28 @@ function App() {
             <DialogDescription>
               {downloaded
                 ? `Version ${(updateDialog as any)?.latestVersion} has been downloaded and is ready to install.`
-                : `Version ${(updateDialog as any)?.latestVersion} is available. Would you like to download it?`}
+                : `Version ${(updateDialog as any)?.latestVersion} is available.`}
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-2 px-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Current version</span>
+              <span className="font-medium">{__APP_VERSION__}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">New version</span>
+              <span className="font-medium text-green-600">v{(updateDialog as any)?.latestVersion}</span>
+            </div>
+            <a
+              href={`https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-xs text-primary hover:underline mt-1"
+            >
+              View release notes →
+            </a>
+          </div>
 
           {downloading && (
             <div className="space-y-1 px-2">
