@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconText } from "@/components/ui/icon-text"
 import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Trash2, MoveRight, Search } from "lucide-react"
@@ -91,12 +91,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const [metricsLoading, setMetricsLoading] = useState(false)
   const [reviewSearch, setReviewSearch] = useState("")
 
-  const filteredMetrics = docMetrics.filter((m) =>
-    m.documentTitle.toLowerCase().includes(reviewSearch.toLowerCase())
+  // Only recompute when docMetrics change, not on every render
+  const filteredMetrics = useMemo(
+    () => docMetrics.filter((m) =>
+      m.documentTitle.toLowerCase().includes(reviewSearch.toLowerCase())
+    ),
+    [docMetrics, reviewSearch]
   )
 
-  // Load per-document FSRS metrics directly from backend on mount and when annotations change
+  // Load per-document FSRS metrics from backend — stable ref, avoids re-fetch on every add/delete
+  const metricsInitRef = useRef(false)
   useEffect(() => {
+    if (metricsInitRef.current) return
+    metricsInitRef.current = true
+
     let cancelled = false
     async function loadMetrics() {
       setMetricsLoading(true)
@@ -136,7 +144,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     }
     loadMetrics()
     return () => { cancelled = true }
-  }, [documents, annotationItems])
+  }, []) // only on mount
 
   useEffect(() => {
     loadFromDb()
