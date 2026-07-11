@@ -29,6 +29,7 @@ interface SiltflowAPI {
     get: (id: string) => Promise<any | null>
     save: (doc: any) => Promise<any>
     delete: (id: string) => Promise<void>
+    deleteBatch: (ids: string[]) => Promise<void>
   }
   annotations: {
     list: (documentId: string) => Promise<any[]>

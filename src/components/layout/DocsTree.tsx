@@ -101,15 +101,20 @@ type ContextMenu =
 
 export interface DocsTreeHandle {
   createFolder: () => void
+  selectedDocIds: () => string[]
+  clearSelection: () => void
 }
 
 interface DocsTreeProps {
   defaultParentId?: string | null
+  onSelectionChange?: (docIds: string[]) => void
 }
 
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
   function DocsTree(_props: DocsTreeProps, ref) {
+    const { onSelectionChange } = _props
     const documents = useDocumentStore((s) => s.documents)
+    const currentDocument = useDocumentStore((s) => s.currentDocument)
     const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
     const removeDocument = useDocumentStore((s) => s.removeDocument)
     const folders = useFolderStore((s) => s.folders)
@@ -165,15 +170,25 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       }
     }, [createFolder, tree, refreshAll])
 
-    // Ref: create folder via tree
+    // Ref: expose createFolder, selectedDocIds, clearSelection
     useImperativeHandle(
       ref,
       () => ({
         createFolder: async () => {
           await createDirectFolder(null)
         },
+        selectedDocIds: () => {
+          if (!tree) return []
+          return [...tree.selectedIds]
+            .filter((id) => id.startsWith("doc:"))
+            .map((id) => id.slice(4))
+        },
+        clearSelection: () => {
+          tree?.deselectAll()
+          onSelectionChange?.([])
+        },
       }),
-      [createDirectFolder],
+      [createDirectFolder, tree, onSelectionChange],
     )
 
     // onRename: persist the new name for existing folders
@@ -208,21 +223,22 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       [moveDocuments, moveFolder],
     )
 
-    // onSelect: open document on click
-    const handleSelect = useCallback(
-      (nodes: NodeApi<NodeData>[]) => {
-        for (const node of nodes) {
-          if (node.id.startsWith("doc:")) {
-            const found = documents.find((d) => d.id === node.id.slice(4))
-            if (found) {
-              setCurrentDocument(found)
-              return
-            }
-          }
+  const handleSelect = useCallback(
+    (nodes: NodeApi<NodeData>[]) => {
+      const docIds = nodes
+        .filter((n) => n.id.startsWith("doc:"))
+        .map((n) => n.id.slice(4))
+      onSelectionChange?.(docIds)
+      // Single-click on a single document opens it
+      if (docIds.length === 1) {
+        const found = documents.find((d) => d.id === docIds[0])
+        if (found && found.id !== currentDocument?.id) {
+          setCurrentDocument(found)
         }
-      },
-      [documents, setCurrentDocument],
-    )
+      }
+    },
+    [documents, currentDocument, setCurrentDocument, onSelectionChange],
+  )
 
     // Context menu actions
     const handleDeleteDoc = useCallback(
@@ -425,6 +441,10 @@ function DocTreeNode({ node, style, dragHandle, onContextMenu }: DocTreeNodeProp
         node.isSelected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
       }`}
       onClick={(e) => {
+        // Let modifier clicks (Ctrl/Cmd, Shift) propagate to react-arborist's built-in multi-select handler
+        if (e.ctrlKey || e.metaKey || e.shiftKey) {
+          return
+        }
         e.stopPropagation()
         if (data.type === "folder") {
           node.toggle()

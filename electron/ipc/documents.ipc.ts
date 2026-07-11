@@ -41,7 +41,6 @@ export function registerDocumentHandlers() {
   ipcMain.handle("documents:delete", (_event, id: string) => {
     const db = getDb()
     if (!db) return
-    // Delete file from disk
     if (vaultPath) {
       const docDir = path.join(vaultPath, 'documents', id)
       if (fs.existsSync(docDir)) {
@@ -49,5 +48,19 @@ export function registerDocumentHandlers() {
       }
     }
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
+  })
+
+  ipcMain.handle("documents:deleteBatch", (_event, ids: string[]) => {
+    const db = getDb()
+    if (!db) return
+    for (const id of ids) {
+      if (vaultPath) {
+        const docDir = path.join(vaultPath, 'documents', id)
+        if (fs.existsSync(docDir)) {
+          fs.rmSync(docDir, { recursive: true, force: true })
+        }
+      }
+      db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
+    }
   })
 }

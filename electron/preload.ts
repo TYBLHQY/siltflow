@@ -30,6 +30,7 @@ export interface SiltflowAPI {
     get: (id: string) => Promise<any | null>
     save: (doc: any) => Promise<any>
     delete: (id: string) => Promise<void>
+    deleteBatch: (ids: string[]) => Promise<void>
   }
   annotations: {
     list: (documentId: string) => Promise<any[]>
@@ -114,6 +115,7 @@ const api: SiltflowAPI = {
     get: (id) => ipcRenderer.invoke('documents:get', id),
     save: (doc) => ipcRenderer.invoke('documents:save', doc),
     delete: (id) => ipcRenderer.invoke('documents:delete', id),
+    deleteBatch: (ids) => ipcRenderer.invoke('documents:deleteBatch', ids),
   },
   annotations: {
     list: (documentId) => ipcRenderer.invoke('annotations:list', documentId),
