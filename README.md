@@ -2,6 +2,8 @@
 
 A desktop app for language learners — read PDFs, look up words, build your vocabulary with spaced repetition.
 
+[中文文档](./README.zh.md)
+
 ## Settings Reference
 
 ### FSRS (Spaced Repetition) Parameters
