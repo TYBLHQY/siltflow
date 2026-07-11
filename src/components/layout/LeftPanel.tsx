@@ -99,10 +99,11 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     [docMetrics, reviewSearch]
   )
 
-  // Load per-document FSRS metrics from backend — stable ref, avoids re-fetch on every add/delete
+  // Load per-document FSRS metrics from backend — only once after documents are available
   const metricsInitRef = useRef(false)
   useEffect(() => {
     if (metricsInitRef.current) return
+    if (documents.length === 0) return
     metricsInitRef.current = true
 
     let cancelled = false
@@ -144,7 +145,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     }
     loadMetrics()
     return () => { cancelled = true }
-  }, []) // only on mount
+  }, [documents.length]) // only once after documents load
 
   useEffect(() => {
     loadFromDb()
