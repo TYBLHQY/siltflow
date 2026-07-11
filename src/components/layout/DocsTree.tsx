@@ -117,6 +117,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     const currentDocument = useDocumentStore((s) => s.currentDocument)
     const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument)
     const removeDocument = useDocumentStore((s) => s.removeDocument)
+    const updateDocument = useDocumentStore((s) => s.updateDocument)
     const folders = useFolderStore((s) => s.folders)
     const { createFolder, renameFolder, deleteFolder, moveDocuments, moveFolder } =
       useFolderStore()
@@ -199,10 +200,12 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         if (id.startsWith("folder:")) {
           await renameFolder(id.slice(7), trimmed)
         } else if (id.startsWith("doc:")) {
-          await window.siltflow.documents.rename({ id: id.slice(4), title: trimmed })
+          const docId = id.slice(4)
+          await window.siltflow.documents.rename({ id: docId, title: trimmed })
+          updateDocument(docId, { title: trimmed })
         }
       },
-      [renameFolder],
+      [renameFolder, updateDocument],
     )
 
     // onCreate: required by react-arborist for tree.create() — we don't use it

@@ -15,6 +15,7 @@ interface DocumentState {
   loaded: boolean
   addDocument: (doc: DocumentItem) => void
   addDocuments: (docs: DocumentItem[]) => void
+  updateDocument: (id: string, patch: Partial<DocumentItem>) => void
   setCurrentDocument: (doc: DocumentItem | null) => void
   removeDocument: (id: string) => void
   setDocuments: (docs: DocumentItem[]) => void
@@ -35,6 +36,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   addDocuments: (docs) =>
     set((state) => ({
       documents: [...state.documents, ...docs],
+    })),
+  updateDocument: (id, patch) =>
+    set((state) => ({
+      documents: state.documents.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+      currentDocument:
+        state.currentDocument?.id === id
+          ? { ...state.currentDocument, ...patch }
+          : state.currentDocument,
     })),
 
   setCurrentDocument: (doc) => set({ currentDocument: doc }),
