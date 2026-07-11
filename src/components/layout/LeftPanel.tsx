@@ -149,15 +149,48 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const docs = useDocumentStore.getState().documents
     if (docs.length === 0) { setDocMetrics([]); return }
     const items = useAnnotationStore.getState().items
+    const currentDoc = useDocumentStore.getState().currentDocument
 
+    // A doc is open but items is empty → last annotation was deleted
+    // Reload that single doc's metrics from backend
+    if (currentDoc && items.length === 0) {
+      window.siltflow.fsrsCards.listByDocument(currentDoc.id).then(rows => {
+        const cardAnnIds = new Set<string>()
+        const cards: import("ts-fsrs").Card[] = []
+        for (const row of rows) {
+          cardAnnIds.add(row.annotationId)
+          try { cards.push(JSON.parse(row.data)) } catch { /* skip */ }
+        }
+        window.siltflow.annotations.list(currentDoc.id).then(annotations => {
+          for (const ann of annotations) {
+            if (!cardAnnIds.has(ann.id)) {
+              cards.push({
+                state: 0, due: new Date(), stability: 0, difficulty: 0,
+                elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0,
+              } as import("ts-fsrs").Card)
+            }
+          }
+          const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {
+            [currentDoc.id]: { title: currentDoc.title, cards },
+          }
+          const fresh = computeDocMetrics(byDoc)
+          setDocMetrics(prev =>
+            prev.map(p => fresh.find(f => f.documentId === p.documentId) ?? p),
+          )
+        })
+      })
+      return
+    }
+
+    // No items and no current doc → just closed a doc, keep backend values
+    if (items.length === 0) return
+
+    // Incremental update: recompute only for docs in memory
     const itemDocIds = new Set(items.map(i => i.documentId))
 
     setDocMetrics(prev => {
-      // Docs not in current annotationItems: keep previous state (from backend load)
-      // Only recompute docs that have live items in memory
       const otherDocs = prev.filter(p => !itemDocIds.has(p.documentId))
 
-      // Recompute only for docs that have items in memory
       const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
       for (const doc of docs) {
         if (itemDocIds.has(doc.id)) {
@@ -184,9 +217,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         }
       }
       const newMetrics = computeDocMetrics(byDoc)
-
-      // Merge: keep unchanged + freshly computed, then re-sort
-      return [...otherDocs, ...newMetrics].sort((a, b) => b.compositeScore - a.compositeScore)
+      return [...otherDocs, ...newMetrics].sort((a, b) => b.compositeScore - a.compositeScore || a.documentTitle.localeCompare(b.documentTitle))
     })
   }, [])
 

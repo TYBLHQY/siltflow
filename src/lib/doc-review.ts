@@ -135,8 +135,8 @@ export function computeDocMetrics(
     })
   }
 
-  // Sort by composite score descending (most urgent first)
-  results.sort((a, b) => b.compositeScore - a.compositeScore)
+  // Sort by composite score descending (most urgent first), then by title for stability
+  results.sort((a, b) => b.compositeScore - a.compositeScore || a.documentTitle.localeCompare(b.documentTitle))
 
   return results
 }
