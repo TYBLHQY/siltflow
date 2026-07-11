@@ -44,7 +44,7 @@ export function useTTS() {
     setState("idle")
   }, [])
 
-  const speak = useCallback(async (text: string, voice?: string) => {
+  const speak = useCallback(async (text: string, voice?: string, language?: string) => {
     // Stop current playback
     stop()
 
@@ -106,7 +106,7 @@ export function useTTS() {
       // ── Edge-TTS ──
       setState("loading")
       try {
-        const resolvedVoice = voice || useTTSStore.getState().getVoice()
+        const resolvedVoice = voice || useTTSStore.getState().getVoice(language)
         const audioData: number[] = await window.siltflow.tts.speak(text, {
           voice: resolvedVoice,
           rate: config.rate,

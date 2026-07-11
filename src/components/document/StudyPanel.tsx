@@ -100,7 +100,7 @@ export function StudyPanel({
   const handleListen = useCallback(() => {
     if (!item) return
     if (tts.state === "playing") tts.stop()
-    else tts.speak(item.text)
+    else tts.speak(item.text, undefined, item.aiResult?.source_lang)
   }, [item, tts])
 
   // Learning mode shortcuts (only active when item exists)
@@ -334,7 +334,7 @@ export function StudyPanel({
           onClick={(e) => {
             e.stopPropagation()
             if (tts.state === "playing") tts.stop()
-            else tts.speak(item.text)
+            else tts.speak(item.text, undefined, item.aiResult?.source_lang)
           }}
         >
           {tts.state === "loading" ? (

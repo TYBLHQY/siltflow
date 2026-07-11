@@ -234,7 +234,7 @@ export function AITranslateCard({
           onClick={(e) => {
             e.stopPropagation()
             if (tts.state === "playing") tts.stop()
-            else tts.speak(item.text)
+            else tts.speak(item.text, undefined, item.aiResult?.source_lang)
           }}
           title={tts.state === "playing" ? "Stop" : "Read aloud"}
         >
