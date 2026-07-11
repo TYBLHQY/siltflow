@@ -34,9 +34,9 @@ export function registerAnnotationHandlers() {
     return { id: annotation.id }
   })
 
-  ipcMain.handle("annotations:delete", (_event, id: string) => {
+  ipcMain.handle("annotations:delete", (_event, id: string, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return
-    sql.prepare("DELETE FROM annotations WHERE id = ?").run(id)
+    sql.prepare("DELETE FROM annotations WHERE id = ? AND document_id = ?").run(id, documentId)
   })
 }

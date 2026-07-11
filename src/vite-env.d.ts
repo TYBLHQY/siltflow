@@ -36,7 +36,7 @@ interface SiltflowAPI {
   annotations: {
     list: (documentId: string) => Promise<any[]>
     save: (annotation: any) => Promise<any>
-    delete: (id: string) => Promise<void>
+    delete: (id: string, documentId: string) => Promise<void>
   }
   summaries: {
     get: (documentId: string) => Promise<any | null>
