@@ -148,6 +148,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           title: result.title,
           fileName: result.fileName,
           filePath: result.filePath,
+          ...(result.originalName ? { originalName: result.originalName } : {}),
         })
         addDocument({
           id: result.id,
