@@ -146,14 +146,10 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         await window.siltflow.documents.save({
           id: result.id,
           title: result.title,
-          fileName: result.fileName,
-          filePath: result.filePath,
-          ...(result.originalName ? { originalName: result.originalName } : {}),
         })
         addDocument({
           id: result.id,
           title: result.title,
-          filePath: result.filePath,
         })
       }
     } catch (err) {

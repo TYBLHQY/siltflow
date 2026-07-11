@@ -33,9 +33,7 @@ function createTables() {
     CREATE TABLE IF NOT EXISTS documents (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
-      file_name TEXT NOT NULL,
       original_name TEXT,
-      file_path TEXT NOT NULL,
       total_pages INTEGER,
       metadata TEXT,
       created_at TEXT NOT NULL,
@@ -137,7 +135,14 @@ function createTables() {
   if (!docCols.some((c: any) => c.name === 'original_name')) {
     try {
       sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT")
-    } catch { /* column may already exist if CREATE TABLE already included it */ }
+    } catch { /* already present in CREATE TABLE */ }
+  }
+  // Drop legacy columns if they exist
+  if (docCols.some((c: any) => c.name === 'file_name')) {
+    try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_name") } catch {}
+  }
+  if (docCols.some((c: any) => c.name === 'file_path')) {
+    try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_path") } catch {}
   }
 }
 

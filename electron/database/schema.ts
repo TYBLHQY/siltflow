@@ -3,9 +3,7 @@ import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 export const documents = sqliteTable("documents", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
-  fileName: text("file_name").notNull(),
   originalName: text("original_name"),
-  filePath: text("file_path").notNull(),
   totalPages: integer("total_pages"),
   metadata: text("metadata"),
   folderId: text("folder_id"),

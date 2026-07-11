@@ -62,7 +62,7 @@ export function ThreeColumnLayout() {
   }, [])
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
-  const hasPdf = !!currentDocument?.filePath
+  const hasPdf = !!currentDocument?.id
 
   // Tab shortcuts: set tab state AND auto-open the panel if it was collapsed
   const goDocsTab = useCallback(() => {
@@ -137,7 +137,7 @@ export function ThreeColumnLayout() {
 
         <Allotment.Pane minSize={400}>
           <CenterPanel
-            documentPath={currentDocument?.filePath}
+            documentPath={currentDocument?.id ? `siltflow://documents/${currentDocument.id}.pdf` : undefined}
             documentId={currentDocument?.id}
             leftCollapsed={leftCollapsed}
             rightCollapsed={rightCollapsed}

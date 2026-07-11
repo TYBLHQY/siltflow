@@ -27,13 +27,13 @@ export function registerDocumentHandlers() {
       .get()
   })
 
-  ipcMain.handle("documents:save", (_event, doc: typeof schema.documents.$inferInsert) => {
+  ipcMain.handle("documents:save", (_event, doc: { id: string; title: string }) => {
     const db = getDb()
     if (!db) return null
     const now = new Date().toISOString()
     return db
       .insert(schema.documents)
-      .values({ ...doc, createdAt: now, updatedAt: now })
+      .values({ id: doc.id, title: doc.title, createdAt: now, updatedAt: now })
       .returning()
       .get()
   })
@@ -42,9 +42,9 @@ export function registerDocumentHandlers() {
     const db = getDb()
     if (!db) return
     if (vaultPath) {
-      const docDir = path.join(vaultPath, 'documents', id)
-      if (fs.existsSync(docDir)) {
-        fs.rmSync(docDir, { recursive: true, force: true })
+      const docPath = path.join(vaultPath, 'documents', `${id}.pdf`)
+      if (fs.existsSync(docPath)) {
+        fs.rmSync(docPath, { force: true })
       }
     }
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
@@ -55,9 +55,9 @@ export function registerDocumentHandlers() {
     if (!db) return
     for (const id of ids) {
       if (vaultPath) {
-        const docDir = path.join(vaultPath, 'documents', id)
-        if (fs.existsSync(docDir)) {
-          fs.rmSync(docDir, { recursive: true, force: true })
+        const docPath = path.join(vaultPath, 'documents', `${id}.pdf`)
+        if (fs.existsSync(docPath)) {
+          fs.rmSync(docPath, { force: true })
         }
       }
       db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
