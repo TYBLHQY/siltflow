@@ -106,7 +106,7 @@ function createWindow() {
   Menu.setApplicationMenu(null)
 
   win = new BrowserWindow({
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    icon: path.join(RENDERER_DIST, 'icon.png'),
     width: 1400,
     height: 900,
     minWidth: 900,
