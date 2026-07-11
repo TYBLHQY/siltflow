@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { IconText } from "@/components/ui/icon-text"
-import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Trash2, MoveRight } from "lucide-react"
+import { FileText, Loader2, BookText, BookMarked, BrainCircuit, FolderPlus, FileUp, FolderUp, Trash2, MoveRight, Search } from "lucide-react"
 import { useDocumentStore } from "@/stores/document.store"
 import { useFolderStore } from "@/stores/folder.store"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
@@ -89,6 +89,11 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const annotationItems = useAnnotationStore((s) => s.items)
   const [docMetrics, setDocMetrics] = useState<DocReviewMetrics[]>([])
   const [metricsLoading, setMetricsLoading] = useState(false)
+  const [reviewSearch, setReviewSearch] = useState("")
+
+  const filteredMetrics = docMetrics.filter((m) =>
+    m.documentTitle.toLowerCase().includes(reviewSearch.toLowerCase())
+  )
 
   // Load per-document FSRS metrics directly from backend on mount and when annotations change
   useEffect(() => {
@@ -398,20 +403,48 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
         {/* ── Review tab ── */}
         <TabsContent value="review" className="flex-1 min-h-0 mt-0 flex flex-col">
+          {/* Search filter bar */}
+          <div className="shrink-0 border-b px-3 py-1.5">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search documents..."
+                value={reviewSearch}
+                onChange={(e) => setReviewSearch(e.target.value)}
+                className="w-full rounded-md border border-border/50 bg-transparent py-1.5 pl-7 pr-2 text-xs outline-none placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+              />
+            </div>
+          </div>
+
           {metricsLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : docMetrics.length === 0 ? (
+          ) : filteredMetrics.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
               <BrainCircuit className="h-8 w-8 mb-2" />
-              <p className="text-xs text-center">No review data yet</p>
-              <p className="text-xs text-center">Annotate and review cards to see per-document metrics</p>
+              {reviewSearch && docMetrics.length > 0 ? (
+                <>
+                  <p className="text-xs text-center">No documents match your search</p>
+                  <button
+                    className="text-primary hover:underline text-xs mt-1"
+                    onClick={() => setReviewSearch("")}
+                  >
+                    Clear filter
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-center">No review data yet</p>
+                  <p className="text-xs text-center">Annotate and review cards to see per-document metrics</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className="space-y-0 w-full">
-                {docMetrics.map((m) => (
+                {filteredMetrics.map((m) => (
                   <div
                     key={m.documentId}
                     className={`group relative border-b border-border/50 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
@@ -424,7 +457,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate min-w-0 flex-1" title={m.documentTitle}>{m.documentTitle}</span>
+                      <span className="truncate min-w-0 flex-1 select-none" title={m.documentTitle}>{m.documentTitle}</span>
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
