@@ -99,53 +99,100 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     [docMetrics, reviewSearch]
   )
 
-  // Load per-document FSRS metrics from backend — only once after documents are available
+  // Load per-document FSRS metrics from backend
   const metricsInitRef = useRef(false)
+
+  // Full load from backend + annotations (used once at startup)
+  const loadMetricsFull = useCallback(async () => {
+    setMetricsLoading(true)
+    const docs = useDocumentStore.getState().documents
+    if (docs.length === 0) { setMetricsLoading(false); return }
+    try {
+      const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
+      for (const doc of docs) {
+        byDoc[doc.id] = { title: doc.title, cards: [] }
+      }
+      for (const doc of docs) {
+        const rows = await window.siltflow.fsrsCards.listByDocument(doc.id)
+        const cardAnnIds = new Set<string>()
+        for (const row of rows) {
+          cardAnnIds.add(row.annotationId)
+          try {
+            const card = JSON.parse(row.data)
+            byDoc[doc.id]!.cards.push(card)
+          } catch { /* skip bad json */ }
+        }
+        // Annotations without FSRS cards → "new" cards
+        try {
+          const annotations = await window.siltflow.annotations.list(doc.id)
+          for (const ann of annotations) {
+            if (!cardAnnIds.has(ann.id)) {
+              byDoc[doc.id]!.cards.push({
+                state: 0, due: new Date(), stability: 0, difficulty: 0,
+                elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0,
+              } as import("ts-fsrs").Card)
+            }
+          }
+        } catch { /* skip */ }
+      }
+      setDocMetrics(computeDocMetrics(byDoc))
+    } catch {
+      // Fallback: from in-memory items
+      computeMetricsFromItems()
+    } finally {
+      setMetricsLoading(false)
+    }
+  }, [])
+
+  // Compute purely from in-memory annotationItems — no loading state, no backend
+  const computeMetricsFromItems = useCallback(() => {
+    const docs = useDocumentStore.getState().documents
+    if (docs.length === 0) { setDocMetrics([]); return }
+    const items = useAnnotationStore.getState().items
+    const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
+    for (const doc of docs) {
+      byDoc[doc.id] = { title: doc.title, cards: [] }
+    }
+    const cardDocMap = new Map<string, Set<string>>()
+    for (const item of items) {
+      if (item.fsrsCard && byDoc[item.documentId]) {
+        byDoc[item.documentId]!.cards.push(item.fsrsCard)
+        if (!cardDocMap.has(item.documentId)) cardDocMap.set(item.documentId, new Set())
+        cardDocMap.get(item.documentId)!.add(item.id)
+      }
+    }
+    for (const item of items) {
+      if (!item.fsrsCard && byDoc[item.documentId]) {
+        const cardIds = cardDocMap.get(item.documentId)
+        if (!cardIds?.has(item.id)) {
+          byDoc[item.documentId]!.cards.push({
+            state: 0, due: new Date(), stability: 0, difficulty: 0,
+            elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0,
+          } as import("ts-fsrs").Card)
+        }
+      }
+    }
+    setDocMetrics(computeDocMetrics(byDoc))
+  }, [])
+
+  // Initial full load from backend
   useEffect(() => {
     if (metricsInitRef.current) return
     if (documents.length === 0) return
     metricsInitRef.current = true
+    loadMetricsFull()
+  }, [documents.length, loadMetricsFull])
 
-    let cancelled = false
-    async function loadMetrics() {
-      setMetricsLoading(true)
-      try {
-        const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
-        for (const doc of documents) {
-          byDoc[doc.id] = { title: doc.title, cards: [] }
-        }
-        for (const doc of documents) {
-          const rows = await window.siltflow.fsrsCards.listByDocument(doc.id)
-          for (const row of rows) {
-            try {
-              const card = JSON.parse(row.data)
-              byDoc[doc.id]!.cards.push(card)
-            } catch { /* skip bad json */ }
-          }
-        }
-        if (!cancelled) {
-          setDocMetrics(computeDocMetrics(byDoc))
-        }
-      } catch {
-        if (!cancelled) {
-          const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
-          for (const doc of documents) {
-            byDoc[doc.id] = { title: doc.title, cards: [] }
-          }
-          for (const item of annotationItems) {
-            if (item.fsrsCard && byDoc[item.documentId]) {
-              byDoc[item.documentId]!.cards.push(item.fsrsCard)
-            }
-          }
-          setDocMetrics(computeDocMetrics(byDoc))
-        }
-      } finally {
-        if (!cancelled) setMetricsLoading(false)
-      }
-    }
-    loadMetrics()
-    return () => { cancelled = true }
-  }, [documents.length]) // only once after documents load
+  // Incremental update from in-memory items — no flash, debounced
+  const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => {
+    if (!metricsInitRef.current) return
+    if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current)
+    metricsDebounceRef.current = setTimeout(() => {
+      computeMetricsFromItems()
+    }, 150)
+    return () => { if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current) }
+  }, [annotationItems, computeMetricsFromItems])
 
   useEffect(() => {
     loadFromDb()
@@ -470,19 +517,10 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                     </div>
                     {m.totalCards > 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
-                        {m.newCardsCount > 0 && (
-                          <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">{m.newCardsCount} new</span>
-                        )}
-                        {m.dueNowCount > 0 && (
-                          <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">{m.dueNowCount} due</span>
-                        )}
-                        {m.dueSoonCount > 0 && (
-                          <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">{m.dueSoonCount} soon</span>
-                        )}
-                        {m.avgRetrievability > 0 && (
-                          <span className="rounded bg-mauve/15 px-1 py-0.5 font-medium text-mauve">{urgencyLabel(m.avgRetrievability)}</span>
-                        )}
-                        <span className="text-muted-foreground ml-auto">{m.totalCards} cards</span>
+                        <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">{m.newCardsCount} new</span>
+                        <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">{m.dueNowCount} due</span>
+                        <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">{m.dueSoonCount} soon</span>
+                        <span className="rounded bg-mauve/15 px-1 py-0.5 font-medium text-mauve">{urgencyLabel(m.avgRetrievability)}</span>
                       </div>
                     )}
                   </div>
