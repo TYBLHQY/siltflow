@@ -149,30 +149,45 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const docs = useDocumentStore.getState().documents
     if (docs.length === 0) { setDocMetrics([]); return }
     const items = useAnnotationStore.getState().items
-    const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
-    for (const doc of docs) {
-      byDoc[doc.id] = { title: doc.title, cards: [] }
-    }
-    const cardDocMap = new Map<string, Set<string>>()
-    for (const item of items) {
-      if (item.fsrsCard && byDoc[item.documentId]) {
-        byDoc[item.documentId]!.cards.push(item.fsrsCard)
-        if (!cardDocMap.has(item.documentId)) cardDocMap.set(item.documentId, new Set())
-        cardDocMap.get(item.documentId)!.add(item.id)
-      }
-    }
-    for (const item of items) {
-      if (!item.fsrsCard && byDoc[item.documentId]) {
-        const cardIds = cardDocMap.get(item.documentId)
-        if (!cardIds?.has(item.id)) {
-          byDoc[item.documentId]!.cards.push({
-            state: 0, due: new Date(), stability: 0, difficulty: 0,
-            elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0,
-          } as import("ts-fsrs").Card)
+
+    const itemDocIds = new Set(items.map(i => i.documentId))
+
+    setDocMetrics(prev => {
+      // Docs not in current annotationItems: keep previous state (from backend load)
+      // Only recompute docs that have live items in memory
+      const otherDocs = prev.filter(p => !itemDocIds.has(p.documentId))
+
+      // Recompute only for docs that have items in memory
+      const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {}
+      for (const doc of docs) {
+        if (itemDocIds.has(doc.id)) {
+          byDoc[doc.id] = { title: doc.title, cards: [] }
         }
       }
-    }
-    setDocMetrics(computeDocMetrics(byDoc))
+      const cardDocMap = new Map<string, Set<string>>()
+      for (const item of items) {
+        if (item.fsrsCard && byDoc[item.documentId]) {
+          byDoc[item.documentId]!.cards.push(item.fsrsCard)
+          if (!cardDocMap.has(item.documentId)) cardDocMap.set(item.documentId, new Set())
+          cardDocMap.get(item.documentId)!.add(item.id)
+        }
+      }
+      for (const item of items) {
+        if (!item.fsrsCard && byDoc[item.documentId]) {
+          const cardIds = cardDocMap.get(item.documentId)
+          if (!cardIds?.has(item.id)) {
+            byDoc[item.documentId]!.cards.push({
+              state: 0, due: new Date(), stability: 0, difficulty: 0,
+              elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0,
+            } as import("ts-fsrs").Card)
+          }
+        }
+      }
+      const newMetrics = computeDocMetrics(byDoc)
+
+      // Merge: keep unchanged + freshly computed, then re-sort
+      return [...otherDocs, ...newMetrics].sort((a, b) => b.compositeScore - a.compositeScore)
+    })
   }, [])
 
   // Initial full load from backend
@@ -516,7 +531,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                       <span className="truncate min-w-0 flex-1 select-none" title={m.documentTitle}>{m.documentTitle}</span>
                     </div>
                     {m.totalCards > 0 && (
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
                         <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">{m.newCardsCount} new</span>
                         <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">{m.dueNowCount} due</span>
                         <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">{m.dueSoonCount} soon</span>

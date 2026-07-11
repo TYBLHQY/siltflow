@@ -6,11 +6,11 @@
  * state of all its component cards.
  *
  * Ranking factors (weighted):
- * 1. due_now_count     — cards due at this moment (highest weight)
- * 2. avg_overdue_ratio — how far past-due cards are on average (elapsed/scheduled)
- * 3. avg_retrievability — average retrievability across all cards (lower = more urgent)
- * 4. due_soon_count    — cards due within the next 7 days
- * 5. total_cards       — tiebreaker (more annotated content = higher rank)
+ * 1. due_now_count     — cards due at this moment (highest weight ×200)
+ * 2. new_cards_count   — annotated but not yet studied (×50)
+ * 3. due_soon_count    — cards due within the next 7 days (×15)
+ * 4. overdue_depth     — how far past-due cards are on average (elapsed/scheduled)
+ * 5. avg_retrievability — average retrievability of non-new cards (lower = more urgent)
  */
 import type { Card } from "ts-fsrs"
 import { State } from "ts-fsrs"
@@ -72,6 +72,7 @@ export function computeDocMetrics(
     let dueNowCount = 0
     let dueSoonCount = 0
     let newCardsCount = 0
+    let nonNewCount = 0
     let retrievabilitySum = 0
     let overdueRatioSum = 0
     let overdueCount = 0
@@ -80,24 +81,24 @@ export function computeDocMetrics(
       // Count new cards (state === New) — annotated but not yet studied
       if (card.state === State.New) {
         newCardsCount++
-        // Don't count new cards into retrievability metrics
         continue
       }
+
+      nonNewCount++
 
       // Normalize due date
       const due = card.due instanceof Date ? card.due : new Date(card.due)
       const dueMs = due.getTime()
       const elapsedDays = now > dueMs ? (now - dueMs) / dayMs : 0
 
-      // Retrievability
+      // Retrievability (only for non-new cards)
       if (card.stability > 0) {
         retrievabilitySum += retrievability(card.stability, elapsedDays)
       }
 
-      // Due now
+      // Due now — include overdue depth
       if (dueMs <= now) {
         dueNowCount++
-        // Overdue ratio
         if (card.scheduled_days > 0 && elapsedDays > 0) {
           overdueRatioSum += elapsedDays / card.scheduled_days
           overdueCount++
@@ -111,13 +112,15 @@ export function computeDocMetrics(
     }
 
     const total = cards.length
-    const avgRetrievability = total > 0 ? retrievabilitySum / total : 0
+    const avgRetrievability = nonNewCount > 0 ? retrievabilitySum / nonNewCount : 0
     const avgOverdueRatio = overdueCount > 0 ? overdueRatioSum / overdueCount : 0
 
     // Composite score: higher = more urgent
-    // Weights: due_now * 100, due_soon * 10, new * 20, retrievability penalty, overdue bonus
-    const retrievabilityPenalty = Math.max(0, 0.5 - avgRetrievability) * 50
-    const overdueBonus = avgOverdueRatio * 20
+    // Weights: due_now ×200, new ×50, due_soon ×15
+    // Overdue depth: each day overdue beyond scheduled boosts score
+    // Retrievability penalty: only matters when avgR drops below 90%
+    const overdueDepthPenalty = avgOverdueRatio * 50
+    const retrievabilityPenalty = Math.max(0, 0.9 - avgRetrievability) * 30
 
     results.push({
       documentId: docId,
@@ -128,7 +131,7 @@ export function computeDocMetrics(
       dueSoonCount,
       avgRetrievability: Math.round(avgRetrievability * 100),
       avgOverdueRatio: Math.round(avgOverdueRatio * 100),
-      compositeScore: dueNowCount * 100 + dueSoonCount * 10 + newCardsCount * 20 + retrievabilityPenalty + overdueBonus,
+      compositeScore: dueNowCount * 200 + newCardsCount * 50 + dueSoonCount * 15 + retrievabilityPenalty + overdueDepthPenalty,
     })
   }
 

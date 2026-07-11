@@ -9,7 +9,7 @@ import { usePdfViewerStore } from "@/stores/pdf-viewer.store"
 import { usePanelLayout } from "@/hooks/usePanelLayout"
 import { useShortcut } from "@/hooks/useShortcut"
 
-const MIN_PANEL_PX = 250
+const MIN_PANEL_PX = 300
 const MAX_PANEL_PX = 600
 
 export function ThreeColumnLayout() {
@@ -103,8 +103,8 @@ export function ThreeColumnLayout() {
 
   // Convert saved percentages to pixel sizes based on a typical window.
   // If saved layout exists, weight left/right as initial sizes in pixels.
-  const leftSize = layout?.[0] ? Math.round((layout[0] / 100) * window.innerWidth) : 250
-  const rightSize = layout?.[2] ? Math.round((layout[2] / 100) * window.innerWidth) : 250
+  const leftSize = layout?.[0] ? Math.round((layout[0] / 100) * window.innerWidth) : 300
+  const rightSize = layout?.[2] ? Math.round((layout[2] / 100) * window.innerWidth) : 300
 
   return (
     <div className="h-screen w-screen">
@@ -127,7 +127,7 @@ export function ThreeColumnLayout() {
         <Allotment.Pane
           minSize={MIN_PANEL_PX}
           maxSize={MAX_PANEL_PX}
-          preferredSize={250}
+          preferredSize={300}
           visible={!leftCollapsed}
         >
           <div ref={leftPanelRef} className="h-full">
@@ -149,7 +149,7 @@ export function ThreeColumnLayout() {
         <Allotment.Pane
           minSize={MIN_PANEL_PX}
           maxSize={MAX_PANEL_PX}
-          preferredSize={250}
+          preferredSize={300}
           visible={!rightCollapsed}
         >
           <div ref={rightPanelRef} className="h-full">
