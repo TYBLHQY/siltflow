@@ -357,6 +357,10 @@
 
 /* PDF invert in dark mode */
 
+.PdfHighlighter {
+  background: hsl(var(--background)) !important;
+}
+
 html[data-pdf-dark-invert="true"].dark .PdfHighlighter :is(canvas, .textLayer) {
   filter: invert(1) hue-rotate(180deg);
 }
