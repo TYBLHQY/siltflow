@@ -250,11 +250,29 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       [removeDocument],
     )
     const handleDeleteFolder = useCallback(
-      async (folder: FolderItem) => {
-        setDeleteConfirm(folder)
+      (folder: FolderItem) => {
         setContextMenu(null)
+        // Count docs in this folder
+        const docCount = documents.filter((d) => d.folderId === folder.id).length
+        // Count subfolders recursively
+        let subFolderCount = 0
+        const countSubfolders = (parentId: string) => {
+          for (const f of folders) {
+            if (f.parentId === parentId) {
+              subFolderCount++
+              countSubfolders(f.id)
+            }
+          }
+        }
+        countSubfolders(folder.id)
+        // If folder is empty, delete without confirmation
+        if (docCount === 0 && subFolderCount === 0) {
+          deleteFolder(folder.id)
+        } else {
+          setDeleteConfirm(folder)
+        }
       },
-      [],
+      [documents, folders, deleteFolder],
     )
     const handleRenameFolder = useCallback(
       (folder: FolderItem) => {
