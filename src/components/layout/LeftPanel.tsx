@@ -82,6 +82,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const [docMetrics, setDocMetrics] = useState<DocReviewMetrics[]>([])
   const [metricsLoading, setMetricsLoading] = useState(false)
   const [reviewSearch, setReviewSearch] = useState("")
+  const reviewSearchRef = useRef<HTMLInputElement>(null)
+
+  // Ctrl+F in review tab → focus search input
+  useEffect(() => {
+    if (activeTab !== "review") return
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault()
+        reviewSearchRef.current?.focus()
+      }
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [activeTab])
 
   // Only recompute when docMetrics change, not on every render
   const filteredMetrics = useMemo(
@@ -309,7 +323,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
         {/* ── Docs tab ── */}
         <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
-          <div className="shrink-0 border-b px-3 py-2">
+          <div className="shrink-0 border-b px-3 py-0.5">
             <div className="flex items-center justify-between">
               <div className="flex gap-1.5">
                 <TooltipProvider>
@@ -375,16 +389,17 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
         {/* ── Review tab ── */}
         <TabsContent value="review" className="flex-1 min-h-0 mt-0 flex flex-col">
-          {/* Search filter bar */}
-          <div className="shrink-0 border-b px-3 py-1.5">
+          {/* Search filter bar — full-width, borderless */}
+          <div className="shrink-0 border-b">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
+                ref={reviewSearchRef}
                 type="text"
                 placeholder="Search documents..."
                 value={reviewSearch}
                 onChange={(e) => setReviewSearch(e.target.value)}
-                className="w-full rounded-md border border-border/50 bg-transparent py-1.5 pl-7 pr-2 text-xs outline-none placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+                className="w-full border-0 bg-transparent py-1.5 pl-8 pr-2 text-xs outline-none placeholder:text-muted-foreground/50"
               />
             </div>
           </div>
