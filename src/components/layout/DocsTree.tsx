@@ -103,6 +103,8 @@ export interface DocsTreeHandle {
   createFolder: () => void
   selectedDocIds: () => string[]
   clearSelection: () => void
+  /** Open parent folders and scroll/select to the document with the given id. */
+  revealDocument: (docId: string) => void
 }
 
 interface DocsTreeProps {
@@ -171,7 +173,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       }
     }, [createFolder, tree, refreshAll])
 
-    // Ref: expose createFolder, selectedDocIds, clearSelection
+    // Ref: expose createFolder, selectedDocIds, clearSelection, revealDocument
     useImperativeHandle(
       ref,
       () => ({
@@ -188,8 +190,26 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
           tree?.deselectAll()
           onSelectionChange?.([])
         },
+        revealDocument: (docId: string) => {
+          if (!tree) return
+          // Find the doc in the documents list to learn its folderId
+          const doc = documents.find((d) => d.id === docId)
+          if (!doc) return
+          // Open all parent folders
+          if (doc.folderId) {
+            const openParents = (folderId: string) => {
+              const folder = folders.find((f) => f.id === folderId)
+              if (!folder) return
+              tree.open(`folder:${folderId}`)
+              if (folder.parentId) openParents(folder.parentId)
+            }
+            openParents(doc.folderId)
+          }
+          // Select and scroll to the document
+          tree.select(`doc:${docId}`, { align: "center" })
+        },
       }),
-      [createDirectFolder, tree, onSelectionChange],
+      [createDirectFolder, tree, onSelectionChange, documents, folders],
     )
 
     // onRename: persist the new name for folders and documents

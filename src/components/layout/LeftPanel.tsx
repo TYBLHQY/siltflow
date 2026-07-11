@@ -209,6 +209,16 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     useDocumentStore.getState().setDocuments(docs || [])
   }
 
+  // When switching to the docs tab with a current document, reveal it in the tree
+  useEffect(() => {
+    if (activeTab === "documents" && currentDocument) {
+      const id = setTimeout(() => {
+        docsTreeRef.current?.revealDocument(currentDocument.id)
+      }, 50)
+      return () => clearTimeout(id)
+    }
+  }, [activeTab, currentDocument])
+
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="review" value={activeTab ?? undefined} onValueChange={onTabChange} className="flex flex-col flex-1 min-h-0">
