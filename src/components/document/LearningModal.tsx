@@ -25,7 +25,7 @@ export function LearningModal({
   onRate,
   onClose,
 }: LearningModalProps) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(items.length > 0)
 
   // Safety-net ESC close (StudyPanel also handles ESC via shortcut system)
   useEffect(() => {
@@ -36,9 +36,10 @@ export function LearningModal({
     return () => window.removeEventListener("keydown", handler)
   }, [onClose])
 
-  // When parent closes us (items becomes empty), start exit animation
+  // Open when items become available, start exit animation when items become empty
   useEffect(() => {
-    if (items.length === 0) setOpen(false)
+    if (items.length > 0) setOpen(true)
+    else setOpen(false)
   }, [items.length])
 
   return (
