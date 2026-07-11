@@ -221,11 +221,11 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     })
   }, [])
 
-  // Initial full load from backend
+  // Load review metrics from backend when documents list changes
+  // (initial load, import, delete).  documents.length starts as 0 and
+  // changes only when docs are added or removed.
   useEffect(() => {
-    if (metricsInitRef.current) return
     if (documents.length === 0) return
-    metricsInitRef.current = true
     loadMetricsFull()
   }, [documents.length, loadMetricsFull])
 
