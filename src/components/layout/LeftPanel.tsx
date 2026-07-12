@@ -108,6 +108,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [reviewSearch, setReviewSearch] = useState("");
   const reviewSearchRef = useRef<HTMLInputElement>(null);
+  const reviewScrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
 
@@ -377,6 +378,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     }
   }, [activeTab, currentDocument]);
 
+  // When switching to the review tab while a PDF is open, scroll the current
+  // document item into view so the user can see its metrics at a glance.
+  useEffect(() => {
+    if (activeTab === "review" && currentDocument) {
+      const id = setTimeout(() => {
+        const el = reviewScrollRef.current?.querySelector(
+          `[data-doc-id="${currentDocument.id}"]`,
+        );
+        el?.scrollIntoView({ block: "center", behavior: "auto" });
+      }, 100);
+      return () => clearTimeout(id);
+    }
+  }, [activeTab, currentDocument]);
+
   return (
     <div className="flex h-full flex-col">
       <Tabs
@@ -535,11 +550,12 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               )}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0" ref={reviewScrollRef}>
               <div className="space-y-0 w-full">
                 {filteredMetrics.map((m) => (
                   <div
                     key={m.documentId}
+                    data-doc-id={m.documentId}
                     className={`group relative border-b border-border/50 pl-3 py-2.5 pr-3 text-sm transition-colors cursor-pointer ${
                       currentDocument?.id === m.documentId
                         ? "before:absolute before:left-0 before:top-0 before:h-full before:w-[5px] before:bg-foreground"
