@@ -51,21 +51,20 @@ function buildTranslatePrompt(
     { "pos": "<pos>", "definition": "<explanation in source language>", "gloss": "<explanation in target language>" }
   ],
   "examples": [
-    { "sentence": "<example sentence>", "translation": "<translation>", "source": "context|dictionary" }
+    { "sentence": "<example sentence>", "translation": "<translation>" }
   ],
   "collocations": [
     { "phrase": "<common collocation>", "translation": "<translation>" }
   ],
   "alternatives": [
-    { "expression": "<synonym or alternative phrasing>", "register": "formal|casual|neutral" }
+    { "expression": "<synonym or alternative phrasing>", "register": "[formal/frozen/consultative/casual/intimate/neutral/academic/technical/literary/slang]" }
   ],
   "pronunciation": { "ipa": "<IPA transcription>" },
   "metadata": {
     "difficulty": "<A1|A2|B1|B2|C1|C2|native>",
-    "register": "<formal|casual|neutral|academic|literary>",
+    "register": "[formal/frozen/consultative/casual/intimate/neutral/academic/technical/literary/slang]",
     "tags": ["<domain tag>"]
-  },
-  "context_sentence": "<context sentence if provided, else omit>"
+  }
 }`;
 
   if (isSameLanguage) {
@@ -78,13 +77,13 @@ ${BASE_SCHEMA}
 CONSTRAINTS:
 - 'lemma': base/dictionary form. For "ran" → "run"; for "better" → "good".
 - 'definitions': at least 1 entry, max 5 for multi-sense words.
-- 'examples': at least 1 entry; if a context sentence is provided, include it as the first example with source "context" and highlight the word with **word**.
+- 'examples': at least 1 entry; if a context sentence is provided, include it as the first example and highlight the word with **word**.
 - All string fields (translation, definitions, examples, collocations, alternatives) must be plain text only — NO markdown formatting (no bold, italics, lists, headings, code fences, or any other markup). Plain sentences only.
 - 'collocations': max 4 entries.
 - 'alternatives': max 3 entries, each differing in register.
 - 'pronunciation': include IPA for words/phrases; omit for sentences/passages.
 - 'metadata.difficulty': estimate CEFR level.
-- 'metadata.register': indicate formality level.
+- 'metadata.register': pick the most specific register tag. Use format: [level/domain], e.g. "formal/academic", "casual/slang", "neutral". Level values: frozen, formal, consultative, casual, intimate, neutral. Domain values: academic, technical, literary, slang. Always include at least the level; add domain when applicable.
 - 'metadata.tags': max 3 domain tags.
 - POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
 - Use ISO 639-1 language codes.
@@ -100,13 +99,13 @@ ${BASE_SCHEMA}
 CONSTRAINTS:
 - 'lemma': base/dictionary form. For "ran" → "run"; for "better" → "good".
 - 'definitions': at least 1 entry, max 5 for multi-sense words.
-- 'examples': at least 1 entry; if a context sentence is provided, include it as the first example with source "context" and highlight the word with **word**.
+- 'examples': at least 1 entry; if a context sentence is provided, include it as the first example and highlight the word with **word**.
 - All string fields (translation, definitions, examples, collocations, alternatives) must be plain text only — NO markdown formatting (no bold, italics, lists, headings, code fences, or any other markup). Plain sentences only.
 - 'collocations': max 4 entries.
 - 'alternatives': max 3 entries, each differing in register.
 - 'pronunciation': include IPA for words/phrases; omit for sentences/passages.
 - 'metadata.difficulty': estimate CEFR level.
-- 'metadata.register': indicate formality level.
+- 'metadata.register': pick the most specific register tag. Use format: [level/domain], e.g. "formal/academic", "casual/slang", "neutral". Level values: frozen, formal, consultative, casual, intimate, neutral. Domain values: academic, technical, literary, slang. Always include at least the level; add domain when applicable.
 - 'metadata.tags': max 3 domain tags.
 - POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
 - Use ISO 639-1 language codes.

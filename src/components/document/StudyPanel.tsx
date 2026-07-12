@@ -195,7 +195,6 @@ export function StudyPanel({
   const register = ai ? getRegister(ai) : undefined;
   const examples = ai?.examples ?? [];
   const alts = ai ? getAlternatives(ai) : [];
-  const contextSentence = ai?.context_sentence;
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
@@ -254,8 +253,8 @@ export function StudyPanel({
               </p>
             )}
 
-            {/* Lemma + POS + register */}
-            {(ai.lemma || ai.pos || register) && (
+            {/* Lemma + POS + register + IPA */}
+            {(ai.lemma || ai.pos || register || ipa) && (
               <div className="flex flex-wrap items-center gap-1.5">
                 {ai.lemma && (
                   <span className="font-semibold text-foreground">
@@ -263,37 +262,35 @@ export function StudyPanel({
                   </span>
                 )}
                 {ai.pos && (
-                  <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach font-mono">
+                  <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                     {ai.pos}
                   </span>
                 )}
                 {register && (
-                  <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
+                  <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender">
                     {register}
                   </span>
                 )}
+                {ipa && (
+                  <span className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo">
+                    {ipa.startsWith("/") ? ipa : `/${ipa}/`}
+                  </span>
+                )}
               </div>
-            )}
-
-            {/* IPA */}
-            {ipa && (
-              <p className="text-muted-foreground/70 italic leading-relaxed">
-                {ipa.startsWith("/") ? ipa : `/${ipa}/`}
-              </p>
             )}
 
             {/* Tags */}
             {(difficulty || (tags && tags.length > 0)) && (
               <div className="flex flex-wrap gap-1">
                 {difficulty && (
-                  <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
+                  <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
                     {difficulty}
                   </span>
                 )}
                 {tags?.slice(0, 3).map((tag) => (
                   <span
                     key={tag}
-                    className="rounded bg-peach/15 px-1.5 py-0.5 text-peach"
+                    className="inline-flex items-center rounded bg-teal/15 px-1.5 py-0.5 text-teal"
                   >
                     {tag}
                   </span>
@@ -314,20 +311,20 @@ export function StudyPanel({
                             {d.pos}
                           </span>
                         )}
-                        <span className="text-muted-foreground ml-1">
+                        <span className="text-overlay0 ml-1">
                           {d.gloss || d.meaning}
                         </span>
                       </>
                     ) : (
                       <>
                         {d.pos && (
-                          <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
+                          <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
                             {d.pos}
                           </span>
                         )}
                         <span className="text-foreground">{d.definition}</span>
                         {d.gloss && (
-                          <span className="text-muted-foreground/70 ml-1">
+                          <span className="text-overlay0 ml-1">
                             {d.gloss}
                           </span>
                         )}
@@ -351,13 +348,8 @@ export function StudyPanel({
                         {renderBoldText(ex.sentence)}
                       </span>
                       {ex.translation && (
-                        <span className="text-muted-foreground block ml-0">
+                        <span className="text-overlay0 block ml-0">
                           {renderBoldText(ex.translation)}
-                          {ex.source === "context" && (
-                            <span className="text-muted-foreground/50 ml-1">
-                              (from text)
-                            </span>
-                          )}
                         </span>
                       )}
                     </li>
@@ -378,7 +370,7 @@ export function StudyPanel({
                       <span className="font-medium text-foreground">
                         {c.phrase}
                       </span>
-                      <span className="text-muted-foreground">
+                      <span className="text-overlay0">
                         {" "}
                         {c.translation}
                       </span>
@@ -401,8 +393,8 @@ export function StudyPanel({
                         {a.expression}
                       </span>
                       {a.register && (
-                        <span className="text-muted-foreground/60 ml-1">
-                          ({a.register})
+                        <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender ml-1">
+                          {a.register}
                         </span>
                       )}
                     </div>
@@ -411,12 +403,6 @@ export function StudyPanel({
               </div>
             )}
 
-            {/* Context sentence */}
-            {contextSentence && (
-              <p className="text-muted-foreground/80 italic leading-relaxed truncate">
-                "{renderBoldText(contextSentence)}"
-              </p>
-            )}
           </div>
         )}
       </div>

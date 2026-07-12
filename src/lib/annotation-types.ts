@@ -32,8 +32,6 @@ export interface DefinitionEntry {
 export interface ExampleEntry {
   sentence: string;
   translation: string;
-  /** "context" = from user's own text, "dictionary" = AI-generated. */
-  source: "context" | "dictionary";
 }
 
 // ---------------------------------------------------------------------------
@@ -100,9 +98,6 @@ export interface AIAnnotationData {
 
   /** Metadata (CEFR, register, domain tags). */
   metadata?: AITranslateMetadata;
-
-  /** The sentence from the user's document where this text appears. */
-  context_sentence?: string;
 
   // ── Backward compat (old fields kept for existing annotations) ──
   /** @deprecated Use translation. */

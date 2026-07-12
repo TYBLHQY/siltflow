@@ -114,12 +114,10 @@ function hasDetails(ai: NonNullable<AnnotationItem["aiResult"]>): boolean {
   const defs = getDefinitions(ai);
   const exs = ai.examples;
   const register = getRegister(ai);
-  const contextSentence = ai.context_sentence;
   if (coll.length > 0) return true;
   if (alts.length > 0) return true;
   if (exs && exs.length > 0) return true;
   if (register) return true;
-  if (contextSentence) return true;
   if (defs.length > 1) return true;
   return false;
 }
@@ -197,14 +195,13 @@ export function AITranslateCard({
   const register = ai ? getRegister(ai) : undefined;
   const alts = ai ? getAlternatives(ai) : [];
   const examples = ai?.examples ?? [];
-  const contextSentence = ai?.context_sentence;
   const granularity = ai ? inferGranularity(ai, item.text) : "highlight";
   const isWord = granularity === "word" || granularity === "phrase";
   const isDetailAvailable = ai ? hasDetails(ai) : false;
 
   return (
     <div
-      className={`w-full min-w-0 rounded-lg border border-border/80 bg-base shadow-sm p-3 transition-colors cursor-pointer ${
+      className={`w-full min-w-0 rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-3 transition-colors cursor-pointer ${
         scrolled ? "bg-accent/40 border-accent" : "hover:border-accent"
       } ${className}`}
       onClick={handleCardClick}
@@ -323,39 +320,40 @@ export function AITranslateCard({
             </p>
           )}
 
-          {ai.lemma && (
+          {(ai.lemma || ai.pos || register || (ipa && isWord)) && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-semibold text-foreground">{ai.lemma}</span>
+              {ai.lemma && (
+                <span className="font-semibold text-foreground">{ai.lemma}</span>
+              )}
               {ai.pos && (
-                <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach font-mono">
+                <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach">
                   {ai.pos}
                 </span>
               )}
               {register && (
-                <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
+                <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender">
                   {register}
+                </span>
+              )}
+              {ipa && isWord && (
+                <span className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo">
+                  {ipa.startsWith("/") ? ipa : `/${ipa}/`}
                 </span>
               )}
             </div>
           )}
 
-          {ipa && isWord && (
-            <p className="text-muted-foreground/70 italic leading-relaxed">
-              {ipa.startsWith("/") ? ipa : `/${ipa}/`}
-            </p>
-          )}
-
           {(difficulty || (tags && tags.length > 0)) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
-                <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach">
+                <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
                   {difficulty}
                 </span>
               )}
               {tags?.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="rounded bg-peach/15 px-1.5 py-0.5 text-peach"
+                  className="inline-flex items-center rounded bg-teal/15 px-1.5 py-0.5 text-teal"
                 >
                   {tag}
                 </span>
@@ -375,14 +373,14 @@ export function AITranslateCard({
                           {d.pos}
                         </span>
                       )}
-                      <span className="text-muted-foreground ml-1">
+                      <span className="text-overlay0 ml-1">
                         {d.gloss || d.meaning}
                       </span>
                     </>
                   ) : (
                     <>
                       {d.pos && (
-                        <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
+                        <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
                           {d.pos}
                         </span>
                       )}
@@ -390,7 +388,7 @@ export function AITranslateCard({
                         <span className="text-foreground">{d.definition}</span>
                       )}
                       {d.gloss && (
-                        <span className="text-muted-foreground/70 ml-1">
+                        <span className="text-overlay0 ml-1">
                           {d.gloss}
                         </span>
                       )}
@@ -399,12 +397,6 @@ export function AITranslateCard({
                 </div>
               ))}
             </div>
-          )}
-
-          {contextSentence && !expanded && (
-            <p className="text-muted-foreground/80 italic leading-relaxed truncate">
-              "{renderBoldText(contextSentence)}"
-            </p>
           )}
 
           {expanded && isDetailAvailable && (
@@ -421,13 +413,8 @@ export function AITranslateCard({
                           {renderBoldText(ex.sentence)}
                         </span>
                         {ex.translation && (
-                          <span className="text-muted-foreground block ml-0">
+                          <span className="text-overlay0 block ml-0">
                             {renderBoldText(ex.translation)}
-                            {ex.source === "context" && (
-                              <span className="text-muted-foreground/50 ml-1">
-                                (from text)
-                              </span>
-                            )}
                           </span>
                         )}
                       </li>
@@ -447,7 +434,7 @@ export function AITranslateCard({
                         <span className="font-medium text-foreground">
                           {c.phrase}
                         </span>
-                        <span className="text-muted-foreground">
+                        <span className="text-overlay0">
                           {" "}
                           {c.translation}
                         </span>
@@ -469,8 +456,8 @@ export function AITranslateCard({
                           {a.expression}
                         </span>
                         {a.register && (
-                          <span className="text-muted-foreground/60 ml-1">
-                            ({a.register})
+                          <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender ml-1">
+                            {a.register}
                           </span>
                         )}
                       </div>
