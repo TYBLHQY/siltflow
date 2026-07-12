@@ -26,6 +26,7 @@ import {
   DocumentOutline,
 } from "react-pdf-highlighter-plus";
 import { useAnnotationStore } from "@/stores/annotation.store";
+import { useStyleStore } from "@/stores/style.store";
 import {
   computeDocMetrics,
   urgencyLabel,
@@ -37,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
   const goToPage = usePdfViewerStore((s) => s.goToPage);
+  const fontSize = useStyleStore((s) => s.style.fontSize);
 
   const {
     outline,
@@ -68,7 +70,7 @@ function DocumentOutlinePanel() {
   }
 
   return (
-    <div className="px-1">
+    <ScrollArea className="flex-1 px-1">
       <DocumentOutline
         outline={outline}
         isLoading={false}
@@ -79,13 +81,16 @@ function DocumentOutlinePanel() {
         }}
         itemClassNames={{
           container:
-            "rounded-md px-2 py-1 text-sm hover:bg-accent transition-colors cursor-pointer",
-          title: "text-sm",
+            "rounded-md px-2 py-1 hover:bg-accent transition-colors cursor-pointer",
+          title: "hover:text-accent-foreground",
           expandButton: "text-muted-foreground",
           expandIcon: "h-3 w-3",
         }}
+        itemStyles={{
+          title: { fontSize },
+        }}
       />
-    </div>
+    </ScrollArea>
   );
 }
 

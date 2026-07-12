@@ -81,9 +81,10 @@ function App() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  // Check for updates on startup if enabled
+  // Check for updates on startup if enabled (skip in dev mode)
   useEffect(() => {
     if (!vaultReady || !appSettingsLoaded || !checkUpdateOnStartup) return;
+    if (import.meta.env.DEV) return;
 
     const timer = setTimeout(() => {
       setUpdateDialog("checking");
