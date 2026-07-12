@@ -381,6 +381,11 @@ export function AITranslateCard({
                     </>
                   ) : (
                     <>
+                      {d.pos && (
+                        <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
+                          {d.pos}
+                        </span>
+                      )}
                       {d.definition && (
                         <span className="text-foreground">{d.definition}</span>
                       )}

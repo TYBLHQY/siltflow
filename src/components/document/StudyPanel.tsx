@@ -320,6 +320,11 @@ export function StudyPanel({
                       </>
                     ) : (
                       <>
+                        {d.pos && (
+                          <span className="rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
+                            {d.pos}
+                          </span>
+                        )}
                         <span className="text-foreground">{d.definition}</span>
                         {d.gloss && (
                           <span className="text-muted-foreground/70 ml-1">
