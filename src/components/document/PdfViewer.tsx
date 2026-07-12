@@ -372,6 +372,11 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
             Failed to load PDF
           </div>
         )}
+        onError={() => {
+          // If the PDF fails to load (e.g. file was deleted externally),
+          // close the current document.
+          useDocumentStore.getState().setCurrentDocument(null);
+        }}
       >
         {(pdfDocument) => (
           <PdfHighlighterWrapper
