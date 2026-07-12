@@ -32,6 +32,7 @@ import {
   type DocReviewMetrics,
 } from "@/lib/doc-review";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
@@ -550,7 +551,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               )}
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto min-h-0" ref={reviewScrollRef}>
+            <ScrollArea className="flex-1" ref={reviewScrollRef as any}>
               <div className="space-y-0 w-full">
                 {filteredMetrics.map((m) => (
                   <div
@@ -594,7 +595,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollArea>
           )}
         </TabsContent>
       </Tabs>

@@ -386,9 +386,9 @@ div[data-pdf-scrollbar="true"] .PdfHighlighter {
 }
 
 div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar {
-  width: 6px !important;
+  width: 10px !important;
 
-  height: 6px !important;
+  height: 10px !important;
 
   background: transparent !important;
 }
@@ -397,6 +397,8 @@ div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-thumb {
   background: hsl(var(--border)) !important;
 
   border-radius: 999px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
 }
 
 div[data-pdf-scrollbar="true"] .PdfHighlighter::-webkit-scrollbar-thumb:hover {
