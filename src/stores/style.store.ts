@@ -11,6 +11,8 @@ export interface ParagraphStyle {
   pdfScrollbar: boolean;
   /** Ordered list of font names for UI (buttons, bars, lists). */
   systemFontFamilies: string[];
+  /** Max height (px) for the Learn panel (study dialog). */
+  learnPanelHeight: number;
 }
 
 /** Join the font families into a CSS font-family string. */
@@ -31,6 +33,7 @@ interface StyleState {
   setFontSize: (size: number) => void;
   setGlobalFontSize: (size: number) => void;
   setPdfScrollbar: (show: boolean) => void;
+  setLearnPanelHeight: (height: number) => void;
   reset: () => void;
 }
 
@@ -49,6 +52,7 @@ const DEFAULT_STYLE: ParagraphStyle = {
     "Arial",
     "sans-serif",
   ],
+  learnPanelHeight: 700,
 };
 
 function persist(style: ParagraphStyle) {
@@ -155,6 +159,13 @@ export const useStyleStore = create<StyleState>((set) => ({
       return { style: next };
     }),
 
+  setLearnPanelHeight: (learnPanelHeight) =>
+    set((s) => {
+      const next = { ...s.style, learnPanelHeight };
+      persist(next);
+      return { style: next };
+    }),
+
   reset: () => {
     persist(DEFAULT_STYLE);
     set({ style: { ...DEFAULT_STYLE } });
@@ -180,6 +191,8 @@ export async function loadStyleFromVault() {
           systemFontFamilies:
             (s.systemFontFamilies as string[]) ??
             DEFAULT_STYLE.systemFontFamilies,
+          learnPanelHeight:
+            (s.learnPanelHeight as number) ?? DEFAULT_STYLE.learnPanelHeight,
         },
       });
     }

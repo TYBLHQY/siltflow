@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { StudyPanel } from "@/components/document/StudyPanel";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useStyleStore } from "@/stores/style.store";
 
 interface LearningModalProps {
   items: AnnotationItem[];
@@ -26,6 +27,7 @@ export function LearningModal({
   onClose,
 }: LearningModalProps) {
   const [open, setOpen] = useState(items.length > 0);
+  const learnPanelHeight = useStyleStore((s) => s.style.learnPanelHeight);
 
   // Safety-net ESC close (StudyPanel also handles ESC via shortcut system)
   useEffect(() => {
@@ -51,7 +53,8 @@ export function LearningModal({
     >
       <DialogContent
         hideClose
-        className="flex w-full max-w-2xl h-[calc(100vh-80px)] max-h-[700px] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0"
+        className="flex w-full max-w-2xl h-[calc(100vh-80px)] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0"
+        style={{ maxHeight: learnPanelHeight }}
       >
         {items.length > 0 && (
           <StudyPanel

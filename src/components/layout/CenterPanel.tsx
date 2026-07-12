@@ -801,6 +801,7 @@ function StyleConfigContent() {
   const setFontSize = useStyleStore((s) => s.setFontSize);
   const setGlobalFontSize = useStyleStore((s) => s.setGlobalFontSize);
   const setPdfScrollbar = useStyleStore((s) => s.setPdfScrollbar);
+  const setLearnPanelHeight = useStyleStore((s) => s.setLearnPanelHeight);
   const setSystemFontFamilies = useStyleStore((s) => s.setSystemFontFamilies);
   const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily);
   const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily);
@@ -1137,6 +1138,22 @@ function StyleConfigContent() {
         <label htmlFor="pdfScrollbar" className="text-xs">
           Show PDF scrollbar (floating overlay)
         </label>
+      </div>
+
+      {/* Learn panel height */}
+      <div className="mt-5">
+        <label className="block text-xs font-medium mb-1.5">
+          Learn panel height: {style.learnPanelHeight}px
+        </label>
+        <input
+          type="range"
+          min="400"
+          max="1000"
+          step="10"
+          className="w-full"
+          value={style.learnPanelHeight}
+          onChange={(e) => setLearnPanelHeight(parseInt(e.target.value, 10))}
+        />
       </div>
 
       {/* ── Theme settings ── */}
