@@ -59,6 +59,31 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const [studyingIndex, setStudyingIndex] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const annotationsScrollRef = useRef<HTMLDivElement>(null);
+
+  // When a highlight is clicked in the PDF, scroll the matching annotation card
+  // into center view in the annotations panel.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id } = (e as CustomEvent).detail;
+      if (!id) return;
+      onTabChange?.("annotations");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = annotationsScrollRef.current?.querySelector(
+            `[data-annotation-id="${id}"]`,
+          );
+          if (el) {
+            el.setAttribute("data-annotation-highlight", "true");
+            setTimeout(() => el.removeAttribute("data-annotation-highlight"), 2000);
+          }
+          el?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+      });
+    };
+    window.addEventListener("siltflow:annotation-click", handler);
+    return () => window.removeEventListener("siltflow:annotation-click", handler);
+  }, [onTabChange]);
 
   // Compute due annotations for the study panel
   const dueItems = useMemo(
@@ -439,6 +464,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
             <ScrollArea className="flex-1">
               <div
                 className="space-y-2 p-3"
+                ref={annotationsScrollRef}
                 style={{ width: 0, minWidth: "100%" }}
               >
                 {[...items]
@@ -450,20 +476,20 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                     return topA - topB;
                   })
                   .map((ann) => (
-                    <AITranslateCard
-                      key={ann.id}
-                      id={ann.id}
-                      item={ann}
-                      scrolled={false}
-                      expanded={expandedCardId === ann.id}
-                      onToggleExpand={(id) => setExpandedCardId(id)}
-                      onClick={() => scrollToHighlight?.(ann.id)}
-                      onDelete={(id) => {
-                        removeItem(id);
-                      }}
-                      onTranslate={async (id) => {
-                        const item = items.find((i) => i.id === id);
-                        if (!item || item.aiResult !== undefined) return;
+                    <div key={ann.id} data-annotation-id={ann.id}>
+                      <AITranslateCard
+                        id={ann.id}
+                        item={ann}
+                        scrolled={false}
+                        expanded={expandedCardId === ann.id}
+                        onToggleExpand={(id) => setExpandedCardId(id)}
+                        onClick={() => scrollToHighlight?.(ann.id)}
+                        onDelete={(id) => {
+                          removeItem(id);
+                        }}
+                        onTranslate={async (id) => {
+                          const item = items.find((i) => i.id === id);
+                          if (!item || item.aiResult !== undefined) return;
 
                         const profile = activeProfile;
                         if (!profile) {
@@ -511,6 +537,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                         }
                       }}
                     />
+                    </div>
                   ))}
               </div>
             </ScrollArea>

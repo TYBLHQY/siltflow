@@ -100,6 +100,8 @@ function selectionToAnnotation(
 
 interface SiltflowHighlightContainerProps {
   deleteHighlight(id: string): void;
+  /** Called when user clicks a highlight in the PDF */
+  onHighlightClick?(highlightId: string): void;
 }
 
 /**
@@ -108,6 +110,7 @@ interface SiltflowHighlightContainerProps {
  */
 function SiltflowHighlightContainer({
   deleteHighlight,
+  onHighlightClick,
 }: SiltflowHighlightContainerProps) {
   const { highlight, isScrolledTo, highlightBindings } =
     useHighlightContainerContext<SiltflowHighlight>();
@@ -116,6 +119,10 @@ function SiltflowHighlightContainer({
     () => deleteHighlight(highlight.id),
     [deleteHighlight, highlight.id],
   );
+
+  const handleClick = useCallback(() => {
+    onHighlightClick?.(highlight.id);
+  }, [onHighlightClick, highlight.id]);
 
   switch (highlight.type) {
     case "text":
@@ -127,6 +134,7 @@ function SiltflowHighlightContainer({
           highlightColor={highlight.highlightColor}
           onDelete={handleDelete}
           copyText={highlight.content?.text}
+          onClick={handleClick}
         />
       );
 
@@ -386,6 +394,11 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
             highlightsRef={highlightsRef}
             onSelection={handleSelection}
             deleteHighlight={deleteHighlight}
+            onHighlightClick={(id: string) => {
+              window.dispatchEvent(
+                new CustomEvent("siltflow:annotation-click", { detail: { id } }),
+              );
+            }}
           />
         )}
       </PdfLoader>
@@ -401,6 +414,7 @@ function PdfHighlighterWrapper({
   highlightsRef,
   onSelection,
   deleteHighlight,
+  onHighlightClick,
 }: {
   pdfDocument: PDFDocumentProxy;
   documentId: string;
@@ -408,6 +422,7 @@ function PdfHighlighterWrapper({
   highlightsRef: React.MutableRefObject<SiltflowHighlight[]>;
   onSelection: (selection: PdfSelection) => void;
   deleteHighlight: (id: string) => void;
+  onHighlightClick?: (id: string) => void;
 }) {
   const setPdfDocument = usePdfViewerStore((s) => s.setPdfDocument);
   const setGoToPage = usePdfViewerStore((s) => s.setGoToPage);
@@ -572,7 +587,10 @@ function PdfHighlighterWrapper({
         initialPage={lastPage && lastPage > 1 ? lastPage : undefined}
         style={{ height: "100%" }}
       >
-        <SiltflowHighlightContainer deleteHighlight={deleteHighlight} />
+        <SiltflowHighlightContainer
+          deleteHighlight={deleteHighlight}
+          onHighlightClick={onHighlightClick}
+        />
       </PdfHighlighter>
     </div>
   );

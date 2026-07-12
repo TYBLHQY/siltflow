@@ -416,6 +416,22 @@ div[data-pdf-scrollbar="false"] .PdfHighlighter {
 
 div[data-pdf-scrollbar="false"] .PdfHighlighter::-webkit-scrollbar {
   width: 0 !important;
-
   height: 0 !important;
+}
+
+/* ── Annotation card flash highlight ── */
+@keyframes annotation-flash {
+  0% {
+    outline: 3px solid var(--peach);
+    outline-offset: -3px;
+  }
+  100% {
+    outline: 3px solid transparent;
+    outline-offset: -3px;
+  }
+}
+
+[data-annotation-highlight="true"] {
+  border-radius: calc(var(--radius) - 2px);
+  animation: annotation-flash 2.5s ease-out forwards;
 }

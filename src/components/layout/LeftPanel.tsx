@@ -386,7 +386,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         const el = reviewScrollRef.current?.querySelector(
           `[data-doc-id="${currentDocument.id}"]`,
         );
-        el?.scrollIntoView({ block: "center", behavior: "auto" });
+        el?.scrollIntoView({ block: "center", behavior: "smooth" });
       }, 100);
       return () => clearTimeout(id);
     }
