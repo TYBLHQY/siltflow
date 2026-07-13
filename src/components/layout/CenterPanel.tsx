@@ -246,7 +246,7 @@ function UnifiedSettingsModal({
     >
       <DialogContent
         hideClose
-        className="flex w-full max-w-3xl min-h-[500px] rounded-lg border bg-background shadow-xl p-0 gap-0"
+        className="flex w-full max-w-3xl h-[calc(100vh-80px)] rounded-lg border bg-background shadow-xl p-0 gap-0"
       >
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
