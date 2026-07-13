@@ -339,7 +339,14 @@ export function AITranslateCard({
                 </span>
               )}
               {ipa && isWord && (
-                <span className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo">
+                <span
+                  className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo cursor-pointer hover:bg-flamingo/25 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (tts.state === "playing") tts.stop();
+                    else tts.speak(ai.lemma || item.text, undefined, ai.source_lang);
+                  }}
+                >
                   {ipa.startsWith("/") ? ipa : `/${ipa}/`}
                 </span>
               )}
