@@ -98,22 +98,18 @@ export function ReviewHistorySection({
 
   if (loading) {
     return (
-      <div className="text-[10px] text-muted-foreground/50 py-1 text-center">
-        Loading history…
-      </div>
+      <div className="text-xs text-muted-foreground/50 py-1 text-center">Loading history…</div>
     );
   }
 
   if (!logs || logs.length === 0) {
     return (
-      <div className="text-[10px] text-muted-foreground/50 py-1 text-center">
-        No review history yet
-      </div>
+      <div className="text-xs text-muted-foreground/50 py-1 text-center">No review history yet</div>
     );
   }
 
   return (
-    <div className="text-[10px] leading-tight space-y-0.5 mt-1">
+    <div className="text-xs leading-snug space-y-0.5 mt-1">
       {logs.map((entry) => {
         const parsed = parseEntryData(entry);
         if (!parsed) return null;
@@ -187,7 +183,7 @@ export function ReviewHistorySection({
       })}
 
       {/* Total count */}
-      <div className="text-[9px] text-muted-foreground/40 text-right pr-1">
+      <div className="text-[10px] text-muted-foreground/40 text-right pr-1">
         {logs.length} review{logs.length !== 1 ? "s" : ""}
       </div>
     </div>

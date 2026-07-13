@@ -473,7 +473,6 @@ export function AITranslateCard({
           {item.fsrsCard && (
             <FSRSStats
               card={item.fsrsCard}
-              compact
               annotationId={item.id}
               documentId={item.documentId}
             />
