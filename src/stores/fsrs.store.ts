@@ -8,6 +8,7 @@ import {
   type Grade,
 } from "ts-fsrs";
 import { useAnnotationStore } from "./annotation.store";
+import { useReviewLogStore } from "./review-log.store";
 
 const VAULT_KEY = "fsrsParams";
 
@@ -124,12 +125,48 @@ export function reviewAnnotation(annotationId: string, grade: Grade) {
     };
     const record = engine.next(card, now, grade);
     store.updateItem(annotationId, { fsrsCard: record.card });
+    persistReviewLog(annotationId, item.documentId, grade, record.log, record.card);
   } else {
     // First review — create a card and run repeat
     const card = createEmptyCard(now);
     const record = engine.next(card, now, grade);
     store.updateItem(annotationId, { fsrsCard: record.card });
+    persistReviewLog(annotationId, item.documentId, grade, record.log, record.card);
   }
+}
+
+/** Persist a single ReviewLog along with a card snapshot to the review_logs table. */
+function persistReviewLog(
+  annotationId: string,
+  documentId: string,
+  grade: Grade,
+  log: import("ts-fsrs").ReviewLog,
+  card: Card,
+) {
+  const data = {
+    grade,
+    log: {
+      rating: log.rating,
+      state: log.state,
+      due: typeof log.due === "string" ? log.due : log.due.toISOString(),
+      stability: log.stability,
+      difficulty: log.difficulty,
+      scheduled_days: log.scheduled_days,
+      learning_steps: log.learning_steps,
+      review: typeof log.review === "string" ? log.review : log.review.toISOString(),
+    },
+    card: {
+      due: typeof card.due === "string" ? card.due : card.due.toISOString(),
+      stability: card.stability,
+      difficulty: card.difficulty,
+      scheduled_days: card.scheduled_days,
+      learning_steps: card.learning_steps,
+      reps: card.reps,
+      lapses: card.lapses,
+      state: card.state,
+    },
+  };
+  useReviewLogStore.getState().add(annotationId, documentId, data);
 }
 
 /** Get the next review date for a card, or undefined if never reviewed. */

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { Card } from "ts-fsrs";
+import { ReviewHistorySection } from "@/components/document/ReviewHistorySection";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -57,71 +59,106 @@ function formatStability(s: number): string {
 interface FSRSStatsProps {
   card: Card;
   compact?: boolean;
+  annotationId?: string;
+  documentId?: string;
 }
 
-export function FSRSStats({ card, compact }: FSRSStatsProps) {
+export function FSRSStats({ card, compact, annotationId, documentId }: FSRSStatsProps) {
   const state = card.state as 0 | 1 | 2 | 3;
+  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const canShowHistory = !!annotationId && !!documentId;
 
   if (compact) {
     return (
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] leading-tight text-muted-foreground/70 mt-1 border-t border-border/20 pt-1">
-        <span className={`font-medium ${STATE_COLORS[state] ?? "text-muted"}`}>
-          {STATE_LABELS[state] ?? "Unknown"}
-        </span>
-        <span>
-          reps: <b className="text-foreground/80">{card.reps}</b>
-        </span>
-        <span>
-          lapses: <b className="text-foreground/80">{card.lapses}</b>
-        </span>
-        <span>
-          stability:{" "}
-          <b className="text-foreground/80">{formatStability(card.stability)}</b>
-        </span>
-        <span>
-          difficulty:{" "}
-          <b className="text-foreground/80">{card.difficulty.toFixed(2)}</b>
-        </span>
-        <span
-          className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}
-        >
-          {formatDue(card.due)}
-        </span>
-        {formatDate(card.last_review) && (
-          <span className="text-muted-foreground/50">
-            last: {formatDate(card.last_review)}
+      <>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] leading-tight text-muted-foreground/70 mt-1 border-t border-border/20 pt-1">
+          <span className={`font-medium ${STATE_COLORS[state] ?? "text-muted"}`}>
+            {STATE_LABELS[state] ?? "Unknown"}
           </span>
+          <span>
+            reps: <b className="text-foreground/80">{card.reps}</b>
+          </span>
+          <span>
+            lapses: <b className="text-foreground/80">{card.lapses}</b>
+          </span>
+          <span>
+            stability:{" "}
+            <b className="text-foreground/80">{formatStability(card.stability)}</b>
+          </span>
+          <span>
+            difficulty:{" "}
+            <b className="text-foreground/80">{card.difficulty.toFixed(2)}</b>
+          </span>
+          <span
+            className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}
+          >
+            {formatDue(card.due)}
+          </span>
+          {formatDate(card.last_review) && (
+            <span className="text-muted-foreground/50">
+              last: {formatDate(card.last_review)}
+            </span>
+          )}
+          {/* History toggle */}
+          {canShowHistory && (
+            <button
+              className="ml-auto text-muted-foreground/50 hover:text-foreground transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setHistoryExpanded((v) => !v);
+              }}
+            >
+              {historyExpanded ? "Hide" : "Show"} history
+            </button>
+          )}
+        </div>
+        {historyExpanded && canShowHistory && (
+          <ReviewHistorySection annotationId={annotationId!} documentId={documentId!} />
         )}
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-1 border-t border-border/20 pt-1">
-      {/* Row 1: state / reps / lapses */}
-      <div className="flex items-center gap-x-3">
-        <span className={`font-medium ${STATE_COLORS[state] ?? ""}`}>
-          {STATE_LABELS[state] ?? "Unknown"}
-        </span>
-        <span>reps: <b className="text-foreground/80">{card.reps}</b></span>
-        <span>lapses: <b className="text-foreground/80">{card.lapses}</b></span>
-      </div>
-      {/* Row 2: stability / difficulty */}
-      <div className="flex items-center gap-x-3">
-        <span>stability: <b className="text-foreground/80">{formatStability(card.stability)}</b></span>
-        <span>difficulty: <b className="text-foreground/80">{card.difficulty.toFixed(2)}</b></span>
-      </div>
-      {/* Row 3: due / last review */}
-      <div className="flex items-center gap-x-3">
-        <span className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}>
-          {formatDue(card.due)}
-        </span>
-        {formatDate(card.last_review) && (
-          <span className="text-muted-foreground/50">
-            last review: {formatDate(card.last_review)}
+    <>
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-1 border-t border-border/20 pt-1">
+        {/* Row 1: state / reps / lapses */}
+        <div className="flex items-center gap-x-3">
+          <span className={`font-medium ${STATE_COLORS[state] ?? ""}`}>
+            {STATE_LABELS[state] ?? "Unknown"}
           </span>
-        )}
+          <span>reps: <b className="text-foreground/80">{card.reps}</b></span>
+          <span>lapses: <b className="text-foreground/80">{card.lapses}</b></span>
+        </div>
+        {/* Row 2: stability / difficulty */}
+        <div className="flex items-center gap-x-3">
+          <span>stability: <b className="text-foreground/80">{formatStability(card.stability)}</b></span>
+          <span>difficulty: <b className="text-foreground/80">{card.difficulty.toFixed(2)}</b></span>
+        </div>
+        {/* Row 3: due / last review */}
+        <div className="flex items-center gap-x-3">
+          <span className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}>
+            {formatDue(card.due)}
+          </span>
+          {formatDate(card.last_review) && (
+            <span className="text-muted-foreground/50">
+              last review: {formatDate(card.last_review)}
+            </span>
+          )}
+          {/* History toggle */}
+          {canShowHistory && (
+            <button
+              className="ml-auto text-muted-foreground/50 hover:text-foreground transition-colors text-[10px]"
+              onClick={() => setHistoryExpanded((v) => !v)}
+            >
+              {historyExpanded ? "Hide" : "View"} history
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+      {historyExpanded && canShowHistory && (
+        <ReviewHistorySection annotationId={annotationId!} documentId={documentId!} />
+      )}
+    </>
   );
 }

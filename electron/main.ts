@@ -14,6 +14,7 @@ import { registerAiResultHandlers } from './ipc/ai-results.ipc'
 import { registerFSRSCardHandlers } from './ipc/fsrs-cards.ipc'
 import { registerTTSHandlers, setTtsCacheDir } from './ipc/tts.ipc'
 import { registerFolderHandlers, setVaultPathForFolders } from './ipc/folders.ipc'
+import { registerReviewLogHandlers } from './ipc/review-logs.ipc'
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
@@ -165,6 +166,7 @@ function registerAllHandlers(vaultPath: string) {
   registerSummaryHandlers()
   registerAiResultHandlers()
   registerFSRSCardHandlers()
+  registerReviewLogHandlers()
   registerTTSHandlers()
   registerFolderHandlers()
   setVaultPathForFolders(vaultPath)

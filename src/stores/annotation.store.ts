@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ScaledPosition, Content } from "react-pdf-highlighter-plus";
 import type { AIAnnotationData } from "@/lib/annotation-types";
 import type { Card } from "ts-fsrs";
+import { useReviewLogStore } from "@/stores/review-log.store";
 
 export interface AnnotationEmbedData {
   position: ScaledPosition;
@@ -63,10 +64,12 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       .getState()
       .items.find((i) => i.id === id);
     if (current) {
-      // Backend deletes in a single transaction (annotation + ai_results + fsrs_cards)
+      // Backend deletes in a single transaction (annotation + ai_results + fsrs_cards + review_logs)
       window.siltflow.annotations
         .delete(id, current.documentId)
         .catch(() => {});
+      // Clear in-memory cache
+      useReviewLogStore.getState().clearAnnotation(id);
     }
     set((s) => ({ items: s.items.filter((i) => i.id !== id) }));
   },

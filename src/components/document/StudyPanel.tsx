@@ -405,7 +405,13 @@ export function StudyPanel({
             )}
 
             {/* ── FSRS card stats ── */}
-            {item.fsrsCard && <FSRSStats card={item.fsrsCard} />}
+            {item.fsrsCard && (
+              <FSRSStats
+                card={item.fsrsCard}
+                annotationId={item.id}
+                documentId={item.documentId}
+              />
+            )}
           </div>
         )}
       </div>

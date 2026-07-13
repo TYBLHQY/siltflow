@@ -72,6 +72,11 @@ interface SiltflowAPI {
       documentId: string,
     ) => Promise<{ annotationId: string; data: string }[]>;
   };
+  reviewLogs: {
+    listByAnnotation: (annotationId: string, documentId: string) => Promise<any[]>;
+    save: (annotationId: string, documentId: string, data: any) => Promise<any>;
+    deleteByAnnotation: (annotationId: string, documentId: string) => Promise<void>;
+  };
   tts: {
     speak: (
       text: string,

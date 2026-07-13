@@ -75,6 +75,22 @@ export const aiResults = sqliteTable(
   })
 )
 
+export const reviewLogs = sqliteTable(
+  "review_logs",
+  {
+    id: text("id").notNull(),
+    annotationId: text("annotation_id").notNull(),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    data: text("data").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.id, table.annotationId, table.documentId] }),
+  })
+)
+
 export const fsrsCards = sqliteTable(
   "fsrs_cards",
   {

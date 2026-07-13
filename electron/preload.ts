@@ -56,6 +56,11 @@ export interface SiltflowAPI {
     delete: (annotationId: string, documentId: string) => Promise<void>
     listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>
   }
+  reviewLogs: {
+    listByAnnotation: (annotationId: string, documentId: string) => Promise<any[]>
+    save: (annotationId: string, documentId: string, data: any) => Promise<any>
+    deleteByAnnotation: (annotationId: string, documentId: string) => Promise<void>
+  }
   tts: {
     speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string; binaryPath?: string }) => Promise<number[]>
     listVoices: (binaryPath?: string) => Promise<string[]>
@@ -143,6 +148,11 @@ const api: SiltflowAPI = {
     save: (annotationId, documentId, data) => ipcRenderer.invoke('fsrsCards:save', { annotationId, documentId, data }),
     delete: (annotationId, documentId) => ipcRenderer.invoke('fsrsCards:delete', annotationId, documentId),
     listByDocument: (documentId) => ipcRenderer.invoke('fsrsCards:listByDocument', documentId),
+  },
+  reviewLogs: {
+    listByAnnotation: (annotationId, documentId) => ipcRenderer.invoke('reviewLogs:listByAnnotation', annotationId, documentId),
+    save: (annotationId, documentId, data) => ipcRenderer.invoke('reviewLogs:save', { annotationId, documentId, data }),
+    deleteByAnnotation: (annotationId, documentId) => ipcRenderer.invoke('reviewLogs:deleteByAnnotation', annotationId, documentId),
   },
   folders: {
     list: () => ipcRenderer.invoke('folders:list'),

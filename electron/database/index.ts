@@ -112,6 +112,18 @@ function createTables() {
     );
   `)
 
+  // Create review_logs table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS review_logs (
+      id TEXT NOT NULL,
+      annotation_id TEXT NOT NULL,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (id, annotation_id, document_id)
+    );
+  `)
+
   // Create folders table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS folders (

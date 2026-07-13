@@ -42,6 +42,7 @@ export function registerAnnotationHandlers() {
       // Delete child tables first (no FK cascade from annotations)
       sql.prepare("DELETE FROM ai_results WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
+      sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM annotations WHERE id = ? AND document_id = ?").run(id, documentId)
       sql.exec("COMMIT")
     } catch (err) {

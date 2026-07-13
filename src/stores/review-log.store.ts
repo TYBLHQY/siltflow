@@ -1,0 +1,104 @@
+import { create } from "zustand";
+
+/** A single review log as stored in SQLite and returned from IPC. */
+export interface ReviewLogEntry {
+  id: string;
+  annotationId: string;
+  documentId: string;
+  /** Serialized ReviewLog JSON from ts-fsrs */
+  data: string;
+  createdAt: string;
+}
+
+/** Parsed structure of the ReviewLog data field (ts-fsrs ReviewLog w/ Date → ISO string) */
+export interface ReviewLogData {
+  rating: number;
+  state: number;
+  due: string;
+  stability: number;
+  difficulty: number;
+  scheduled_days: number;
+  learning_steps: number;
+  review: string;
+}
+
+/** Card snapshot at the time the log was created, stored alongside the log */
+export interface CardSnapshot {
+  due: string;
+  stability: number;
+  difficulty: number;
+  scheduled_days: number;
+  learning_steps: number;
+  reps: number;
+  lapses: number;
+  state: number;
+}
+
+/** Rustered type sent to IPC for saving */
+export interface ReviewLogSaveRequest {
+  /** The ts-fsrs ReviewLog (Dates serialized to ISO strings) */
+  log: ReviewLogData;
+  /** Snapshot of the Card state AFTER this review */
+  card: CardSnapshot;
+  /** Grade that was given */
+  grade: number;
+}
+
+interface ReviewLogStoreState {
+  /** Logs keyed by annotationId, cached after load */
+  logs: Record<string, ReviewLogEntry[]>;
+  /** Load logs for an annotation from IPC */
+  load: (annotationId: string, documentId: string) => Promise<void>;
+  /** Add a new log entry (save IPC + prepend to cache) */
+  add: (
+    annotationId: string,
+    documentId: string,
+    data: ReviewLogSaveRequest,
+  ) => Promise<void>;
+  /** Remove cached logs for an annotation */
+  clearAnnotation: (annotationId: string) => void;
+}
+
+export const useReviewLogStore = create<ReviewLogStoreState>((set) => ({
+  logs: {},
+
+  load: async (annotationId, documentId) => {
+    const entries = await window.siltflow.reviewLogs.listByAnnotation(
+      annotationId,
+      documentId,
+    );
+    set((s) => ({
+      logs: { ...s.logs, [annotationId]: entries },
+    }));
+  },
+
+  add: async (annotationId, documentId, data) => {
+    const result = await window.siltflow.reviewLogs.save(
+      annotationId,
+      documentId,
+      data,
+    );
+    if (!result) return;
+    const entry: ReviewLogEntry = {
+      id: result.id,
+      annotationId,
+      documentId,
+      data: JSON.stringify(data),
+      createdAt: result.createdAt,
+    };
+    set((s) => ({
+      logs: {
+        ...s.logs,
+        [annotationId]: [entry, ...(s.logs[annotationId] ?? [])],
+      },
+    }));
+  },
+
+  clearAnnotation: (annotationId) => {
+    set((s) => {
+      const next = { ...s.logs };
+      delete next[annotationId];
+      return { logs: next };
+    });
+  },
+}));

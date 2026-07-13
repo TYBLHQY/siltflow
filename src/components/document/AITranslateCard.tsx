@@ -470,7 +470,14 @@ export function AITranslateCard({
           )}
 
           {/* ── FSRS card stats (compact) ── */}
-          {item.fsrsCard && <FSRSStats card={item.fsrsCard} compact />}
+          {item.fsrsCard && (
+            <FSRSStats
+              card={item.fsrsCard}
+              compact
+              annotationId={item.id}
+              documentId={item.documentId}
+            />
+          )}
         </div>
       )}
     </div>
