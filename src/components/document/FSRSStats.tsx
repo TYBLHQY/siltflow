@@ -100,7 +100,7 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
             {formatDue(card.due)}
           </span>
           {formatDate(card.last_review) && (
-            <span className="text-muted-foreground/50">
+            <span className="text-muted-foreground/80">
               last: {formatDate(card.last_review)}
             </span>
           )}
