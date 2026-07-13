@@ -4,7 +4,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useStatsStore } from "@/stores/stats.store";
 import { OverviewCards } from "./OverviewCards";
-import { LazyChart } from "./LazyChart";
 import { DailyReviewsChart } from "./charts/DailyReviewsChart";
 import { CalendarHeatmap } from "./charts/CalendarHeatmap";
 import { RecallRateChart } from "./charts/RecallRateChart";
@@ -101,29 +100,29 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
           <ScrollArea className="flex-1">
             {activePanel === "learning" && (
               <div className="space-y-4">
-                <LazyChart height={300}><DailyReviewsChart /></LazyChart>
-                <LazyChart height={240}><CalendarHeatmap /></LazyChart>
-                <LazyChart height={300}><ReviewForecastChart /></LazyChart>
+                <DailyReviewsChart />
+                <CalendarHeatmap />
+                <ReviewForecastChart />
               </div>
             )}
             {activePanel === "memory" && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <LazyChart height={300}><RecallRateChart /></LazyChart>
-                  <LazyChart height={300}><StabilityDistributionChart /></LazyChart>
+                  <RecallRateChart />
+                  <StabilityDistributionChart />
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <LazyChart height={300}><RetrievabilityDistributionChart /></LazyChart>
-                  <LazyChart height={300}><DifficultyDistributionChart /></LazyChart>
+                  <RetrievabilityDistributionChart />
+                  <DifficultyDistributionChart />
                 </div>
-                <LazyChart height={300}><IntervalDistributionChart /></LazyChart>
+                <IntervalDistributionChart />
               </div>
             )}
             {activePanel === "growth" && (
               <div className="space-y-4">
-                <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
-                <LazyChart height={320}><ForgettingCurveChart /></LazyChart>
-                <LazyChart height={300}><RetentionOptimizationChart /></LazyChart>
+                <KnowledgeGrowthChart />
+                <ForgettingCurveChart />
+                <RetentionOptimizationChart />
               </div>
             )}
           </ScrollArea>

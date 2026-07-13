@@ -324,30 +324,42 @@ export function computeKnowledgeGrowth(
   return daily;
 }
 
+function fmtLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 // ---------------------------------------------------------------------------
 // Chart 10: Review Forecast
 // ---------------------------------------------------------------------------
 
 export function computeReviewForecast(cards: Card[], days = 14): ForecastDay[] {
-  const now = Date.now();
-  const end = now + days * 86400000;
+  const now = new Date();
+  // Start of tomorrow in local timezone — cards due today are "overdue"
+  const startMs = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+  ).getTime();
+  const endMs = startMs + (days - 1) * 86400000;
   const map = new Map<string, number>();
 
   for (const card of cards) {
     if (card.state === State.New) continue;
     const due = card.due instanceof Date ? card.due : new Date(card.due);
     const dueMs = due.getTime();
-    if (dueMs > now && dueMs <= end) {
-      const date = due.toISOString().slice(0, 10);
+    if (dueMs >= startMs && dueMs <= endMs) {
+      const date = fmtLocalDate(due);
       map.set(date, (map.get(date) ?? 0) + 1);
     }
   }
 
-  // Fill all days in range
   const result: ForecastDay[] = [];
-  for (let i = 1; i <= days; i++) {
-    const date = new Date(now + i * 86400000).toISOString().slice(0, 10);
-    result.push({ date, dueCount: map.get(date) ?? 0 });
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1 + i);
+    result.push({ date: fmtLocalDate(d), dueCount: map.get(fmtLocalDate(d)) ?? 0 });
   }
   return result;
 }
