@@ -14,6 +14,7 @@ import { useTTS } from "@/lib/use-tts";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { renderBoldText } from "@/lib/render-bold";
+import { FSRSStats } from "@/components/document/FSRSStats";
 
 interface AITranslateCardProps {
   id: string;
@@ -467,6 +468,9 @@ export function AITranslateCard({
               )}
             </div>
           )}
+
+          {/* ── FSRS card stats (compact) ── */}
+          {item.fsrsCard && <FSRSStats card={item.fsrsCard} compact />}
         </div>
       )}
     </div>
