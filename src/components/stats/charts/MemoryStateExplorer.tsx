@@ -149,7 +149,7 @@ export function MemoryStateExplorer() {
   }, [selectedAnnotation]);
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:h-[768px]">
+    <div className="flex flex-col gap-4 lg:flex-row h-full">
       {/* Card list */}
       <div className="lg:w-72 shrink-0 flex flex-col">
         <div className="relative mb-2 shrink-0">

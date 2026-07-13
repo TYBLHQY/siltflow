@@ -36,6 +36,7 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
   const loaded = useStatsStore((s) => s.loaded);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activePanel, setActivePanel] = useState<Panel>("learning");
+  const isExplorer = activePanel === "explorer";
 
   useEffect(() => {
     if (!loaded) loadAllData();
@@ -69,65 +70,65 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
         )}
       </div>
 
-      {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="space-y-6 p-4">
-          {/* Overview */}
-          <section>
-            <OverviewCards />
-          </section>
+      {/* Content: fixed tabs + fill remaining space */}
+      <div className="flex flex-1 flex-col min-h-0 gap-6 p-4">
+        <section className="shrink-0">
+          <OverviewCards />
+        </section>
 
-          {/* Panel tabs */}
-          <div className="flex gap-2">
-            {PANELS.map((p) => (
-              <button
-                key={p.id}
-                className={cn(
-                  "flex-1 rounded-md border px-3 py-2 text-xs font-semibold transition-colors",
-                  activePanel === p.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-text hover:bg-accent",
-                )}
-                onClick={() => setActivePanel(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Panel content */}
-          {activePanel === "learning" && (
-            <div className="space-y-4">
-              <LazyChart height={300}><DailyReviewsChart /></LazyChart>
-              <LazyChart height={240}><CalendarHeatmap /></LazyChart>
-              <LazyChart height={300}><ReviewForecastChart /></LazyChart>
-            </div>
-          )}
-          {activePanel === "memory" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <LazyChart height={300}><RecallRateChart /></LazyChart>
-                <LazyChart height={300}><StabilityDistributionChart /></LazyChart>
-              </div>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <LazyChart height={300}><RetrievabilityDistributionChart /></LazyChart>
-                <LazyChart height={300}><DifficultyDistributionChart /></LazyChart>
-              </div>
-              <LazyChart height={300}><IntervalDistributionChart /></LazyChart>
-            </div>
-          )}
-          {activePanel === "growth" && (
-            <div className="space-y-4">
-              <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
-              <LazyChart height={320}><ForgettingCurveChart /></LazyChart>
-              <LazyChart height={300}><RetentionOptimizationChart /></LazyChart>
-            </div>
-          )}
-          {activePanel === "explorer" && (
-            <LazyChart height={400}><MemoryStateExplorer /></LazyChart>
-          )}
+        <div className="flex gap-2 shrink-0">
+          {PANELS.map((p) => (
+            <button
+              key={p.id}
+              className={cn(
+                "flex-1 rounded-md border px-3 py-2 text-xs font-semibold transition-colors",
+                activePanel === p.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-text hover:bg-accent",
+              )}
+              onClick={() => setActivePanel(p.id)}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
-      </ScrollArea>
+
+        {isExplorer ? (
+          <div className="flex-1 min-h-0">
+            <MemoryStateExplorer />
+          </div>
+        ) : (
+          <ScrollArea className="flex-1">
+            {activePanel === "learning" && (
+              <div className="space-y-4">
+                <LazyChart height={300}><DailyReviewsChart /></LazyChart>
+                <LazyChart height={240}><CalendarHeatmap /></LazyChart>
+                <LazyChart height={300}><ReviewForecastChart /></LazyChart>
+              </div>
+            )}
+            {activePanel === "memory" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <LazyChart height={300}><RecallRateChart /></LazyChart>
+                  <LazyChart height={300}><StabilityDistributionChart /></LazyChart>
+                </div>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <LazyChart height={300}><RetrievabilityDistributionChart /></LazyChart>
+                  <LazyChart height={300}><DifficultyDistributionChart /></LazyChart>
+                </div>
+                <LazyChart height={300}><IntervalDistributionChart /></LazyChart>
+              </div>
+            )}
+            {activePanel === "growth" && (
+              <div className="space-y-4">
+                <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
+                <LazyChart height={320}><ForgettingCurveChart /></LazyChart>
+                <LazyChart height={300}><RetentionOptimizationChart /></LazyChart>
+              </div>
+            )}
+          </ScrollArea>
+        )}
+      </div>
     </div>
   );
 }
