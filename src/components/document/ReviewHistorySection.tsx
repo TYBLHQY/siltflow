@@ -119,23 +119,21 @@ export function ReviewHistorySection({
         return (
           <div
             key={entry.id}
-            className="flex items-center gap-x-2 rounded bg-muted/30 px-1.5 py-1"
+            className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded bg-muted/30 px-1.5 py-1"
           >
             {/* Time */}
-            <span className="text-muted-foreground/60 shrink-0 w-16 tabular-nums">
+            <span className="text-muted-foreground/60 shrink-0 tabular-nums">
               {formatTime(log.review)}
             </span>
 
             {/* Grade badge */}
-            <span
-              className={`shrink-0 font-semibold ${gInfo.color} w-10 text-center`}
-            >
+            <span className={`shrink-0 font-semibold ${gInfo.color}`}>
               {gInfo.label}
             </span>
 
             {/* State transition */}
             <span
-              className={`shrink-0 inline-flex items-center rounded px-1 py-0.5 leading-none ${
+              className={`inline-flex items-center rounded px-1 py-0.5 leading-none ${
                 STATE_BG[log.state] ?? "text-muted"
               }`}
             >
@@ -143,11 +141,11 @@ export function ReviewHistorySection({
             </span>
 
             {/* Arrow */}
-            <span className="text-muted-foreground/40">→</span>
+            <span className="text-muted-foreground/40 shrink-0">→</span>
 
             {/* New state */}
             <span
-              className={`shrink-0 inline-flex items-center rounded px-1 py-0.5 leading-none ${
+              className={`inline-flex items-center rounded px-1 py-0.5 leading-none ${
                 STATE_BG[card.state] ?? "text-muted"
               }`}
             >
@@ -155,9 +153,9 @@ export function ReviewHistorySection({
             </span>
 
             {/* Stability */}
-            <span className="text-muted-foreground/70">
+            <span className="text-maroon/70 shrink-0">
               S:
-              <b className="text-foreground/80">
+              <b className="text-foreground/80 ml-0.5">
                 {log.stability < 30
                   ? log.stability.toFixed(1)
                   : Math.round(log.stability)}
@@ -165,27 +163,22 @@ export function ReviewHistorySection({
             </span>
 
             {/* Difficulty */}
-            <span className="text-muted-foreground/70">
+            <span className="text-maroon/70 shrink-0">
               D:
-              <b className="text-foreground/80">
+              <b className="text-foreground/80 ml-0.5">
                 {card.difficulty.toFixed(2)}
               </b>
             </span>
 
             {/* Scheduled interval */}
             {card.scheduled_days > 0 && (
-              <span className="text-muted-foreground/50 ml-auto tabular-nums">
+              <span className="text-muted-foreground/50 shrink-0 tabular-nums">
                 +{formatInterval(card.scheduled_days)}
               </span>
             )}
           </div>
         );
       })}
-
-      {/* Total count */}
-      <div className="text-[10px] text-muted-foreground/40 text-right pr-1">
-        {logs.length} review{logs.length !== 1 ? "s" : ""}
-      </div>
     </div>
   );
 }
