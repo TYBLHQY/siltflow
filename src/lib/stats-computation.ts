@@ -37,7 +37,7 @@ export interface ForecastDay {
   dueCount: number;
 }
 
-export const FORGETTING_LABELS = ["1 day", "7 days", "30 days", "90 days", "365 days"] as const;
+export const FORGETTING_LABELS = ["365 days", "90 days", "30 days", "7 days", "1 day"] as const;
 
 export type ForgettingCurvePoint = {
   day: number;
@@ -357,7 +357,7 @@ export function computeReviewForecast(cards: Card[], days = 14): ForecastDay[] {
 // ---------------------------------------------------------------------------
 
 export function computeForgettingCurves(): ForgettingCurvePoint[] {
-  const stabilities = [1, 7, 30, 90, 365];
+  const stabilities = [365, 90, 30, 7, 1];
   const points: ForgettingCurvePoint[] = [];
 
   for (let day = 0; day <= 365; day++) {

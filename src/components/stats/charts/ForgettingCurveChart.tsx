@@ -14,11 +14,11 @@ import { computeForgettingCurves, FORGETTING_LABELS } from "@/lib/stats-computat
 import { useStatsStore } from "@/stores/stats.store";
 
 const LINE_COLORS = [
-  "var(--red)",
-  "var(--peach)",
-  "var(--green)",
-  "var(--blue)",
   "var(--mauve)",
+  "var(--blue)",
+  "var(--green)",
+  "var(--peach)",
+  "var(--red)",
 ];
 
 export function ForgettingCurveChart() {
@@ -73,19 +73,38 @@ export function ForgettingCurveChart() {
               border: "1px solid var(--border)",
               background: "var(--tooltip-bg)",
             }}
-            formatter={(value: any) => `${(Number(value) * 100).toFixed(1)}%`}
+            content={({ active, payload: tpPayload, label }) => {
+              if (!active || !tpPayload?.length) return null;
+              return (
+                <div className="rounded-md border border-border bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-sm">
+                  <div className="mb-1 font-medium text-foreground">{label}d</div>
+                  {FORGETTING_LABELS.map((lbl) => {
+                    const entry = tpPayload.find((p) => p.name === lbl);
+                    if (!entry) return null;
+                    const idx = FORGETTING_LABELS.indexOf(lbl);
+                    return (
+                      <div key={lbl} className="flex items-center gap-2">
+                        <span className="inline-block h-1 w-2 rounded-full" style={{ backgroundColor: LINE_COLORS[idx] }} />
+                        <span style={{ color: LINE_COLORS[idx] }}>{lbl}</span>
+                        <span className="text-foreground">{(Number(entry.value) * 100).toFixed(1)}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }}
           />
           <Legend verticalAlign="bottom"
             wrapperStyle={{ fontSize: 11 }}
-            content={({ payload }) => (
+            content={() => (
               <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
-                {payload?.map((entry, idx) => (
-                  <div key={entry.value} className="flex items-center gap-1">
+                {FORGETTING_LABELS.map((lbl, idx) => (
+                  <div key={lbl} className="flex items-center gap-1">
                     <span
                       className="inline-block h-0.5 w-3 rounded-full"
-                      style={{ backgroundColor: LINE_COLORS[idx % LINE_COLORS.length] }}
+                      style={{ backgroundColor: LINE_COLORS[idx] }}
                     />
-                    <span className="text-foreground">{entry.value}</span>
+                    <span className="text-foreground">{lbl}</span>
                   </div>
                 ))}
               </div>
