@@ -202,13 +202,14 @@ export function AITranslateCard({
 
   return (
     <div
-      className={`w-full min-w-0 rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-3 transition-colors cursor-pointer ${
+      className={`w-full min-w-0 rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-3 transition-colors ${
         scrolled ? "bg-accent/40 border-accent" : "hover:border-accent"
       } ${className}`}
-      onClick={handleCardClick}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-1">
+      {/* Clickable area for expand/collapse — header + source text + action bar */}
+      <div className="cursor-pointer" onClick={handleCardClick}>
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
           <IconText icon={Highlighter} size="xs">
             <span className="font-medium text-muted-foreground uppercase tracking-wider">
@@ -305,6 +306,7 @@ export function AITranslateCard({
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
+      </div>{/* end clickable area */}
 
       {/* AI result content */}
       {ai && (
