@@ -1,6 +1,6 @@
-import { useState } from "react";
 import type { Card } from "ts-fsrs";
 import { ReviewHistorySection } from "@/components/document/ReviewHistorySection";
+import { useReviewLogStore } from "@/stores/review-log.store";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -64,18 +64,22 @@ interface FSRSStatsProps {
 
 export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
   const state = card.state as 0 | 1 | 2 | 3;
-  const [historyExpanded, setHistoryExpanded] = useState(false);
   const canShowHistory = !!annotationId && !!documentId;
+  const activeHistoryId = useReviewLogStore((s) => s.activeHistoryId);
+  const setActiveHistoryId = useReviewLogStore((s) => s.setActiveHistoryId);
+  const historyExpanded = activeHistoryId === annotationId;
+
+  const handleToggle = (e: React.MouseEvent) => {
+    if (!canShowHistory) return;
+    e.stopPropagation();
+    setActiveHistoryId(historyExpanded ? null : annotationId!);
+  };
 
   return (
     <>
       <div
         className="flex flex-col gap-1 text-xs text-muted-foreground mt-1 border-t border-border/20 pt-1"
-        onClick={(e) => {
-          if (!canShowHistory) return;
-          e.stopPropagation();
-          setHistoryExpanded((v) => !v);
-        }}
+        onClick={handleToggle}
       >
         {/* Row 1: state / reps / lapses */}
         <div className="flex items-center gap-x-3">

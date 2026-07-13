@@ -47,6 +47,10 @@ export interface ReviewLogSaveRequest {
 interface ReviewLogStoreState {
   /** Logs keyed by annotationId, cached after load */
   logs: Record<string, ReviewLogEntry[]>;
+  /** ID of the annotation whose review history is currently expanded (null = collapsed) */
+  activeHistoryId: string | null;
+  /** Set which annotation's history is expanded (pass null to collapse all) */
+  setActiveHistoryId: (id: string | null) => void;
   /** Load logs for an annotation from IPC */
   load: (annotationId: string, documentId: string) => Promise<void>;
   /** Add a new log entry (save IPC + prepend to cache) */
@@ -61,6 +65,9 @@ interface ReviewLogStoreState {
 
 export const useReviewLogStore = create<ReviewLogStoreState>((set) => ({
   logs: {},
+  activeHistoryId: null,
+
+  setActiveHistoryId: (id) => set({ activeHistoryId: id }),
 
   load: async (annotationId, documentId) => {
     const entries = await window.siltflow.reviewLogs.listByAnnotation(
