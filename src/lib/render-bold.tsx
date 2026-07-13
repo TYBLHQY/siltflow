@@ -18,7 +18,7 @@ export function renderBoldText(
       return (
         <span
           key={i}
-          className={options?.boldClassName ?? "font-bold text-peach"}
+          className={options?.boldClassName ?? "font-bold"}
         >
           {m[1]}
         </span>
