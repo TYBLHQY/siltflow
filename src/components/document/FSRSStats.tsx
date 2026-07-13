@@ -108,9 +108,17 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
           )}
         </div>
       </div>
-      {historyExpanded && canShowHistory && (
-        <ReviewHistorySection annotationId={annotationId!} documentId={documentId!} />
-      )}
+      {/* Animated expand/collapse */}
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+        style={{ gridTemplateRows: historyExpanded && canShowHistory ? "1fr" : "0fr" }}
+      >
+        <div className="overflow-hidden">
+          {canShowHistory && (
+            <ReviewHistorySection annotationId={annotationId!} documentId={documentId!} />
+          )}
+        </div>
+      </div>
     </>
   );
 }
