@@ -147,8 +147,15 @@ export function StudyPanel({
   const handleGoToHighlight = useCallback(() => {
     if (!item) return;
     onBack();
-    // Small delay so the modal closes before scrolling
-    requestAnimationFrame(() => scrollToHighlight?.(item.id));
+    requestAnimationFrame(() => {
+      scrollToHighlight?.(item.id);
+      // Also trigger right-panel card scroll so the annotation card comes into view
+      requestAnimationFrame(() => {
+        window.dispatchEvent(
+          new CustomEvent("siltflow:annotation-click", { detail: { id: item.id } }),
+        );
+      });
+    });
   }, [item, onBack, scrollToHighlight]);
 
   // Learning mode shortcuts (only active when item exists)
