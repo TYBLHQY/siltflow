@@ -400,74 +400,82 @@ export function AITranslateCard({
             </div>
           )}
 
-          {expanded && isDetailAvailable && (
-            <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
-              {examples.length > 0 && (
-                <div>
-                  <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
-                    Examples
-                  </span>
-                  <ul className="space-y-1">
-                    {examples.slice(0, 5).map((ex: any, i) => (
-                      <li key={i}>
-                        <span className="text-foreground">
-                          {renderBoldText(ex.sentence)}
-                        </span>
-                        {ex.translation && (
-                          <span className="text-overlay0 block ml-0">
-                            {renderBoldText(ex.translation)}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+          {/* Expanded details — animated */}
+          <div
+            className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+            style={{ gridTemplateRows: expanded && isDetailAvailable ? "1fr" : "0fr" }}
+          >
+            <div className="overflow-hidden">
+              {isDetailAvailable && (
+                <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
+                  {examples.length > 0 && (
+                    <div>
+                      <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+                        Examples
+                      </span>
+                      <ul className="space-y-1">
+                        {examples.slice(0, 5).map((ex: any, i) => (
+                          <li key={i}>
+                            <span className="text-foreground">
+                              {renderBoldText(ex.sentence)}
+                            </span>
+                            {ex.translation && (
+                              <span className="text-overlay0 block ml-0">
+                                {renderBoldText(ex.translation)}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-              {colls.length > 0 && (
-                <div>
-                  <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
-                    Collocations
-                  </span>
-                  <div className="space-y-0.5">
-                    {colls.map((c: any, i) => (
-                      <div key={i} className="leading-relaxed">
-                        <span className="font-medium text-foreground">
-                          {c.phrase}
-                        </span>
-                        <span className="text-overlay0">
-                          {" "}
-                          {c.translation}
-                        </span>
+                  {colls.length > 0 && (
+                    <div>
+                      <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+                        Collocations
+                      </span>
+                      <div className="space-y-0.5">
+                        {colls.map((c: any, i) => (
+                          <div key={i} className="leading-relaxed">
+                            <span className="font-medium text-foreground">
+                              {c.phrase}
+                            </span>
+                            <span className="text-overlay0">
+                              {" "}
+                              {c.translation}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {alts.length > 0 && (
-                <div>
-                  <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
-                    Alternatives
-                  </span>
-                  <div className="space-y-0.5">
-                    {alts.map((a: any, i) => (
-                      <div key={i} className="leading-relaxed">
-                        <span className="font-medium text-foreground">
-                          {a.expression}
-                        </span>
-                        {a.register && (
-                          <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender ml-1">
-                            {a.register}
-                          </span>
-                        )}
+                  {alts.length > 0 && (
+                    <div>
+                      <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+                        Alternatives
+                      </span>
+                      <div className="space-y-0.5">
+                        {alts.map((a: any, i) => (
+                          <div key={i} className="leading-relaxed">
+                            <span className="font-medium text-foreground">
+                              {a.expression}
+                            </span>
+                            {a.register && (
+                              <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender ml-1">
+                                {a.register}
+                              </span>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>
 
           {/* ── FSRS card stats (compact) ── */}
           {item.fsrsCard && (
