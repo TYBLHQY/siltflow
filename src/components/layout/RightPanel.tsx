@@ -491,7 +491,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                         }}
                         onTranslate={async (id) => {
                           const item = items.find((i) => i.id === id);
-                          if (!item || item.aiResult !== undefined) return;
+                          if (!item || item.aiResult === null) return; // already loading
 
                         const profile = activeProfile;
                         if (!profile) {
