@@ -53,8 +53,8 @@ export function OverviewCards() {
   const parsedCards = useStatsStore((s) => s.parsedCards);
   const loading = useStatsStore((s) => s.loading);
 
-  // Memoised via dataVersion
-  if (loading || !rawCards.length) {
+  // Still loading: show skeleton
+  if (loading) {
     return (
       <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -67,6 +67,21 @@ export function OverviewCards() {
             <div className="h-3 w-20 rounded bg-muted" />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  // Loaded but no cards: friendly empty state
+  if (!rawCards.length) {
+    return (
+      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
+        <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/80 bg-white dark:bg-mantle px-4 py-8">
+          <BrainCircuit className="h-8 w-8 text-muted-foreground/50" />
+          <p className="text-sm font-medium text-muted-foreground">No cards yet</p>
+          <p className="text-xs text-muted-foreground/60 text-center max-w-xs">
+            Add notes or highlight something to start building your memory
+          </p>
+        </div>
       </div>
     );
   }

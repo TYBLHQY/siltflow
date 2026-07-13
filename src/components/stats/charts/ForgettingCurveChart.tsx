@@ -37,10 +37,14 @@ export function ForgettingCurveChart() {
     [data, maxDays],
   );
 
+  const isEmpty = data.length === 0 || data.every((d) => FORGETTING_LABELS.every((lbl) => d[lbl] === 0));
+
   return (
     <ChartCard
       title="Forgetting Curves"
       loading={loading}
+      isEmpty={isEmpty}
+      emptyMessage="No reviewed cards yet"
     >
       <ResponsiveContainer width="100%" height={280}>
         <LineChart
