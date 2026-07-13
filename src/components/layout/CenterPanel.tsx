@@ -1276,19 +1276,6 @@ function TTSConfigContent() {
       </div>
 
       <div className="space-y-4">
-        {/* Auto TTS toggle */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="autoTts"
-            className="rounded"
-            checked={config.autoTts}
-            onChange={(e) => setConfig({ autoTts: e.target.checked })}
-          />
-          <label htmlFor="autoTts" className="text-xs">
-            Auto-play TTS after AI translation
-          </label>
-        </div>
 
         {/* Provider selector */}
         <div>

@@ -31,8 +31,6 @@ export interface TTSConfig {
   mimoStylePrompt: string;
   /** MiMo inline audio tags — inserted at start of assistant content (e.g. "(温柔)") */
   mimoInlineTag: string;
-  /** Whether auto-TTS after AI translation is enabled. */
-  autoTts: boolean;
 }
 
 interface TTSStoreState {
@@ -67,7 +65,6 @@ const DEFAULT_CONFIG: TTSConfig = {
   mimoModel: "mimo-v2.5-tts",
   mimoStylePrompt: "",
   mimoInlineTag: "",
-  autoTts: false,
 };
 
 export const MIMO_PRESET_VOICES = [
