@@ -23,6 +23,16 @@ export function CalendarHeatmap() {
     [logs, dataVersion],
   );
 
+  // Calendar year range: Jan 1 – Dec 31 of current year
+  const { endDate, rangeDays } = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const start = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+    const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+    return { endDate: end, rangeDays: days };
+  }, []);
+
   const data = useMemo(() => {
     const arr: { date: string; value: number }[] = [];
     for (const [date, count] of heatmap) {
@@ -44,6 +54,8 @@ export function CalendarHeatmap() {
         <HeatmapCalendar
           title=""
           data={data}
+          rangeDays={rangeDays}
+          endDate={endDate}
           cellSize={11}
           cellGap={3}
           weekStartsOn={0}
