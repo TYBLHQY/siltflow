@@ -318,6 +318,15 @@
     box-sizing: border-box;
   }
 
+  /* Only show focus ring for keyboard navigation, not mouse clicks */
+  *:focus {
+    outline: none !important;
+  }
+
+  *:focus-visible {
+    outline: none !important;
+  }
+
   body {
     @apply bg-background text-foreground m-0 overflow-hidden;
 
