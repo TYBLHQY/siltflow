@@ -564,7 +564,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                     data-doc-id={m.documentId}
                     className={`group relative border-b border-border/50 pl-3 py-2.5 pr-3 text-sm transition-colors cursor-pointer ${
                       currentDocument?.id === m.documentId
-                        ? "before:absolute before:left-0 before:top-0 before:h-full before:w-[5px] before:bg-foreground"
+                        ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
                         : "hover:bg-accent"
                     }`}
                     onClick={() => {
