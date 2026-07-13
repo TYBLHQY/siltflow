@@ -2,6 +2,11 @@ import type { Card } from "ts-fsrs";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
+/** Coerce Date | string → Date (ts-fsrs Card dates arrive as ISO strings via JSON) */
+function toDate(d: Date | string): Date {
+  return d instanceof Date ? d : new Date(d);
+}
+
 const STATE_LABELS: Record<number, string> = {
   0: "New",
   1: "Learning",
@@ -16,9 +21,11 @@ const STATE_COLORS: Record<number, string> = {
   3: "text-red",
 };
 
-function formatDue(due: Date): string {
+function formatDue(due: Date | string): string {
+  const d = toDate(due);
+  if (isNaN(d.getTime())) return "unknown";
   const now = new Date();
-  const diffMs = due.getTime() - now.getTime();
+  const diffMs = d.getTime() - now.getTime();
   const diffDays = Math.round(diffMs / 86_400_000);
   if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
   if (diffDays === 0) return "due today";
@@ -76,7 +83,7 @@ export function FSRSStats({ card, compact }: FSRSStatsProps) {
           <b className="text-foreground/80">{card.difficulty.toFixed(2)}</b>
         </span>
         <span
-          className={card.due <= new Date() ? "text-red/80 font-medium" : ""}
+          className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}
         >
           {formatDue(card.due)}
         </span>
@@ -106,7 +113,7 @@ export function FSRSStats({ card, compact }: FSRSStatsProps) {
       </div>
       {/* Row 3: due / last review */}
       <div className="flex items-center gap-x-3">
-        <span className={card.due <= new Date() ? "text-red/80 font-medium" : ""}>
+        <span className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}>
           {formatDue(card.due)}
         </span>
         {formatDate(card.last_review) && (
