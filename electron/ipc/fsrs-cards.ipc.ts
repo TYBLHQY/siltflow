@@ -16,6 +16,21 @@ export function registerFSRSCardHandlers() {
     return rows.map((r: any) => ({ annotationId: r.annotation_id, data: r.data }))
   })
 
+  ipcMain.handle("fsrsCards:listAll", () => {
+    const sql = getSqlite()
+    if (!sql) return []
+    const rows = sql.prepare(
+      "SELECT annotation_id, document_id, data, created_at, updated_at FROM fsrs_cards"
+    ).all() as any[]
+    return rows.map((r: any) => ({
+      annotationId: r.annotation_id,
+      documentId: r.document_id,
+      data: r.data,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }))
+  })
+
   ipcMain.handle("fsrsCards:save", (_event, record: { annotationId: string; documentId: string; data: any }) => {
     const sql = getSqlite()
     if (!sql) return null

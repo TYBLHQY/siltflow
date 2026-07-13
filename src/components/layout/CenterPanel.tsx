@@ -21,6 +21,7 @@ import {
   Info,
   ExternalLink,
   Download,
+  BarChart3,
 } from "lucide-react";
 import { IconText } from "@/components/ui/icon-text";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ import { useThemeStore } from "@/stores/theme.store";
 import { formatShortcut } from "@/lib/keyboard-keys";
 import { useAppSettingsStore } from "@/stores/app.store";
 import { useDocumentStore } from "@/stores/document.store";
+import { useShortcut } from "@/hooks/useShortcut";
+import { StatsDashboard } from "@/components/stats/StatsDashboard";
 
 // ---------------------------------------------------------------------------
 // Page navigation — jump to page (only shown when a PDF is open)
@@ -1855,6 +1858,8 @@ export function CenterPanel({
   const loadedDocRef = useRef<string | null>(null);
   const currentDocument = useDocumentStore((s) => s.currentDocument);
   const currentPage = usePdfViewerStore((s) => s.currentPage);
+  const [showStats, setShowStats] = useState(false);
+  useShortcut("toggleStats", () => setShowStats((s) => !s));
 
   // Load annotations from Electron backend when document changes
   useEffect(() => {
@@ -1920,6 +1925,15 @@ export function CenterPanel({
             <PanelLeftClose className="h-4 w-4" />
           )}
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0"
+          onClick={() => setShowStats(true)}
+          title="Statistics (Ctrl+D)"
+        >
+          <BarChart3 className="h-4 w-4" />
+        </Button>
 
         <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
           {docTitle || "Siltflow"}
@@ -1975,6 +1989,16 @@ export function CenterPanel({
           </div>
         </div>
       )}
+
+      {/* ── Statistics Dashboard Dialog ── */}
+      <Dialog open={showStats} onOpenChange={(open) => { if (!open) setShowStats(false); }}>
+        <DialogContent
+          hideClose
+          className="flex w-full max-w-5xl h-[calc(100vh-80px)] rounded-lg border bg-background shadow-xl p-0 gap-0"
+        >
+          <StatsDashboard onClose={() => setShowStats(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

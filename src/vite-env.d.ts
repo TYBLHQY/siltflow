@@ -71,9 +71,30 @@ interface SiltflowAPI {
     listByDocument: (
       documentId: string,
     ) => Promise<{ annotationId: string; data: string }[]>;
+    listAll: () => Promise<
+      {
+        annotationId: string;
+        documentId: string;
+        data: string;
+        createdAt: string;
+        updatedAt: string;
+      }[]
+    >;
   };
   reviewLogs: {
-    listByAnnotation: (annotationId: string, documentId: string) => Promise<any[]>;
+    listByAnnotation: (
+      annotationId: string,
+      documentId: string,
+    ) => Promise<any[]>;
+    listAll: () => Promise<
+      {
+        id: string;
+        annotationId: string;
+        documentId: string;
+        data: string;
+        createdAt: string;
+      }[]
+    >;
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
     deleteByAnnotation: (annotationId: string, documentId: string) => Promise<void>;
   };

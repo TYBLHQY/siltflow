@@ -24,6 +24,7 @@ export type ShortcutActionId =
   | "toggleOutlinesTab"
   | "toggleAnnotationsTab"
   | "toggleSummaryTab"
+  | "toggleStats"
   | "toggleLeftPanel"
   | "toggleRightPanel"
   | "openSettings"
@@ -96,6 +97,13 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
     context: "global",
     defaultKeys: "alt+s",
     keys: "alt+s",
+  },
+  {
+    actionId: "toggleStats",
+    label: "Toggle statistics dashboard",
+    context: "global",
+    defaultKeys: "ctrl+d",
+    keys: "ctrl+d",
   },
   // Global — panels
   {

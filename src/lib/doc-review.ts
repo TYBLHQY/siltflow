@@ -36,7 +36,7 @@ export interface DocReviewMetrics {
  * Compute retrievability from FSRS card state.
  * Default w[20] = 0.1542 (FSRS-5) — a reasonable approximation.
  */
-function retrievability(stability: number, elapsedDays: number): number {
+export function retrievability(stability: number, elapsedDays: number): number {
   if (stability <= 0 || elapsedDays < 0) return 0;
   const w20 = 0.1542;
   const factor = Math.pow(0.9, -1 / w20) - 1;

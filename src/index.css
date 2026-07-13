@@ -126,6 +126,12 @@
   --border: var(--overlay0);
   --input: var(--overlay0);
   --ring: var(--mauve);
+  --tooltip-bg: white;
+  --cal-0: #ebedf0;
+  --cal-1: #9be9a8;
+  --cal-2: #54d17a;
+  --cal-3: #2da44e;
+  --cal-4: #116329;
 }
 
 .catppuccin-frappe {
@@ -179,6 +185,12 @@
   --border: var(--overlay0);
   --input: var(--overlay0);
   --ring: var(--mauve);
+  --tooltip-bg: var(--mantle);
+  --cal-0: #161b22;
+  --cal-1: #0e4429;
+  --cal-2: #006d32;
+  --cal-3: #26a641;
+  --cal-4: #39d353;
 }
 
 .catppuccin-macchiato {
@@ -232,6 +244,12 @@
   --border: var(--overlay0);
   --input: var(--overlay0);
   --ring: var(--mauve);
+  --tooltip-bg: var(--mantle);
+  --cal-0: #161b22;
+  --cal-1: #0e4429;
+  --cal-2: #006d32;
+  --cal-3: #26a641;
+  --cal-4: #39d353;
 }
 
 .catppuccin-mocha {
@@ -285,6 +303,12 @@
   --border: var(--overlay0);
   --input: var(--overlay0);
   --ring: var(--mauve);
+  --tooltip-bg: var(--mantle);
+  --cal-0: #161b22;
+  --cal-1: #0e4429;
+  --cal-2: #006d32;
+  --cal-3: #26a641;
+  --cal-4: #39d353;
 }
 
 @layer base {
