@@ -482,7 +482,9 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                         item={ann}
                         scrolled={false}
                         expanded={expandedCardId === ann.id}
-                        onToggleExpand={(id) => setExpandedCardId(id)}
+                        onToggleExpand={(id) =>
+                          setExpandedCardId((prev) => (prev === id ? null : id))
+                        }
                         onClick={() => scrollToHighlight?.(ann.id)}
                         onDelete={(id) => {
                           removeItem(id);
