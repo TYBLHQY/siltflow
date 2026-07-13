@@ -31,17 +31,6 @@ export function RecallRateChart() {
       isEmpty={isEmpty}
       emptyMessage="No reviews yet"
     >
-      <div className="mb-2 flex flex-wrap justify-center gap-3 text-[10px] text-muted-foreground">
-        {data.map((d) => (
-          <div key={d.name} className="flex items-center gap-1">
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ backgroundColor: d.color }}
-            />
-            {d.name}
-          </div>
-        ))}
-      </div>
       <ResponsiveContainer width="100%" height={240}>
         <PieChart>
           <Pie

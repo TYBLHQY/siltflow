@@ -52,7 +52,7 @@ export function DifficultyDistributionChart() {
               background: "var(--tooltip-bg)",
             }}
           />
-          <Bar dataKey="count" fill="var(--pink)" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill="var(--rosewater)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

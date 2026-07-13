@@ -62,13 +62,13 @@ export function DailyReviewsChart() {
               background: "var(--tooltip-bg)",
             }}
           />
-          <Legend verticalAlign="top"
+          <Legend verticalAlign="bottom"
             wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
-              const swatchColors = ["var(--yellow)", "var(--sky)"];
+              const swatchColors = ["var(--green)", "var(--peach)"];
               const labels = ["Learning", "Review"];
               return (
-                <div className="mb-2 flex justify-center gap-4 text-xs">
+                <div className="mt-2 flex justify-center gap-4 text-xs">
                   {payload?.map((entry, idx) => (
                     <div key={entry.value} className="flex items-center gap-1">
                       <span
@@ -86,14 +86,14 @@ export function DailyReviewsChart() {
             dataKey="learnCount"
             name="learnCount"
             stackId="a"
-            fill="var(--yellow)"
+            fill="var(--green)"
             radius={[0, 0, 0, 0]}
           />
           <Bar
             dataKey="reviewCount"
             name="reviewCount"
             stackId="a"
-            fill="var(--sky)"
+            fill="var(--peach)"
             radius={[3, 3, 0, 0]}
           />
         </BarChart>

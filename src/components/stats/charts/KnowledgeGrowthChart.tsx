@@ -14,10 +14,10 @@ import { computeKnowledgeGrowth } from "@/lib/stats-computation";
 import { useStatsStore } from "@/stores/stats.store";
 
 const GRADIENTS = [
-  { id: "gradLearning", color: "var(--yellow)" },
-  { id: "gradYoung", color: "var(--green)" },
-  { id: "gradMature", color: "var(--blue)" },
-  { id: "gradLongTerm", color: "var(--mauve)" },
+  { id: "gradLearning", color: "var(--rosewater)" },
+  { id: "gradYoung", color: "var(--peach)" },
+  { id: "gradMature", color: "var(--green)" },
+  { id: "gradLongTerm", color: "var(--sapphire)" },
 ];
 
 export function KnowledgeGrowthChart() {
@@ -54,12 +54,12 @@ export function KnowledgeGrowthChart() {
             dataKey="date"
             tick={{ fontSize: 10 }}
             tickFormatter={(d: string) => d.slice(5)}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
           />
           <YAxis
             allowDecimals={false}
             tick={{ fontSize: 10 }}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
           />
           <Tooltip
             contentStyle={{
@@ -69,14 +69,14 @@ export function KnowledgeGrowthChart() {
               background: "var(--tooltip-bg)",
             }}
           />
-          <Legend verticalAlign="top"
+          <Legend verticalAlign="bottom"
             wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
               const colors: Record<string, string> = {
-                "Long-term": "var(--mauve)",
-                "Mature": "var(--blue)",
-                "Young": "var(--green)",
-                "Learning": "var(--yellow)",
+                "Long-term": "var(--sapphire)",
+                "Mature": "var(--green)",
+                "Young": "var(--peach)",
+                "Learning": "var(--rosewater)",
               };
               return (
                 <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
@@ -98,7 +98,7 @@ export function KnowledgeGrowthChart() {
             dataKey="longTerm"
             name="Long-term"
             stackId="1"
-            stroke="var(--mauve)"
+            stroke="var(--sapphire)"
             fill="url(#gradLongTerm)"
             fillOpacity={1}
           />
@@ -107,7 +107,7 @@ export function KnowledgeGrowthChart() {
             dataKey="mature"
             name="Mature"
             stackId="1"
-            stroke="var(--blue)"
+            stroke="var(--green)"
             fill="url(#gradMature)"
             fillOpacity={1}
           />
@@ -116,7 +116,7 @@ export function KnowledgeGrowthChart() {
             dataKey="young"
             name="Young"
             stackId="1"
-            stroke="var(--green)"
+            stroke="var(--peach)"
             fill="url(#gradYoung)"
             fillOpacity={1}
           />
@@ -125,7 +125,7 @@ export function KnowledgeGrowthChart() {
             dataKey="learning"
             name="Learning"
             stackId="1"
-            stroke="var(--yellow)"
+            stroke="var(--rosewater)"
             fill="url(#gradLearning)"
             fillOpacity={1}
           />

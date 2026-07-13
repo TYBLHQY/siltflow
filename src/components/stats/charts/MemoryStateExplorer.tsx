@@ -209,18 +209,18 @@ export function MemoryStateExplorer() {
                     <XAxis
                       dataKey="date"
                       tick={{ fontSize: 9 }}
-                      stroke="var(--lavender)"
+                      stroke="var(--text)"
                     />
                     <YAxis
                       yAxisId="stability"
                       tick={{ fontSize: 9 }}
-                      stroke="var(--mauve)"
+                      stroke="var(--text)"
                       label={{
                         value: "Stability",
                         angle: -90,
                         position: "insideLeft",
                         fontSize: 9,
-                        fill: "var(--mauve)",
+                        fill: "var(--text)",
                       }}
                     />
                     <YAxis
@@ -228,13 +228,13 @@ export function MemoryStateExplorer() {
                       orientation="right"
                       domain={[0, 1]}
                       tick={{ fontSize: 9 }}
-                      stroke="var(--pink)"
+                      stroke="var(--text)"
                       label={{
                         value: "Difficulty",
                         angle: 90,
                         position: "insideRight",
                         fontSize: 9,
-                        fill: "var(--pink)",
+                        fill: "var(--text)",
                       }}
                     />
                     <Tooltip

@@ -90,7 +90,7 @@ export function CalendarHeatmap() {
               x={2}
               y={i * 16 + 11}
               fontSize={9}
-              fill="var(--lavender)"
+              fill="var(--text)"
             >
               {label}
             </text>

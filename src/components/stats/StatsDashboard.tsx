@@ -103,8 +103,8 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
             <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
               Growth
             </summary>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
+            <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
+            <div className="mt-4">
               <LazyChart height={320}><ForgettingCurveChart /></LazyChart>
             </div>
             <div className="mt-4">

@@ -51,20 +51,20 @@ export function ForgettingCurveChart() {
           <XAxis
             dataKey="day"
             tick={{ fontSize: 10 }}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
             label={{
               value: "Days elapsed",
               position: "insideBottomRight",
               offset: -4,
               fontSize: 10,
-              fill: "var(--lavender)",
+              fill: "var(--text)",
             }}
           />
           <YAxis
             domain={[0, 1]}
             tick={{ fontSize: 10 }}
             tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
           />
           <Tooltip
             contentStyle={{
@@ -75,7 +75,7 @@ export function ForgettingCurveChart() {
             }}
             formatter={(value: any) => `${(Number(value) * 100).toFixed(1)}%`}
           />
-          <Legend verticalAlign="top"
+          <Legend verticalAlign="bottom"
             wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => (
               <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">

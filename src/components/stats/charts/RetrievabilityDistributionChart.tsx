@@ -71,7 +71,7 @@ export function RetrievabilityDistributionChart() {
               fill: "var(--red)",
             }}
           />
-          <Bar dataKey="count" fill="var(--sapphire)" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill="var(--maroon)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

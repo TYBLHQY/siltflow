@@ -46,12 +46,12 @@ export function ReviewForecastChart() {
                 day: "numeric",
               });
             }}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
           />
           <YAxis
             allowDecimals={false}
             tick={{ fontSize: 10 }}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
           />
           <Tooltip
             formatter={(value: any) => [`${value} due`, ""]}
@@ -72,10 +72,10 @@ export function ReviewForecastChart() {
           />
           <ReferenceLine
             y={0}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
             strokeDasharray="3 3"
           />
-          <Bar dataKey="dueCount" fill="var(--peach)" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="dueCount" fill="var(--green)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

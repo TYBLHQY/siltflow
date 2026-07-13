@@ -41,33 +41,33 @@ export function RetentionOptimizationChart() {
             dataKey="targetRetention"
             tick={{ fontSize: 10 }}
             tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            stroke="var(--lavender)"
+            stroke="var(--text)"
           />
           <YAxis
             yAxisId="left"
             tick={{ fontSize: 10 }}
-            stroke="var(--peach)"
+            stroke="var(--text)"
             label={{
               value: "Reviews/day",
               angle: -90,
               position: "insideLeft",
               offset: 0,
               fontSize: 10,
-              fill: "var(--peach)",
+              fill: "var(--text)",
             }}
           />
           <YAxis
             yAxisId="right"
             orientation="right"
             tick={{ fontSize: 10 }}
-            stroke="var(--mauve)"
+            stroke="var(--text)"
             label={{
               value: "Avg stability (d)",
               angle: 90,
               position: "insideRight",
               offset: 0,
               fontSize: 10,
-              fill: "var(--mauve)",
+              fill: "var(--text)",
             }}
           />
           <Tooltip
@@ -84,7 +84,7 @@ export function RetentionOptimizationChart() {
               return [value, name as string];
             }}
           />
-          <Legend verticalAlign="top"
+          <Legend verticalAlign="bottom"
             wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
               const colors: Record<string, string> = {
