@@ -259,10 +259,17 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
       if (!docId || !numPages) return;
       const current =
         selPages ?? Array.from({ length: numPages }, (_, i) => i + 1);
+      // Don't allow deselecting the last remaining page
+      if (current.includes(pageNum) && current.length === 1) return;
       const next = current.includes(pageNum)
         ? current.filter((p) => p !== pageNum)
         : [...current, pageNum].sort((a, b) => a - b);
-      setSelectedPages(docId, next.length === numPages ? undefined : next);
+      setSelectedPages(
+        docId,
+        next.length === numPages
+          ? Array.from({ length: numPages }, (_, i) => i + 1)
+          : next,
+      );
     },
     [docId, numPages, selPages, setSelectedPages],
   );
