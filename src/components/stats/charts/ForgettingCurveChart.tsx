@@ -42,21 +42,6 @@ export function ForgettingCurveChart() {
       title="Forgetting Curves"
       loading={loading}
     >
-      <div className="mb-2 flex gap-1">
-        {[30, 90, 180, 365].map((d) => (
-          <button
-            key={d}
-            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
-              maxDays === d
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent"
-            }`}
-            onClick={() => setMaxDays(d)}
-          >
-            {d}d
-          </button>
-        ))}
-      </div>
       <ResponsiveContainer width="100%" height={280}>
         <LineChart
           data={filtered}
@@ -119,6 +104,21 @@ export function ForgettingCurveChart() {
           ))}
         </LineChart>
       </ResponsiveContainer>
+      <div className="mt-2 flex justify-center gap-1">
+        {[30, 90, 180, 365].map((d) => (
+          <button
+            key={d}
+            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+              maxDays === d
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-accent"
+            }`}
+            onClick={() => setMaxDays(d)}
+          >
+            {d}d
+          </button>
+        ))}
+      </div>
     </ChartCard>
   );
 }

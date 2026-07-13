@@ -81,22 +81,6 @@ export function CalendarHeatmap() {
       isEmpty={isEmpty}
       emptyMessage="No review activity yet"
     >
-      <div className="mb-2 flex gap-1">
-        {RANGES.map((r) => (
-          <button
-            key={r.label}
-            className={cn(
-              "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
-              range.months === r.months
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent",
-            )}
-            onClick={() => setRange(r)}
-          >
-            {r.label}
-          </button>
-        ))}
-      </div>
       <div className="overflow-x-auto">
         <svg width={weekKeys.length * 14 + 30} height={130} className="shrink-0">
           {/* Day labels */}
@@ -135,6 +119,22 @@ export function CalendarHeatmap() {
             });
           })}
         </svg>
+      </div>
+      <div className="mt-2 flex justify-center gap-1">
+        {RANGES.map((r) => (
+          <button
+            key={r.label}
+            className={cn(
+              "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
+              range.months === r.months
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-accent",
+            )}
+            onClick={() => setRange(r)}
+          >
+            {r.label}
+          </button>
+        ))}
       </div>
     </ChartCard>
   );

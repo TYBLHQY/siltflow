@@ -3,6 +3,7 @@ import { X, BarChart3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useStatsStore } from "@/stores/stats.store";
 import { OverviewCards } from "./OverviewCards";
+import { LazyChart } from "./LazyChart";
 import { DailyReviewsChart } from "./charts/DailyReviewsChart";
 import { CalendarHeatmap } from "./charts/CalendarHeatmap";
 import { RecallRateChart } from "./charts/RecallRateChart";
@@ -70,12 +71,12 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
             <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
               Learning
             </summary>
-            <DailyReviewsChart />
+            <LazyChart height={300}><DailyReviewsChart /></LazyChart>
             <div className="mt-4">
-              <CalendarHeatmap />
+              <LazyChart height={240}><CalendarHeatmap /></LazyChart>
             </div>
             <div className="mt-4">
-              <ReviewForecastChart />
+              <LazyChart height={300}><ReviewForecastChart /></LazyChart>
             </div>
           </details>
 
@@ -85,15 +86,15 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
               Memory (FSRS)
             </summary>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <RecallRateChart />
-              <StabilityDistributionChart />
+              <LazyChart height={300}><RecallRateChart /></LazyChart>
+              <LazyChart height={300}><StabilityDistributionChart /></LazyChart>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <RetrievabilityDistributionChart />
-              <DifficultyDistributionChart />
+              <LazyChart height={300}><RetrievabilityDistributionChart /></LazyChart>
+              <LazyChart height={300}><DifficultyDistributionChart /></LazyChart>
             </div>
             <div className="mt-4">
-              <IntervalDistributionChart />
+              <LazyChart height={300}><IntervalDistributionChart /></LazyChart>
             </div>
           </details>
 
@@ -103,11 +104,11 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
               Growth
             </summary>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <KnowledgeGrowthChart />
-              <ForgettingCurveChart />
+              <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
+              <LazyChart height={320}><ForgettingCurveChart /></LazyChart>
             </div>
             <div className="mt-4">
-              <RetentionOptimizationChart />
+              <LazyChart height={300}><RetentionOptimizationChart /></LazyChart>
             </div>
           </details>
 
@@ -116,7 +117,7 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
             <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
               Memory State Explorer
             </summary>
-            <MemoryStateExplorer />
+            <LazyChart height={400}><MemoryStateExplorer /></LazyChart>
           </details>
         </div>
       </ScrollArea>

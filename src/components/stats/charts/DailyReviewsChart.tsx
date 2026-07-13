@@ -38,21 +38,6 @@ export function DailyReviewsChart() {
       isEmpty={data.length === 0}
       emptyMessage="No reviews yet"
     >
-      <div className="mb-2 flex gap-1">
-        {TIME_RANGES.map((r) => (
-          <button
-            key={r.label}
-            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
-              range.days === r.days
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent"
-            }`}
-            onClick={() => setRange(r)}
-          >
-            {r.label}
-          </button>
-        ))}
-      </div>
       <ResponsiveContainer width="100%" height={240}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
@@ -113,6 +98,21 @@ export function DailyReviewsChart() {
           />
         </BarChart>
       </ResponsiveContainer>
+      <div className="mt-2 flex justify-center gap-1">
+        {TIME_RANGES.map((r) => (
+          <button
+            key={r.label}
+            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+              range.days === r.days
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-accent"
+            }`}
+            onClick={() => setRange(r)}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
     </ChartCard>
   );
 }
