@@ -1867,6 +1867,7 @@ export function CenterPanel({
   const setItems = useAnnotationStore((s) => s.setItems);
   const loadedDocRef = useRef<string | null>(null);
   const currentDocument = useDocumentStore((s) => s.currentDocument);
+  const currentPage = usePdfViewerStore((s) => s.currentPage);
 
   // Load annotations from Electron backend when document changes
   useEffect(() => {
@@ -1960,6 +1961,19 @@ export function CenterPanel({
       {/* ── content ── */}
       {docTitle ? (
         <div className="flex-1 min-h-0 relative">
+          {/* Sticky progress bar */}
+          <div className="absolute top-0 left-0 right-0 z-10 h-1 pointer-events-none">
+            <div className="relative h-full w-full bg-teal/10">
+              <div
+                className="absolute inset-y-0 left-0 bg-sky transition-[width] duration-150"
+                style={{
+                  width: currentDocument?.totalPages
+                    ? `${(currentPage / currentDocument.totalPages) * 100}%`
+                    : "0%",
+                }}
+              />
+            </div>
+          </div>
           <PdfViewer
             className="h-full w-full"
             src={documentPath!}
