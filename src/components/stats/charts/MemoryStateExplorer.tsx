@@ -9,8 +9,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Search, Loader2, ChevronRight } from "lucide-react";
+import { Search, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useStatsStore } from "@/stores/stats.store";
 import type { ReviewLogEntry } from "@/stores/review-log.store";
 
@@ -50,7 +51,6 @@ export function MemoryStateExplorer() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [logs, setLogs] = useState<ParsedReviewLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
   const [annotationsMap, setAnnotationsMap] = useState<Map<string, string>>(new Map());
 
   // Load all annotations for text lookup
@@ -84,6 +84,13 @@ export function MemoryStateExplorer() {
     return list.sort((a, b) => (b.card.stability ?? 0) - (a.card.stability ?? 0));
   }, [rawCards, dataVersion, annotationsMap]);
 
+  // Auto-select first annotation when data loads
+  useEffect(() => {
+    if (!selectedId && annotations.length > 0) {
+      setSelectedId(annotations[0].id);
+    }
+  }, [annotations, selectedId]);
+
   const filtered = useMemo(
     () =>
       annotations.filter((a) =>
@@ -104,7 +111,6 @@ export function MemoryStateExplorer() {
       return;
     }
     let cancelled = false;
-    setLogsLoading(true);
     window.siltflow.reviewLogs
       .listByAnnotation(selectedAnnotation.id, selectedAnnotation.documentId)
       .then((entries: ReviewLogEntry[]) => {
@@ -133,10 +139,9 @@ export function MemoryStateExplorer() {
           .filter((p): p is ParsedReviewLog => p !== null)
           .sort((a, b) => a.timestamp - b.timestamp);
         setLogs(parsed);
-        setLogsLoading(false);
       })
       .catch(() => {
-        if (!cancelled) setLogsLoading(false);
+        // no-op
       });
     return () => {
       cancelled = true;
@@ -144,10 +149,10 @@ export function MemoryStateExplorer() {
   }, [selectedAnnotation]);
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
+    <div className="flex flex-col gap-4 lg:flex-row lg:h-[768px]">
       {/* Card list */}
-      <div className="lg:w-72 shrink-0">
-        <div className="relative mb-2">
+      <div className="lg:w-72 shrink-0 flex flex-col">
+        <div className="relative mb-2 shrink-0">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
@@ -156,51 +161,51 @@ export function MemoryStateExplorer() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="max-h-80 space-y-0.5 overflow-y-auto rounded-md border">
-          {filtered.length === 0 ? (
-            <p className="px-3 py-4 text-xs text-center text-muted-foreground">
-              {search ? "No matching cards" : "No cards reviewed yet"}
-            </p>
-          ) : (
-            filtered.map((a) => (
-              <button
-                key={a.id}
-                className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
-                  selectedId === a.id
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50 text-text",
-                )}
-                onClick={() => setSelectedId(a.id)}
-              >
-                <ChevronRight
-                  className={cn(
-                    "h-3 w-3 shrink-0 transition-transform",
-                    selectedId === a.id && "rotate-90",
-                  )}
-                />
-                <span className="flex-1 truncate" title={a.text}>
-                  {a.text}
-                </span>
-                <span className="shrink-0 text-[10px] text-muted-foreground">
-                  S={typeof a.card.stability === "number" ? a.card.stability.toFixed(1) : "?"}
-                </span>
-              </button>
-            ))
-          )}
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full rounded-md border">
+            <div className="space-y-0.5">
+              {filtered.length === 0 ? (
+                <p className="px-3 py-4 text-xs text-center text-muted-foreground">
+                  {search ? "No matching cards" : "No cards reviewed yet"}
+                </p>
+              ) : (
+                filtered.map((a) => (
+                  <button
+                    key={a.id}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
+                      selectedId === a.id
+                        ? "bg-accent text-text"
+                        : "hover:bg-accent/50 text-text",
+                    )}
+                    onClick={() => setSelectedId(a.id)}
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "h-3 w-3 shrink-0 transition-transform",
+                        selectedId === a.id && "rotate-90",
+                      )}
+                    />
+                    <span className="flex-1 truncate" title={a.text}>
+                      {a.text}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      S={typeof a.card.stability === "number" ? a.card.stability.toFixed(1) : "?"}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
 
       {/* Detail panel */}
-      <div className="flex-1 min-w-0">
-        {logsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : selectedAnnotation ? (
-          <div className="space-y-4">
-            {/* Card info */}
-            <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-3">
+      <div className="flex-1 min-w-0 flex flex-col">
+        {selectedAnnotation ? (
+          <>
+            {/* Card info — fixed */}
+            <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-3 shrink-0">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-medium truncate">
                   {selectedAnnotation.text}
@@ -209,7 +214,7 @@ export function MemoryStateExplorer() {
                   Document: {selectedAnnotation.documentId.slice(0, 12)}...
                 </span>
               </div>
-              <div className="mt-1 flex flex-wrap gap-3 text-[10px] text-muted-foreground">
+              <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
                 <span>Stability: <strong>{selectedAnnotation.card.stability?.toFixed(1)}d</strong></span>
                 <span>Difficulty: <strong>{selectedAnnotation.card.difficulty?.toFixed(2)}</strong></span>
                 <span>Reps: <strong>{selectedAnnotation.card.reps ?? 0}</strong></span>
@@ -217,10 +222,10 @@ export function MemoryStateExplorer() {
               </div>
             </div>
 
-            {/* Evolution chart */}
+            {/* Chart card — fixed */}
             {logs.length >= 2 ? (
-              <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-4">
-                <h4 className="mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-4 mt-4 shrink-0">
+                <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Stability & Difficulty Over Time
                 </h4>
                 <ResponsiveContainer width="100%" height={200}>
@@ -273,7 +278,7 @@ export function MemoryStateExplorer() {
                           "Difficulty": "var(--pink)",
                         };
                         return (
-                          <div className="flex justify-center gap-4 text-[10px]">
+                          <div className="flex justify-center gap-4 text-xs">
                             {payload?.map((entry) => (
                               <div key={entry.value} className="flex items-center gap-1">
                                 <span
@@ -311,56 +316,55 @@ export function MemoryStateExplorer() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-6 text-center text-[10px] text-muted-foreground">
+              <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm mt-4 px-4 py-6 text-center text-xs text-muted-foreground shrink-0">
                 {logs.length === 1
                   ? "Only one review recorded — need at least 2 to show evolution"
                   : "No review history for this card yet"}
               </div>
             )}
 
-            {/* Review log table */}
+            {/* Review log table — fixed header + scrollable body */}
             {logs.length > 0 && (
-              <div className="overflow-x-auto rounded-md border">
-                <table className="w-full text-[10px]">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-1.5 text-left font-medium text-text">Date</th>
-                      <th className="px-3 py-1.5 text-left font-medium text-text">Grade</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-text">Stability</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-text">Difficulty</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-text">Interval</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="flex-1 min-h-0 mt-4 flex flex-col rounded-md border border-border/80">
+                {/* Fixed table header */}
+                <div className="shrink-0 bg-muted/50 border-b border-border/50">
+                  <div className="flex w-full text-xs">
+                    <div className="flex-1 px-3 py-1.5 font-medium text-text">Date</div>
+                    <div className="flex-1 px-3 py-1.5 font-medium text-text">Grade</div>
+                    <div className="w-20 px-3 py-1.5 text-right font-medium text-text">Stability</div>
+                    <div className="w-20 px-3 py-1.5 text-right font-medium text-text">Difficulty</div>
+                    <div className="w-16 px-3 py-1.5 text-right font-medium text-text">Interval</div>
+                  </div>
+                </div>
+                {/* Scrollable table body */}
+                <div className="flex-1 min-h-0">
+                  <ScrollArea className="h-full">
                     {logs.map((log, i) => (
-                      <tr key={i} className="border-b border-border/50 last:border-0">
-                        <td className="px-3 py-1.5 text-foreground">{log.date}</td>
-                        <td className="px-3 py-1.5">
+                      <div
+                        key={i}
+                        className="flex w-full text-xs border-b border-border/50 last:border-0"
+                      >
+                        <div className="flex-1 px-3 py-1.5 text-foreground">{log.date}</div>
+                        <div className="flex-1 px-3 py-1.5">
                           <span
-                            className="inline-block rounded px-1.5 py-0.5 text-[9px] font-medium text-white"
+                            className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-white"
                             style={{ backgroundColor: GRADE_COLORS[log.grade] ?? "var(--lavender)" }}
                           >
                             {GRADE_LABELS[log.grade] ?? log.grade}
                           </span>
-                        </td>
-                        <td className="px-3 py-1.5 text-right text-foreground">
-                          {log.stability.toFixed(1)}d
-                        </td>
-                        <td className="px-3 py-1.5 text-right text-foreground">
-                          {log.difficulty.toFixed(2)}
-                        </td>
-                        <td className="px-3 py-1.5 text-right text-foreground">
-                          {log.scheduledDays}d
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="w-20 px-3 py-1.5 text-right text-foreground">{log.stability.toFixed(1)}d</div>
+                        <div className="w-20 px-3 py-1.5 text-right text-foreground">{log.difficulty.toFixed(2)}</div>
+                        <div className="w-16 px-3 py-1.5 text-right text-foreground">{log.scheduledDays}d</div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </ScrollArea>
+                </div>
               </div>
             )}
-          </div>
+          </>
         ) : (
-          <div className="flex items-center justify-center py-12 text-xs text-muted-foreground">
+          <div className="flex items-center justify-center flex-1 text-xs text-muted-foreground">
             Select a card to view its memory timeline
           </div>
         )}

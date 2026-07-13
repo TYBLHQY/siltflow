@@ -127,7 +127,7 @@ export function ForgettingCurveChart() {
         {[30, 90, 180, 365].map((d) => (
           <button
             key={d}
-            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+            className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
               maxDays === d
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground hover:bg-accent"

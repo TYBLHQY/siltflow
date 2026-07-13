@@ -374,7 +374,7 @@ function AIConfigContent() {
                     {profile.name}
                   </span>
                 )}
-                <span className="text-[10px] text-muted-foreground uppercase">
+                <span className="text-xs text-muted-foreground uppercase">
                   {profile.providerKey}
                 </span>
               </div>
@@ -410,7 +410,7 @@ function AIConfigContent() {
               <>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-muted-foreground mb-0.5">
                       Base URL
                     </label>
                     <input
@@ -422,7 +422,7 @@ function AIConfigContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-muted-foreground mb-0.5">
                       Model
                     </label>
                     <input
@@ -435,7 +435,7 @@ function AIConfigContent() {
                   </div>
                 </div>
                 <div className="mb-2">
-                  <label className="block text-[10px] text-muted-foreground mb-0.5">
+                  <label className="block text-xs text-muted-foreground mb-0.5">
                     API Key
                   </label>
                   <input
@@ -449,7 +449,7 @@ function AIConfigContent() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-muted-foreground mb-0.5">
                       Temperature
                     </label>
                     <input
@@ -467,7 +467,7 @@ function AIConfigContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-muted-foreground mb-0.5">
                       Max Tokens
                     </label>
                     <input
@@ -483,7 +483,7 @@ function AIConfigContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-muted-foreground mb-0.5">
                       Top P
                     </label>
                     <input
@@ -512,7 +512,7 @@ function AIConfigContent() {
 
             {/* Toggle config edit */}
             <button
-              className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+              className="mt-1 text-xs text-muted-foreground hover:text-foreground"
               onClick={() =>
                 setEditingId(editingId === profile.id ? null : profile.id)
               }
@@ -566,7 +566,7 @@ function AIConfigContent() {
           <option value="ko">한국어</option>
           <option value="ru">Русский</option>
         </select>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           Used for AI translation when no per-document override is set.
         </p>
       </div>
@@ -606,7 +606,7 @@ function FSRSConfigContent() {
               updateParam("request_retention", parseFloat(e.target.value))
             }
           />
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Higher = more reviews, better retention. Default: 85%
           </p>
         </div>
@@ -627,7 +627,7 @@ function FSRSConfigContent() {
               updateParam("maximum_interval", parseInt(e.target.value, 10))
             }
           />
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Max days between reviews. Default: 365
           </p>
         </div>
@@ -859,7 +859,7 @@ function StyleConfigContent() {
                   {f}
                 </span>
                 <button
-                  className="text-[10px] text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                  className="text-xs text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
                   onClick={() => removeFontFamily(i)}
                   disabled={style.fontFamilies.length <= 1}
                 >
@@ -867,7 +867,7 @@ function StyleConfigContent() {
                 </button>
                 {i > 0 && (
                   <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
                       const arr = [...style.fontFamilies];
                       [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
@@ -879,7 +879,7 @@ function StyleConfigContent() {
                 )}
                 {i < style.fontFamilies.length - 1 && (
                   <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
                       const arr = [...style.fontFamilies];
                       [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
@@ -944,7 +944,7 @@ function StyleConfigContent() {
                 )}
               </div>
               <button
-                className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+                className="mt-1 text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   setShowFontList(false);
                   setSearch("");
@@ -986,7 +986,7 @@ function StyleConfigContent() {
                   {f}
                 </span>
                 <button
-                  className="text-[10px] text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                  className="text-xs text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
                   onClick={() => removeSystemFontFamily(i)}
                   disabled={style.systemFontFamilies.length <= 1}
                 >
@@ -994,7 +994,7 @@ function StyleConfigContent() {
                 </button>
                 {i > 0 && (
                   <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
                       const arr = [...style.systemFontFamilies];
                       [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
@@ -1006,7 +1006,7 @@ function StyleConfigContent() {
                 )}
                 {i < style.systemFontFamilies.length - 1 && (
                   <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => {
                       const arr = [...style.systemFontFamilies];
                       [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
@@ -1071,7 +1071,7 @@ function StyleConfigContent() {
                 )}
               </div>
               <button
-                className="mt-1 text-[10px] text-muted-foreground hover:text-foreground"
+                className="mt-1 text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   setShowSystemFontList(false);
                   setSearch2("");
@@ -1091,7 +1091,7 @@ function StyleConfigContent() {
               + Add font
             </button>
           )}
-          <p className="text-[10px] text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Controls all UI text (buttons, bars, lists, panels).
           </p>
         </div>
@@ -1321,7 +1321,7 @@ function TTSConfigContent() {
                 onChange={(e) => setConfig({ binaryPath: e.target.value })}
                 placeholder="edge-tts (via PATH)"
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Absolute path or leave empty to search via PATH.
               </p>
             </div>
@@ -1388,7 +1388,7 @@ function TTSConfigContent() {
                   Voices (per language)
                 </label>
                 <button
-                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                   onClick={() => refreshVoices()}
                   disabled={loadingVoices}
                   title="Refresh voice list from edge-tts --list-voices"
@@ -1461,7 +1461,7 @@ function TTSConfigContent() {
               </div>
             </div>
 
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Requires <code>pip install edge-tts</code> · Voices provided by
               Microsoft Edge online TTS.
             </p>
@@ -1481,7 +1481,7 @@ function TTSConfigContent() {
                 onChange={(e) => setConfig({ mimoApiKey: e.target.value })}
                 placeholder="mimo-xxx..."
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Get your API key from{" "}
                 <a
                   className="underline"
@@ -1549,7 +1549,7 @@ function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">
                 Style prompt{" "}
-                <span className="text-[10px] text-muted-foreground font-normal">
+                <span className="text-xs text-muted-foreground font-normal">
                   (tone description)
                 </span>
               </label>
@@ -1560,7 +1560,7 @@ function TTSConfigContent() {
                 onChange={(e) => setConfig({ mimoStylePrompt: e.target.value })}
                 placeholder="e.g. Bright, bouncy tone."
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Sent as a <code>user</code> message before the text. Use{" "}
                 <strong>Director Mode</strong> for detailed control:{" "}
                 <code>{"【角色】... 【场景】... 【指导】..."}</code>
@@ -1571,7 +1571,7 @@ function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">
                 Inline tag{" "}
-                <span className="text-[10px] text-muted-foreground font-normal">
+                <span className="text-xs text-muted-foreground font-normal">
                   (prepended to text)
                 </span>
               </label>
@@ -1581,12 +1581,12 @@ function TTSConfigContent() {
                 onChange={(e) => setConfig({ mimoInlineTag: e.target.value })}
                 placeholder="e.g. (温柔) or (紧张，深呼吸)"
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Wrap in parentheses. Examples: <code>(开心)</code>{" "}
                 <code>(颤抖)</code> <code>(轻声笑)</code>.
               </p>
               <details className="mt-1">
-                <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                   Quick tags
                 </summary>
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -1619,7 +1619,7 @@ function TTSConfigContent() {
                   ].map((tag) => (
                     <button
                       key={tag}
-                      className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+                      className={`rounded px-1.5 py-0.5 text-xs transition-colors ${
                         config.mimoInlineTag === `(${tag})`
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -1640,7 +1640,7 @@ function TTSConfigContent() {
               </details>
             </div>
 
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Powered by XiaoMi MiMo API ·{" "}
               <a
                 className="underline"
@@ -1790,16 +1790,16 @@ function ShortcutsContent() {
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       {editingId === s.actionId ? (
-                        <span className="inline-flex items-center rounded border border-primary bg-primary/10 px-2 py-0.5 text-[10px] font-mono">
+                        <span className="inline-flex items-center rounded border border-primary bg-primary/10 px-2 py-0.5 text-xs font-mono">
                           (listening...)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-[10px] font-mono">
+                        <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-mono">
                           {formatShortcut(s.keys)}
                         </span>
                       )}
                       <button
-                        className="text-[10px] text-muted-foreground hover:text-foreground ml-1"
+                        className="text-xs text-muted-foreground hover:text-foreground ml-1"
                         onClick={() => handleStartCapture(s.actionId)}
                         title="Change shortcut"
                       >
@@ -1807,7 +1807,7 @@ function ShortcutsContent() {
                       </button>
                       {s.keys !== s.defaultKeys && (
                         <button
-                          className="text-[10px] text-muted-foreground hover:text-destructive"
+                          className="text-xs text-muted-foreground hover:text-destructive"
                           onClick={() => resetShortcut(s.actionId)}
                           title="Reset to default"
                         >

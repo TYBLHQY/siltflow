@@ -125,7 +125,7 @@ export function CalendarHeatmap() {
           <button
             key={r.label}
             className={cn(
-              "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
+              "rounded px-2 py-0.5 text-xs font-medium transition-colors",
               range.months === r.months
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground hover:bg-accent",

@@ -591,11 +591,6 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                     <Square className="h-3.5 w-3.5 shrink-0" />
                   )}
                   {numPages} pages
-                  {selPages !== undefined && (
-                    <span className="text-[10px] text-muted-foreground">
-                      ({selPages.length} selected)
-                    </span>
-                  )}
                 </button>
                 <ScrollArea className="max-h-32">
                   <div className="flex flex-wrap gap-1">
@@ -606,7 +601,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                       return (
                         <button
                           key={p}
-                          className={`inline-flex items-center justify-center h-6 min-w-[24px] rounded px-1 text-[10px] font-medium transition-colors ${
+                          className={`inline-flex items-center justify-center h-6 min-w-[24px] rounded px-1 text-xs font-medium transition-colors ${
                             selected
                               ? "bg-primary/10 text-primary"
                               : "text-muted-foreground hover:bg-accent"
@@ -658,20 +653,20 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
                   ) : (
                     <>
                       <button
-                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                         onClick={() => setEditingSummary(true)}
                       >
                         <Pencil className="h-3 w-3" />
                         Edit
                       </button>
                       {summary.isAiGenerated && (
-                        <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
                           <Bot className="h-2.5 w-2.5" />
                           AI-generated
                         </span>
                       )}
                       <button
-                        className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive"
+                        className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
                         onClick={handleClearSummary}
                       >
                         <Trash2 className="h-3 w-3" />

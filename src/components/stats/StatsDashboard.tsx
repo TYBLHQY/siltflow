@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, BarChart3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import { useStatsStore } from "@/stores/stats.store";
 import { OverviewCards } from "./OverviewCards";
 import { LazyChart } from "./LazyChart";
@@ -17,6 +18,15 @@ import { ForgettingCurveChart } from "./charts/ForgettingCurveChart";
 import { RetentionOptimizationChart } from "./charts/RetentionOptimizationChart";
 import { MemoryStateExplorer } from "./charts/MemoryStateExplorer";
 
+type Panel = "learning" | "memory" | "growth" | "explorer";
+
+const PANELS: { id: Panel; label: string }[] = [
+  { id: "learning", label: "Learning" },
+  { id: "memory", label: "Memory (FSRS)" },
+  { id: "growth", label: "Growth" },
+  { id: "explorer", label: "Memory State Explorer" },
+];
+
 interface StatsDashboardProps {
   onClose?: () => void;
 }
@@ -25,6 +35,7 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
   const loadAllData = useStatsStore((s) => s.loadAllData);
   const loaded = useStatsStore((s) => s.loaded);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [activePanel, setActivePanel] = useState<Panel>("learning");
 
   useEffect(() => {
     if (!loaded) loadAllData();
@@ -66,59 +77,55 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
             <OverviewCards />
           </section>
 
-          {/* Learning */}
-          <details open className="group">
-            <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
-              Learning
-            </summary>
-            <LazyChart height={300}><DailyReviewsChart /></LazyChart>
-            <div className="mt-4">
+          {/* Panel tabs */}
+          <div className="flex gap-2">
+            {PANELS.map((p) => (
+              <button
+                key={p.id}
+                className={cn(
+                  "flex-1 rounded-md border px-3 py-2 text-xs font-semibold transition-colors",
+                  activePanel === p.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-text hover:bg-accent",
+                )}
+                onClick={() => setActivePanel(p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Panel content */}
+          {activePanel === "learning" && (
+            <div className="space-y-4">
+              <LazyChart height={300}><DailyReviewsChart /></LazyChart>
               <LazyChart height={240}><CalendarHeatmap /></LazyChart>
-            </div>
-            <div className="mt-4">
               <LazyChart height={300}><ReviewForecastChart /></LazyChart>
             </div>
-          </details>
-
-          {/* Memory (FSRS) */}
-          <details open className="group">
-            <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
-              Memory (FSRS)
-            </summary>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <LazyChart height={300}><RecallRateChart /></LazyChart>
-              <LazyChart height={300}><StabilityDistributionChart /></LazyChart>
-            </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <LazyChart height={300}><RetrievabilityDistributionChart /></LazyChart>
-              <LazyChart height={300}><DifficultyDistributionChart /></LazyChart>
-            </div>
-            <div className="mt-4">
+          )}
+          {activePanel === "memory" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <LazyChart height={300}><RecallRateChart /></LazyChart>
+                <LazyChart height={300}><StabilityDistributionChart /></LazyChart>
+              </div>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <LazyChart height={300}><RetrievabilityDistributionChart /></LazyChart>
+                <LazyChart height={300}><DifficultyDistributionChart /></LazyChart>
+              </div>
               <LazyChart height={300}><IntervalDistributionChart /></LazyChart>
             </div>
-          </details>
-
-          {/* Growth */}
-          <details open className="group">
-            <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
-              Growth
-            </summary>
-            <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
-            <div className="mt-4">
+          )}
+          {activePanel === "growth" && (
+            <div className="space-y-4">
+              <LazyChart height={320}><KnowledgeGrowthChart /></LazyChart>
               <LazyChart height={320}><ForgettingCurveChart /></LazyChart>
-            </div>
-            <div className="mt-4">
               <LazyChart height={300}><RetentionOptimizationChart /></LazyChart>
             </div>
-          </details>
-
-          {/* Memory State Explorer */}
-          <details className="group">
-            <summary className="mb-3 cursor-pointer text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground">
-              Memory State Explorer
-            </summary>
+          )}
+          {activePanel === "explorer" && (
             <LazyChart height={400}><MemoryStateExplorer /></LazyChart>
-          </details>
+          )}
         </div>
       </ScrollArea>
     </div>

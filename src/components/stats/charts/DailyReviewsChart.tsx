@@ -102,7 +102,7 @@ export function DailyReviewsChart() {
         {TIME_RANGES.map((r) => (
           <button
             key={r.label}
-            className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+            className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
               range.days === r.days
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground hover:bg-accent"

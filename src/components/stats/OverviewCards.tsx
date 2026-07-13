@@ -29,7 +29,7 @@ function StatCard({ icon: Icon, label, value, color }: StatCardData) {
         <p className="text-lg font-semibold leading-tight tracking-tight">
           {value ?? "—"}
         </p>
-        <p className="truncate text-[10px] text-muted-foreground">{label}</p>
+        <p className="truncate text-xs text-muted-foreground">{label}</p>
       </div>
     </div>
   );
