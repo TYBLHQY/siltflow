@@ -47,6 +47,7 @@ interface SiltflowAPI {
   };
   annotations: {
     list: (documentId: string) => Promise<any[]>;
+    listAll: () => Promise<any[]>;
     save: (annotation: any) => Promise<any>;
     delete: (id: string, documentId: string) => Promise<void>;
   };

@@ -14,6 +14,12 @@ import { cn } from "@/lib/utils";
 import { useStatsStore } from "@/stores/stats.store";
 import type { ReviewLogEntry } from "@/stores/review-log.store";
 
+interface AnnotationRow {
+  id: string;
+  documentId: string;
+  text: string | null;
+}
+
 interface ParsedReviewLog {
   timestamp: number;
   date: string;
@@ -45,16 +51,30 @@ export function MemoryStateExplorer() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [logs, setLogs] = useState<ParsedReviewLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [annotationsMap, setAnnotationsMap] = useState<Map<string, string>>(new Map());
+
+  // Load all annotations for text lookup
+  useEffect(() => {
+    window.siltflow.annotations.listAll().then((rows: AnnotationRow[]) => {
+      const map = new Map<string, string>();
+      for (const row of rows) {
+        if (row.text) map.set(row.id, row.text);
+      }
+      setAnnotationsMap(map);
+    });
+  }, []);
 
   // Build annotation list from raw card data
   const annotations = useMemo(() => {
-    const list: { id: string; documentId: string; card: any }[] = [];
+    const list: { id: string; documentId: string; text: string; card: any }[] = [];
     for (const row of rawCards) {
       try {
         const card = JSON.parse(row.data);
+        const text = annotationsMap.get(row.annotationId) ?? row.annotationId;
         list.push({
           id: row.annotationId,
           documentId: row.documentId,
+          text,
           card,
         });
       } catch {
@@ -62,12 +82,12 @@ export function MemoryStateExplorer() {
       }
     }
     return list.sort((a, b) => (b.card.stability ?? 0) - (a.card.stability ?? 0));
-  }, [rawCards, dataVersion]);
+  }, [rawCards, dataVersion, annotationsMap]);
 
   const filtered = useMemo(
     () =>
       annotations.filter((a) =>
-        a.id.toLowerCase().includes(search.toLowerCase()),
+        a.text.toLowerCase().includes(search.toLowerCase()),
       ),
     [annotations, search],
   );
@@ -149,7 +169,7 @@ export function MemoryStateExplorer() {
                   "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
                   selectedId === a.id
                     ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50 text-foreground",
+                    : "hover:bg-accent/50 text-text",
                 )}
                 onClick={() => setSelectedId(a.id)}
               >
@@ -159,8 +179,8 @@ export function MemoryStateExplorer() {
                     selectedId === a.id && "rotate-90",
                   )}
                 />
-                <span className="flex-1 truncate" title={a.id}>
-                  {a.id.slice(0, 16)}...
+                <span className="flex-1 truncate" title={a.text}>
+                  {a.text}
                 </span>
                 <span className="shrink-0 text-[10px] text-muted-foreground">
                   S={typeof a.card.stability === "number" ? a.card.stability.toFixed(1) : "?"}
@@ -183,7 +203,7 @@ export function MemoryStateExplorer() {
             <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-3">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-medium truncate">
-                  Annotation: {selectedAnnotation.id.slice(0, 12)}...
+                  {selectedAnnotation.text}
                 </span>
                 <span className="text-muted-foreground shrink-0">
                   Document: {selectedAnnotation.documentId.slice(0, 12)}...
@@ -304,11 +324,11 @@ export function MemoryStateExplorer() {
                 <table className="w-full text-[10px]">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-3 py-1.5 text-left font-medium text-muted-foreground">Date</th>
-                      <th className="px-3 py-1.5 text-left font-medium text-muted-foreground">Grade</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-muted-foreground">Stability</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-muted-foreground">Difficulty</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-muted-foreground">Interval</th>
+                      <th className="px-3 py-1.5 text-left font-medium text-text">Date</th>
+                      <th className="px-3 py-1.5 text-left font-medium text-text">Grade</th>
+                      <th className="px-3 py-1.5 text-right font-medium text-text">Stability</th>
+                      <th className="px-3 py-1.5 text-right font-medium text-text">Difficulty</th>
+                      <th className="px-3 py-1.5 text-right font-medium text-text">Interval</th>
                     </tr>
                   </thead>
                   <tbody>

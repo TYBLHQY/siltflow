@@ -14,6 +14,12 @@ export function registerAnnotationHandlers() {
       .all()
   })
 
+  ipcMain.handle("annotations:listAll", () => {
+    const db = getDb()
+    if (!db) return []
+    return db.select().from(schema.annotations).all()
+  })
+
   ipcMain.handle("annotations:save", (_event, annotation: any) => {
     const sql = getSqlite()
     if (!sql) return null

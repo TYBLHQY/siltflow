@@ -37,6 +37,7 @@ export interface SiltflowAPI {
   }
   annotations: {
     list: (documentId: string) => Promise<any[]>
+    listAll: () => Promise<any[]>
     save: (annotation: any) => Promise<any>
     delete: (id: string, documentId: string) => Promise<void>
   }
@@ -132,6 +133,7 @@ const api: SiltflowAPI = {
   },
   annotations: {
     list: (documentId) => ipcRenderer.invoke('annotations:list', documentId),
+    listAll: () => ipcRenderer.invoke('annotations:listAll'),
     save: (annotation) => ipcRenderer.invoke('annotations:save', annotation),
     delete: (id, documentId) => ipcRenderer.invoke('annotations:delete', id, documentId),
   },
