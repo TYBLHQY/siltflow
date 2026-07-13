@@ -69,7 +69,14 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-1 border-t border-border/20 pt-1">
+      <div
+        className="flex flex-col gap-1 text-xs text-muted-foreground mt-1 border-t border-border/20 pt-1"
+        onClick={(e) => {
+          if (!canShowHistory) return;
+          e.stopPropagation();
+          setHistoryExpanded((v) => !v);
+        }}
+      >
         {/* Row 1: state / reps / lapses */}
         <div className="flex items-center gap-x-3">
           <span className={`font-medium ${STATE_COLORS[state] ?? ""}`}>
@@ -93,17 +100,11 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
               last: {formatDate(card.last_review)}
             </span>
           )}
-          {/* History toggle */}
+          {/* Collapse hint indicator */}
           {canShowHistory && (
-            <button
-              className="ml-auto text-muted-foreground/50 hover:text-foreground transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setHistoryExpanded((v) => !v);
-              }}
-            >
-              {historyExpanded ? "Hide" : "View"} history
-            </button>
+            <span className="ml-auto text-muted-foreground/40 select-none">
+              {historyExpanded ? "▾" : "▸"}
+            </span>
           )}
         </div>
       </div>
