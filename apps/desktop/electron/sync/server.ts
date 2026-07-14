@@ -158,45 +158,6 @@ async function handlePush(
   }
 
   const tx = sql.transaction(() => {
-    // Push annotations (and related data)
-    if (Array.isArray(body.annotations)) {
-      for (const a of body.annotations) {
-        sql
-          .prepare(
-            `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          )
-          .run(
-            a.id,
-            a.document_id,
-            a.type || "highlight",
-            a.text || "",
-            a.page_number ?? 0,
-            a.embed_data || "",
-            a.created_at || new Date().toISOString(),
-            a.updated_at || new Date().toISOString(),
-          )
-      }
-    }
-
-    // Push AI results
-    if (Array.isArray(body.aiResults)) {
-      for (const r of body.aiResults) {
-        sql
-          .prepare(
-            `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?)`,
-          )
-          .run(
-            r.annotation_id,
-            r.document_id,
-            r.data,
-            r.created_at || new Date().toISOString(),
-            r.updated_at || new Date().toISOString(),
-          )
-      }
-    }
-
     // Push FSRS cards
     if (Array.isArray(body.fsrsCards)) {
       for (const c of body.fsrsCards) {
@@ -229,25 +190,6 @@ async function handlePush(
             l.document_id,
             l.data,
             l.created_at || new Date().toISOString(),
-          )
-      }
-    }
-
-    // Push summaries
-    if (Array.isArray(body.summaries)) {
-      for (const s of body.summaries) {
-        sql
-          .prepare(
-            `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-          )
-          .run(
-            s.document_id,
-            s.text,
-            s.is_ai_generated ?? 0,
-            s.source_lang || null,
-            s.created_at || new Date().toISOString(),
-            s.updated_at || new Date().toISOString(),
           )
       }
     }
