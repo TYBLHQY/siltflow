@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -20,10 +21,16 @@ export default function DocumentListScreen() {
   const items = useAnnotationStore((s) => s.items);
   const [refreshing, setRefreshing] = useState(false);
   const [studyingDocId, setStudyingDocId] = useState<string | null>(null);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     if (!loaded) loadFromDb();
   }, []);
+
+  // Reload when screen comes into focus (e.g. after sync)
+  useEffect(() => {
+    if (isFocused && loaded) loadFromDb();
+  }, [isFocused]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
