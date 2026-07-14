@@ -9,8 +9,6 @@
 import http from "node:http"
 import { randomUUID } from "node:crypto"
 import { getSqlite } from "../database"
-import fs from "node:fs"
-import path from "node:path"
 
 let server: http.Server | null = null
 let vaultPath = ""
@@ -71,23 +69,6 @@ function handleDocuments(res: http.ServerResponse) {
     )
     .all()
   json(res, rows)
-}
-
-function handleDocumentPdf(
-  res: http.ServerResponse,
-  id: string,
-) {
-  if (!vaultPath) return error(res, "no vault")
-  const pdfPath = path.join(vaultPath, "documents", `${id}.pdf`)
-  if (!fs.existsSync(pdfPath)) return error(res, "pdf not found", 404)
-  const stat = fs.statSync(pdfPath)
-  res.writeHead(200, {
-    "Content-Type": "application/pdf",
-    "Content-Length": stat.size,
-    "Access-Control-Allow-Origin": "*",
-    "Content-Disposition": `attachment; filename="${id}.pdf"`,
-  })
-  fs.createReadStream(pdfPath).pipe(res)
 }
 
 function handleFolders(res: http.ServerResponse) {
@@ -321,11 +302,6 @@ function handleRequest(
   // GET /api/documents
   if (req.method === "GET" && parts[0] === "api" && parts[1] === "documents" && !parts[2]) {
     return handleDocuments(res)
-  }
-
-  // GET /api/documents/:id/pdf
-  if (req.method === "GET" && parts[0] === "api" && parts[1] === "documents" && parts[2] === "pdf") {
-    return handleDocumentPdf(res, parts[3])
   }
 
   // GET /api/folders
