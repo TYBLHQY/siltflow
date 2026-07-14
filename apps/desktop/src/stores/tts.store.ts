@@ -135,8 +135,16 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
   getVoice: (language?: string) => {
     const { config } = get();
     if (config.provider === "mimo") return config.mimoVoice;
-    if (language && config.perLanguageVoices[language]) {
-      return config.perLanguageVoices[language];
+    if (language) {
+      // Extract ISO 639-1 from possible full locale (e.g. "en-US" or "zh-CN")
+      const langCode = language.split("-")[0];
+      // Try exact match first, then ISO 639-1 prefix
+      if (config.perLanguageVoices[language]) {
+        return config.perLanguageVoices[language];
+      }
+      if (langCode && config.perLanguageVoices[langCode]) {
+        return config.perLanguageVoices[langCode];
+      }
     }
     return config.defaultVoice;
   },
