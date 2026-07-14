@@ -27,3 +27,11 @@ dist-ssr
 # Build outputs
 release/
 main.js
+
+# Monorepo: app-specific build outputs
+apps/desktop/dist
+apps/desktop/dist-electron
+apps/desktop/release
+
+# Package build outputs
+packages/*/dist

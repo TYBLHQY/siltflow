@@ -1,0 +1,60 @@
+// @see - https://www.electron.build/configuration/configuration
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.myq.siltflow",
+  "asar": true,
+  "asarUnpack": [
+    "**/better-sqlite3/**",
+    "**/bindings/**",
+    "**/file-uri-to-path/**",
+    "**/prebuild-install/**",
+    "**/*.node"
+  ],
+  "productName": "Siltflow",
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron"
+  ],
+  "npmRebuild": true,
+  "compression": "maximum",
+  "mac": {
+    "icon": "build/icon.icns",
+    "target": [
+      "dmg"
+    ],
+    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+  },
+  "win": {
+    "icon": "build/icon.ico",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false
+  },
+  "linux": {
+    "icon": "build/icons",
+    "category": "Utility",
+    "maintainer": "MYQ <myq@localhost>",
+    "target": [
+      "deb",
+      "AppImage"
+    ],
+    "artifactName": "${productName}-Linux-${version}.${ext}"
+  },
+  // publish is omitted for dev builds.
+  // CI releases should set GH_TOKEN and call electron-builder with --publish=always.
+}
