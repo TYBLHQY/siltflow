@@ -108,12 +108,16 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
         {/* Original text */}
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>TEXT</Text>
-          <Text style={styles.originalText}>{current.text}</Text>
+          <Text style={styles.originalTextSingle}>{current.text}</Text>
+
+          {/* Pronunciation below text */}
+          {aiData?.pronunciation?.ipa && (
+            <Text style={styles.ipaInline}>{aiData.pronunciation.ipa}</Text>
+          )}
 
           {/* Translation — always visible if available */}
           {aiData && (
             <View style={styles.divider}>
-              <View style={styles.dividerLine} />
               <Text style={styles.sectionLabel}>TRANSLATION</Text>
               <Text style={styles.translationText}>{aiData.translation}</Text>
             </View>
@@ -168,11 +172,16 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
               </View>
             )}
 
-            {/* Pronunciation */}
-            {aiData.pronunciation?.ipa && (
+            {/* Alternatives */}
+            {aiData.alternatives && aiData.alternatives.length > 0 && (
               <View style={styles.revealSection}>
-                <Text style={styles.revealSectionTitle}>Pronunciation</Text>
-                <Text style={styles.ipaText}>{aiData.pronunciation.ipa}</Text>
+                <Text style={styles.revealSectionTitle}>Alternatives</Text>
+                {aiData.alternatives.slice(0, 4).map((alt, i) => (
+                  <Text key={i} style={styles.collocPhrase}>
+                    {alt.expression}
+                    {alt.register ? ` (${alt.register})` : ""}
+                  </Text>
+                ))}
               </View>
             )}
           </View>
@@ -295,7 +304,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     marginBottom: 6,
   },
-  originalText: {
+  ipaInline: { fontSize: 15, color: "#888", marginTop: 6, fontFamily: "monospace" },
+  originalTextSingle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#222",
@@ -378,17 +388,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
-  // Pronunciation
-  ipaText: {
-    fontSize: 18,
-    color: "#666",
-    fontFamily: "monospace",
-    textAlign: "center",
-    padding: 10,
-    backgroundColor: "#f8f8f8",
-    borderRadius: 8,
-  },
-
   // Collocations
   collocRow: {
     flexDirection: "row",
@@ -438,4 +437,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   gradeBtnLabel: { color: "#fff", fontSize: 14, fontWeight: "800", letterSpacing: 0.5 },
+
+  // Inline pronunciation
+  ipaInline: { fontSize: 15, color: "#888", marginTop: 6, fontFamily: "monospace" },
+  originalTextSingle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#222",
+    lineHeight: 28,
+  },
 });
