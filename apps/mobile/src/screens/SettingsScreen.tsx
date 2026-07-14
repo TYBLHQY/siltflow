@@ -102,7 +102,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
       {/* Sync Modal */}
-      <Modal visible={showSync} animationType="slide" presentationStyle="pageSheet">
+      <Modal visible={showSync} animationType="slide">
         <View style={{ flex: 1, paddingTop: 60 }}>
           <TouchableOpacity
             style={styles.closeSyncBtn}
