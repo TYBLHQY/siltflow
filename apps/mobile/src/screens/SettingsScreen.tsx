@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAIStore } from "../stores/ai.store";
 import { useFSRSStore } from "../stores/fsrs.store";
+import { useDocumentStore } from "../stores/document.store";
+import { useAnnotationStore } from "../stores/annotation.store";
+import { DROP_TABLES_SQL } from "../database/schema";
 import SyncScreen from "../sync/SyncScreen";
 
 export default function SettingsScreen() {
@@ -18,6 +22,33 @@ export default function SettingsScreen() {
   const activeProfile = useAIStore((s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null);
   const params = useFSRSStore((s) => s.params);
   const [showSync, setShowSync] = useState(false);
+
+  const handleReset = useCallback(() => {
+    Alert.alert(
+      "Clear All Data",
+      "This will drop all synced data. You'll need to sync again from desktop.\n\nSettings (AI config, FSRS params) will NOT be cleared.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { getDb } = await import("../database");
+              const db = getDb();
+              await db.execAsync(DROP_TABLES_SQL);
+              await db.execAsync(require("../database/schema").CREATE_TABLES_SQL);
+              useDocumentStore.getState().setDocuments([]);
+              useAnnotationStore.getState().setItems([]);
+              Alert.alert("Done", "Data cleared. Go to Sync to re-sync.");
+            } catch (err: any) {
+              Alert.alert("Error", err.message);
+            }
+          },
+        },
+      ],
+    );
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -65,6 +96,15 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>Sync</Text>
         <TouchableOpacity style={styles.syncBtn} onPress={() => setShowSync(true)}>
           <Text style={styles.syncBtnText}>Sync with Desktop</Text>
+        </TouchableOpacity>
+
+        {/* Reset */}
+        <Text style={styles.sectionTitle}>Reset</Text>
+        <TouchableOpacity
+          style={[styles.syncBtn, { backgroundColor: "#e74c3c" }]}
+          onPress={handleReset}
+        >
+          <Text style={styles.syncBtnText}>Clear All Data & Re-sync</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
