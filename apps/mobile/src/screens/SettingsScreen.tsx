@@ -1,14 +1,5 @@
 import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  Alert,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAIStore } from "../stores/ai.store";
 import { useFSRSStore } from "../stores/fsrs.store";
@@ -111,14 +102,14 @@ export default function SettingsScreen() {
       </ScrollView>
 
       {/* Sync Modal */}
-      <Modal visible={showSync} animationType="slide">
-        <View style={{ flex: 1 }}>
-          <Pressable
+      <Modal visible={showSync} animationType="slide" presentationStyle="pageSheet">
+        <View style={{ flex: 1, paddingTop: 60 }}>
+          <TouchableOpacity
             style={styles.closeSyncBtn}
             onPress={() => setShowSync(false)}
           >
-            <Text style={styles.closeSyncText}>✕ Close Sync</Text>
-          </Pressable>
+            <Text style={styles.closeSyncText}>← Back to Settings</Text>
+          </TouchableOpacity>
           <SyncScreen />
         </View>
       </Modal>
@@ -159,11 +150,12 @@ const styles = StyleSheet.create({
   },
   syncBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   closeSyncBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     position: "absolute",
-    top: 50,
-    right: 16,
+    top: 12,
+    left: 0,
     zIndex: 10,
-    padding: 8,
   },
   closeSyncText: { fontSize: 16, color: "#4a90d9", fontWeight: "600" },
 });
