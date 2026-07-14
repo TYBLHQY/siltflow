@@ -83,6 +83,7 @@ export interface SiltflowAPI {
     stop: () => Promise<{ ok: boolean }>
     status: () => Promise<{ running: boolean; port: number }>
   }
+  getNetworkIPs: () => Promise<string[]>
 }
 
 const api: SiltflowAPI = {
@@ -184,6 +185,7 @@ const api: SiltflowAPI = {
     stop: () => ipcRenderer.invoke('sync:stop'),
     status: () => ipcRenderer.invoke('sync:status'),
   },
+  getNetworkIPs: () => ipcRenderer.invoke('network:ips'),
 }
 
 contextBridge.exposeInMainWorld('siltflow', api)

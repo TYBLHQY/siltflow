@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { PdfViewer } from "@/components/document/PdfViewer";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import { SyncButton } from "@/components/SyncButton";
 import {
   useAnnotationStore,
   type AnnotationEmbedData,
@@ -1943,6 +1944,7 @@ export function CenterPanel({
           {docTitle && <PageNav />}
           {docTitle && <QuickAddToggle />}
           {docTitle && <FitWidthButton />}
+          <SyncButton />
           <SettingsButton />
           <Button
             variant="ghost"

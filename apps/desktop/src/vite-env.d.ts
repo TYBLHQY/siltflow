@@ -140,6 +140,7 @@ interface SiltflowAPI {
     stop: () => Promise<{ ok: boolean }>;
     status: () => Promise<{ running: boolean; port: number }>;
   };
+  getNetworkIPs: () => Promise<string[]>;
 }
 
 interface Window {

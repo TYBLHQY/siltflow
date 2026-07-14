@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain, shell } from 
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { autoUpdater } from 'electron-updater'
@@ -434,6 +435,20 @@ ipcMain.handle('sync:stop', () => {
 
 ipcMain.handle('sync:status', () => {
   return getSyncStatus()
+})
+
+ipcMain.handle('network:ips', () => {
+  const interfaces = os.networkInterfaces()
+  const ips: string[] = []
+  for (const iface of Object.values(interfaces)) {
+    if (!iface) continue
+    for (const addr of iface) {
+      if (addr.family === 'IPv4' && !addr.internal) {
+        ips.push(addr.address)
+      }
+    }
+  }
+  return ips
 })
 
 // ── App Bootstrap ─────────────────────────────────────────────────
