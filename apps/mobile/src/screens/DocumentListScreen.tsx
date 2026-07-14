@@ -105,6 +105,7 @@ export default function DocumentListScreen() {
                     {item.dueSoonCount > 0 ? ` · ${item.dueSoonCount} soon` : ""}
                     {item.newCardsCount > 0 ? ` · ${item.newCardsCount} new` : ""}
                   </Text>
+                  <Text style={styles.statusBadge}>{statusLabel(item)}</Text>
                 </View>
               </View>
               {item.totalCards > 0 && <Text style={styles.arrow}>→</Text>}
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
   docTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
   docMeta: { fontSize: 12, color: "#888", marginTop: 2 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 2, gap: 8 },
+  statusBadge: { fontSize: 12, fontWeight: "600", color: "#888" },
   arrow: { fontSize: 18, color: "#ccc", marginLeft: 8 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: "#999", textAlign: "center", lineHeight: 22 },
