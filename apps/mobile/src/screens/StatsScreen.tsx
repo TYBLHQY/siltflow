@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useIsFocused } from "@react-navigation/native";
 import { useStatsStore } from "../stores/stats.store";
 import { computeOverviewStats, computeDailyReviews } from "@siltflow/shared/fsrs";
 
@@ -10,11 +11,17 @@ export default function StatsScreen() {
   const rawReviewLogs = useStatsStore((s) => s.rawReviewLogs);
   const parsedCards = useStatsStore((s) => s.parsedCards);
   const loadAllData = useStatsStore.getState().loadAllData;
+  const isFocused = useIsFocused();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!loaded) loadAllData();
   }, []);
+
+  // Reload when tab focused (e.g. after sync or reset)
+  useEffect(() => {
+    if (isFocused && loaded) loadAllData();
+  }, [isFocused]);
 
   const onRefresh = async () => {
     setRefreshing(true);
