@@ -89,7 +89,8 @@ export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }:
           source={{ html }}
           style={{ flex: 1 }}
           originWhitelist={["*"]}
-          javaScriptEnabled={false}
+          javaScriptEnabled={true}
+          allowFileAccess={true}
         />
       ) : (
         <View style={styles.centered}>

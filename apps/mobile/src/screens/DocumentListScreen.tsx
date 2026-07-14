@@ -76,7 +76,7 @@ export default function DocumentListScreen() {
 
       {/* PDF Reader Modal */}
       {pdfDocId && pdfPath && (
-        <Modal visible animationType="fullScreen">
+        <Modal visible animationType="slide">
           <PdfReaderScreen
             documentId={pdfDocId}
             title={pdfTitle}
