@@ -18,64 +18,39 @@ import {
 } from "./utils.js";
 
 /**
- * Get a WebSocket constructor that supports custom headers.
+ * Get a WebSocket constructor.
  *
- * In Node.js / Electron main process, use the `ws` package which
- * allows setting cookie and origin headers.  Browser/RN's globalThis.WebSocket
- * does NOT support custom headers, which causes the Edge TTS server to
- * reject the connection.
+ * In React Native / browser, uses globalThis.WebSocket (no custom headers).
+ * In Node.js / Electron, loads the `ws` package behind a hidden dynamic import
+ * (new Function() hides the import() from Metro's static analyzer, preventing
+ * it from bundling ws + native .node modules).
  */
 let _WS: any;
+
+/** Load the `ws` package — hidden from Metro's static analyzer. */
+async function loadNodeWS(): Promise<any> {
+  try {
+    const wsMod = await new Function(`return import("ws")`)();
+    return wsMod?.default?.WebSocket ?? wsMod?.default ?? wsMod?.WebSocket ?? wsMod;
+  } catch {
+    return null;
+  }
+}
 
 async function getWS(): Promise<any> {
   if (_WS) return _WS;
 
-  if (isNode()) {
-    // Strategy:
-    // 1. createRequire from process.cwd() — works in Electron (cwd = app dir,
-    //    which has node_modules/ws installed as a dependency).
-    // 2. createRequire from import.meta.url — works for standalone Node.js.
-    // 3. Dynamic import — last resort.
-    try {
-      const { createRequire } = await import("node:module");
-      const req = createRequire(
-        (typeof __filename !== "undefined" ? __filename : process.cwd() + "/.noop.js"),
-      );
-      const wsMod = tryResolveWs(req);
-      if (wsMod) { _WS = wsMod; return _WS; }
-    } catch { /* try next */ }
-
-    try {
-      const { createRequire } = await import("node:module");
-      const { fileURLToPath } = await import("node:url");
-      const thisFile = fileURLToPath(import.meta.url);
-      const req = createRequire(thisFile);
-      const wsMod = tryResolveWs(req);
-      if (wsMod) { _WS = wsMod; return _WS; }
-    } catch { /* try next */ }
-
-    try {
-      const wsMod = await import("ws");
-      _WS = (wsMod as any).default?.WebSocket ?? (wsMod as any).default ?? (wsMod as any).WebSocket ?? wsMod;
-      if (_WS) return _WS;
-    } catch { /* try global */ }
-  }
-
+  // React Native / browser — global WebSocket exists
   if (typeof globalThis.WebSocket !== "undefined") {
     _WS = globalThis.WebSocket;
     return _WS;
   }
 
-  throw new Error("@siltflow/edge-tts: WebSocket not available");
-}
+  // Node.js / Electron — try ws package
+  const ws = await loadNodeWS();
+  if (ws) { _WS = ws; return _WS; }
 
-function tryResolveWs(req: (id: string) => unknown): any {
-  try {
-    const wsMod: any = req("ws");
-    return wsMod.WebSocket ?? wsMod;
-  } catch {
-    return null;
-  }
+  throw new Error("@siltflow/edge-tts: WebSocket not available");
 }
 
 /**
@@ -339,7 +314,7 @@ export class Communicate {
             }
           }
           // path === "turn.start" / "response" — ignore
-        } else if (data instanceof ArrayBuffer || data instanceof Buffer) {
+        } else if (data instanceof ArrayBuffer || (typeof Buffer !== "undefined" && data instanceof Buffer)) {
           // Binary frame — audio data (MP3)
           // ws library sends Buffer (with possible byteOffset), browser sends ArrayBuffer
           const raw = data instanceof ArrayBuffer

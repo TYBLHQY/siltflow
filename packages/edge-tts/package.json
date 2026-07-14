@@ -18,8 +18,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "js-sha256": "^0.11.0"
+  },
+  "optionalDependencies": {
     "bufferutil": "^4.1.0",
-    "js-sha256": "^0.11.0",
     "utf-8-validate": "^6.0.6",
     "ws": "^8.21.0"
   },
