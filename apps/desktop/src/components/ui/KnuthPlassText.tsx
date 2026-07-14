@@ -1,3 +1,4 @@
+import { KnuthPlassText as SharedKnuthPlassText } from "@siltflow/shared-ui";
 import { memo } from "react";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 
@@ -7,8 +8,8 @@ export interface KnuthPlassTextProps {
 }
 
 /**
- * Renders text using simple web-native line-breaking instead of Knuth-Plass.
- * Preserves the same interface for backward compatibility.
+ * Renders text with font styles from the app's style store.
+ * Delegates to @siltflow/shared-ui for the rendering.
  */
 export const KnuthPlassText = memo(function KnuthPlassText({
   text,
@@ -19,17 +20,11 @@ export const KnuthPlassText = memo(function KnuthPlassText({
   if (!text) return null;
 
   return (
-    <p
+    <SharedKnuthPlassText
+      text={text}
       className={className}
-      style={{
-        fontFamily: buildFontStack(style.fontFamilies),
-        fontSize: style.fontSize,
-        lineHeight: 1.6,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-      }}
-    >
-      {text}
-    </p>
+      fontFamily={buildFontStack(style.fontFamilies)}
+      fontSize={style.fontSize}
+    />
   );
 });
