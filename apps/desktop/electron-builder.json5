@@ -49,11 +49,18 @@
     "icon": "build/icons",
     "category": "Utility",
     "maintainer": "MYQ <myq@localhost>",
+    "executableName": "siltflow",
+    "synopsis": "Language learning document reader",
+    "desktop": {
+      "Name": "Siltflow",
+      "StartupWMClass": "siltflow",
+      "Package": "siltflow"
+    },
     "target": [
       "deb",
       "AppImage"
     ],
-    "artifactName": "${productName}-Linux-${version}.${ext}"
+    "artifactName": "Siltflow-Linux-${version}.${ext}"
   },
   // publish is omitted for dev builds.
   // CI releases should set GH_TOKEN and call electron-builder with --publish=always.
