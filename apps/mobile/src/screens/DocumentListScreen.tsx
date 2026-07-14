@@ -101,9 +101,9 @@ export default function DocumentListScreen() {
                 <View style={styles.metaRow}>
                   <Text style={styles.docMeta}>
                     {item.totalCards} card{item.totalCards !== 1 ? "s" : ""}
-                    {item.dueNowCount > 0 ? ` · ${item.dueNowCount} due` : ""}
-                    {item.dueSoonCount > 0 ? ` · ${item.dueSoonCount} soon` : ""}
-                    {item.newCardsCount > 0 ? ` · ${item.newCardsCount} new` : ""}
+                    {` · ${item.dueNowCount} due`}
+                    {` · ${item.dueSoonCount} soon`}
+                    {` · ${item.newCardsCount} new`}
                   </Text>
                   <Text style={styles.statusBadge}>{statusLabel(item)}</Text>
                 </View>
