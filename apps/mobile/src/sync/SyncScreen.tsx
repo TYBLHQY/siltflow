@@ -76,7 +76,7 @@ export default function SyncScreen() {
     setStatus("Syncing…");
     setSyncResult("");
     try {
-      const result = await client.fullSync();
+      const result = await client.fullPull();
       // Reload stores
       useDocumentStore.getState().loadFromDb();
       useAnnotationStore.getState().loadFromDb();
