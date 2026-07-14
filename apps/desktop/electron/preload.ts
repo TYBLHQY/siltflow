@@ -34,6 +34,7 @@ export interface SiltflowAPI {
     delete: (id: string) => Promise<void>
     deleteBatch: (ids: string[]) => Promise<void>
     rename: (params: { id: string; title: string }) => Promise<void>
+    loadPdf: (id: string) => Promise<ArrayBuffer>
   }
   annotations: {
     list: (documentId: string) => Promise<any[]>
@@ -136,6 +137,7 @@ const api: SiltflowAPI = {
     delete: (id) => ipcRenderer.invoke('documents:delete', id),
     deleteBatch: (ids) => ipcRenderer.invoke('documents:deleteBatch', ids),
     rename: (params) => ipcRenderer.invoke('documents:rename', params),
+    loadPdf: (id) => ipcRenderer.invoke('documents:loadPdf', id),
   },
   annotations: {
     list: (documentId) => ipcRenderer.invoke('annotations:list', documentId),

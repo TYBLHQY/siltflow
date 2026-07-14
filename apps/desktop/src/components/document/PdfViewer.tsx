@@ -205,9 +205,40 @@ function SiltflowHighlightContainer({
 // ---------------------------------------------------------------------------
 
 interface PdfViewerProps {
-  src: string;
   documentId: string;
   className?: string;
+}
+
+/**
+ * Loads a PDF via IPC and passes the binary data directly to PdfLoader.
+ * This avoids Chromium's CORS restrictions on custom protocols.
+ */
+function usePdfData(documentId: string | undefined) {
+  const [data, setData] = useState<Uint8Array | null>(null);
+  const [error, setError] = useState<unknown>(null);
+
+  useEffect(() => {
+    if (!documentId) {
+      setData(null);
+      setError(null);
+      return;
+    }
+    let cancelled = false;
+    window.siltflow.documents.loadPdf(documentId).then((buf) => {
+      if (!cancelled) {
+        setData(new Uint8Array(buf));
+        setError(null);
+      }
+    }).catch((err) => {
+      if (!cancelled) {
+        setError(err);
+        setData(null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [documentId]);
+
+  return { data, error };
 }
 
 /**
@@ -264,7 +295,8 @@ function SelectionTip() {
   );
 }
 
-export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
+export function PdfViewer({ documentId, className }: PdfViewerProps) {
+  const { data: pdfData, error: pdfError } = usePdfData(documentId);
   const storeItems = useAnnotationStore((s) => s.items);
   const addItem = useAnnotationStore((s) => s.addItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
@@ -366,10 +398,31 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
     };
   }, [documentId, pdfDocumentCleanup, setScrollToHighlightCleanup]);
 
+  // ── After load failure or no data, render fallback ──
+  if (pdfError || !documentId) {
+    return (
+      <div className={className}>
+        <div className="flex items-center justify-center h-full text-destructive text-sm">
+          Failed to load PDF
+        </div>
+      </div>
+    );
+  }
+
+  if (!pdfData) {
+    return (
+      <div className={className}>
+        <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+          Loading PDF...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       <PdfLoader
-        document={src}
+        document={pdfData}
         beforeLoad={() => (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             Loading PDF...

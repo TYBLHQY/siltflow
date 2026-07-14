@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
@@ -18,10 +18,7 @@ import { registerFolderHandlers, setVaultPathForFolders } from './ipc/folders.ip
 import { registerReviewLogHandlers } from './ipc/review-logs.ipc'
 import { startSyncServer, stopSyncServer, getSyncStatus } from './sync/server'
 
-// Register siltflow:// as a privileged scheme BEFORE app.whenReady
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'siltflow', privileges: { standard: true, supportFetchAPI: true, bypassCSP: true } },
-])
+// ── Window Management ─────────────────────────────────────────────
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -118,7 +115,6 @@ function createWindow() {
     minHeight: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
-      webSecurity: false,
     },
   })
 
@@ -459,20 +455,6 @@ app.whenReady().then(async () => {
   if (vaultPath) {
     registerAllHandlers(vaultPath)
   }
-
-  // Register siltflow:// protocol → vault path
-  protocol.handle('siltflow', (request) => {
-    let relativePath = decodeURIComponent(request.url.slice('siltflow://'.length))
-    if (relativePath.startsWith('/')) relativePath = relativePath.slice(1)
-    const vault = getVaultPath()
-    if (!vault) return new Response('Vault not set', { status: 404 })
-    const fullPath = path.resolve(vault, relativePath)
-    return net.fetch(new URL(fullPath, 'file:///').href, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
-  })
 
   if (VITE_DEV_SERVER_URL) {
     await installDevTools()

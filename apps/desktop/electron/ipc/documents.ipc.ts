@@ -77,4 +77,10 @@ export function registerDocumentHandlers() {
     const now = new Date().toISOString()
     db.update(schema.documents).set({ totalPages, metadata, updatedAt: now }).where(eq(schema.documents.id, id)).run()
   })
+
+  ipcMain.handle("documents:loadPdf", async (_event, id: string) => {
+    if (!vaultPath) throw new Error("Vault not set")
+    const filePath = path.join(vaultPath, "documents", `${id}.pdf`)
+    return fs.readFileSync(filePath).buffer
+  })
 }

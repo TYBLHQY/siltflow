@@ -1823,7 +1823,6 @@ function ShortcutsContent() {
 }
 
 interface CenterPanelProps {
-  documentPath?: string | null;
   documentId?: string | null;
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
@@ -1832,7 +1831,6 @@ interface CenterPanelProps {
 }
 
 export function CenterPanel({
-  documentPath,
   documentId,
   leftCollapsed,
   rightCollapsed,
@@ -1963,7 +1961,6 @@ export function CenterPanel({
           </div>
           <PdfViewer
             className="h-full w-full"
-            src={documentPath!}
             documentId={documentId!}
           />
         </div>

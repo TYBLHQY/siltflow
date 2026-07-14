@@ -145,11 +145,6 @@ export function ThreeColumnLayout() {
 
         <Allotment.Pane minSize={400}>
           <CenterPanel
-            documentPath={
-              currentDocument?.id
-                ? `siltflow://documents/${currentDocument.id}.pdf`
-                : undefined
-            }
             documentId={currentDocument?.id}
             leftCollapsed={leftCollapsed}
             rightCollapsed={rightCollapsed}
