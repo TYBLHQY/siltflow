@@ -60,12 +60,11 @@ export default function DocumentListScreen() {
   }, []);
 
   function statusLabel(m: DocReviewMetrics): string {
-    if (m.dueNowCount > 0) return `🔴 ${m.dueNowCount} due`;
     if (m.compositeScore === -1) return "";
-    if (m.avgRetrievability >= 90) return "🟢 Fresh";
-    if (m.avgRetrievability >= 75) return "🟡 Good";
-    if (m.avgRetrievability >= 50) return "🟠 Aging";
-    return "🔴 Stale";
+    if (m.avgRetrievability >= 90) return "Fresh";
+    if (m.avgRetrievability >= 75) return "Good";
+    if (m.avgRetrievability >= 50) return "Aging";
+    return "Stale";
   }
 
   if (studyingDocId) {
@@ -102,11 +101,10 @@ export default function DocumentListScreen() {
                 <View style={styles.metaRow}>
                   <Text style={styles.docMeta}>
                     {item.totalCards} card{item.totalCards !== 1 ? "s" : ""}
-                    {item.newCardsCount > 0 ? ` · ${item.newCardsCount} new` : ""}
                     {item.dueNowCount > 0 ? ` · ${item.dueNowCount} due` : ""}
                     {item.dueSoonCount > 0 ? ` · ${item.dueSoonCount} soon` : ""}
+                    {item.newCardsCount > 0 ? ` · ${item.newCardsCount} new` : ""}
                   </Text>
-                  {status ? <Text style={styles.statusBadge}>{status}</Text> : null}
                 </View>
               </View>
               {item.totalCards > 0 && <Text style={styles.arrow}>→</Text>}
@@ -149,7 +147,6 @@ const styles = StyleSheet.create({
   docTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
   docMeta: { fontSize: 12, color: "#888", marginTop: 2 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 2, gap: 8 },
-  statusBadge: { fontSize: 12, fontWeight: "600" },
   arrow: { fontSize: 18, color: "#ccc", marginLeft: 8 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: "#999", textAlign: "center", lineHeight: 22 },
