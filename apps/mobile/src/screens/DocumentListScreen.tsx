@@ -31,10 +31,24 @@ export default function DocumentListScreen() {
       byDoc[doc.id] = { title: doc.title, cards: [] };
     }
     for (const item of items) {
-      if (item.fsrsCard && byDoc[item.documentId]) {
+      if (!byDoc[item.documentId]) continue;
+      if (item.fsrsCard) {
         byDoc[item.documentId].cards.push({
           ...item.fsrsCard,
           due: new Date(item.fsrsCard.due ?? Date.now()),
+        });
+      } else {
+        // No FSRS card yet = New card (annotated but not studied)
+        byDoc[item.documentId].cards.push({
+          state: 0, // State.New
+          due: new Date(0),
+          stability: 0,
+          difficulty: 0,
+          elapsed_days: 0,
+          scheduled_days: 0,
+          reps: 0,
+          lapses: 0,
+          last_review: null,
         });
       }
     }
