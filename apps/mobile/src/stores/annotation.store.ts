@@ -22,11 +22,13 @@ export interface AnnotationItem {
 
 interface AnnotationState {
   items: AnnotationItem[];
+  loaded: boolean;
   setItems: (items: AnnotationItem[]) => void;
   addItem: (item: AnnotationItem) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateItem: (id: string, patch: Partial<AnnotationItem>) => Promise<void>;
   clear: () => void;
+  loadFromDb: () => Promise<void>;
 }
 
 async function persistAnnotation(item: AnnotationItem) {
@@ -48,6 +50,9 @@ async function persistAnnotation(item: AnnotationItem) {
 
 export const useAnnotationStore = create<AnnotationState>((set) => ({
   items: [],
+  loaded: false,
+
+  setItems: (items) => set({ items }),
 
   setItems: (items) => set({ items }),
 
@@ -123,5 +128,30 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
     }));
   },
 
-  clear: () => set({ items: [] }),
+  clear: () => set({ items: [], loaded: false }),
+
+  loadFromDb: async () => {
+    const db = getDb();
+    const rows = await db.getAllAsync<any>(
+      `SELECT a.id, a.document_id AS documentId, a.type, a.text, a.page_number AS pageNumber, a.embed_data AS embedDataJson,
+              r.data AS aiResultJson, c.data AS fsrsCardJson
+       FROM annotations a
+       LEFT JOIN ai_results r ON r.annotation_id = a.id AND r.document_id = a.document_id
+       LEFT JOIN fsrs_cards c ON c.annotation_id = a.id AND c.document_id = a.document_id
+       ORDER BY a.created_at`,
+    );
+    const items: AnnotationItem[] = rows.map((r: any) => ({
+      id: r.id,
+      documentId: r.documentId,
+      type: r.type,
+      text: r.text ?? "",
+      pageNumber: r.pageNumber ?? 0,
+      embedData: (() => {
+        try { return JSON.parse(r.embedDataJson); } catch { return { position: {} }; }
+      })(),
+      aiResult: r.aiResultJson ? (() => { try { return JSON.parse(r.aiResultJson); } catch { return null; } })() : null,
+      fsrsCard: r.fsrsCardJson ? (() => { try { return JSON.parse(r.fsrsCardJson); } catch { return null; } })() : null,
+    }));
+    set({ items, loaded: true });
+  },
 }));

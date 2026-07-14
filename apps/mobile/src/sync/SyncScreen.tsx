@@ -79,7 +79,7 @@ export default function SyncScreen() {
       const result = await client.fullSync();
       // Reload stores
       useDocumentStore.getState().loadFromDb();
-      useAnnotationStore.getState().setItems([]);
+      useAnnotationStore.getState().loadFromDb();
 
       const parts: string[] = [];
       if (result.pull) {

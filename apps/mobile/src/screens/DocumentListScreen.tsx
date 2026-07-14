@@ -27,9 +27,12 @@ export default function DocumentListScreen() {
     if (!loaded) loadFromDb();
   }, []);
 
-  // Reload when screen comes into focus (e.g. after sync)
+  // Reload docs + annotations when screen comes into focus
   useEffect(() => {
-    if (isFocused && loaded) loadFromDb();
+    if (isFocused && loaded) {
+      loadFromDb();
+      useAnnotationStore.getState().loadFromDb();
+    }
   }, [isFocused]);
 
   const onRefresh = useCallback(async () => {
