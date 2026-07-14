@@ -12,6 +12,32 @@ import {
 import { generateConnectId, generateMuid, parseWsMessage, sendWsText } from "./utils.js";
 
 /**
+ * Get the global WebSocket constructor.
+ * - React Native / browsers: globalThis.WebSocket
+ * - Electron / Node: try globalThis first, then fallback to the ws package
+ *   loaded lazily from node_modules/ws
+ *
+ * The lazy fallback is a dynamic await import so it works in both
+ * ESM and CJS environments without needing @types/node.
+ */
+let _WS: { new(url: string): WebSocket } | undefined;
+
+async function getWS(wsImpl?: { new(url: string): WebSocket }): Promise<{ new(url: string): WebSocket }> {
+  if (wsImpl) return wsImpl;
+  if (_WS) return _WS;
+  if (typeof globalThis.WebSocket !== "undefined") {
+    _WS = globalThis.WebSocket;
+    return _WS;
+  }
+  // Node.js — dynamic import of the `ws` package
+  // The 'ws' package is a dependency so it's always available.
+  // We import it asynchronously to work in both ESM and CJS.
+  const { default: WsClass } = await import("./ws-shim.js");
+  _WS = WsClass as unknown as { new(url: string): WebSocket };
+  return _WS;
+}
+
+/**
  * Parse a text frame from Edge TTS.  Format:
  *   Key:Value\r\n
  *   Key:Value\r\n
@@ -136,15 +162,14 @@ function connectWs(
   wsImpl?: { new(url: string): WebSocket },
   timeoutMs = 10_000,
 ): Promise<WebSocket> {
-  const WS = wsImpl ?? globalThis.WebSocket;
-  if (!WS) {
-    return Promise.reject(
-      new Error(
-        "@siltflow/edge-tts: WebSocket not available. " +
-          "In Node.js < 21 / Electron, pass the `ws` package as `wsImpl` option.",
-      ),
-    );
-  }
+  return getWS(wsImpl).then((WS) => connectWithWS(url, WS, timeoutMs));
+}
+
+function connectWithWS(
+  url: string,
+  WS: { new(url: string): WebSocket },
+  timeoutMs: number,
+): Promise<WebSocket> {
   return new Promise<WebSocket>((resolve, reject) => {
     const ws = new WS(url);
     const timer = setTimeout(() => {
@@ -161,6 +186,8 @@ function connectWs(
     });
   });
 }
+
+/**
 
 /**
  * Edge TTS client.  Connects to Microsoft Edge's online TTS service

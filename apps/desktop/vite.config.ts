@@ -45,7 +45,12 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ['better-sqlite3', 'ws', 'bufferutil', 'utf-8-validate'],
+              external: [
+                'better-sqlite3',
+                'ws',
+                'bufferutil',
+                'utf-8-validate',
+              ],
             },
             minify: 'esbuild',
           },
