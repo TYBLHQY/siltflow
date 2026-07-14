@@ -5,6 +5,7 @@ import { useAIStore } from "../stores/ai.store";
 import { useFSRSStore } from "../stores/fsrs.store";
 import { useDocumentStore } from "../stores/document.store";
 import { useAnnotationStore } from "../stores/annotation.store";
+import { useStatsStore } from "../stores/stats.store";
 import { DROP_TABLES_SQL, CREATE_TABLES_SQL } from "../database/schema";
 import SyncScreen from "../sync/SyncScreen";
 
@@ -31,6 +32,7 @@ export default function SettingsScreen() {
               await db.execAsync(CREATE_TABLES_SQL);
               useDocumentStore.getState().setDocuments([]);
               useAnnotationStore.getState().setItems([]);
+              useStatsStore.setState({ loaded: false, loading: false, rawCards: [], rawReviewLogs: [], parsedCards: new Map(), dataVersion: 0 });
               Alert.alert("Done", "Data cleared. Go to Sync to re-sync.");
             } catch (err: any) {
               Alert.alert("Error", err.message);
