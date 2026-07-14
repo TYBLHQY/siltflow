@@ -135,17 +135,24 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
   getVoice: (language?: string) => {
     const { config } = get();
     if (config.provider === "mimo") return config.mimoVoice;
+
+    // 匹配顺序：先精确匹配，再取 ISO 639-1 前缀匹配
     if (language) {
-      // Extract ISO 639-1 from possible full locale (e.g. "en-US" or "zh-CN")
-      const langCode = language.split("-")[0];
-      // Try exact match first, then ISO 639-1 prefix
       if (config.perLanguageVoices[language]) {
         return config.perLanguageVoices[language];
       }
-      if (langCode && config.perLanguageVoices[langCode]) {
-        return config.perLanguageVoices[langCode];
+      const shortCode = language.split("-")[0];
+      if (shortCode && config.perLanguageVoices[shortCode]) {
+        return config.perLanguageVoices[shortCode];
       }
     }
+
+    // 如果没有 language 参数，也尝试用 defaultVoice 的 locale 前缀去匹配 perLanguageVoices
+    const defShortCode = config.defaultVoice?.split("-")[0];
+    if (defShortCode && config.perLanguageVoices[defShortCode]) {
+      return config.perLanguageVoices[defShortCode];
+    }
+
     return config.defaultVoice;
   },
 }));
