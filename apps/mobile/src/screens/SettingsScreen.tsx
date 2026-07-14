@@ -15,7 +15,7 @@ import SyncScreen from "../sync/SyncScreen";
 
 export default function SettingsScreen() {
   const profiles = useAIStore((s) => s.profiles);
-  const activeProfile = useAIStore((s) => s.activeProfile());
+  const activeProfile = useAIStore((s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null);
   const params = useFSRSStore((s) => s.params);
   const [showSync, setShowSync] = useState(false);
 
