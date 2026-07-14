@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'apps/mobile/pdf-viewer'
 onlyBuiltDependencies:
   - better-sqlite3
   - electron

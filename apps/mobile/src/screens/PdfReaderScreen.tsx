@@ -1,21 +1,16 @@
 /**
- * PDF Reader — renders PDF using WebView with base64 embedding.
- * PDFs are synced from desktop and stored in expo-file-system.
+ * PDF Reader — renders PDF with react-pdf-highlighter-plus inside a WebView.
+ *
+ * Communication:
+ *   RN  → WebView: postMessage({ type: "init", pdfBase64, annotations })
+ *   WebView → RN:  postMessage({ type: "highlight-click" | "text-selection" | ... })
  */
-import React, { useEffect, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-  FlatList,
-  Modal,
-} from "react-native";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import * as FileSystem from "expo-file-system/legacy";
-import { useAnnotationStore, type AnnotationItem } from "../stores/annotation.store";
+import { useAnnotationStore } from "../stores/annotation.store";
 
 interface Props {
   documentId: string;
@@ -24,80 +19,85 @@ interface Props {
   onClose: () => void;
 }
 
+// Load the inlined HTML from assets
+const PDF_VIEWER_HTML = require("../../assets/pdf-viewer/index.html") as string;
+
 export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }: Props) {
-  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
+  const webRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
-  const [showAnnotations, setShowAnnotations] = useState(false);
-  const [selectedAnnotation, setSelectedAnnotation] = useState<AnnotationItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const allItems = useAnnotationStore((s) => s.items);
-  const items = useMemo(
+  const annotations = useMemo(
     () => allItems.filter((i) => i.documentId === documentId),
     [allItems, documentId],
   );
 
-  // Load PDF as base64
+  // Load PDF as base64 and send to WebView
   useEffect(() => {
     (async () => {
       try {
         const info = await FileSystem.getInfoAsync(pdfPath);
         if (!info.exists) {
+          setError("PDF not found. Sync with desktop first.");
           setLoading(false);
           return;
         }
-        const base64 = await FileSystem.readAsStringAsync(pdfPath, {
+        const pdfBase64 = await FileSystem.readAsStringAsync(pdfPath, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        setPdfBase64(base64);
+
+        // Send init message to WebView once it's loaded
+        const initMsg = JSON.stringify({
+          type: "init",
+          pdfBase64,
+          documentId,
+          annotations: annotations.map((a) => ({
+            id: a.id,
+            text: a.text,
+            pageNumber: a.pageNumber,
+            position: a.embedData.position,
+          })),
+        });
+
+        // Wait a bit for WebView to render then send data
+        setTimeout(() => {
+          webRef.current?.postMessage(initMsg);
+        }, 500);
       } catch (err) {
         console.error("[PdfReader] failed to load PDF:", err);
+        setError("Failed to load PDF file.");
       } finally {
         setLoading(false);
       }
     })();
   }, [pdfPath]);
 
-  const html = pdfBase64
-    ? `<!DOCTYPE html><html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #525659; }
-    #viewer { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
-    .page { margin: 6px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-    canvas { display: block; width: 100% !important; height: auto !important; }
-    .loading { text-align: center; padding: 40px; color: #ccc; font-family: sans-serif; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div id="viewer"><div class="loading">Loading PDF…</div></div>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    var pdfData = atob("${pdfBase64}");
-    pdfjsLib.getDocument({ data: pdfData }).promise.then(function(pdf) {
-      document.getElementById('viewer').innerHTML = '';
-      for (var i = 1; i <= pdf.numPages; i++) {
-        (function(pageNum) {
-          pdf.getPage(pageNum).then(function(page) {
-            var scale = 1.5;
-            var viewport = page.getViewport({ scale: scale });
-            var canvas = document.createElement('canvas');
-            canvas.className = 'page';
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            document.getElementById('viewer').appendChild(canvas);
-            page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
-          });
-        })(i);
+  // Handle messages from WebView
+  const handleMessage = useCallback(
+    (event: any) => {
+      try {
+        const msg = JSON.parse(event.nativeEvent.data);
+        switch (msg.type) {
+          case "highlight-click":
+            // Highlight tapped — scroll to it / show detail
+            break;
+          case "text-selection":
+            // Text selected — could trigger annotation creation
+            break;
+          case "loaded":
+            // WebView ready — resend init if already loaded
+            break;
+          case "error":
+            console.warn("[PdfReader] WebView error:", msg.message);
+            break;
+        }
+      } catch {
+        // ignore malformed messages
       }
-    }).catch(function(err) {
-      document.getElementById('viewer').innerHTML = '<div class="loading">Failed to load PDF: ' + err.message + '</div>';
-    });
-  </script>
-</body></html>`
-    : undefined;
+    },
+    [],
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -109,10 +109,8 @@ export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }:
         <Text style={styles.headerTitle} numberOfLines={1}>
           {title}
         </Text>
-        <TouchableOpacity onPress={() => setShowAnnotations(true)}>
-          <Text style={styles.annoBtn}>
-            Notes ({items.length})
-          </Text>
+        <TouchableOpacity onPress={() => {}}>
+          <Text style={styles.annoBtn}>Notes ({annotations.length})</Text>
         </TouchableOpacity>
       </View>
 
@@ -122,95 +120,24 @@ export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }:
           <ActivityIndicator size="large" />
           <Text style={{ marginTop: 8 }}>Loading PDF…</Text>
         </View>
-      ) : html ? (
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text>{error}</Text>
+        </View>
+      ) : (
         <WebView
-          source={{ html }}
+          ref={webRef}
+          source={{ html: PDF_VIEWER_HTML }}
           style={{ flex: 1, backgroundColor: "#525659" }}
           originWhitelist={["*"]}
           javaScriptEnabled={true}
+          onMessage={handleMessage}
+          onError={() => setError("WebView failed to load")}
           allowFileAccess={true}
           allowUniversalAccessFromFileURLs={true}
           mixedContentMode="always"
         />
-      ) : (
-        <View style={styles.centered}>
-          <Text>PDF not found. Sync with desktop first.</Text>
-        </View>
       )}
-
-      {/* Annotations Sidebar Modal */}
-      <Modal visible={showAnnotations} animationType="slide" transparent>
-        <View style={styles.sidebarOverlay}>
-          <View style={styles.sidebar}>
-            <View style={styles.sidebarHeader}>
-              <Text style={styles.sidebarTitle}>Annotations</Text>
-              <TouchableOpacity onPress={() => setShowAnnotations(false)}>
-                <Text style={styles.closeBtn}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={items}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.annotationCard}
-                  onPress={() => setSelectedAnnotation(item)}
-                >
-                  <Text style={styles.annoText} numberOfLines={2}>
-                    {item.text}
-                  </Text>
-                  {item.aiResult && (
-                    <Text style={styles.annoTranslation} numberOfLines={2}>
-                      {item.aiResult.translation}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>No annotations yet.</Text>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
-
-      {/* Annotation Detail Modal */}
-      <Modal visible={!!selectedAnnotation} animationType="fade" transparent>
-        <View style={styles.detailOverlay}>
-          <View style={styles.detailCard}>
-            {selectedAnnotation && (
-              <>
-                <Text style={styles.detailTitle}>Selected Text</Text>
-                <Text style={styles.detailText}>{selectedAnnotation.text}</Text>
-                {selectedAnnotation.aiResult && (
-                  <>
-                    <Text style={styles.detailTitle}>Translation</Text>
-                    <Text style={styles.detailTranslation}>
-                      {selectedAnnotation.aiResult.translation}
-                    </Text>
-                    {selectedAnnotation.aiResult.definitions?.length > 0 && (
-                      <>
-                        <Text style={styles.detailTitle}>Definitions</Text>
-                        {selectedAnnotation.aiResult.definitions.map((d, i) => (
-                          <Text key={i} style={styles.defLine}>
-                            {d.pos ? `(${d.pos}) ` : ""}{d.definition}
-                          </Text>
-                        ))}
-                      </>
-                    )}
-                  </>
-                )}
-                <TouchableOpacity
-                  style={styles.closeDetailBtn}
-                  onPress={() => setSelectedAnnotation(null)}
-                >
-                  <Text style={styles.closeDetailText}>Close</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -228,68 +155,5 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: 16, color: "#4a90d9", marginRight: 12 },
   headerTitle: { flex: 1, fontSize: 16, fontWeight: "700" },
   annoBtn: { fontSize: 14, color: "#4a90d9" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
-  // Sidebar
-  sidebarOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "flex-end",
-  },
-  sidebar: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: "60%",
-    paddingBottom: 20,
-  },
-  sidebarHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-  },
-  sidebarTitle: { fontSize: 18, fontWeight: "700" },
-  closeBtn: { fontSize: 20, color: "#999" },
-  annotationCard: {
-    padding: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#eee",
-  },
-  annoText: { fontSize: 14, fontWeight: "600", color: "#333" },
-  annoTranslation: { fontSize: 13, color: "#666", marginTop: 4 },
-  emptyText: { padding: 20, textAlign: "center", color: "#999" },
-  // Detail
-  detailOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  detailCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 20,
-    maxHeight: "70%",
-  },
-  detailTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#888",
-    textTransform: "uppercase",
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  detailText: { fontSize: 16, color: "#333", lineHeight: 22 },
-  detailTranslation: { fontSize: 15, color: "#555", lineHeight: 20 },
-  defLine: { fontSize: 14, color: "#444", lineHeight: 20, marginLeft: 8 },
-  closeDetailBtn: {
-    marginTop: 16,
-    paddingVertical: 10,
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-  },
-  closeDetailText: { fontSize: 15, color: "#333", fontWeight: "600" },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
 });
