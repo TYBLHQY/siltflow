@@ -71,17 +71,6 @@ function handleDocuments(res: http.ServerResponse) {
   json(res, rows)
 }
 
-function handleFolders(res: http.ServerResponse) {
-  const sql = getSqlite()
-  if (!sql) return error(res, "no database")
-  const rows = sql
-    .prepare(
-      "SELECT id, name, parent_id, sort_order, created_at, updated_at FROM folders ORDER BY sort_order, name",
-    )
-    .all()
-  json(res, rows)
-}
-
 function handleAnnotations(
   res: http.ServerResponse,
   url: URL,
@@ -302,11 +291,6 @@ function handleRequest(
   // GET /api/documents
   if (req.method === "GET" && parts[0] === "api" && parts[1] === "documents" && !parts[2]) {
     return handleDocuments(res)
-  }
-
-  // GET /api/folders
-  if (req.method === "GET" && parts[0] === "api" && parts[1] === "folders") {
-    return handleFolders(res)
   }
 
   // GET /api/annotations

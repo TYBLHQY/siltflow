@@ -41,20 +41,8 @@ export class SyncClient {
     const counts: Record<string, number> = {};
 
     // Temporarily disable FK constraints during bulk sync.
-    // Data comes from a consistent desktop source; ordering may not be perfect.
     try {
     await db.execAsync("PRAGMA foreign_keys = OFF");
-
-    // Folders
-    const folders = await this.fetchJson<any[]>("/api/folders");
-    for (const f of folders) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO folders (id, name, parent_id, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        f.id, f.name, f.parent_id, f.sort_order, f.created_at, f.updated_at,
-      );
-    }
-    counts.folders = folders.length;
 
     // Documents
     const docs = await this.fetchJson<any[]>("/api/documents");
