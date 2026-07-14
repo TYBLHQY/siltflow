@@ -41,6 +41,11 @@ export class SyncClient {
     const db = getDb();
     const counts: Record<string, number> = {};
 
+    // Temporarily disable FK constraints during bulk sync.
+    // Data comes from a consistent desktop source; ordering may not be perfect.
+    try {
+    await db.execAsync("PRAGMA foreign_keys = OFF");
+
     // Folders
     const folders = await this.fetchJson<any[]>("/api/folders");
     for (const f of folders) {
@@ -128,6 +133,9 @@ export class SyncClient {
     counts.summaries = summaries.length;
 
     return counts;
+  } finally {
+      await db.execAsync("PRAGMA foreign_keys = ON");
+    }
   }
 
   // ====================================================================
