@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { configGetAll, configSet } from "../config";
 
 interface AppSettingsState {
   loaded: boolean;
@@ -7,31 +6,32 @@ interface AppSettingsState {
   setCheckUpdateOnStartup: (v: boolean) => void;
 }
 
-const STORAGE_KEY = "appSettings";
+const STORAGE_KEY = "app_settings";
 
 export const useAppSettingsStore = create<AppSettingsState>()((set) => ({
   loaded: false,
-  checkUpdateOnStartup: true,
+  checkUpdateOnStartup: false,
 
-  setCheckUpdateOnStartup: (v) => {
+  setCheckUpdateOnStartup: async (v) => {
     set({ checkUpdateOnStartup: v });
-    configSet({ [STORAGE_KEY]: { checkUpdateOnStartup: v } });
+    const { configSet } = await import("../config");
+    await configSet(STORAGE_KEY, JSON.stringify({ checkUpdateOnStartup: v }));
   },
 }));
 
 export async function loadAppSettingsFromConfig() {
   try {
+    const { configGetAll } = await import("../config");
     const cfg = await configGetAll();
-    const saved = cfg[STORAGE_KEY] as Partial<AppSettingsState> | undefined;
-    if (saved && typeof saved === "object") {
+    const saved = cfg[STORAGE_KEY];
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<AppSettingsState>;
       const patch: Partial<AppSettingsState> = {};
-      if (typeof saved.checkUpdateOnStartup === "boolean")
-        patch.checkUpdateOnStartup = saved.checkUpdateOnStartup;
+      if (typeof parsed.checkUpdateOnStartup === "boolean")
+        patch.checkUpdateOnStartup = parsed.checkUpdateOnStartup;
       useAppSettingsStore.setState({ ...patch, loaded: true });
       return;
     }
-  } catch {
-    // ignore
-  }
+  } catch { /* ignore */ }
   useAppSettingsStore.setState({ loaded: true });
 }

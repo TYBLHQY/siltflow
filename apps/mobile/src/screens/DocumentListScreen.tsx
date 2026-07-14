@@ -1,169 +1,133 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { useIsFocused } from "@react-navigation/native";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  Modal,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useDocumentStore } from "../stores/document.store";
-import { useAnnotationStore } from "../stores/annotation.store";
-import { computeDocMetrics, type DocReviewMetrics } from "@siltflow/shared/fsrs";
-import StudyScreen from "./StudyScreen";
+import { useEffect, useState } from "react";
+import { useDocumentStore, type DocumentItem } from "../stores/document.store";
+import { useFolderStore, type FolderItem } from "../stores/folder.store";
 
 export default function DocumentListScreen() {
   const documents = useDocumentStore((s) => s.documents);
+  const loading = useDocumentStore((s) => s.loading);
   const loaded = useDocumentStore((s) => s.loaded);
-  const loadFromDb = useDocumentStore.getState().loadFromDb;
-  const items = useAnnotationStore((s) => s.items);
-  const [refreshing, setRefreshing] = useState(false);
-  const [studyingDocId, setStudyingDocId] = useState<string | null>(null);
-  const isFocused = useIsFocused();
+  const loadFromDb = useDocumentStore((s) => s.loadFromDb);
+  const folders = useFolderStore((s) => s.folders);
+  const loadFolders = useFolderStore((s) => s.loadFolders);
 
-  // Cards per document with FSRS metrics
-  const docMetrics = useMemo(() => {
-    const byDoc: Record<string, { title: string; cards: any[] }> = {};
-    for (const doc of documents) {
-      byDoc[doc.id] = { title: doc.title, cards: [] };
-    }
-    for (const item of items) {
-      if (!byDoc[item.documentId]) continue;
-      if (item.fsrsCard) {
-        byDoc[item.documentId].cards.push({
-          ...item.fsrsCard,
-          due: new Date(item.fsrsCard.due ?? Date.now()),
-        });
-      } else {
-        // No FSRS card yet = New card (annotated but not studied)
-        byDoc[item.documentId].cards.push({
-          state: 0, // State.New
-          due: new Date(0),
-          stability: 0,
-          difficulty: 0,
-          elapsed_days: 0,
-          scheduled_days: 0,
-          reps: 0,
-          lapses: 0,
-          last_review: null,
-        });
-      }
-    }
-    return computeDocMetrics(byDoc);
-  }, [documents, items]);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loaded) loadFromDb();
-  }, []);
+    loadFolders();
+  }, [loaded, loadFromDb, loadFolders]);
 
-  // Reload docs + annotations when screen comes into focus
-  useEffect(() => {
-    if (isFocused && loaded) {
-      loadFromDb();
-      useAnnotationStore.getState().loadFromDb();
-    }
-  }, [isFocused]);
+  const toggleFolder = (id: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadFromDb();
-    setRefreshing(false);
-  }, []);
+  const rootDocs = documents.filter((d) => !d.folderId);
+  const rootFolders = folders.filter((f) => !f.parentId);
 
-  function statusLabel(m: DocReviewMetrics): string {
-    if (m.compositeScore === -1) return "";
-    if (m.avgRetrievability >= 90) return "Fresh";
-    if (m.avgRetrievability >= 75) return "Good";
-    if (m.avgRetrievability >= 50) return "Aging";
-    return "Stale";
+  if (loading && !loaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin size-6 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
-  if (studyingDocId) {
+  if (!loading && loaded && documents.length === 0) {
     return (
-      <StudyScreen
-        documentId={studyingDocId}
-        onBack={() => setStudyingDocId(null)}
-      />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <FileText className="size-12 text-muted-foreground/40 mb-3" />
+        <p className="text-muted-foreground text-sm">No documents yet</p>
+        <p className="text-xs text-muted-foreground mt-1">Sync from desktop to get started</p>
+      </div>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Study</Text>
-      </View>
+    <div className="px-4 pt-4 pb-16">
+      <h1 className="text-lg font-semibold text-foreground mb-4">Documents</h1>
 
-      <FlatList
-        data={docMetrics.filter((m) => m.totalCards > 0)}
-        keyExtractor={(item) => item.documentId}
-        renderItem={({ item }) => {
-          const status = statusLabel(item);
-          return (
-            <TouchableOpacity
-              style={styles.docRow}
-              onPress={() => item.totalCards > 0 && setStudyingDocId(item.documentId)}
-              disabled={item.totalCards === 0}
-            >
-              <Text style={styles.docIcon}>📄</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.docTitle} numberOfLines={1}>
-                  {item.documentTitle}
-                </Text>
-                <View style={styles.metaRow}>
-                  <Text style={styles.docMeta}>
-                    {item.totalCards} card{item.totalCards !== 1 ? "s" : ""}
-                    {` · ${item.dueNowCount} due`}
-                    {` · ${item.dueSoonCount} soon`}
-                    {` · ${item.newCardsCount} new`}
-                  </Text>
-                  <Text style={styles.statusBadge}>{statusLabel(item)}</Text>
-                </View>
-              </View>
-              {item.totalCards > 0 && <Text style={styles.arrow}>→</Text>}
-            </TouchableOpacity>
-          );
-        }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              No documents yet.{ "\n"}Sync from desktop to get started.
-            </Text>
-          </View>
-        }
-      />
-    </SafeAreaView>
+      <div className="space-y-1">
+        {rootFolders.map((folder) => (
+          <FolderRow
+            key={folder.id}
+            folder={folder}
+            documents={documents}
+            folders={folders}
+            expanded={expandedFolders.has(folder.id)}
+            onToggle={() => toggleFolder(folder.id)}
+            depth={0}
+          />
+        ))}
+
+        {rootDocs.map((doc) => (
+          <DocumentRow key={doc.id} doc={doc} />
+        ))}
+      </div>
+    </div>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "#e5e5e5",
-  },
-  headerTitle: { fontSize: 22, fontWeight: "700" },
-  docRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#eee",
-  },
-  docIcon: { fontSize: 18, marginRight: 12 },
-  docTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
-  docMeta: { fontSize: 12, color: "#888", marginTop: 2 },
-  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 2, gap: 8 },
-  statusBadge: { fontSize: 12, fontWeight: "600", color: "#888" },
-  arrow: { fontSize: 18, color: "#ccc", marginLeft: 8 },
-  empty: { padding: 40, alignItems: "center" },
-  emptyText: { fontSize: 15, color: "#999", textAlign: "center", lineHeight: 22 },
-});
+function FolderRow({
+  folder, documents, folders, expanded, onToggle, depth,
+}: {
+  folder: FolderItem;
+  documents: DocumentItem[];
+  folders: FolderItem[];
+  expanded: boolean;
+  onToggle: () => void;
+  depth: number;
+}) {
+  const childFolders = folders.filter((f) => f.parentId === folder.id);
+  const childDocs = documents.filter((d) => d.folderId === folder.id);
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition-colors"
+        style={{ paddingLeft: `${12 + depth * 16}px` }}
+      >
+        <span className="text-xs text-muted-foreground transition-transform">
+          {expanded ? "▼" : "▶"}
+        </span>
+        <span>{folder.name}</span>
+        <span className="text-xs text-muted-foreground ml-auto">{childDocs.length}</span>
+      </button>
+
+      {expanded && (
+        <div>
+          {childFolders.map((cf) => (
+            <FolderRow key={cf.id} folder={cf} documents={documents} folders={folders} expanded={false} onToggle={() => {}} depth={depth + 1} />
+          ))}
+          {childDocs.map((doc) => (<DocumentRow key={doc.id} doc={doc} depth={depth + 1} />))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocumentRow({ doc, depth = 0 }: { doc: DocumentItem; depth?: number }) {
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer"
+      style={{ paddingLeft: `${12 + depth * 16}px` }}
+    >
+      <FileText className="size-4 text-muted-foreground shrink-0" />
+      <span className="truncate">{doc.title}</span>
+    </div>
+  );
+}
+
+function FileText({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  );
+}

@@ -1,154 +1,84 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useIsFocused } from "@react-navigation/native";
+import { useEffect, useState } from "react";
 import { useStatsStore } from "../stores/stats.store";
-import { computeOverviewStats, computeDailyReviews } from "@siltflow/shared/fsrs";
+import { BarChart3 } from "lucide-react";
 
 export default function StatsScreen() {
   const loaded = useStatsStore((s) => s.loaded);
   const loading = useStatsStore((s) => s.loading);
+  const error = useStatsStore((s) => s.error);
+  const rawCards = useStatsStore((s) => s.rawCards);
   const rawReviewLogs = useStatsStore((s) => s.rawReviewLogs);
-  const parsedCards = useStatsStore((s) => s.parsedCards);
-  const loadAllData = useStatsStore.getState().loadAllData;
-  const isFocused = useIsFocused();
-  const [refreshing, setRefreshing] = useState(false);
+  const loadAllData = useStatsStore((s) => s.loadAllData);
 
   useEffect(() => {
     if (!loaded) loadAllData();
-  }, []);
+  }, [loaded, loadAllData]);
 
-  // Reload when tab focused (e.g. after sync or reset)
-  useEffect(() => {
-    if (isFocused && loaded) loadAllData();
-  }, [isFocused]);
+  if (loading && !loaded) {
+    return (
+      <div className="p-4">
+        <h1 className="text-lg font-semibold text-foreground mb-4">Statistics</h1>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin size-6 border-2 border-primary border-t-transparent rounded-full" />
+        </div>
+      </div>
+    );
+  }
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadAllData();
-    setRefreshing(false);
-  };
+  if (error) {
+    return (
+      <div className="p-4">
+        <h1 className="text-lg font-semibold text-foreground mb-4">Statistics</h1>
+        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
-  const overview = loaded
-    ? computeOverviewStats(
-        Array.from(parsedCards.values()),
-        rawReviewLogs.map((r) => ({ data: r.data })),
-      )
-    : null;
-
-  const daily = loaded
-    ? computeDailyReviews(
-        rawReviewLogs.map((r) => ({ createdAt: r.createdAt, data: r.data })),
-        7,
-      )
-    : [];
+  // Compute basic stats
+  const totalCards = rawCards.length;
+  const totalReviews = rawReviewLogs.length;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Statistics</Text>
-      </View>
+    <div className="p-4 pb-2">
+      <h1 className="text-lg font-semibold text-foreground mb-4">Statistics</h1>
 
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={styles.scroll}
-      >
-        {overview ? (
-          <>
-            <View style={styles.grid}>
-              <StatCard label="Total Cards" value={overview.total.toString()} />
-              <StatCard label="Due Today" value={overview.dueToday.toString()} />
-              <StatCard label="Learning" value={overview.learning.toString()} />
-              <StatCard label="Review" value={overview.review.toString()} />
-            </View>
-            <View style={styles.grid}>
-              <StatCard
-                label="Avg Stability"
-                value={`${overview.avgStability.toFixed(1)}d`}
-              />
-              <StatCard
-                label="Avg Difficulty"
-                value={overview.avgDifficulty.toFixed(2)}
-              />
-              <StatCard
-                label="Avg Retrievability"
-                value={`${(overview.avgRetrievability * 100).toFixed(0)}%`}
-              />
-            </View>
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard label="Total Cards" value={totalCards} />
+        <StatCard label="Total Reviews" value={totalReviews} />
+        <StatCard label="Cards Studying" value={rawCards.filter((c) => {
+          try {
+            const card = JSON.parse(c.data);
+            return card.state === 2 || card.state === 1;
+          } catch { return false; }
+        }).length} />
+        <StatCard label="Cards Learned" value={rawCards.filter((c) => {
+          try {
+            const card = JSON.parse(c.data);
+            return card.state === 3;
+          } catch { return false; }
+        }).length} />
+      </div>
 
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
-            {daily.length > 0 ? (
-              daily.map((d) => (
-                <View key={d.date} style={styles.dailyRow}>
-                  <Text style={styles.dailyDate}>{d.date}</Text>
-                  <Text style={styles.dailyCount}>
-                    {d.count} review{d.count !== 1 ? "s" : ""}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.hint}>No reviews yet.</Text>
-            )}
-          </>
-        ) : (
-          <Text style={styles.hint}>Loading statistics…</Text>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      {totalCards === 0 && (
+        <div className="text-center py-8 mt-4">
+          <BarChart3 className="size-12 mx-auto text-muted-foreground/40 mb-3" />
+          <p className="text-muted-foreground">No data yet</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Study some cards to see statistics
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground mt-1">{label}</p>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "#e5e5e5",
-  },
-  headerTitle: { fontSize: 22, fontWeight: "700" },
-  scroll: { padding: 16 },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 16,
-    gap: 8,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: "30%",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-  },
-  statValue: { fontSize: 22, fontWeight: "700", color: "#333" },
-  statLabel: { fontSize: 12, color: "#888", marginTop: 2 },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  dailyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#eee",
-  },
-  dailyDate: { fontSize: 14, color: "#555" },
-  dailyCount: { fontSize: 14, color: "#333", fontWeight: "600" },
-  hint: { fontSize: 14, color: "#999", textAlign: "center", marginTop: 20 },
-});

@@ -1,9 +1,4 @@
 import { create } from "zustand";
-import { getDb, nowISO } from "../database";
-
-// ---------------------------------------------------------------------------
-// Types (matching desktop store)
-// ---------------------------------------------------------------------------
 
 export interface ReviewLogEntry {
   id: string;
@@ -46,7 +41,11 @@ interface ReviewLogStoreState {
   activeHistoryId: string | null;
   setActiveHistoryId: (id: string | null) => void;
   load: (annotationId: string, documentId: string) => Promise<void>;
-  add: (annotationId: string, documentId: string, data: ReviewLogSaveRequest) => Promise<void>;
+  add: (
+    annotationId: string,
+    documentId: string,
+    data: ReviewLogSaveRequest,
+  ) => Promise<void>;
   clearAnnotation: (annotationId: string) => void;
 }
 
@@ -57,24 +56,38 @@ export const useReviewLogStore = create<ReviewLogStoreState>((set) => ({
   setActiveHistoryId: (id) => set({ activeHistoryId: id }),
 
   load: async (annotationId, documentId) => {
-    const db = getDb();
-    const rows = await db.getAllAsync<any>(
-      "SELECT id, annotation_id AS annotationId, document_id AS documentId, data, created_at AS createdAt FROM review_logs WHERE annotation_id = ? AND document_id = ? ORDER BY created_at DESC",
-      annotationId,
-      documentId,
+    const { executeSql } = await import("../database");
+    const rows = await executeSql(
+      "SELECT * FROM review_logs WHERE annotation_id = ? AND document_id = ? ORDER BY created_at DESC",
+      [annotationId, documentId],
     );
-    set((s) => ({ logs: { ...s.logs, [annotationId]: rows || [] } }));
+    const entries: ReviewLogEntry[] = rows.map((r: any) => ({
+      id: r.id,
+      annotationId: r.annotation_id,
+      documentId: r.document_id,
+      data: r.data,
+      createdAt: r.created_at,
+    }));
+    set((s) => ({
+      logs: { ...s.logs, [annotationId]: entries },
+    }));
   },
 
   add: async (annotationId, documentId, data) => {
-    const db = getDb();
-    const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const now = nowISO();
-    await db.runAsync(
+    const { runSql } = await import("../database");
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await runSql(
       "INSERT INTO review_logs (id, annotation_id, document_id, data, created_at) VALUES (?, ?, ?, ?, ?)",
-      id, annotationId, documentId, JSON.stringify(data), now,
+      [id, annotationId, documentId, JSON.stringify(data), now],
     );
-    const entry: ReviewLogEntry = { id, annotationId, documentId, data: JSON.stringify(data), createdAt: now };
+    const entry: ReviewLogEntry = {
+      id,
+      annotationId,
+      documentId,
+      data: JSON.stringify(data),
+      createdAt: now,
+    };
     set((s) => ({
       logs: {
         ...s.logs,

@@ -1,203 +1,137 @@
-/**
- * Sync configuration and control screen.
- */
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { SyncClient } from "./client";
 import { configGetAll, configSet } from "../config";
-import { useDocumentStore } from "../stores/document.store";
-import { useAnnotationStore } from "../stores/annotation.store";
 
 const CONFIG_KEY = "syncAddress";
+
+interface SyncCounts {
+  documents?: number;
+  annotations?: number;
+  aiResults?: number;
+  fsrsCards?: number;
+  reviewLogs?: number;
+  summaries?: number;
+}
 
 export default function SyncScreen() {
   const [host, setHost] = useState("");
   const [port, setPort] = useState("53891");
-  const [status, setStatus] = useState<string>("");
-  const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [client, setClient] = useState<SyncClient | null>(null);
-  const [syncResult, setSyncResult] = useState<string>("");
+  const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [result, setResult] = useState<{ pull?: SyncCounts; push?: { pushed: number } } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Restore saved address
+  // Load previously saved address
   useEffect(() => {
     (async () => {
-      const cfg = await configGetAll();
-      const saved = cfg[CONFIG_KEY] as { host?: string; port?: string } | undefined;
-      if (saved?.host) setHost(saved.host);
-      if (saved?.port) setPort(saved.port);
+      const config = await configGetAll();
+      const saved = config[CONFIG_KEY];
+      if (saved) {
+        const [h, p] = saved.split(":");
+        setHost(h);
+        if (p) setPort(p);
+      }
     })();
   }, []);
 
-  const persist = useCallback((h: string, p: string) => {
-    configSet({ [CONFIG_KEY]: { host: h, port: p } });
-  }, []);
-
   const handleConnect = useCallback(async () => {
-    if (!host.trim()) {
-      Alert.alert("Error", "Please enter the desktop IP address");
-      return;
+    setConnecting(true);
+    setError(null);
+    const client = new SyncClient(host, parseInt(port, 10));
+    const ok = await client.checkConnection();
+    setConnected(ok);
+    if (!ok) {
+      setError("Could not connect to server. Check the host/port and ensure the desktop sync is running.");
+    } else {
+      await configSet(CONFIG_KEY, `${host}:${port}`);
     }
-    setLoading(true);
-    setStatus("Connecting…");
-    setSyncResult("");
-    persist(host.trim(), port);
-    try {
-      const c = new SyncClient(host.trim(), parseInt(port, 10) || 53891);
-      const ok = await c.checkConnection();
-      if (ok) {
-        const state = await c.getServerState();
-        setClient(c);
-        setConnected(true);
-        setStatus(`Connected!`);
-      } else {
-        setStatus("Connection failed — check IP and port");
-      }
-    } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }, [host, port, persist]);
+    setConnecting(false);
+  }, [host, port]);
 
   const handleSync = useCallback(async () => {
-    if (!client) return;
-    setLoading(true);
-    setStatus("Syncing…");
-    setSyncResult("");
+    setSyncing(true);
+    setError(null);
+    setResult(null);
+    const client = new SyncClient(host, parseInt(port, 10));
     try {
-      const result = await client.fullPull();
-      // Reload stores
-      useDocumentStore.getState().loadFromDb();
-      useAnnotationStore.getState().loadFromDb();
-
-      const parts: string[] = [];
-      if (result.pull) {
-        for (const [k, v] of Object.entries(result.pull)) {
-          parts.push(`${k}: ${v}`);
-        }
-      }
-      setConnected(false);
-      setClient(null);
-      setSyncResult(`Sync complete!\n\nDownloaded:\n${parts.join("\n")}`);
-      setStatus("");
-      Alert.alert("Sync Complete", parts.join("\n"));
+      const res = await client.fullSync();
+      setResult(res);
     } catch (err: any) {
-      setStatus(`Sync error: ${err.message}`);
-    } finally {
-      setLoading(false);
+      setError(err?.message ?? "Sync failed");
     }
-  }, [client]);
-
-  const handleDisconnect = useCallback(() => {
-    setClient(null);
-    setConnected(false);
-    setStatus("Disconnected");
-    setSyncResult("");
-  }, []);
+    setSyncing(false);
+  }, [host, port]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} scrollEnabled={false}>
-        {!connected ? (
-          <>
-            <Text style={styles.label}>Desktop IP Address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 192.168.1.100"
-              value={host}
-              onChangeText={setHost}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="decimal-pad"
-            />
-            <Text style={styles.label}>Port</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="53891"
-              value={port}
-              onChangeText={setPort}
-              keyboardType="number-pad"
-            />
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: "#4a90d9" }]}
-              onPress={handleConnect}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.btnText}>Connect</Text>
-              )}
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <View style={styles.connectedBanner}>
-              <Text style={styles.connectedIcon}>✅</Text>
-              <Text style={styles.connectedText}>
-                Connected to {host}:{port}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: "#4caf50" }]}
-              onPress={handleSync}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.btnText}>Start Sync</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: "#e74c3c", marginTop: 8 }]}
-              onPress={handleDisconnect}
-              disabled={loading}
-            >
-              <Text style={styles.btnText}>Disconnect</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        {status ? <Text style={styles.status}>{status}</Text> : null}
-        {syncResult ? (
-          <View style={styles.resultBox}>
-            <Text style={styles.resultText}>{syncResult}</Text>
-          </View>
-        ) : null}
-      </ScrollView>
-    </SafeAreaView>
+    <div className="p-4 space-y-4">
+      <h2 className="text-lg font-semibold text-foreground">Sync with Desktop</h2>
+
+      {/* Server address */}
+      <div className="space-y-2">
+        <label className="text-sm text-muted-foreground">Desktop IP address</label>
+        <input
+          className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
+          placeholder="e.g. 192.168.1.100"
+          value={host}
+          onChange={(e) => setHost(e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm text-muted-foreground">Port</label>
+        <input
+          className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm"
+          placeholder="53891"
+          value={port}
+          onChange={(e) => setPort(e.target.value)}
+        />
+      </div>
+
+      <button
+        onClick={handleConnect}
+        disabled={connecting || !host}
+        className="w-full py-2 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-50"
+      >
+        {connecting ? "Connecting…" : connected ? "✓ Connected" : "Connect"}
+      </button>
+
+      {connected && (
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="w-full py-2 rounded-md bg-secondary text-secondary-foreground font-medium disabled:opacity-50"
+        >
+          {syncing ? "Syncing…" : "Start Sync"}
+        </button>
+      )}
+
+      {error && (
+        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          {error}
+        </div>
+      )}
+
+      {result && (
+        <div className="space-y-2 p-3 rounded-md bg-muted/50 text-sm text-foreground">
+          <h3 className="font-medium">Sync Complete</h3>
+          {result.pull && (
+            <div>
+              <p className="text-muted-foreground mb-1">Pulled from desktop:</p>
+              <ul className="space-y-0.5 pl-4 list-disc">
+                {Object.entries(result.pull).map(([key, val]) => (
+                  <li key={key}>{key}: {val}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {result.push && (
+            <p className="text-muted-foreground">
+              Pushed to desktop: {result.push.pushed} items
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  scroll: { padding: 16 },
-  label: { fontSize: 14, fontWeight: "600", color: "#555", marginBottom: 4, marginTop: 12 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 12, fontSize: 16 },
-  btn: { paddingVertical: 14, borderRadius: 10, alignItems: "center", marginTop: 16 },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  connectedBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#e8f5e9",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  connectedIcon: { fontSize: 20, marginRight: 10 },
-  connectedText: { fontSize: 15, fontWeight: "600", color: "#2e7d32" },
-  status: { fontSize: 14, color: "#666", marginTop: 12, textAlign: "center" },
-  resultBox: { backgroundColor: "#f0f4ff", padding: 16, borderRadius: 10, marginTop: 12 },
-  resultText: { fontSize: 13, color: "#333", lineHeight: 20 },
-});

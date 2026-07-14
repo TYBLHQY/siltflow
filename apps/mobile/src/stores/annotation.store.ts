@@ -1,12 +1,11 @@
 import { create } from "zustand";
-import { getDb, nowISO } from "../database";
+import { useReviewLogStore } from "./review-log.store";
 import type { AIAnnotationData } from "@siltflow/shared/types";
 import type { Card } from "ts-fsrs";
-import { useReviewLogStore } from "./review-log.store";
 
 export interface AnnotationEmbedData {
-  position: any;
-  content?: any;
+  position: { boundingRect: any; rects: any[]; pageNumber: number };
+  content?: { text?: string };
 }
 
 export interface AnnotationItem {
@@ -22,136 +21,72 @@ export interface AnnotationItem {
 
 interface AnnotationState {
   items: AnnotationItem[];
-  loaded: boolean;
   setItems: (items: AnnotationItem[]) => void;
-  addItem: (item: AnnotationItem) => Promise<void>;
-  removeItem: (id: string) => Promise<void>;
-  updateItem: (id: string, patch: Partial<AnnotationItem>) => Promise<void>;
+  addItem: (item: AnnotationItem) => void;
+  removeItem: (id: string) => void;
+  updateItem: (id: string, patch: Partial<AnnotationItem>) => void;
   clear: () => void;
-  loadFromDb: () => Promise<void>;
 }
 
 async function persistAnnotation(item: AnnotationItem) {
-  const db = getDb();
-  const now = nowISO();
-  await db.runAsync(
+  const { runSql } = await import("../database");
+  const now = new Date().toISOString();
+  await runSql(
     `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    item.id,
-    item.documentId,
-    item.type,
-    item.text ?? "",
-    item.pageNumber ?? 0,
-    JSON.stringify(item.embedData),
-    now,
-    now,
+     VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM annotations WHERE id = ? AND document_id = ?), ?), ?)`,
+    [
+      item.id, item.documentId, item.type, item.text, item.pageNumber,
+      JSON.stringify(item.embedData), item.id, item.documentId, now, now,
+    ],
   );
 }
 
 export const useAnnotationStore = create<AnnotationState>((set) => ({
   items: [],
-  loaded: false,
 
   setItems: (items) => set({ items }),
-
-  setItems: (items) => set({ items }),
-
-  addItem: async (item) => {
-    await persistAnnotation(item);
-    if (item.aiResult) {
-      const db = getDb();
-      const now = nowISO();
-      await db.runAsync(
-        `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-        item.id, item.documentId, JSON.stringify(item.aiResult), now, now,
-      );
-    }
-    if (item.fsrsCard) {
-      const db = getDb();
-      const now = nowISO();
-      await db.runAsync(
-        `INSERT OR REPLACE INTO fsrs_cards (annotation_id, document_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-        item.id, item.documentId, JSON.stringify(item.fsrsCard), now, now,
-      );
-    }
+  addItem: (item) => {
+    persistAnnotation(item);
     set((s) => ({ items: [...s.items, item] }));
   },
 
-  removeItem: async (id) => {
-    const current = useAnnotationStore.getState().items.find((i) => i.id === id);
+  removeItem: (id) => {
+    const current = useAnnotationStore
+      .getState()
+      .items.find((i) => i.id === id);
     if (current) {
-      const db = getDb();
-      await db.execAsync(
-        `DELETE FROM ai_results WHERE annotation_id = ? AND document_id = ?`,
-      );
-      await db.runAsync(
-        "DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?",
-        id, current.documentId,
-      );
-      await db.runAsync(
-        "DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?",
-        id, current.documentId,
-      );
-      await db.runAsync(
-        "DELETE FROM annotations WHERE id = ? AND document_id = ?",
-        id, current.documentId,
-      );
+      (async () => {
+        const { runSql } = await import("../database");
+        await runSql("DELETE FROM annotations WHERE id = ? AND document_id = ?", [
+          id, current.documentId,
+        ]);
+        await runSql("DELETE FROM ai_results WHERE annotation_id = ? AND document_id = ?", [
+          id, current.documentId,
+        ]);
+        await runSql("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?", [
+          id, current.documentId,
+        ]);
+        await runSql("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?", [
+          id, current.documentId,
+        ]);
+      })();
       useReviewLogStore.getState().clearAnnotation(id);
     }
     set((s) => ({ items: s.items.filter((i) => i.id !== id) }));
   },
 
-  updateItem: async (id, patch) => {
-    const current = useAnnotationStore.getState().items.find((i) => i.id === id);
+  updateItem: (id, patch) => {
+    const current = useAnnotationStore
+      .getState()
+      .items.find((i) => i.id === id);
     if (current) {
       const merged = { ...current, ...patch };
-      await persistAnnotation(merged);
-
-      const db = getDb();
-      const now = nowISO();
-
-      if (patch.aiResult !== undefined) {
-        await db.runAsync(
-          `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-          id, current.documentId, JSON.stringify(patch.aiResult), now, now,
-        );
-      }
-      if (patch.fsrsCard !== undefined) {
-        await db.runAsync(
-          `INSERT OR REPLACE INTO fsrs_cards (annotation_id, document_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
-          id, current.documentId, JSON.stringify(patch.fsrsCard), now, now,
-        );
-      }
+      persistAnnotation(merged);
     }
     set((s) => ({
       items: s.items.map((i) => (i.id === id ? { ...i, ...patch } : i)),
     }));
   },
 
-  clear: () => set({ items: [], loaded: false }),
-
-  loadFromDb: async () => {
-    const db = getDb();
-    const rows = await db.getAllAsync<any>(
-      `SELECT a.id, a.document_id AS documentId, a.type, a.text, a.page_number AS pageNumber, a.embed_data AS embedDataJson,
-              r.data AS aiResultJson, c.data AS fsrsCardJson
-       FROM annotations a
-       LEFT JOIN ai_results r ON r.annotation_id = a.id AND r.document_id = a.document_id
-       LEFT JOIN fsrs_cards c ON c.annotation_id = a.id AND c.document_id = a.document_id
-       ORDER BY a.created_at`,
-    );
-    const items: AnnotationItem[] = rows.map((r: any) => ({
-      id: r.id,
-      documentId: r.documentId,
-      type: r.type,
-      text: r.text ?? "",
-      pageNumber: r.pageNumber ?? 0,
-      embedData: (() => {
-        try { return JSON.parse(r.embedDataJson); } catch { return { position: {} }; }
-      })(),
-      aiResult: r.aiResultJson ? (() => { try { return JSON.parse(r.aiResultJson); } catch { return null; } })() : null,
-      fsrsCard: r.fsrsCardJson ? (() => { try { return JSON.parse(r.fsrsCardJson); } catch { return null; } })() : null,
-    }));
-    set({ items, loaded: true });
-  },
+  clear: () => set({ items: [] }),
 }));

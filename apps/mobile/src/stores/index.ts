@@ -1,5 +1,6 @@
 /**
- * Mobile stores barrel — all Zustand stores backed by expo-sqlite or expo-secure-store.
+ * Mobile stores barrel — all Zustand stores backed by @capacitor-community/sqlite
+ * and @capacitor/preferences.
  *
  * Shared types and business logic come from @siltflow/shared.
  */
@@ -19,15 +20,8 @@ export type { AIProfile, ProviderPreset } from "./ai.store";
 export { useSummaryStore } from "./summary.store";
 export type { DocSummary } from "./summary.store";
 
-export {
-  useFSRSStore,
-  useReviewLogStore,
-  getFSRSEngine,
-  initAnnotationCard,
-  reviewAnnotation,
-  getNextReview,
-  loadFSRSParams,
-} from "./fsrs.store";
+export { useFSRSStore, getFSRSEngine, initAnnotationCard, reviewAnnotation, getNextReview, loadFSRSParams } from "./fsrs.store";
+export { useReviewLogStore } from "./review-log.store";
 
 export { useStatsStore } from "./stats.store";
 
@@ -41,6 +35,9 @@ export { useAppSettingsStore } from "./app.store";
 
 export { useToastStore } from "./toast.store";
 
+export { useTTSStore, loadTTSConfigFromConfig } from "./tts.store";
+export type { TTSConfig, TTSProvider } from "./tts.store";
+
 // ---------------------------------------------------------------------------
 // Boot: call once to hydrate all stores from persistent storage
 // ---------------------------------------------------------------------------
@@ -52,6 +49,7 @@ export async function bootStores() {
   const { loadStyleFromConfig } = await import("./style.store");
   const { loadThemeFromConfig } = await import("./theme.store");
   const { loadAppSettingsFromConfig } = await import("./app.store");
+  const { loadTTSConfigFromConfig } = await import("./tts.store");
 
   await Promise.all([
     loadFromConfig(),
@@ -60,5 +58,6 @@ export async function bootStores() {
     loadStyleFromConfig(),
     loadThemeFromConfig(),
     loadAppSettingsFromConfig(),
+    loadTTSConfigFromConfig(),
   ]);
 }

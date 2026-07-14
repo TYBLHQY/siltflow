@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { configGetAll, configSet } from "../config";
 
 export type ThemeFlavor = "latte" | "frappe" | "macchiato" | "mocha";
 export type ThemeMode = "auto" | "light" | "dark";
@@ -20,7 +19,7 @@ interface ThemeStoreState {
   resolveTheme: () => { flavor: ThemeFlavor; isDark: boolean };
 }
 
-const STORAGE_KEY = "themeConfig";
+const STORAGE_KEY = "theme";
 
 const DEFAULT_CONFIG: ThemeConfig = {
   lightTheme: "latte",
@@ -29,8 +28,13 @@ const DEFAULT_CONFIG: ThemeConfig = {
   pdfDarkInvert: true,
 };
 
-function persist(config: ThemeConfig) {
-  configSet({ [STORAGE_KEY]: config });
+async function persist(config: ThemeConfig) {
+  try {
+    const { configSet } = await import("../config");
+    await configSet(STORAGE_KEY, JSON.stringify(config));
+  } catch {
+    /* ignore */
+  }
 }
 
 export const useThemeStore = create<ThemeStoreState>((set, get) => ({
@@ -66,21 +70,36 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
 
   resolveTheme: () => {
     const { lightTheme, darkTheme, themeMode } = get().config;
-    if (themeMode === "light") return { flavor: lightTheme, isDark: false };
-    if (themeMode === "dark") return { flavor: darkTheme, isDark: true };
-    // auto — on mobile we can't match OS media query easily; default to light
-    return { flavor: lightTheme, isDark: false };
+    if (themeMode === "light") {
+      return { flavor: lightTheme as ThemeFlavor, isDark: false };
+    }
+    if (themeMode === "dark") {
+      return { flavor: darkTheme, isDark: true };
+    }
+    // auto: follow OS
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    if (prefersDark) {
+      return { flavor: darkTheme, isDark: true };
+    }
+    return { flavor: lightTheme as ThemeFlavor, isDark: false };
   },
 }));
 
+/** Call once on app boot to restore theme config. */
 export async function loadThemeFromConfig() {
   try {
+    const { configGetAll } = await import("../config");
     const cfg = await configGetAll();
-    const saved = cfg[STORAGE_KEY] as Partial<ThemeConfig> | undefined;
-    if (saved && typeof saved === "object") {
-      useThemeStore.setState({ config: { ...DEFAULT_CONFIG, ...saved } });
+    const saved = cfg[STORAGE_KEY];
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<ThemeConfig>;
+      useThemeStore.setState({
+        config: { ...DEFAULT_CONFIG, ...parsed },
+      });
     }
   } catch {
-    // ignore
+    /* ignore */
   }
 }

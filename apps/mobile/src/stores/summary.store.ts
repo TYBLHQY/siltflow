@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { getDb, nowISO } from "../database";
 
 export interface DocSummary {
   text: string;
@@ -22,12 +21,26 @@ interface SummaryState {
     sourceLang?: string,
     keyVocabulary?: { term: string; cefr?: string }[],
     gist?: string,
-  ) => Promise<void>;
-  clearSummary: (documentId: string) => Promise<void>;
+  ) => void;
+  clearSummary: (documentId: string) => void;
   setPageTexts: (documentId: string, texts: string[]) => void;
   setSelectedPages: (documentId: string, pages: number[] | undefined) => void;
   setTargetLang: (documentId: string, lang: string) => void;
   getTargetLang: (documentId: string) => string;
+}
+
+async function persistSummary(
+  documentId: string,
+  text: string,
+  isAiGenerated: boolean,
+) {
+  const { runSql } = await import("../database");
+  const now = new Date().toISOString();
+  await runSql(
+    `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, created_at, updated_at)
+     VALUES (?, ?, ?, COALESCE((SELECT created_at FROM summaries WHERE document_id = ?), ?), ?)`,
+    [documentId, text, isAiGenerated ? 1 : 0, documentId, now, now],
+  );
 }
 
 export const useSummaryStore = create<SummaryState>((set, get) => ({
@@ -36,13 +49,15 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   pageTexts: {},
   selectedPages: {},
 
-  setSummary: async (documentId, text, isAiGenerated = false, sourceLang?, keyVocabulary?, gist?) => {
-    const db = getDb();
-    const now = nowISO();
-    await db.runAsync(
-      `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
-      documentId, text, isAiGenerated ? 1 : 0, sourceLang ?? null, now, now,
-    );
+  setSummary: (
+    documentId,
+    text,
+    isAiGenerated = false,
+    sourceLang?,
+    keyVocabulary?,
+    gist?,
+  ) => {
+    persistSummary(documentId, text, isAiGenerated);
     set((s) => ({
       summaries: {
         ...s.summaries,
@@ -56,9 +71,11 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
     }));
   },
 
-  clearSummary: async (documentId) => {
-    const db = getDb();
-    await db.runAsync("DELETE FROM summaries WHERE document_id = ?", documentId);
+  clearSummary: (documentId) => {
+    (async () => {
+      const { runSql } = await import("../database");
+      await runSql("DELETE FROM summaries WHERE document_id = ?", [documentId]);
+    })();
     set((s) => {
       const next = { ...s.summaries };
       delete next[documentId];
@@ -67,33 +84,36 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   },
 
   setPageTexts: (documentId, texts) =>
-    set((s) => ({ pageTexts: { ...s.pageTexts, [documentId]: texts } })),
+    set((s) => ({
+      pageTexts: { ...s.pageTexts, [documentId]: texts },
+    })),
 
   setSelectedPages: (documentId, pages) =>
-    set((s) => ({ selectedPages: { ...s.selectedPages, [documentId]: pages } })),
+    set((s) => ({
+      selectedPages: { ...s.selectedPages, [documentId]: pages },
+    })),
 
   setTargetLang: (documentId, lang) =>
-    set((s) => ({ targetLangs: { ...s.targetLangs, [documentId]: lang } })),
+    set((s) => ({
+      targetLangs: { ...s.targetLangs, [documentId]: lang },
+    })),
 
   getTargetLang: (documentId) => {
     const docLang = get().targetLangs[documentId];
-    return docLang ?? "";
+    if (docLang) return docLang;
+    return "";
   },
 }));
 
-/** Call once at app boot to restore summaries from database. */
 export async function loadSummariesFromDb() {
   try {
-    const db = getDb();
-    const docs = await db.getAllAsync<any>("SELECT id FROM documents");
+    const { executeSql } = await import("../database");
+    const docs = await executeSql("SELECT * FROM documents");
     const summaries: Record<string, DocSummary> = {};
-
     for (const doc of docs) {
-      const s = await db.getFirstAsync<any>(
-        "SELECT text, is_ai_generated, source_lang FROM summaries WHERE document_id = ?",
-        doc.id,
-      );
-      if (s) {
+      const rows = await executeSql("SELECT * FROM summaries WHERE document_id = ?", [doc.id]);
+      if (rows.length > 0) {
+        const s = rows[0];
         summaries[doc.id] = {
           text: s.text,
           isAiGenerated: !!s.is_ai_generated,
@@ -103,6 +123,6 @@ export async function loadSummariesFromDb() {
     }
     useSummaryStore.setState({ summaries });
   } catch {
-    // ignore
+    /* ignore */
   }
 }

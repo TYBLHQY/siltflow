@@ -5,7 +5,7 @@
  *   Desktop → Mobile: pull ALL data (documents, annotations, cards, etc.)
  *   Mobile → Desktop: push ONLY review_logs + fsrs_cards (learning progress)
  */
-import { getDb } from "../database";
+import { getDb, executeSql, runSql } from "../database";
 
 export class SyncClient {
   private baseUrl: string;
@@ -37,86 +37,85 @@ export class SyncClient {
   // ====================================================================
 
   async fullPull() {
-    const db = getDb();
     const counts: Record<string, number> = {};
 
     // Temporarily disable FK constraints during bulk sync.
     try {
-    await db.execAsync("PRAGMA foreign_keys = OFF");
+      await runSql("PRAGMA foreign_keys = OFF");
 
-    // Documents
-    const docs = await this.fetchJson<any[]>("/api/documents");
-    for (const d of docs) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO documents (id, title, original_name, total_pages, metadata, folder_id, sort_order, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        d.id, d.title, d.original_name, d.total_pages, d.metadata, d.folder_id,
-        d.sort_order, d.created_at, d.updated_at,
-      );
-    }
-    counts.documents = docs.length;
+      // Documents
+      const docs = await this.fetchJson<any[]>("/api/documents");
+      for (const d of docs) {
+        await runSql(
+          `INSERT OR REPLACE INTO documents (id, title, original_name, total_pages, metadata, folder_id, sort_order, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [d.id, d.title, d.original_name, d.total_pages, d.metadata, d.folder_id,
+           d.sort_order, d.created_at, d.updated_at],
+        );
+      }
+      counts.documents = docs.length;
 
-    // Annotations
-    const annotations = await this.fetchJson<any[]>("/api/annotations");
-    for (const a of annotations) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
-        a.created_at, a.updated_at,
-      );
-    }
-    counts.annotations = annotations.length;
+      // Annotations
+      const annotations = await this.fetchJson<any[]>("/api/annotations");
+      for (const a of annotations) {
+        await runSql(
+          `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
+           a.created_at, a.updated_at],
+        );
+      }
+      counts.annotations = annotations.length;
 
-    // AI results
-    const aiResults = await this.fetchJson<any[]>("/api/ai-results");
-    for (const r of aiResults) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        r.annotation_id, r.document_id, r.data, r.created_at, r.updated_at,
-      );
-    }
-    counts.aiResults = aiResults.length;
+      // AI results
+      const aiResults = await this.fetchJson<any[]>("/api/ai-results");
+      for (const r of aiResults) {
+        await runSql(
+          `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [r.annotation_id, r.document_id, r.data, r.created_at, r.updated_at],
+        );
+      }
+      counts.aiResults = aiResults.length;
 
-    // FSRS cards (pull from desktop first, but don't overwrite mobile's newer cards)
-    const fsrsCards = await this.fetchJson<any[]>("/api/fsrs-cards");
-    for (const c of fsrsCards) {
-      // Only insert if not exists (desktop doesn't know mobile reviews yet)
-      await db.runAsync(
-        `INSERT OR IGNORE INTO fsrs_cards (annotation_id, document_id, data, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        c.annotation_id, c.document_id, c.data, c.created_at, c.updated_at,
-      );
-    }
-    counts.fsrsCards = fsrsCards.length;
+      // FSRS cards (pull from desktop first, but don't overwrite mobile's newer cards)
+      const fsrsCards = await this.fetchJson<any[]>("/api/fsrs-cards");
+      for (const c of fsrsCards) {
+        // Only insert if not exists (desktop doesn't know mobile reviews yet)
+        await runSql(
+          `INSERT OR IGNORE INTO fsrs_cards (annotation_id, document_id, data, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [c.annotation_id, c.document_id, c.data, c.created_at, c.updated_at],
+        );
+      }
+      counts.fsrsCards = fsrsCards.length;
 
-    // Review logs (desktop → mobile, append only)
-    const reviewLogs = await this.fetchJson<any[]>("/api/review-logs");
-    for (const l of reviewLogs) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO review_logs (id, annotation_id, document_id, data, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        l.id, l.annotation_id, l.document_id, l.data, l.created_at,
-      );
-    }
-    counts.reviewLogs = reviewLogs.length;
+      // Review logs (desktop → mobile, append only)
+      const reviewLogs = await this.fetchJson<any[]>("/api/review-logs");
+      for (const l of reviewLogs) {
+        await runSql(
+          `INSERT OR IGNORE INTO review_logs (id, annotation_id, document_id, data, created_at)
+           VALUES (?, ?, ?, ?, ?)`,
+          [l.id, l.annotation_id, l.document_id, l.data, l.created_at],
+        );
+      }
+      counts.reviewLogs = reviewLogs.length;
 
-    // Summaries
-    const summaries = await this.fetchJson<any[]>("/api/summaries");
-    for (const s of summaries) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        s.document_id, s.text, s.is_ai_generated, s.source_lang,
-        s.created_at, s.updated_at,
-      );
-    }
-    counts.summaries = summaries.length;
+      // Summaries
+      const summaries = await this.fetchJson<any[]>("/api/summaries");
+      for (const s of summaries) {
+        await runSql(
+          `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [s.document_id, s.text, s.is_ai_generated, s.source_lang,
+           s.created_at, s.updated_at],
+        );
+      }
+      counts.summaries = summaries.length;
 
-    return counts;
-  } finally {
-      await db.execAsync("PRAGMA foreign_keys = ON");
+      return counts;
+    } finally {
+      await runSql("PRAGMA foreign_keys = ON");
     }
   }
 
@@ -126,13 +125,11 @@ export class SyncClient {
   // ====================================================================
 
   async pushLearningProgress() {
-    const db = getDb();
-
     const [reviewLogs, fsrsCards] = await Promise.all([
-      db.getAllAsync<any>(
+      executeSql(
         "SELECT id, annotation_id AS annotation_id, document_id AS document_id, data, created_at FROM review_logs",
       ),
-      db.getAllAsync<any>(
+      executeSql(
         "SELECT annotation_id, document_id, data, created_at, updated_at FROM fsrs_cards",
       ),
     ]);

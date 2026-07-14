@@ -1,0 +1,3 @@
+/* Tailwind v4 — only loaded for its utility classes, but our theme.css
+   duplicates all needed utilities to avoid @layer/@property parse issues.
+   This import is kept in case we need it, but theme.css is loaded first. */

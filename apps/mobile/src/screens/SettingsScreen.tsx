@@ -1,163 +1,79 @@
-import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAIStore } from "../stores/ai.store";
-import { useFSRSStore } from "../stores/fsrs.store";
-import { useDocumentStore } from "../stores/document.store";
-import { useAnnotationStore } from "../stores/annotation.store";
-import { useStatsStore } from "../stores/stats.store";
-import { DROP_TABLES_SQL, CREATE_TABLES_SQL } from "../database/schema";
+import { useState } from "react";
 import SyncScreen from "../sync/SyncScreen";
+import { useAIStore, BUILTIN_PROVIDERS } from "../stores/ai.store";
+import { useFSRSStore } from "../stores/fsrs.store";
+import { Settings as SettingsIcon } from "lucide-react";
 
 export default function SettingsScreen() {
-  const profiles = useAIStore((s) => s.profiles);
-  const activeProfile = useAIStore((s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null);
-  const params = useFSRSStore((s) => s.params);
   const [showSync, setShowSync] = useState(false);
-
-  const handleReset = useCallback(() => {
-    Alert.alert(
-      "Clear All Data",
-      "This will drop all synced data. You'll need to sync again from desktop.\n\nSettings (AI config, FSRS params) will NOT be cleared.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const { getDb } = await import("../database");
-              const db = getDb();
-              await db.execAsync(DROP_TABLES_SQL);
-              await db.execAsync(CREATE_TABLES_SQL);
-              useDocumentStore.getState().setDocuments([]);
-              useAnnotationStore.getState().setItems([]);
-              useStatsStore.setState({ loaded: false, loading: false, rawCards: [], rawReviewLogs: [], parsedCards: new Map(), dataVersion: 0 });
-              Alert.alert("Done", "Data cleared. Go to Sync to re-sync.");
-            } catch (err: any) {
-              Alert.alert("Error", err.message);
-            }
-          },
-        },
-      ],
-    );
-  }, []);
+  const profiles = useAIStore((s) => s.profiles);
+  const activeProfile = useAIStore(
+    (s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null,
+  );
+  const params = useFSRSStore((s) => s.params);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
-      </View>
+    <div className="p-4 pb-2">
+      <h1 className="text-lg font-semibold text-foreground mb-4">Settings</h1>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* AI Section */}
-        <Text style={styles.sectionTitle}>AI Provider</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Active Profile</Text>
-          <Text style={styles.cardValue}>
-            {activeProfile?.name ?? "None configured"}
-          </Text>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Configured Profiles</Text>
-          <Text style={styles.cardValue}>{profiles.length}</Text>
-        </View>
-
-        {/* FSRS Section */}
-        <Text style={styles.sectionTitle}>FSRS (SRS Parameters)</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Request Retention</Text>
-          <Text style={styles.cardValue}>
-            {(params.request_retention * 100).toFixed(0)}%
-          </Text>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Maximum Interval</Text>
-          <Text style={styles.cardValue}>
-            {params.maximum_interval} days
-          </Text>
-        </View>
-
-        {/* Appearance */}
-        <Text style={styles.sectionTitle}>Appearance</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Theme</Text>
-          <Text style={styles.cardValue}>Catppuccin Mocha</Text>
-        </View>
-
+      <div className="space-y-4">
         {/* Sync */}
-        <Text style={styles.sectionTitle}>Sync</Text>
-        <TouchableOpacity style={styles.syncBtn} onPress={() => setShowSync(true)}>
-          <Text style={styles.syncBtnText}>Sync with Desktop</Text>
-        </TouchableOpacity>
+        <section className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold text-foreground mb-3">Sync</h2>
+          {showSync ? (
+            <SyncScreen />
+          ) : (
+            <button
+              onClick={() => setShowSync(true)}
+              className="w-full py-2 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium"
+            >
+              Sync with Desktop
+            </button>
+          )}
+        </section>
 
-        {/* Reset */}
-        <Text style={styles.sectionTitle}>Reset</Text>
-        <TouchableOpacity
-          style={[styles.syncBtn, { backgroundColor: "#e74c3c" }]}
-          onPress={handleReset}
-        >
-          <Text style={styles.syncBtnText}>Clear All Data & Re-sync</Text>
-        </TouchableOpacity>
+        {/* AI Provider */}
+        <section className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold text-foreground mb-3">AI Provider</h2>
+          {profiles.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              <p>No AI provider configured.</p>
+              <p className="text-xs mt-1">Add one in the desktop app to enable translations.</p>
+            </div>
+          ) : (
+            <div className="text-sm text-foreground">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Active:</span>
+                <span>{activeProfile?.name ?? "None"}</span>
+              </div>
+            </div>
+          )}
+        </section>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+        {/* FSRS Parameters */}
+        <section className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold text-foreground mb-3">Review Settings</h2>
+          <div className="text-sm space-y-1.5 text-muted-foreground">
+            <div className="flex justify-between">
+              <span>Retention target</span>
+              <span className="text-foreground">{Math.round((params.request_retention ?? 0.85) * 100)}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Max interval</span>
+              <span className="text-foreground">{params.maximum_interval ?? 365}d</span>
+            </div>
+          </div>
+        </section>
 
-      {/* Sync Modal */}
-      <Modal visible={showSync} animationType="slide">
-        <View style={{ flex: 1, paddingTop: 60 }}>
-          <TouchableOpacity
-            style={styles.closeSyncBtn}
-            onPress={() => setShowSync(false)}
-          >
-            <Text style={styles.closeSyncText}>← Back to Settings</Text>
-          </TouchableOpacity>
-          <SyncScreen />
-        </View>
-      </Modal>
-    </SafeAreaView>
+        {/* App info */}
+        <section className="rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold text-foreground mb-3">About</h2>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Siltflow Mobile v0.1.0</p>
+            <p>Powered by Capacitor + React</p>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: "#e5e5e5",
-  },
-  headerTitle: { fontSize: 22, fontWeight: "700" },
-  scroll: { padding: 16 },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginTop: 12,
-    marginBottom: 8,
-    color: "#333",
-  },
-  card: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-  },
-  cardLabel: { fontSize: 13, color: "#888", marginBottom: 2 },
-  cardValue: { fontSize: 16, color: "#333", fontWeight: "600" },
-  syncBtn: {
-    backgroundColor: "#4a90d9",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  syncBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  closeSyncBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    position: "absolute",
-    top: 12,
-    left: 0,
-    zIndex: 10,
-  },
-  closeSyncText: { fontSize: 16, color: "#4a90d9", fontWeight: "600" },
-});

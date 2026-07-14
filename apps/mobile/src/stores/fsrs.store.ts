@@ -9,9 +9,8 @@ import {
 } from "ts-fsrs";
 import { useAnnotationStore } from "./annotation.store";
 import { useReviewLogStore } from "./review-log.store";
-import { configGetAll, configSet } from "../config";
 
-const VAULT_KEY = "fsrsParams";
+const CONFIG_KEY = "fsrs_params";
 
 const DEFAULT_PARAMS: FSRSParameters = generatorParameters({
   request_retention: 0.85,
@@ -29,6 +28,13 @@ interface FSRSStoreState {
   resetParams: () => void;
 }
 
+async function persistToConfig(params: FSRSParameters) {
+  try {
+    const { configSet } = await import("../config");
+    await configSet(CONFIG_KEY, JSON.stringify(params));
+  } catch { /* ignore */ }
+}
+
 export const useFSRSStore = create<FSRSStoreState>()((set) => ({
   loaded: false,
   params: { ...DEFAULT_PARAMS },
@@ -36,37 +42,32 @@ export const useFSRSStore = create<FSRSStoreState>()((set) => ({
   updateParam: (key, value) =>
     set((s) => {
       const next = { ...s.params, [key]: value };
-      persistParams(next);
+      persistToConfig(next);
       return { params: next };
     }),
 
   resetParams: () => {
-    persistParams(DEFAULT_PARAMS);
+    persistToConfig(DEFAULT_PARAMS);
     set({ params: { ...DEFAULT_PARAMS } });
   },
 }));
 
-function persistParams(params: FSRSParameters) {
-  configSet({ [VAULT_KEY]: params });
-}
-
 export async function loadFSRSParams() {
   try {
+    const { configGetAll } = await import("../config");
     const cfg = await configGetAll();
-    const saved = cfg[VAULT_KEY] as Partial<FSRSParameters> | undefined;
+    const saved = cfg[CONFIG_KEY];
     if (saved) {
-      useFSRSStore.setState({ params: { ...DEFAULT_PARAMS, ...saved }, loaded: true });
+      const parsed = JSON.parse(saved) as Partial<FSRSParameters>;
+      useFSRSStore.setState({
+        params: { ...DEFAULT_PARAMS, ...parsed },
+        loaded: true,
+      });
       return;
     }
-  } catch {
-    // ignore
-  }
+  } catch { /* ignore */ }
   useFSRSStore.setState({ loaded: true });
 }
-
-// ---------------------------------------------------------------------------
-// FSRS helpers
-// ---------------------------------------------------------------------------
 
 export function getFSRSEngine() {
   const params = useFSRSStore.getState().params;
@@ -75,7 +76,8 @@ export function getFSRSEngine() {
 
 export function initAnnotationCard(annotationId: string) {
   const card = createEmptyCard(new Date());
-  useAnnotationStore.getState().updateItem(annotationId, { fsrsCard: card });
+  const store = useAnnotationStore.getState();
+  store.updateItem(annotationId, { fsrsCard: card });
 }
 
 export function reviewAnnotation(annotationId: string, grade: Grade) {
