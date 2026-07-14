@@ -154,6 +154,20 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
               </View>
             )}
 
+            {/* Collocations */}
+            {aiData.collocations && aiData.collocations.length > 0 && (
+              <View style={styles.revealSection}>
+                <Text style={styles.revealSectionTitle}>Collocations</Text>
+                {aiData.collocations.slice(0, 4).map((col, i) => (
+                  <View key={i} style={styles.collocRow}>
+                    <Text style={styles.collocPhrase}>{col.phrase}</Text>
+                    <Text style={styles.collocArrow}> → </Text>
+                    <Text style={styles.collocTranslation}>{col.translation}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             {/* Pronunciation */}
             {aiData.pronunciation?.ipa && (
               <View style={styles.revealSection}>
@@ -374,6 +388,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f8f8",
     borderRadius: 8,
   },
+
+  // Collocations
+  collocRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  collocPhrase: { fontSize: 15, color: "#444", fontWeight: "600" },
+  collocArrow: { fontSize: 14, color: "#aaa" },
+  collocTranslation: { fontSize: 15, color: "#666" },
 
   // ── Actions ──
   actions: {
