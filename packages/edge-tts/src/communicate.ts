@@ -6,28 +6,76 @@ import {
   DEFAULT_VOICE,
   SEC_MS_GEC_VERSION,
   TEXT_CHUNK_MAX_BYTES,
-  TRUSTED_CLIENT_TOKEN,
+  WSS_HEADERS,
   WSS_URL,
 } from "./constants.js";
-import { generateConnectId, generateMuid, parseWsMessage, sendWsText } from "./utils.js";
+import {
+  generateConnectId,
+  generateMuid,
+  parseWsMessage,
+  sendWsText,
+  isNode,
+} from "./utils.js";
 
 /**
- * Get the global WebSocket constructor.
- * Available in React Native, browsers, and Node 21+ (Electron 43+).
- * Falls back to the `ws` ONLY if neither is available.
+ * Get a WebSocket constructor that supports custom headers.
+ *
+ * In Node.js / Electron main process, use the `ws` package which
+ * allows setting cookie and origin headers.  Browser/RN's globalThis.WebSocket
+ * does NOT support custom headers, which causes the Edge TTS server to
+ * reject the connection.
  */
-let _WS: { new(url: string): WebSocket } | undefined;
+let _WS: any;
 
-async function getWS(): Promise<{ new(url: string): WebSocket }> {
+async function getWS(): Promise<any> {
   if (_WS) return _WS;
+
+  if (isNode()) {
+    // Strategy:
+    // 1. createRequire from process.cwd() — works in Electron (cwd = app dir,
+    //    which has node_modules/ws installed as a dependency).
+    // 2. createRequire from import.meta.url — works for standalone Node.js.
+    // 3. Dynamic import — last resort.
+    try {
+      const { createRequire } = await import("node:module");
+      const req = createRequire(
+        (typeof __filename !== "undefined" ? __filename : process.cwd() + "/.noop.js"),
+      );
+      const wsMod = tryResolveWs(req);
+      if (wsMod) { _WS = wsMod; return _WS; }
+    } catch { /* try next */ }
+
+    try {
+      const { createRequire } = await import("node:module");
+      const { fileURLToPath } = await import("node:url");
+      const thisFile = fileURLToPath(import.meta.url);
+      const req = createRequire(thisFile);
+      const wsMod = tryResolveWs(req);
+      if (wsMod) { _WS = wsMod; return _WS; }
+    } catch { /* try next */ }
+
+    try {
+      const wsMod = await import("ws");
+      _WS = (wsMod as any).default?.WebSocket ?? (wsMod as any).default ?? (wsMod as any).WebSocket ?? wsMod;
+      if (_WS) return _WS;
+    } catch { /* try global */ }
+  }
+
   if (typeof globalThis.WebSocket !== "undefined") {
     _WS = globalThis.WebSocket;
     return _WS;
   }
-  // Ancient Node.js — unlikely, but keep fallback for completeness
-  const { default: WsClass } = await import("ws");
-  _WS = WsClass as unknown as { new(url: string): WebSocket };
-  return _WS;
+
+  throw new Error("@siltflow/edge-tts: WebSocket not available");
+}
+
+function tryResolveWs(req: (id: string) => unknown): any {
+  try {
+    const wsMod: any = req("ws");
+    return wsMod.WebSocket ?? wsMod;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -58,6 +106,12 @@ function parseTextFrame(
 
 /**
  * Parse the JSON metadata body for WordBoundary/SentenceBoundary info.
+ * Matches the Python edge-tts __parse_metadata format.
+ *
+ * Expected JSON structure (from "audio.metadata" text frames):
+ *   { "Metadata": [{ "Type": "WordBoundary",
+ *     "Data": { "Offset": 123, "Duration": 456,
+ *       "text": { "Text": "hello" } } }] }
  */
 function parseMetadataBody(body: string): {
   type: string;
@@ -67,18 +121,16 @@ function parseMetadataBody(body: string): {
 } | null {
   try {
     const parsed = JSON.parse(body);
-    // Metadata comes as { Metadata: [...] } or as a single object
     const items = parsed.Metadata ?? [parsed];
     for (const item of items) {
-      if (
-        item.Type === "WordBoundary" ||
-        item.Type === "SentenceBoundary"
-      ) {
+      const metaType = item.Type;
+      if (metaType === "WordBoundary" || metaType === "SentenceBoundary") {
+        const data = item.Data ?? item;
         return {
-          type: item.Type,
-          offset: item.Offset,
-          duration: item.Duration,
-          text: item.Text?.Text ?? "",
+          type: metaType,
+          offset: data.Offset ?? 0,
+          duration: data.Duration ?? 0,
+          text: data.text?.Text ?? data.Text ?? "",
         };
       }
     }
@@ -148,15 +200,33 @@ async function* wsMessages(
 
 /**
  * Wait for the WebSocket connection to open.
- * Uses the global WebSocket (available in RN, browsers, Node 21+).
+ * Passes custom headers via the `ws` package's options (Node.js/Electron)
+ * so the Edge server gets the required Cookie and Origin headers.
  */
 function connectWs(
   url: string,
+  muid: string,
   timeoutMs = 10_000,
 ): Promise<WebSocket> {
-  return getWS().then((WS) =>
-    new Promise<WebSocket>((resolve, reject) => {
-      const ws = new WS(url);
+  return getWS().then((WS: any) => {
+    return new Promise<WebSocket>((resolve, reject) => {
+      let ws: WebSocket;
+
+      // ws package accepts options (headers, etc.) as third argument
+      // globalThis.WebSocket does not support custom headers
+      if (isNode()) {
+        // ws package — pass custom headers
+        ws = new (WS as any)(url, undefined, {
+          headers: {
+            ...WSS_HEADERS,
+            Cookie: `muid=${muid};`,
+          },
+        });
+      } else {
+        // globalThis.WebSocket in browser/RN — no custom headers
+        ws = new WS(url);
+      }
+
       const timer = setTimeout(() => {
         ws.close();
         reject(new Error("WebSocket connection timed out"));
@@ -169,25 +239,15 @@ function connectWs(
         clearTimeout(timer);
         reject(new Error("WebSocket connection failed"));
       });
-    })
-  );
+    });
+  });
 }
-
-/**
 
 /**
  * Edge TTS client.  Connects to Microsoft Edge's online TTS service
  * via WebSocket, streams MP3 audio chunks and word/sentence boundary events.
  *
  * Cross-platform: works in Node.js 21+/Electron 43+, React Native, and browsers.
- *
- * @example
- * ```ts
- * const tts = new Communicate("Hello world");
- * for await (const chunk of tts.stream()) {
- *   if (chunk.type === "audio") playAudio(chunk.data);
- * }
- * ```
  */
 export class Communicate {
   private text: string;
@@ -220,13 +280,12 @@ export class Communicate {
   private buildWsUrl(): string {
     const { token } = this.clockSkew.getAdjustedToken();
     const params = new URLSearchParams({
-      TrustedClientToken: TRUSTED_CLIENT_TOKEN,
       ConnectionId: this.connectId,
       "Sec-MS-GEC": token,
       "Sec-MS-GEC-Version": SEC_MS_GEC_VERSION,
       muid: this.muid,
     });
-    return `${WSS_URL}?${params.toString()}`;
+    return `${WSS_URL}&${params.toString()}`;
   }
 
   /**
@@ -237,31 +296,38 @@ export class Communicate {
     text: string,
   ): AsyncGenerator<TTSChunk, void, unknown> {
     const url = this.buildWsUrl();
-    const ws = await connectWs(url);
+    const ws = await connectWs(url, this.muid);
 
     try {
-      // 1. Send speech.config
+      // 1. Send speech.config (Python-style: booleans as "true"/"false" strings)
       await sendWsText(
         ws,
         buildSpeechConfig(this.wordBoundary, this.sentenceBoundary),
       );
 
       // 2. Send SSML
-      const ssml = buildSsml(text, this.voice, this.rate, this.volume, this.pitch);
+      const ssml = buildSsml(
+        text,
+        this.voice,
+        this.rate,
+        this.volume,
+        this.pitch,
+      );
       await sendWsText(ws, buildSsmlHeaders(ssml));
 
-      // 3. Receive loop
+      // 3. Receive loop — matches Python's async for received in websocket
       for await (const event of wsMessages(ws)) {
-        if (typeof event.data === "string") {
+        const data = (event as any).data;
+        if (typeof data === "string") {
           // Text frame — metadata or control signal
-          const { headers, body } = parseTextFrame(event.data);
+          const { headers, body } = parseTextFrame(data);
           const path = headers["path"] ?? "";
 
           if (path === "turn.end") {
             break;
           }
 
-          if (path === "response.metadata" && body) {
+          if (path === "audio.metadata" && body) {
             const meta = parseMetadataBody(body);
             if (meta) {
               yield {
@@ -273,9 +339,15 @@ export class Communicate {
             }
           }
           // path === "turn.start" / "response" — ignore
-        } else if (event.data instanceof ArrayBuffer) {
+        } else if (data instanceof ArrayBuffer || data instanceof Buffer) {
           // Binary frame — audio data (MP3)
-          const parsed = parseWsMessage(event.data);
+          // ws library sends Buffer (with possible byteOffset), browser sends ArrayBuffer
+          const raw = data instanceof ArrayBuffer
+            ? new Uint8Array(data)
+            : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+          // Must use a COPY of the buffer to avoid the full backing store
+          const copy = raw.slice(); // returns Uint8Array — .buffer is the minimal copy
+          const parsed = parseWsMessage(copy.buffer);
           yield { type: "audio", data: parsed.data } as TTSChunk;
         }
       }

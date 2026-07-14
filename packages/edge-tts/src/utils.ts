@@ -35,10 +35,18 @@ export function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array {
 }
 
 /**
+ * Detect if running in Node.js / Electron main process.
+ */
+export function isNode(): boolean {
+  return typeof process !== "undefined" && process.versions?.node != null;
+}
+
+/**
  * Format a Date like the Python edge-tts date_to_string():
  * "Tue Jul 15 2025 12:00:00 GMT+0000 (Coordinated Universal Time)"
  */
-export function dateToString(date: Date): string {
+export function dateToString(date?: Date): string {
+  if (!date) date = new Date();
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -65,6 +73,13 @@ export function dateToString(date: Date): string {
 export function parseWsMessage(data: ArrayBuffer): ParsedWsMessage {
   const view = new DataView(data);
   const headerLength = view.getUint16(0, false); // big-endian
+  const audioOffset = 2 + headerLength;
+
+  // Guard: header length might be corrupt or data truncated
+  if (headerLength < 0 || audioOffset > data.byteLength) {
+    return { headers: {}, data: new Uint8Array(0) };
+  }
+
   const headerBytes = new Uint8Array(data, 2, headerLength);
   const headerStr = new TextDecoder().decode(headerBytes);
 
@@ -78,7 +93,7 @@ export function parseWsMessage(data: ArrayBuffer): ParsedWsMessage {
     }
   }
 
-  const audioData = new Uint8Array(data, 2 + headerLength);
+  const audioData = new Uint8Array(data, audioOffset);
   return { headers, data: audioData };
 }
 

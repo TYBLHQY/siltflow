@@ -6,7 +6,7 @@ export const BASE_URL =
   "speech.platform.bing.com/consumer/speech/synthesize/readaloud";
 
 /** WebSocket endpoint for streaming TTS */
-export const WSS_URL = `wss://${BASE_URL}/edge/v1`;
+export const WSS_URL = `wss://${BASE_URL}/edge/v1?TrustedClientToken=${TRUSTED_CLIENT_TOKEN}`;
 
 /** HTTPS endpoint for listing available voices */
 export const VOICES_URL = `https://${BASE_URL}/voices/list`;
