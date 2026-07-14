@@ -7,7 +7,6 @@
     "**/better-sqlite3/**",
     "**/bindings/**",
     "**/file-uri-to-path/**",
-    "**/prebuild-install/**",
     "**/*.node"
   ],
   "productName": "Siltflow",
