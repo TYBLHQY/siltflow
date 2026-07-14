@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#888",
     backgroundColor: "#f0f0f0",
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
     overflow: "hidden",
