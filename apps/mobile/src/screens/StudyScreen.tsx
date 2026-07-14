@@ -1,19 +1,22 @@
 /**
- * Study screen — FSRS card review interface for mobile.
- * Shows one card at a time: front (text + translation) → flip → rate.
- * Ratings persist via reviewAnnotation() (FSRS engine + review_log).
+ * Study screen — FSRS card review interface.
+ * Front: original text + translation. Tap to reveal → definitions + examples → grade.
  */
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAnnotationStore } from "../stores/annotation.store";
 import { reviewAnnotation } from "../stores/fsrs.store";
 import type { AIAnnotationData } from "@siltflow/shared/types";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface StudyScreenProps {
   documentId: string;
@@ -29,6 +32,12 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Scroll to top when card changes
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [currentIndex]);
 
   const current = annotations[currentIndex];
 
@@ -40,23 +49,24 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
         setCurrentIndex(currentIndex + 1);
         setRevealed(false);
       } else {
-        setCurrentIndex(currentIndex + 1); // past end → triggers "done" state
+        setCurrentIndex(currentIndex + 1);
       }
     },
     [current, currentIndex, annotations.length],
   );
 
-  // Done state
+  // ── Done state ──
   if (!current || currentIndex >= annotations.length) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.centered}>
-          <Text style={styles.doneTitle}>All done! 🎉</Text>
+        <View style={styles.doneContainer}>
+          <Text style={styles.doneEmoji}>🎉</Text>
+          <Text style={styles.doneTitle}>All done!</Text>
           <Text style={styles.doneSubtitle}>
             Reviewed {annotations.length} card{annotations.length !== 1 ? "s" : ""}
           </Text>
-          <TouchableOpacity style={styles.actionBtn} onPress={onBack}>
-            <Text style={styles.actionBtnText}>Back to document list</Text>
+          <TouchableOpacity style={styles.doneBtn} onPress={onBack}>
+            <Text style={styles.doneBtnText}>Back to list</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -67,65 +77,102 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={styles.backBtn}>← Back</Text>
+        <TouchableOpacity onPress={onBack} style={styles.headerBtn}>
+          <Text style={styles.headerBtnText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.progress}>
-          {currentIndex + 1} / {annotations.length}
-        </Text>
+        <View style={styles.headerCenter}>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${((currentIndex + 1) / annotations.length) * 100}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.progressText}>
+            {currentIndex + 1} / {annotations.length}
+          </Text>
+        </View>
+        <View style={styles.headerBtn} />
       </View>
 
-      {/* Card Front */}
-      <View style={styles.cardArea}>
-        <View style={styles.cardFront}>
-          <Text style={styles.cardLabel}>TEXT</Text>
-          <Text style={styles.cardText}>{current.text}</Text>
+      {/* ── Card Content ── */}
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Original text */}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>TEXT</Text>
+          <Text style={styles.originalText}>{current.text}</Text>
+
+          {/* Translation — always visible if available */}
           {aiData && (
-            <View style={styles.translationBox}>
-              <Text style={styles.translationLabel}>TRANSLATION</Text>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.sectionLabel}>TRANSLATION</Text>
               <Text style={styles.translationText}>{aiData.translation}</Text>
             </View>
           )}
         </View>
 
-        {/* Card Back (revealed) */}
+        {/* Revealed content */}
         {revealed && aiData && (
-          <View style={styles.cardBack}>
+          <View style={styles.cardRevealed}>
+            {/* Definitions */}
             {aiData.definitions && aiData.definitions.length > 0 && (
-              <>
-                <Text style={styles.revealLabel}>DEFINITIONS</Text>
+              <View style={styles.revealSection}>
+                <Text style={styles.revealSectionTitle}>Definitions</Text>
                 {aiData.definitions.map((d, i) => (
-                  <Text key={i} style={styles.defText}>
-                    {d.pos ? `(${d.pos}) ` : ""}{d.definition}
-                  </Text>
+                  <View key={i} style={styles.defRow}>
+                    <View style={styles.defBullet} />
+                    <Text style={styles.defText}>
+                      {d.pos ? <Text style={styles.posTag}>{d.pos}</Text> : null}
+                      {d.definition}
+                      {d.gloss ? (
+                        <Text style={styles.glossText}> — {d.gloss}</Text>
+                      ) : null}
+                    </Text>
+                  </View>
                 ))}
-              </>
+              </View>
             )}
+
+            {/* Examples */}
             {aiData.examples && aiData.examples.length > 0 && (
-              <>
-                <Text style={[styles.revealLabel, { marginTop: 10 }]}>EXAMPLES</Text>
-                {aiData.examples.slice(0, 2).map((ex, i) => (
-                  <Text key={i} style={styles.exampleText}>
-                    "{ex.sentence}" → {ex.translation}
-                  </Text>
+              <View style={styles.revealSection}>
+                <Text style={styles.revealSectionTitle}>Examples</Text>
+                {aiData.examples.slice(0, 3).map((ex, i) => (
+                  <View key={i} style={styles.exampleCard}>
+                    <Text style={styles.exampleSentence}>{ex.sentence}</Text>
+                    <Text style={styles.exampleTranslation}>{ex.translation}</Text>
+                  </View>
                 ))}
-              </>
+              </View>
             )}
+
+            {/* Pronunciation */}
             {aiData.pronunciation?.ipa && (
-              <Text style={styles.ipaText}>/{aiData.pronunciation.ipa}/</Text>
+              <View style={styles.revealSection}>
+                <Text style={styles.revealSectionTitle}>Pronunciation</Text>
+                <Text style={styles.ipaText}>/{aiData.pronunciation.ipa}/</Text>
+              </View>
             )}
           </View>
         )}
-      </View>
+      </ScrollView>
 
-      {/* Actions */}
+      {/* ── Actions (fixed bottom) ── */}
       <View style={styles.actions}>
         {!revealed ? (
           <TouchableOpacity
             style={styles.revealBtn}
             onPress={() => setRevealed(true)}
+            activeOpacity={0.8}
           >
             <Text style={styles.revealBtnText}>Tap to Reveal</Text>
           </TouchableOpacity>
@@ -158,84 +205,214 @@ function GradeBtn({
     <TouchableOpacity
       style={[styles.gradeBtn, { backgroundColor: color }]}
       onPress={onPress}
+      activeOpacity={0.7}
     >
-      <Text style={styles.gradeBtnText}>{label}</Text>
+      <Text style={styles.gradeBtnLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  container: { flex: 1, backgroundColor: "#f0f0f0" },
+
+  // ── Header ──
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderColor: "#e5e5e5",
-    backgroundColor: "#fff",
+    borderColor: "#e0e0e0",
   },
-  backBtn: { fontSize: 16, color: "#4a90d9" },
-  progress: { fontSize: 15, color: "#888" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  doneTitle: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
-  doneSubtitle: { fontSize: 16, color: "#666", marginBottom: 20 },
-  actionBtn: {
+  headerBtn: { width: 60 },
+  headerBtnText: { fontSize: 16, color: "#4a90d9", fontWeight: "600" },
+  headerCenter: { flex: 1, alignItems: "center" },
+  progressBar: {
+    width: "100%",
+    height: 4,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  progressFill: {
+    height: "100%",
     backgroundColor: "#4a90d9",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 2,
   },
-  actionBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  // Card
-  cardArea: { flex: 1, padding: 16 },
-  cardFront: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
+  progressText: { fontSize: 12, color: "#888" },
+
+  // ── Done state ──
+  doneContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  cardLabel: {
+  doneEmoji: { fontSize: 64, marginBottom: 16 },
+  doneTitle: { fontSize: 28, fontWeight: "700", color: "#333", marginBottom: 8 },
+  doneSubtitle: { fontSize: 16, color: "#666", marginBottom: 28 },
+  doneBtn: {
+    backgroundColor: "#4a90d9",
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  doneBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+
+  // ── Card area ──
+  scrollArea: { flex: 1 },
+  scrollContent: { padding: 12, paddingBottom: 4 },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  sectionLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#888",
+    color: "#999",
+    letterSpacing: 1.2,
     marginBottom: 6,
-    letterSpacing: 1,
   },
-  cardText: { fontSize: 18, color: "#222", lineHeight: 26, fontWeight: "600" },
-  translationBox: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderColor: "#eee" },
-  translationLabel: { fontSize: 11, fontWeight: "700", color: "#888", marginBottom: 4, letterSpacing: 1 },
-  translationText: { fontSize: 16, color: "#555", lineHeight: 22 },
-  // Revealed
-  cardBack: {
+  originalText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#222",
+    lineHeight: 28,
+  },
+  divider: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderColor: "#eee",
+  },
+  translationText: {
+    fontSize: 17,
+    color: "#555",
+    lineHeight: 24,
+  },
+
+  // ── Revealed card ──
+  cardRevealed: {
     backgroundColor: "#fff",
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 20,
+    marginTop: 10,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
-  revealLabel: { fontSize: 11, fontWeight: "700", color: "#888", marginBottom: 4, letterSpacing: 1 },
-  defText: { fontSize: 15, color: "#444", lineHeight: 22, marginLeft: 4 },
-  exampleText: { fontSize: 14, color: "#666", lineHeight: 20, marginLeft: 4, fontStyle: "italic" },
-  ipaText: { marginTop: 8, fontSize: 14, color: "#777", fontFamily: "monospace" },
-  // Actions
-  actions: { padding: 16, paddingBottom: 30 },
+  revealSection: { marginBottom: 16 },
+  revealSectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#555",
+    marginBottom: 8,
+  },
+
+  // Definitions
+  defRow: { flexDirection: "row", marginBottom: 6, alignItems: "flex-start" },
+  defBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#4a90d9",
+    marginTop: 7,
+    marginRight: 8,
+    flexShrink: 0,
+  },
+  defText: { fontSize: 15, color: "#444", lineHeight: 22, flex: 1 },
+  posTag: {
+    fontSize: 12,
+    color: "#888",
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginRight: 4,
+    overflow: "hidden",
+    fontWeight: "600",
+  },
+  glossText: { color: "#888", fontStyle: "italic" },
+
+  // Examples
+  exampleCard: {
+    backgroundColor: "#f8f8f8",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 6,
+  },
+  exampleSentence: {
+    fontSize: 15,
+    color: "#333",
+    lineHeight: 22,
+    fontWeight: "500",
+  },
+  exampleTranslation: {
+    fontSize: 14,
+    color: "#777",
+    lineHeight: 20,
+    marginTop: 4,
+    fontStyle: "italic",
+  },
+
+  // Pronunciation
+  ipaText: {
+    fontSize: 18,
+    color: "#666",
+    fontFamily: "monospace",
+    textAlign: "center",
+    padding: 10,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 8,
+  },
+
+  // ── Actions ──
+  actions: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24,
+    backgroundColor: "#f0f0f0",
+  },
   revealBtn: {
     backgroundColor: "#4a90d9",
+    paddingVertical: 18,
+    borderRadius: 14,
+    alignItems: "center",
+    shadowColor: "#4a90d9",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  revealBtnText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  rateLabel: {
+    fontSize: 14,
+    color: "#888",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  gradeRow: { flexDirection: "row", gap: 8 },
+  gradeBtn: {
+    flex: 1,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  revealBtnText: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  rateLabel: { fontSize: 14, color: "#888", textAlign: "center", marginBottom: 10 },
-  gradeRow: { flexDirection: "row", gap: 8 },
-  gradeBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, alignItems: "center" },
-  gradeBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  gradeBtnLabel: { color: "#fff", fontSize: 14, fontWeight: "800", letterSpacing: 0.5 },
 });
