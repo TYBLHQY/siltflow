@@ -12,7 +12,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Documents: "📄",
+    Review: "📄",
     Stats: "📊",
     Settings: "⚙️",
   };
@@ -41,7 +41,7 @@ export default function AppNavigator() {
           },
         })}
       >
-        <Tab.Screen name="DocumentsTab" component={DocumentListScreen} />
+        <Tab.Screen name="ReviewTab" component={DocumentListScreen} />
         <Tab.Screen name="StatsTab" component={StatsScreen} />
         <Tab.Screen name="SettingsTab" component={SettingsScreen} />
       </Tab.Navigator>
