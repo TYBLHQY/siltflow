@@ -59,23 +59,6 @@ export default function DocumentListScreen() {
     setRefreshing(false);
   }, []);
 
-  // Cards per document with FSRS metrics
-  const docMetrics = useMemo(() => {
-    const byDoc: Record<string, { title: string; cards: any[] }> = {};
-    for (const doc of documents) {
-      byDoc[doc.id] = { title: doc.title, cards: [] };
-    }
-    for (const item of items) {
-      if (item.fsrsCard && byDoc[item.documentId]) {
-        byDoc[item.documentId].cards.push({
-          ...item.fsrsCard,
-          due: new Date(item.fsrsCard.due ?? Date.now()),
-        });
-      }
-    }
-    return computeDocMetrics(byDoc);
-  }, [documents, items]);
-
   function statusLabel(m: DocReviewMetrics): string {
     if (m.dueNowCount > 0) return `🔴 ${m.dueNowCount} due`;
     if (m.compositeScore === -1) return "";
