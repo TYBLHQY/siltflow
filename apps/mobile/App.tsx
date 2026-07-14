@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ActivityIndicator, Text, View } from "react-native";
+// Polyfill crypto.randomUUID for React Native
+import "react-native-get-random-values";
 import { initDatabase } from "./src/database";
 import { bootStores, useDocumentStore, useFolderStore } from "./src/stores";
 import AppNavigator from "./src/navigation/AppNavigator";
