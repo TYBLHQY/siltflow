@@ -120,7 +120,6 @@ export function useTTS() {
             rate: config.rate,
             volume: config.volume,
             pitch: config.pitch,
-            binaryPath: config.binaryPath || undefined,
           });
 
           if (!audioData || audioData.length === 0) {

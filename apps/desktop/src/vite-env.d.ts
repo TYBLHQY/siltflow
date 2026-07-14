@@ -107,10 +107,9 @@ interface SiltflowAPI {
         rate?: string;
         volume?: string;
         pitch?: string;
-        binaryPath?: string;
       },
     ) => Promise<number[]>;
-    listVoices: (binaryPath?: string) => Promise<string[]>;
+    listVoices: () => Promise<string[]>;
   };
   folders: {
     list: () => Promise<any[]>;

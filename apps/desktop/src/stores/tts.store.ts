@@ -6,8 +6,6 @@ export interface TTSConfig {
   /** Active TTS provider */
   provider: TTSProvider;
   // ── edge-tts settings ──
-  /** Absolute path to edge-tts binary, or "" to search via PATH. */
-  binaryPath: string;
   /** Speech rate string, e.g. "+0%", "-10%", "+50%". */
   rate: string;
   /** Volume string, e.g. "+0%", "-20%", "+30%". */
@@ -46,7 +44,6 @@ const STORAGE_KEY = "ttsConfig";
 
 const DEFAULT_CONFIG: TTSConfig = {
   provider: "edge-tts",
-  binaryPath: "",
   rate: "+0%",
   volume: "+0%",
   pitch: "+0Hz",
@@ -109,10 +106,7 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
   refreshVoices: async () => {
     set({ loadingVoices: true });
     try {
-      const config = get().config;
-      const allVoices = await window.siltflow.tts.listVoices(
-        config.binaryPath || undefined,
-      );
+      const allVoices = await window.siltflow.tts.listVoices();
 
       // Group by language prefix
       const prefixMap: Record<string, string> = {
@@ -125,7 +119,7 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
       };
       const lists: Record<string, string[]> = {};
       for (const [langId, prefix] of Object.entries(prefixMap)) {
-        const filtered = allVoices.filter((v) => v.startsWith(prefix));
+        const filtered = allVoices.filter((v: string) => v.startsWith(prefix));
         if (filtered.length > 0) lists[langId] = filtered;
       }
 

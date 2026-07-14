@@ -1311,22 +1311,6 @@ function TTSConfigContent() {
         {/* ── Edge-TTS settings ── */}
         {config.provider === "edge-tts" && (
           <>
-            {/* Binary path */}
-            <div>
-              <label className="block text-xs font-medium mb-1">
-                Binary path
-              </label>
-              <input
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
-                value={config.binaryPath}
-                onChange={(e) => setConfig({ binaryPath: e.target.value })}
-                placeholder="edge-tts (via PATH)"
-              />
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Absolute path or leave empty to search via PATH.
-              </p>
-            </div>
-
             {/* Rate / Volume / Pitch */}
             <div className="grid grid-cols-3 gap-3">
               <div>
