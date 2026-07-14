@@ -14,7 +14,7 @@ import { useAIStore } from "../stores/ai.store";
 import { useFSRSStore } from "../stores/fsrs.store";
 import { useDocumentStore } from "../stores/document.store";
 import { useAnnotationStore } from "../stores/annotation.store";
-import { DROP_TABLES_SQL } from "../database/schema";
+import { DROP_TABLES_SQL, CREATE_TABLES_SQL } from "../database/schema";
 import SyncScreen from "../sync/SyncScreen";
 
 export default function SettingsScreen() {
@@ -37,7 +37,7 @@ export default function SettingsScreen() {
               const { getDb } = await import("../database");
               const db = getDb();
               await db.execAsync(DROP_TABLES_SQL);
-              await db.execAsync(require("../database/schema").CREATE_TABLES_SQL);
+              await db.execAsync(CREATE_TABLES_SQL);
               useDocumentStore.getState().setDocuments([]);
               useAnnotationStore.getState().setItems([]);
               Alert.alert("Done", "Data cleared. Go to Sync to re-sync.");
