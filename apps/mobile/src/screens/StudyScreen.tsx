@@ -132,7 +132,7 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
                     <View style={styles.defBullet} />
                     <Text style={styles.defText}>
                       {d.pos ? <Text style={styles.posTag}>{d.pos}</Text> : null}
-                      {d.definition}
+                      {" "}{d.definition}
                       {d.gloss ? (
                         <Text style={styles.glossText}> — {d.gloss}</Text>
                       ) : null}
@@ -337,11 +337,11 @@ const styles = StyleSheet.create({
     color: "#888",
     backgroundColor: "#f0f0f0",
     paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingVertical: 2,
     borderRadius: 4,
-    marginRight: 4,
     overflow: "hidden",
     fontWeight: "600",
+    marginRight: 4,
   },
   glossText: { color: "#888", fontStyle: "italic" },
 
