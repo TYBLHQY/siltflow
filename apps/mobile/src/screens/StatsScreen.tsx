@@ -5,8 +5,11 @@ import { useStatsStore } from "../stores/stats.store";
 import { computeOverviewStats, computeDailyReviews } from "@siltflow/shared/fsrs";
 
 export default function StatsScreen() {
-  const { loaded, loading, loadAllData, rawReviewLogs, parsedCards } =
-    useStatsStore();
+  const loaded = useStatsStore((s) => s.loaded);
+  const loading = useStatsStore((s) => s.loading);
+  const rawReviewLogs = useStatsStore((s) => s.rawReviewLogs);
+  const parsedCards = useStatsStore((s) => s.parsedCards);
+  const loadAllData = useStatsStore.getState().loadAllData;
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {

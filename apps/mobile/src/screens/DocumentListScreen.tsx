@@ -13,7 +13,9 @@ import { useDocumentStore } from "../stores/document.store";
 import PdfReaderScreen from "./PdfReaderScreen";
 
 export default function DocumentListScreen() {
-  const { documents, loaded, loadFromDb } = useDocumentStore();
+  const documents = useDocumentStore((s) => s.documents);
+  const loaded = useDocumentStore((s) => s.loaded);
+  const loadFromDb = useDocumentStore.getState().loadFromDb;
   const [refreshing, setRefreshing] = useState(false);
 
   // PDF reader state

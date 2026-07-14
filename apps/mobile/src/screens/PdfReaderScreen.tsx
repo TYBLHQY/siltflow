@@ -2,7 +2,7 @@
  * PDF Reader — renders PDF using WebView with base64 embedding.
  * PDFs are synced from desktop and stored in expo-file-system.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -30,8 +30,10 @@ export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }:
   const [showAnnotations, setShowAnnotations] = useState(false);
   const [selectedAnnotation, setSelectedAnnotation] = useState<AnnotationItem | null>(null);
 
-  const items = useAnnotationStore((s) =>
-    s.items.filter((i) => i.documentId === documentId),
+  const allItems = useAnnotationStore((s) => s.items);
+  const items = useMemo(
+    () => allItems.filter((i) => i.documentId === documentId),
+    [allItems, documentId],
   );
 
   // Load PDF as base64
