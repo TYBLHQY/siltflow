@@ -58,9 +58,45 @@ export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }:
   }, [pdfPath]);
 
   const html = pdfBase64
-    ? `<!DOCTYPE html><html><body style="margin:0">
-        <embed src="data:application/pdf;base64,${pdfBase64}" type="application/pdf" width="100%" height="100%" />
-      </body></html>`
+    ? `<!DOCTYPE html><html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #525659; }
+    #viewer { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+    .page { margin: 6px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    canvas { display: block; width: 100% !important; height: auto !important; }
+    .loading { text-align: center; padding: 40px; color: #ccc; font-family: sans-serif; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="viewer"><div class="loading">Loading PDF…</div></div>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    var pdfData = atob("${pdfBase64}");
+    pdfjsLib.getDocument({ data: pdfData }).promise.then(function(pdf) {
+      document.getElementById('viewer').innerHTML = '';
+      for (var i = 1; i <= pdf.numPages; i++) {
+        (function(pageNum) {
+          pdf.getPage(pageNum).then(function(page) {
+            var scale = 1.5;
+            var viewport = page.getViewport({ scale: scale });
+            var canvas = document.createElement('canvas');
+            canvas.className = 'page';
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            document.getElementById('viewer').appendChild(canvas);
+            page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
+          });
+        })(i);
+      }
+    }).catch(function(err) {
+      document.getElementById('viewer').innerHTML = '<div class="loading">Failed to load PDF: ' + err.message + '</div>';
+    });
+  </script>
+</body></html>`
     : undefined;
 
   return (
@@ -89,10 +125,12 @@ export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }:
       ) : html ? (
         <WebView
           source={{ html }}
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: "#525659" }}
           originWhitelist={["*"]}
           javaScriptEnabled={true}
           allowFileAccess={true}
+          allowUniversalAccessFromFileURLs={true}
+          mixedContentMode="always"
         />
       ) : (
         <View style={styles.centered}>
