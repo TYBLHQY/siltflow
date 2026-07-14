@@ -128,7 +128,6 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   setDocuments: (docs) => set({ documents: docs }),
 
   loadFromDb: async () => {
-    if (get().loaded) return;
     set({ loading: true });
     try {
       const db = getDb();
