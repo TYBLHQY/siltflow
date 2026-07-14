@@ -131,8 +131,7 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
                   <View key={i} style={styles.defRow}>
                     <View style={styles.defBullet} />
                     <Text style={styles.defText}>
-                      {d.pos ? <Text style={styles.posTag}>{d.pos}</Text> : null}
-                      {" "}{d.definition}
+                      <Text style={styles.posTag}>[{d.pos}]</Text>{" "}{d.definition}
                       {d.gloss ? (
                         <Text style={styles.glossText}> — {d.gloss}</Text>
                       ) : null}
@@ -334,14 +333,13 @@ const styles = StyleSheet.create({
   defText: { fontSize: 15, color: "#444", lineHeight: 22, flex: 1 },
   posTag: {
     fontSize: 12,
+    fontWeight: "700",
     color: "#888",
-    backgroundColor: "#f0f0f0",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    overflow: "hidden",
-    fontWeight: "600",
-    marginRight: 4,
+    textTransform: "lowercase",
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    marginRight: 0,
   },
   glossText: { color: "#888", fontStyle: "italic" },
 
