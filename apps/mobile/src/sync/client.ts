@@ -6,7 +6,7 @@
  *   Mobile → Desktop: push ONLY review_logs + fsrs_cards (learning progress)
  */
 import { getDb } from "../database";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 export class SyncClient {
   private baseUrl: string;
