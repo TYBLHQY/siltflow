@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDocumentStore } from "../stores/document.store";
 import { useAnnotationStore } from "../stores/annotation.store";
+import { computeDocMetrics, type DocReviewMetrics } from "@siltflow/shared/fsrs";
 import StudyScreen from "./StudyScreen";
 
 export default function DocumentListScreen() {
@@ -22,6 +23,23 @@ export default function DocumentListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [studyingDocId, setStudyingDocId] = useState<string | null>(null);
   const isFocused = useIsFocused();
+
+  // Cards per document with FSRS metrics
+  const docMetrics = useMemo(() => {
+    const byDoc: Record<string, { title: string; cards: any[] }> = {};
+    for (const doc of documents) {
+      byDoc[doc.id] = { title: doc.title, cards: [] };
+    }
+    for (const item of items) {
+      if (item.fsrsCard && byDoc[item.documentId]) {
+        byDoc[item.documentId].cards.push({
+          ...item.fsrsCard,
+          due: new Date(item.fsrsCard.due ?? Date.now()),
+        });
+      }
+    }
+    return computeDocMetrics(byDoc);
+  }, [documents, items]);
 
   useEffect(() => {
     if (!loaded) loadFromDb();
@@ -41,14 +59,31 @@ export default function DocumentListScreen() {
     setRefreshing(false);
   }, []);
 
-  // Cards per document
-  const docCardCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const item of items) {
-      map.set(item.documentId, (map.get(item.documentId) ?? 0) + 1);
+  // Cards per document with FSRS metrics
+  const docMetrics = useMemo(() => {
+    const byDoc: Record<string, { title: string; cards: any[] }> = {};
+    for (const doc of documents) {
+      byDoc[doc.id] = { title: doc.title, cards: [] };
     }
-    return map;
-  }, [items]);
+    for (const item of items) {
+      if (item.fsrsCard && byDoc[item.documentId]) {
+        byDoc[item.documentId].cards.push({
+          ...item.fsrsCard,
+          due: new Date(item.fsrsCard.due ?? Date.now()),
+        });
+      }
+    }
+    return computeDocMetrics(byDoc);
+  }, [documents, items]);
+
+  function statusLabel(m: DocReviewMetrics): string {
+    if (m.dueNowCount > 0) return `🔴 ${m.dueNowCount} due`;
+    if (m.compositeScore === -1) return "";
+    if (m.avgRetrievability >= 90) return "🟢 Fresh";
+    if (m.avgRetrievability >= 75) return "🟡 Good";
+    if (m.avgRetrievability >= 50) return "🟠 Aging";
+    return "🔴 Stale";
+  }
 
   if (studyingDocId) {
     return (
@@ -66,26 +101,32 @@ export default function DocumentListScreen() {
       </View>
 
       <FlatList
-        data={documents}
-        keyExtractor={(item) => item.id}
+        data={docMetrics}
+        keyExtractor={(item) => item.documentId}
         renderItem={({ item }) => {
-          const cardCount = docCardCounts.get(item.id) ?? 0;
+          const status = statusLabel(item);
           return (
             <TouchableOpacity
               style={styles.docRow}
-              onPress={() => cardCount > 0 && setStudyingDocId(item.id)}
-              disabled={cardCount === 0}
+              onPress={() => item.totalCards > 0 && setStudyingDocId(item.documentId)}
+              disabled={item.totalCards === 0}
             >
               <Text style={styles.docIcon}>📄</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.docTitle} numberOfLines={1}>
-                  {item.title}
+                  {item.documentTitle}
                 </Text>
-                <Text style={styles.docMeta}>
-                  {cardCount} card{cardCount !== 1 ? "s" : ""}
-                </Text>
+                <View style={styles.metaRow}>
+                  <Text style={styles.docMeta}>
+                    {item.totalCards} card{item.totalCards !== 1 ? "s" : ""}
+                    {item.newCardsCount > 0 ? ` · ${item.newCardsCount} new` : ""}
+                    {item.dueNowCount > 0 ? ` · ${item.dueNowCount} due` : ""}
+                    {item.dueSoonCount > 0 ? ` · ${item.dueSoonCount} soon` : ""}
+                  </Text>
+                  {status ? <Text style={styles.statusBadge}>{status}</Text> : null}
+                </View>
               </View>
-              {cardCount > 0 && <Text style={styles.arrow}>→</Text>}
+              {item.totalCards > 0 && <Text style={styles.arrow}>→</Text>}
             </TouchableOpacity>
           );
         }}
@@ -123,7 +164,9 @@ const styles = StyleSheet.create({
   },
   docIcon: { fontSize: 18, marginRight: 12 },
   docTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
-  docMeta: { fontSize: 13, color: "#888", marginTop: 2 },
+  docMeta: { fontSize: 12, color: "#888", marginTop: 2 },
+  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 2, gap: 8 },
+  statusBadge: { fontSize: 12, fontWeight: "600" },
   arrow: { fontSize: 18, color: "#ccc", marginLeft: 8 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: "#999", textAlign: "center", lineHeight: 22 },
