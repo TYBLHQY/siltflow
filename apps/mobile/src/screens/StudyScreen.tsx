@@ -159,7 +159,7 @@ export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
             {aiData.pronunciation?.ipa && (
               <View style={styles.revealSection}>
                 <Text style={styles.revealSectionTitle}>Pronunciation</Text>
-                <Text style={styles.ipaText}>/{aiData.pronunciation.ipa}/</Text>
+                <Text style={styles.ipaText}>{aiData.pronunciation.ipa}</Text>
               </View>
             )}
           </View>
