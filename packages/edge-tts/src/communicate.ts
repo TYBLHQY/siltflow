@@ -13,26 +13,19 @@ import { generateConnectId, generateMuid, parseWsMessage, sendWsText } from "./u
 
 /**
  * Get the global WebSocket constructor.
- * - React Native / browsers: globalThis.WebSocket
- * - Electron / Node: try globalThis first, then fallback to the ws package
- *   loaded lazily from node_modules/ws
- *
- * The lazy fallback is a dynamic await import so it works in both
- * ESM and CJS environments without needing @types/node.
+ * Available in React Native, browsers, and Node 21+ (Electron 43+).
+ * Falls back to the `ws` ONLY if neither is available.
  */
 let _WS: { new(url: string): WebSocket } | undefined;
 
-async function getWS(wsImpl?: { new(url: string): WebSocket }): Promise<{ new(url: string): WebSocket }> {
-  if (wsImpl) return wsImpl;
+async function getWS(): Promise<{ new(url: string): WebSocket }> {
   if (_WS) return _WS;
   if (typeof globalThis.WebSocket !== "undefined") {
     _WS = globalThis.WebSocket;
     return _WS;
   }
-  // Node.js — dynamic import of the `ws` package
-  // The 'ws' package is a dependency so it's always available.
-  // We import it asynchronously to work in both ESM and CJS.
-  const { default: WsClass } = await import("./ws-shim.js");
+  // Ancient Node.js — unlikely, but keep fallback for completeness
+  const { default: WsClass } = await import("ws");
   _WS = WsClass as unknown as { new(url: string): WebSocket };
   return _WS;
 }
@@ -155,55 +148,42 @@ async function* wsMessages(
 
 /**
  * Wait for the WebSocket connection to open.
- * Uses the `wsImpl` option if provided, otherwise globalThis.WebSocket.
+ * Uses the global WebSocket (available in RN, browsers, Node 21+).
  */
 function connectWs(
   url: string,
-  wsImpl?: { new(url: string): WebSocket },
   timeoutMs = 10_000,
 ): Promise<WebSocket> {
-  return getWS(wsImpl).then((WS) => connectWithWS(url, WS, timeoutMs));
-}
-
-function connectWithWS(
-  url: string,
-  WS: { new(url: string): WebSocket },
-  timeoutMs: number,
-): Promise<WebSocket> {
-  return new Promise<WebSocket>((resolve, reject) => {
-    const ws = new WS(url);
-    const timer = setTimeout(() => {
-      ws.close();
-      reject(new Error("WebSocket connection timed out"));
-    }, timeoutMs);
-    ws.addEventListener("open", () => {
-      clearTimeout(timer);
-      resolve(ws);
-    });
-    ws.addEventListener("error", () => {
-      clearTimeout(timer);
-      reject(new Error("WebSocket connection failed"));
-    });
-  });
+  return getWS().then((WS) =>
+    new Promise<WebSocket>((resolve, reject) => {
+      const ws = new WS(url);
+      const timer = setTimeout(() => {
+        ws.close();
+        reject(new Error("WebSocket connection timed out"));
+      }, timeoutMs);
+      ws.addEventListener("open", () => {
+        clearTimeout(timer);
+        resolve(ws);
+      });
+      ws.addEventListener("error", () => {
+        clearTimeout(timer);
+        reject(new Error("WebSocket connection failed"));
+      });
+    })
+  );
 }
 
 /**
 
 /**
  * Edge TTS client.  Connects to Microsoft Edge's online TTS service
- * via WebSocket, streams audio chunks and word/sentence boundary events.
+ * via WebSocket, streams MP3 audio chunks and word/sentence boundary events.
  *
- * Cross-platform: works in Node.js 18+/Electron and React Native.
+ * Cross-platform: works in Node.js 21+/Electron 43+, React Native, and browsers.
  *
  * @example
  * ```ts
- * // React Native / browsers (global WebSocket available)
  * const tts = new Communicate("Hello world");
- *
- * // Electron / Node < 21 (need `ws` package)
- * import WebSocket from "ws";
- * const tts = new Communicate("Hello world", { wsImpl: WebSocket });
- *
  * for await (const chunk of tts.stream()) {
  *   if (chunk.type === "audio") playAudio(chunk.data);
  * }
@@ -217,7 +197,6 @@ export class Communicate {
   private pitch: string;
   private wordBoundary: boolean;
   private sentenceBoundary: boolean;
-  private wsImpl: { new(url: string): WebSocket } | undefined;
   private muid: string;
   private connectId: string;
   private clockSkew: ClockSkewManager;
@@ -230,7 +209,6 @@ export class Communicate {
     this.pitch = options.pitch ?? "+0Hz";
     this.wordBoundary = options.wordBoundary ?? true;
     this.sentenceBoundary = options.sentenceBoundary ?? false;
-    this.wsImpl = options.wsImpl;
     this.muid = generateMuid();
     this.connectId = generateConnectId();
     this.clockSkew = new ClockSkewManager();
@@ -259,7 +237,7 @@ export class Communicate {
     text: string,
   ): AsyncGenerator<TTSChunk, void, unknown> {
     const url = this.buildWsUrl();
-    const ws = await connectWs(url, this.wsImpl);
+    const ws = await connectWs(url);
 
     try {
       // 1. Send speech.config

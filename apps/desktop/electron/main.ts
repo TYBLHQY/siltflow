@@ -467,7 +467,11 @@ app.whenReady().then(async () => {
     const vault = getVaultPath()
     if (!vault) return new Response('Vault not set', { status: 404 })
     const fullPath = path.resolve(vault, relativePath)
-    return net.fetch(new URL(fullPath, 'file:///').href)
+    return net.fetch(new URL(fullPath, 'file:///').href, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+    })
   })
 
   if (VITE_DEV_SERVER_URL) {

@@ -14,12 +14,6 @@ export interface CommunicateOptions {
   sentenceBoundary?: boolean;
   /** HTTP proxy URL (Node.js only) */
   proxy?: string;
-  /**
-   * WebSocket constructor override.
-   * - React Native / browsers: omit (uses globalThis.WebSocket)
-   * - Electron / Node < 21: pass the `ws` module's constructor
-   */
-  wsImpl?: { new(url: string): WebSocket };
 }
 
 /** A single chunk from the edge-tts stream */

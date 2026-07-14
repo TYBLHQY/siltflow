@@ -47,9 +47,6 @@ export default defineConfig({
             rollupOptions: {
               external: [
                 'better-sqlite3',
-                'ws',
-                'bufferutil',
-                'utf-8-validate',
               ],
             },
             minify: 'esbuild',
