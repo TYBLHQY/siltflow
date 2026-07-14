@@ -15,6 +15,7 @@ import { registerFSRSCardHandlers } from './ipc/fsrs-cards.ipc'
 import { registerTTSHandlers, setTtsCacheDir } from './ipc/tts.ipc'
 import { registerFolderHandlers, setVaultPathForFolders } from './ipc/folders.ipc'
 import { registerReviewLogHandlers } from './ipc/review-logs.ipc'
+import { startSyncServer, stopSyncServer, getSyncStatus } from './sync/server'
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
@@ -411,6 +412,28 @@ ipcMain.handle('update:install', async () => {
 // Open external URL in system browser
 ipcMain.handle('shell:openExternal', async (_event, url: string) => {
   shell.openExternal(url)
+})
+
+// ── Sync Server ──────────────────────────────────────────────────────
+
+ipcMain.handle('sync:start', async () => {
+  const vp = getVaultPath()
+  if (!vp) return { error: 'No vault configured' }
+  try {
+    const port = await startSyncServer(vp)
+    return { port }
+  } catch (err: any) {
+    return { error: err.message }
+  }
+})
+
+ipcMain.handle('sync:stop', () => {
+  stopSyncServer()
+  return { ok: true }
+})
+
+ipcMain.handle('sync:status', () => {
+  return getSyncStatus()
 })
 
 // ── App Bootstrap ─────────────────────────────────────────────────

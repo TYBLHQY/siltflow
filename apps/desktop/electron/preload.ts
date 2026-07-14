@@ -78,6 +78,11 @@ export interface SiltflowAPI {
     updateSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
     updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
   }
+  sync: {
+    start: () => Promise<{ port?: number; error?: string }>
+    stop: () => Promise<{ ok: boolean }>
+    status: () => Promise<{ running: boolean; port: number }>
+  }
 }
 
 const api: SiltflowAPI = {
@@ -173,6 +178,11 @@ const api: SiltflowAPI = {
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),
     listVoices: (binaryPath?: string) => ipcRenderer.invoke('tts:listVoices', binaryPath),
+  },
+  sync: {
+    start: () => ipcRenderer.invoke('sync:start'),
+    stop: () => ipcRenderer.invoke('sync:stop'),
+    status: () => ipcRenderer.invoke('sync:status'),
   },
 }
 

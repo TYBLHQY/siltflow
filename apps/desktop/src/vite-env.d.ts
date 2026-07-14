@@ -135,6 +135,11 @@ interface SiltflowAPI {
       items: { id: string; sortOrder: number }[],
     ) => Promise<void>;
   };
+  sync: {
+    start: () => Promise<{ port?: number; error?: string }>;
+    stop: () => Promise<{ ok: boolean }>;
+    status: () => Promise<{ running: boolean; port: number }>;
+  };
 }
 
 interface Window {
