@@ -6,7 +6,6 @@
  *   Mobile → Desktop: push ONLY review_logs + fsrs_cards (learning progress)
  */
 import { getDb } from "../database";
-import * as FileSystem from "expo-file-system/legacy";
 
 export class SyncClient {
   private baseUrl: string;
@@ -68,11 +67,6 @@ export class SyncClient {
       );
     }
     counts.documents = docs.length;
-
-    // PDFs (skip if already downloaded)
-    for (const d of docs) {
-      await this.downloadPdfIfMissing(d.id);
-    }
 
     // Annotations
     const annotations = await this.fetchJson<any[]>("/api/annotations");
@@ -136,34 +130,6 @@ export class SyncClient {
   } finally {
       await db.execAsync("PRAGMA foreign_keys = ON");
     }
-  }
-
-  // ====================================================================
-  // PDF download (skip if exists)
-  // ====================================================================
-
-  async downloadPdfIfMissing(documentId: string): Promise<string | null> {
-    const destDir = `${FileSystem.documentDirectory}pdfs/`;
-    const destPath = `${destDir}${documentId}.pdf`;
-
-    const info = await FileSystem.getInfoAsync(destPath);
-    if (info.exists) return destPath;
-
-    await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
-    try {
-      const result = await FileSystem.downloadAsync(
-        `${this.baseUrl}/api/documents/pdf/${documentId}`,
-        destPath,
-      );
-      return result.uri;
-    } catch (err) {
-      console.warn(`[sync] failed to download PDF ${documentId}:`, err);
-      return null;
-    }
-  }
-
-  getPdfPath(documentId: string): string {
-    return `${FileSystem.documentDirectory}pdfs/${documentId}.pdf`;
   }
 
   // ====================================================================
