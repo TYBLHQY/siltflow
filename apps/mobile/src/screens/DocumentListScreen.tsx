@@ -83,7 +83,7 @@ export default function DocumentListScreen() {
       </View>
 
       <FlatList
-        data={docMetrics}
+        data={docMetrics.filter((m) => m.totalCards > 0)}
         keyExtractor={(item) => item.documentId}
         renderItem={({ item }) => {
           const status = statusLabel(item);
