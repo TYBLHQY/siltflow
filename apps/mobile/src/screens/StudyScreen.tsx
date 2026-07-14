@@ -1,109 +1,143 @@
 /**
  * Study screen — FSRS card review interface for mobile.
  * Shows one card at a time: front (text + translation) → flip → rate.
- *
- * Ratings are persisted via reviewAnnotation() which:
- * 1. Runs FSRS engine to compute next review
- * 2. Updates FSRS card in annotations store
- * 3. Writes review_log to database
  */
+
 import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAnnotationStore, type AnnotationItem } from "../stores/annotation.store";
 import { reviewAnnotation } from "../stores/fsrs.store";
 import type { AIAnnotationData } from "@siltflow/shared/types";
 
-// ── Study phases ──
-
-type StudyPhase = "select-doc" | "study";
-
-export default function StudyScreen() {
-  const items = useAnnotationStore((s) => s.items);
-  const [phase, setPhase] = useState<StudyPhase>("select-doc");
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-
-  // Group by document
-  const docsWithCards = useMemo(() => {
-    const map = new Map<string, AnnotationItem[]>();
-    for (const item of items) {
-      const list = map.get(item.documentId) ?? [];
-      list.push(item);
-      map.set(item.documentId, list);
-    }
-    return Array.from(map.entries()).map(([id, annotations]) => ({
-      documentId: id,
-      annotationCount: annotations.length,
-    }));
-  }, [items]);
-
-  const handleSelectDoc = (docId: string) => {
-    setSelectedDocId(docId);
-    setPhase("study");
-  };
-
-  if (phase === "study" && selectedDocId) {
-    return (
-      <StudySession
-        documentId={selectedDocId}
-        annotations={items.filter((i) => i.documentId === selectedDocId)}
-        onBack={() => setPhase("select-doc")}
-      />
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Select Document to Study</Text>
-      </View>
-      <FlatList
-        data={docsWithCards}
-        keyExtractor={(item) => item.documentId}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.docCard}
-            onPress={() => handleSelectDoc(item.documentId)}
-          >
-            <Text style={styles.docCardTitle}>
-              Document {item.documentId.slice(0, 8)}…
-            </Text>
-            <Text style={styles.docCardCount}>
-              {item.annotationCount} card{item.annotationCount !== 1 ? "s" : ""}
-            </Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              No annotations to study.{ "\n"}Sync annotations from desktop first.
-            </Text>
-          </View>
-        }
-      />
-    </SafeAreaView>
-  );
-}
-
-// ── Study Session ──
-
-interface StudySessionProps {
+interface StudyScreenProps {
   documentId: string;
-  annotations: AnnotationItem[];
   onBack: () => void;
 }
 
-function StudySession({ documentId, annotations, onBack }: StudySessionProps) {
+export default function StudyScreen({ documentId, onBack }: StudyScreenProps) {
+  const allItems = useAnnotationStore((s) => s.items);
+  const items = useMemo(
+    () => allItems.filter((i) => i.documentId === documentId),
+    [allItems, documentId],
+  );
+
+  // Skip selection — document is already chosen
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
 
-  const current = annotations[currentIndex];
+  const current = items[currentIndex];
+
+  const handleGrade = useCallback(
+    (grade: 1 | 2 | 3 | 4) => {
+      if (!current) return;
+      reviewAnnotation(current.id, grade as any);
+      if (currentIndex < items.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+        setRevealed(false);
+      }
+    },
+    [current, currentIndex, items.length],
+  );
+
+  // All done
+  if (!current || currentIndex >= items.length) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.centered}>
+          <Text style={styles.doneTitle}>All done! 🎉</Text>
+          <Text style={styles.doneSubtitle}>Reviewed {items.length} cards</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack}>
+            <Text style={styles.backBtnText}>Back to document list</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const aiData: AIAnnotationData | null = current.aiResult ?? null;
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.backBtn}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.progress}>
+          {currentIndex + 1} / {items.length}
+        </Text>
+      </View>
+
+      {/* Card */}
+      <View style={styles.cardArea}>
+        <View style={styles.cardFront}>
+          <Text style={styles.cardLabel}>TEXT</Text>
+          <Text style={styles.cardText}>{current.text}</Text>
+          {aiData && (
+            <View style={styles.translationBox}>
+              <Text style={styles.translationLabel}>TRANSLATION</Text>
+              <Text style={styles.translationText}>{aiData.translation}</Text>
+            </View>
+          )}
+        </View>
+
+        {revealed && aiData && (
+          <View style={styles.cardBack}>
+            {aiData.definitions?.length > 0 && (
+              <>
+                <Text style={styles.revealLabel}>DEFINITIONS</Text>
+                {aiData.definitions.map((d, i) => (
+                  <Text key={i} style={styles.defText}>
+                    {d.pos ? `(${d.pos}) ` : ""}{d.definition}
+                  </Text>
+                ))}
+              </>
+            )}
+            {aiData.examples?.length > 0 && (
+              <>
+                <Text style={[styles.revealLabel, { marginTop: 10 }]}>EXAMPLES</Text>
+                {aiData.examples.slice(0, 2).map((ex, i) => (
+                  <Text key={i} style={styles.exampleText}>
+                    "{ex.sentence}" → {ex.translation}
+                  </Text>
+                ))}
+              </>
+            )}
+            {aiData.pronunciation?.ipa && (
+              <Text style={styles.ipaText}>/{aiData.pronunciation.ipa}/</Text>
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        {!revealed ? (
+          <TouchableOpacity style={styles.revealBtn} onPress={() => setRevealed(true)}>
+            <Text style={styles.revealBtnText}>Tap to Reveal</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <Text style={styles.rateLabel}>How well did you remember?</Text>
+            <View style={styles.gradeRow}>
+              <GradeBtn label="Again" color="#e74c3c" onPress={() => handleGrade(1)} />
+              <GradeBtn label="Hard" color="#e67e22" onPress={() => handleGrade(2)} />
+              <GradeBtn label="Good" color="#27ae60" onPress={() => handleGrade(3)} />
+              <GradeBtn label="Easy" color="#2980b9" onPress={() => handleGrade(4)} />
+            </View>
+          </>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
 
   const handleGrade = useCallback(
     (grade: 1 | 2 | 3 | 4) => {

@@ -20,7 +20,7 @@ interface Props {
 }
 
 // Load the inlined HTML from assets
-const PDF_VIEWER_HTML = require("../../assets/pdf-viewer/index.html") as string;
+import PDF_VIEWER_HTML from "../pdf-viewer-html";
 
 export default function PdfReaderScreen({ documentId, title, pdfPath, onClose }: Props) {
   const webRef = useRef<WebView>(null);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,18 +10,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDocumentStore } from "../stores/document.store";
-import PdfReaderScreen from "./PdfReaderScreen";
+import { useAnnotationStore } from "../stores/annotation.store";
+import StudyScreen from "./StudyScreen";
 
 export default function DocumentListScreen() {
   const documents = useDocumentStore((s) => s.documents);
   const loaded = useDocumentStore((s) => s.loaded);
   const loadFromDb = useDocumentStore.getState().loadFromDb;
+  const items = useAnnotationStore((s) => s.items);
   const [refreshing, setRefreshing] = useState(false);
-
-  // PDF reader state
-  const [pdfDocId, setPdfDocId] = useState<string | null>(null);
-  const [pdfTitle, setPdfTitle] = useState("");
-  const [pdfPath, setPdfPath] = useState<string | null>(null);
+  const [studyingDocId, setStudyingDocId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loaded) loadFromDb();
@@ -33,37 +31,54 @@ export default function DocumentListScreen() {
     setRefreshing(false);
   }, []);
 
-  const openPdf = async (doc: { id: string; title: string }) => {
-    // Try to load PDF from synced storage
-    const { getPdfPath } = await import("../sync/client");
-    const client = new (await import("../sync/client")).SyncClient("", 0);
-    setPdfDocId(doc.id);
-    setPdfTitle(doc.title);
-    setPdfPath(client.getPdfPath(doc.id));
-  };
+  // Cards per document
+  const docCardCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of items) {
+      map.set(item.documentId, (map.get(item.documentId) ?? 0) + 1);
+    }
+    return map;
+  }, [items]);
+
+  if (studyingDocId) {
+    return (
+      <StudyScreen
+        documentId={studyingDocId}
+        onBack={() => setStudyingDocId(null)}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Documents</Text>
+        <Text style={styles.headerTitle}>Study</Text>
       </View>
 
       <FlatList
         data={documents}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.docRow} onPress={() => openPdf(item)}>
-            <Text style={styles.docIcon}>📄</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.docTitle} numberOfLines={1}>
-                {item.title}
-              </Text>
-              {item.totalPages ? (
-                <Text style={styles.docMeta}>{item.totalPages} pages</Text>
-              ) : null}
-            </View>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const cardCount = docCardCounts.get(item.id) ?? 0;
+          return (
+            <TouchableOpacity
+              style={styles.docRow}
+              onPress={() => cardCount > 0 && setStudyingDocId(item.id)}
+              disabled={cardCount === 0}
+            >
+              <Text style={styles.docIcon}>📄</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.docTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+                <Text style={styles.docMeta}>
+                  {cardCount} card{cardCount !== 1 ? "s" : ""}
+                </Text>
+              </View>
+              {cardCount > 0 && <Text style={styles.arrow}>→</Text>}
+            </TouchableOpacity>
+          );
+        }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -75,21 +90,6 @@ export default function DocumentListScreen() {
           </View>
         }
       />
-
-      {/* PDF Reader Modal */}
-      {pdfDocId && pdfPath && (
-        <Modal visible animationType="slide">
-          <PdfReaderScreen
-            documentId={pdfDocId}
-            title={pdfTitle}
-            pdfPath={pdfPath}
-            onClose={() => {
-              setPdfDocId(null);
-              setPdfPath(null);
-            }}
-          />
-        </Modal>
-      )}
     </SafeAreaView>
   );
 }
@@ -106,14 +106,15 @@ const styles = StyleSheet.create({
   docRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: "#eee",
   },
   docIcon: { fontSize: 18, marginRight: 12 },
   docTitle: { fontSize: 16, fontWeight: "600", color: "#333" },
-  docMeta: { fontSize: 12, color: "#999", marginTop: 2 },
+  docMeta: { fontSize: 13, color: "#888", marginTop: 2 },
+  arrow: { fontSize: 18, color: "#ccc", marginLeft: 8 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: "#999", textAlign: "center", lineHeight: 22 },
 });

@@ -53,7 +53,7 @@ export function SyncButton({ vaultReady }: SyncButtonProps) {
     setTimeout(() => setCopied(false), 2000);
   }, [ips, status.port]);
 
-  if (!vaultReady) return null;
+  if (vaultReady === false) return null;
 
   return (
     <div className="relative" ref={panelRef}>
