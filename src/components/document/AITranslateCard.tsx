@@ -323,41 +323,22 @@ export function AITranslateCard({
             </p>
           )}
 
-          {(ai.lemma || ai.pos || register || (ipa && isWord)) && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {ai.lemma && (
-                <span className="font-semibold text-foreground">{ai.lemma}</span>
+          {/* Meta tags: difficulty + IPA + register + tags */}
+          {(difficulty || (ipa && isWord) || register || (tags && tags.length > 0)) && (
+            <div className="flex flex-wrap gap-1">
+              {difficulty && (
+                <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
+                  {difficulty}
+                </span>
               )}
-              {ai.pos && (
-                <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach">
-                  {ai.pos}
+              {ipa && isWord && (
+                <span className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo">
+                  {ipa.startsWith("/") ? ipa : `/${ipa}/`}
                 </span>
               )}
               {register && (
                 <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender">
                   {register}
-                </span>
-              )}
-              {ipa && isWord && (
-                <span
-                  className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo cursor-pointer hover:bg-flamingo/25 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (tts.state === "playing") tts.stop();
-                    else tts.speak(ai.lemma || item.text, undefined, ai.source_lang);
-                  }}
-                >
-                  {ipa.startsWith("/") ? ipa : `/${ipa}/`}
-                </span>
-              )}
-            </div>
-          )}
-
-          {(difficulty || (tags && tags.length > 0)) && (
-            <div className="flex flex-wrap gap-1">
-              {difficulty && (
-                <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
-                  {difficulty}
                 </span>
               )}
               {tags?.slice(0, 3).map((tag) => (
