@@ -10,10 +10,10 @@ import { useState, useRef, useEffect } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { IconText } from "@/components/ui/icon-text";
 import { KnuthPlassText } from "@/components/ui/KnuthPlassText";
-import { useTTS } from "@/lib/use-tts";
+import { useTTS } from "@/hooks/use-tts";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
-import { renderBoldText } from "@/lib/render-bold";
+import { renderBoldText } from "@/components/ui/render-bold";
 import { FSRSStats } from "@/components/document/FSRSStats";
 
 interface AITranslateCardProps {

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ChartCard } from "../ChartCard";
-import { HeatmapCalendar } from "../HeatmapCalendar";
+import { CalendarGrid } from "../CalendarGrid";
 import { computeCalendarHeatmap } from "@/lib/stats-computation";
 import { useStatsStore } from "@/stores/stats.store";
 
@@ -51,7 +51,7 @@ export function CalendarHeatmap() {
       emptyMessage="No review activity yet"
     >
       <div className="overflow-x-auto flex justify-center">
-        <HeatmapCalendar
+        <CalendarGrid
           title=""
           data={data}
           rangeDays={rangeDays}

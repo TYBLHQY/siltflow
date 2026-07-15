@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { ScaledPosition, Content } from "react-pdf-highlighter-plus";
-import type { AIAnnotationData } from "@/lib/annotation-types";
+import type { AIAnnotationData } from "@/types/annotation";
 import type { Card } from "ts-fsrs";
 import { useReviewLogStore } from "@/stores/review-log.store";
 

@@ -9,11 +9,11 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react";
-import { useTTS } from "@/lib/use-tts";
+import { useTTS } from "@/hooks/use-tts";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
-import { renderBoldText } from "@/lib/render-bold";
+import { renderBoldText } from "@/components/ui/render-bold";
 import { FSRSStats } from "@/components/document/FSRSStats";
 
 interface StudyPanelProps {

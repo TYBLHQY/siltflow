@@ -63,7 +63,7 @@ export type AxisLabelsConfig = {
   className?: string;
 };
 
-export type HeatmapCalendarProps = {
+export type CalendarGridProps = {
   title?: string;
   data: HeatmapDatum[];
   /** Number of days ending at endDate (default 365) */
@@ -179,7 +179,7 @@ function weekdayLabelForIndex(index: number, weekStartsOn: 0 | 1) {
 
 /* ---------------- component ---------------- */
 
-export function HeatmapCalendar({
+export function CalendarGrid({
   title = "Activity",
   data,
   rangeDays = 365,
@@ -195,7 +195,7 @@ export function HeatmapCalendar({
   renderLegend,
   renderTooltip,
   className,
-}: HeatmapCalendarProps) {
+}: CalendarGridProps) {
   // Default classes are semantic => good in light/dark
   const levels = levelClassNames ?? [
     "bg-muted",

@@ -9,7 +9,7 @@
 
 import type { AIProfile } from "@/stores/ai.store";
 import { chatCompletion } from "@/lib/ai";
-import type { AIAnnotationData } from "@/lib/annotation-types";
+import type { AIAnnotationData } from "@/types/annotation";
 
 // ===========================================================================
 // Types
