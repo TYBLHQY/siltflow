@@ -80,7 +80,7 @@ export interface SiltflowAPI {
     updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
   }
   review: {
-    getAllCardsWithDocuments: () => Promise<Record<string, { title: string; cardData: string[]; annotationIds: string[] }>>
+    getDocMetrics: () => Promise<import("../src/lib/doc-review").DocReviewMetrics[]>
   }
 }
 
@@ -176,7 +176,7 @@ const api: SiltflowAPI = {
     updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('documents:updateSortOrder', items),
   },
   review: {
-    getAllCardsWithDocuments: () => ipcRenderer.invoke('review:getAllCardsWithDocuments'),
+    getDocMetrics: () => ipcRenderer.invoke('review:getDocMetrics'),
   },
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),

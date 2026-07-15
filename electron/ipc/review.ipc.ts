@@ -2,67 +2,183 @@ import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 
 /**
- * Single batch IPC handler that returns all FSRS card data across all documents.
+ * Compute retrievability from FSRS card state (FSRS-5).
+ * Duplicated from src/lib/doc-review.ts because the main process
+ * can't use the @ path alias.
+ */
+function retrievability(stability: number, elapsedDays: number): number {
+  if (stability <= 0 || elapsedDays < 0) return 0
+  const w20 = 0.1542
+  const factor = Math.pow(0.9, -1 / w20) - 1
+  return Math.pow(1 + (factor * elapsedDays) / stability, -w20)
+}
+
+interface FSRSCard {
+  state: number
+  due: string
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  reps: number
+  lapses: number
+}
+
+/**
+ * Single batch IPC handler that returns pre-computed DocReviewMetrics
+ * for every document — computed entirely in the main process so the
+ * renderer only has to setState.
  *
- * Previously the renderer iterated over every document calling
- * fsrsCards.listByDocument() — O(N) IPC calls. This handler replaces
- * that with 3 SQL queries in one call (O(1) IPC).
- *
- * Returns:
- *   Record<string, { title: string; cardData: string[]; annotationIds: string[] }>
- *   keyed by documentId. Every document gets an entry; documents with no
- *   annotations get empty cards + annotationIds arrays.
+ * Previously: O(N) IPC calls + renderer-side JSON.parse + computation.
+ * Now:        O(1) IPC call, all work in the main process.
  */
 export function registerReviewHandlers() {
-  ipcMain.handle("review:getAllCardsWithDocuments", () => {
+  ipcMain.handle("review:getDocMetrics", () => {
     const sql = getSqlite()
-    if (!sql) return {}
+    if (!sql) return []
 
-    // All documents
     const docs = sql
       .prepare("SELECT id, title FROM documents ORDER BY title")
       .all() as { id: string; title: string }[]
 
-    // All FSRS cards (stringified JSON)
-    const cards = sql
-      .prepare("SELECT document_id, annotation_id, data FROM fsrs_cards")
-      .all() as { document_id: string; annotation_id: string; data: string }[]
+    if (docs.length === 0) return []
 
-    // All annotations (just ids for counting cards with no card row)
-    const annotations = sql
-      .prepare("SELECT id, document_id FROM annotations")
-      .all() as { id: string; document_id: string }[]
-
-    // Build card lookup: document_id → card data strings
+    // Count cards per document (annotation_id → data)
     const cardsByDoc = new Map<string, string[]>()
-    for (const c of cards) {
-      let list = cardsByDoc.get(c.document_id)
+    const cardRows = sql
+      .prepare("SELECT document_id, data FROM fsrs_cards")
+      .all() as { document_id: string; data: string }[]
+
+    for (const row of cardRows) {
+      let list = cardsByDoc.get(row.document_id)
       if (!list) {
         list = []
-        cardsByDoc.set(c.document_id, list)
+        cardsByDoc.set(row.document_id, list)
       }
-      list.push(c.data)
+      list.push(row.data)
     }
 
-    // Build annotation-id set per doc
-    const annIdsByDoc = new Map<string, string[]>()
-    for (const a of annotations) {
-      let list = annIdsByDoc.get(a.document_id)
-      if (!list) {
-        list = []
-        annIdsByDoc.set(a.document_id, list)
-      }
-      list.push(a.id)
+    // Count annotations per document (to catch annotations with no card row)
+    const annCountByDoc = new Map<string, number>()
+    const annRows = sql
+      .prepare("SELECT document_id, COUNT(*) as cnt FROM annotations GROUP BY document_id")
+      .all() as { document_id: string; cnt: number }[]
+
+    for (const row of annRows) {
+      annCountByDoc.set(row.document_id, row.cnt)
     }
 
-    const result: Record<string, { title: string; cardData: string[]; annotationIds: string[] }> = {}
+    // ── Compute metrics per document ──────────────────────────────
+    const now = Date.now()
+    const dayMs = 86400000
+    const results: MetricsRow[] = []
+
     for (const doc of docs) {
-      result[doc.id] = {
-        title: doc.title,
-        cardData: cardsByDoc.get(doc.id) ?? [],
-        annotationIds: annIdsByDoc.get(doc.id) ?? [],
+      const rawCards = cardsByDoc.get(doc.id) ?? []
+      const annCount = annCountByDoc.get(doc.id) ?? 0
+      const cards: FSRSCard[] = []
+
+      for (const raw of rawCards) {
+        try {
+          cards.push(JSON.parse(raw))
+        } catch { /* skip corrupt data */ }
       }
+
+      // Annotations without an FSRS card → treat as New state
+      while (cards.length < annCount) {
+        cards.push({
+          state: 0, // State.New
+          due: new Date().toISOString(),
+          stability: 0,
+          difficulty: 0,
+          elapsed_days: 0,
+          scheduled_days: 0,
+          reps: 0,
+          lapses: 0,
+        })
+      }
+
+      if (cards.length === 0) {
+        results.push({
+          documentId: doc.id,
+          documentTitle: doc.title,
+          totalCards: 0,
+          newCardsCount: 0,
+          dueNowCount: 0,
+          dueSoonCount: 0,
+          avgRetrievability: 0,
+          avgOverdueRatio: 0,
+          compositeScore: -1,
+        })
+        continue
+      }
+
+      let dueNowCount = 0, dueSoonCount = 0, newCardsCount = 0
+      let nonNewCount = 0, retrievabilitySum = 0, overdueRatioSum = 0, overdueCount = 0
+
+      for (const card of cards) {
+        if (card.state === 0) { // State.New
+          newCardsCount++
+          continue
+        }
+        nonNewCount++
+        const dueMs = new Date(card.due).getTime()
+        const elapsedDays = now > dueMs ? (now - dueMs) / dayMs : 0
+
+        if (card.stability > 0) {
+          retrievabilitySum += retrievability(card.stability, elapsedDays)
+        }
+        if (dueMs <= now) {
+          dueNowCount++
+          if (card.scheduled_days > 0 && elapsedDays > 0) {
+            overdueRatioSum += elapsedDays / card.scheduled_days
+            overdueCount++
+          }
+        }
+        if (dueMs > now && dueMs <= now + 7 * dayMs) {
+          dueSoonCount++
+        }
+      }
+
+      const avgRetrievability = nonNewCount > 0 ? retrievabilitySum / nonNewCount : 0
+      const avgOverdueRatio = overdueCount > 0 ? overdueRatioSum / overdueCount : 0
+
+      results.push({
+        documentId: doc.id,
+        documentTitle: doc.title,
+        totalCards: cards.length,
+        newCardsCount,
+        dueNowCount,
+        dueSoonCount,
+        avgRetrievability: Math.round(avgRetrievability * 100),
+        avgOverdueRatio: Math.round(avgOverdueRatio * 100),
+        compositeScore:
+          dueNowCount * 200 +
+          newCardsCount * 50 +
+          dueSoonCount * 15 +
+          Math.max(0, 0.9 - avgRetrievability) * 30 +
+          avgOverdueRatio * 50,
+      })
     }
-    return result
+
+    // Sort: most urgent first, then by title
+    results.sort((a, b) =>
+      b.compositeScore - a.compositeScore ||
+      a.documentTitle.localeCompare(b.documentTitle),
+    )
+
+    return results
   })
+}
+
+interface MetricsRow {
+  documentId: string
+  documentTitle: string
+  totalCards: number
+  newCardsCount: number
+  dueNowCount: number
+  dueSoonCount: number
+  avgRetrievability: number
+  avgOverdueRatio: number
+  compositeScore: number
 }

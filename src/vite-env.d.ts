@@ -137,7 +137,7 @@ interface SiltflowAPI {
     ) => Promise<void>;
   };
   review: {
-    getAllCardsWithDocuments: () => Promise<Record<string, { title: string; cardData: string[]; annotationIds: string[] }>>;
+    getDocMetrics: () => Promise<import("@/lib/doc-review").DocReviewMetrics[]>;
   };
 }
 

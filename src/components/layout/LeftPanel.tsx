@@ -210,26 +210,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const docs = useDocumentStore.getState().documents;
     if (docs.length === 0) { setMetricsLoading(false); return; }
     try {
-      const data = await window.siltflow.review.getAllCardsWithDocuments();
-
-      // Build annotation id set per doc to find uncarded annotations
-      const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {};
-      for (const doc of docs) {
-        const entry = data?.[doc.id];
-        const cards: import("ts-fsrs").Card[] = [];
-
-        if (entry) {
-          for (const cardStr of entry.cardData) {
-            try {
-              cards.push(JSON.parse(cardStr) as import("ts-fsrs").Card);
-            } catch { /* skip corrupt data */ }
-          }
-        }
-
-        byDoc[doc.id] = { title: entry?.title ?? doc.title, cards };
-      }
-
-      setDocMetrics(computeDocMetrics(byDoc));
+      const metrics = await window.siltflow.review.getDocMetrics();
+      setDocMetrics(metrics);
     } catch (err) {
       console.error("batch load failed, falling back to incremental metrics", err);
       computeMetricsFromItems();
