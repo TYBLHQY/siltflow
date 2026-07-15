@@ -1,6 +1,6 @@
 import { Search, Loader2, BrainCircuit, FileText } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, memo, useEffect, useState } from "react";
+import { useRef, memo, useEffect } from "react";
 import type { DocReviewMetrics } from "@/lib/doc-review";
 
 interface ReviewTabProps {
@@ -29,8 +29,6 @@ function urgencyLabel(avgRetrievability: number): string {
   return "overdue";
 }
 
-const ROW_HEIGHT = 72;
-
 // ── Row component ──────────────────────────────────────────────────────
 
 const ReviewTabRow = memo(function ReviewTabRow({
@@ -42,15 +40,15 @@ const ReviewTabRow = memo(function ReviewTabRow({
   isActive: boolean;
   onSelectDocument: (doc: { id: string; title: string }) => void;
 }) {
+  const hasTags = metric.totalCards > 0;
   return (
     <div
       data-doc-id={metric.documentId}
-      className={`group relative border-b border-border/50 pl-3 py-2.5 pr-3 text-sm transition-colors cursor-pointer ${
+      className={`group relative border-b border-border/50 pl-3 text-sm transition-colors cursor-pointer ${
         isActive
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
           : "hover:bg-accent"
-      }`}
-      style={{ height: ROW_HEIGHT }}
+      } ${hasTags ? "py-2.5 pr-3" : "py-2 pr-3"}`}
       onClick={() => onSelectDocument({ id: metric.documentId, title: metric.documentTitle })}
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -62,7 +60,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
           {metric.documentTitle}
         </span>
       </div>
-      {metric.totalCards > 0 && (
+      {hasTags && (
         <div className="flex flex-wrap items-center gap-2 mt-0.5">
           <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">
             {metric.newCardsCount} new
@@ -99,24 +97,12 @@ export const ReviewTab = memo(function ReviewTab({
 }: ReviewTabProps) {
   // Virtual scrolling
   const parentRef = useRef<HTMLDivElement>(null);
-  const [_parentHeight, setParentHeight] = useState(400);
-
-  useEffect(() => {
-    const el = parentRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setParentHeight(entry.contentRect.height);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   const virtualizer = useVirtualizer({
     count: filteredMetrics.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => 56, // fallback; measureElement overrides after first render
+    measureElement: (el) => el.getBoundingClientRect().height,
     overscan: 10,
   });
 
@@ -198,12 +184,13 @@ export const ReviewTab = memo(function ReviewTab({
               return (
                 <div
                   key={metric.documentId}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
                   style={{
                     position: "absolute",
                     top: 0,
                     left: 0,
                     width: "100%",
-                    height: ROW_HEIGHT,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
