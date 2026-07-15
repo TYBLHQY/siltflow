@@ -239,6 +239,7 @@ export function CenterPanel({
           pageNumber: a.page_number ?? 1,
           embedData: a.embed_data as AnnotationEmbedData,
           aiResult: a.ai_data ?? undefined,
+          aiVersion: a.ai_version ?? undefined,
           fsrsCard: a.fsrs_data ?? undefined,
         })),
       );

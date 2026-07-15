@@ -17,10 +17,46 @@ import { useToastStore } from "@/stores/toast.store";
 import { useShortcut } from "@/hooks/useShortcut";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import type { Grade } from "ts-fsrs";
+import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
+import type { AIProfile } from "@/stores/ai.store";
+import type { AnnotationItem } from "@/stores/annotation.store";
 
 interface AnnotationsTabProps {
   onTabChange?: (tab: string) => void;
   annotationsScrollRef: React.RefObject<HTMLDivElement>;
+}
+
+// ── Shared translation helper ───────────────────────────────────────
+// Both single-annotation and batch-annotation translation use this.
+
+async function translateItem(
+  item: { id: string; text: string },
+  profile: AIProfile,
+  sourceLang: string,
+  targetLang: string,
+  summary: string | undefined,
+  texts: string[] | undefined,
+  updateItem: (id: string, patch: Partial<AnnotationItem>) => void,
+  showToast: (message: string, type: "info" | "success" | "error") => void,
+): Promise<boolean> {
+  updateItem(item.id, { aiResult: null });
+  try {
+    const { translateAnnotation, extractArticleContext } = await import("@/lib/translate");
+    const result = await translateAnnotation(profile, {
+      text: item.text,
+      sourceLang,
+      targetLang,
+      contextSentence: item.text,
+      context: summary ?? extractArticleContext((texts ?? []).join(" ")),
+    });
+    updateItem(item.id, { aiResult: result, text: result.cleaned_input || item.text });
+    return true;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Translation failed";
+    showToast(message, "error");
+    updateItem(item.id, { aiResult: undefined });
+    return false;
+  }
 }
 
 export function AnnotationsTab({
@@ -107,26 +143,18 @@ export function AnnotationsTab({
 
     setBatchTranslating(true);
     const results = await Promise.all(
-      untranslated.map(async (item) => {
-        updateItem(item.id, { aiResult: null });
-        try {
-          const { translateAnnotation, extractArticleContext } = await import("@/lib/translate");
-          const result = await translateAnnotation(activeProfile, {
-            text: item.text,
-            sourceLang,
-            targetLang: effectiveTargetLang,
-            contextSentence: item.text,
-            context: summary?.text ?? extractArticleContext(texts ? texts.map((t) => t).join(" ") : ""),
-          });
-          updateItem(item.id, { aiResult: result, text: result.cleaned_input || item.text });
-          return true;
-        } catch (err) {
-          const message = err instanceof Error ? err.message : "Translation failed";
-          showToast(`${message}`, "error");
-          updateItem(item.id, { aiResult: undefined });
-          return false;
-        }
-      }),
+      untranslated.map((item) =>
+        translateItem(
+          item,
+          activeProfile,
+          sourceLang,
+          effectiveTargetLang,
+          summary?.text || undefined,
+          texts,
+          updateItem,
+          showToast,
+        ),
+      ),
     );
     setBatchTranslating(false);
     const completed = results.filter(Boolean).length;
@@ -177,15 +205,9 @@ export function AnnotationsTab({
                 }
               }}
             >
-              <option value="en">English</option>
-              <option value="zh">中文</option>
-              <option value="ja">日本語</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="es">Español</option>
-              <option value="ko">한국어</option>
-              <option value="ru">Русский</option>
-              <option value="auto">Auto</option>
+              {LANGUAGES_WITH_AUTO.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
             </select>
           </span>
           <span className="flex items-center gap-1 text-muted-foreground">
@@ -199,14 +221,9 @@ export function AnnotationsTab({
                 if (docId) setTargetLang(docId, val);
               }}
             >
-              <option value="zh">中文</option>
-              <option value="en">English</option>
-              <option value="ja">日本語</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="es">Español</option>
-              <option value="ko">한국어</option>
-              <option value="ru">Русский</option>
+              {LANGUAGES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
               <option value="__default__">
                 Default (zh)
               </option>
@@ -269,34 +286,16 @@ export function AnnotationsTab({
                         return;
                       }
 
-                      updateItem(id, { aiResult: null });
-
-                      try {
-                        const { translateAnnotation, extractArticleContext } =
-                          await import("@/lib/translate");
-                        const result = await translateAnnotation(profile, {
-                          text: item.text,
-                          sourceLang,
-                          targetLang: effectiveTargetLang,
-                          contextSentence: item.text,
-                          context:
-                            summary?.text ??
-                            extractArticleContext(
-                              (texts ?? []).map((t) => t).join(" "),
-                            ),
-                        });
-                        updateItem(id, {
-                          aiResult: result,
-                          text: result.cleaned_input || item.text,
-                        });
-                      } catch (err) {
-                        const message =
-                          err instanceof Error
-                            ? err.message
-                            : "Translation failed";
-                        showToast(message, "error");
-                        updateItem(id, { aiResult: undefined });
-                      }
+                      await translateItem(
+                        item,
+                        profile,
+                        sourceLang,
+                        effectiveTargetLang,
+                        summary.text,
+                        texts,
+                        updateItem,
+                        showToast,
+                      );
                     }}
                   />
                 </div>

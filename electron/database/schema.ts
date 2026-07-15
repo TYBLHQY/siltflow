@@ -67,6 +67,7 @@ export const aiResults = sqliteTable(
       .notNull()
       .references(() => documents.id, { onDelete: "cascade" }),
     data: text("data").notNull(),
+    version: integer("version").notNull(),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },

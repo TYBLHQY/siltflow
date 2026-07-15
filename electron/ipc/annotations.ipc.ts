@@ -22,6 +22,7 @@ export function registerAnnotationHandlers() {
         a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
         a.created_at, a.updated_at,
         ar.data AS ai_data,
+        ar.version AS ai_version,
         fc.data AS fsrs_data
       FROM annotations a
       LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
@@ -40,6 +41,7 @@ export function registerAnnotationHandlers() {
       created_at: r.created_at,
       updated_at: r.updated_at,
       ai_data: r.ai_data ? tryParseJson(r.ai_data, null) : null,
+      ai_version: r.ai_version ?? null,
       fsrs_data: r.fsrs_data ? tryParseJson(r.fsrs_data, null) : null,
     }))
   })

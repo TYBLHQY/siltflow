@@ -1,5 +1,6 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
+import { AI_DATA_VERSION } from "../database"
 
 export function registerAiResultHandlers() {
   ipcMain.handle("aiResults:get", (_event, annotationId: string, documentId: string) => {
@@ -21,18 +22,19 @@ export function registerAiResultHandlers() {
     if (!sql) return null
     const now = new Date().toISOString()
     sql.prepare(
-      `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, created_at, updated_at)
-       VALUES (?, ?, ?, COALESCE((SELECT created_at FROM ai_results WHERE annotation_id = ? AND document_id = ?), ?), ?)`
+      `INSERT OR REPLACE INTO ai_results (annotation_id, document_id, data, version, created_at, updated_at)
+       VALUES (?, ?, ?, ?, COALESCE((SELECT created_at FROM ai_results WHERE annotation_id = ? AND document_id = ?), ?), ?)`
     ).run(
       record.annotationId,
       record.documentId,
       JSON.stringify(record.data),
+      AI_DATA_VERSION,
       record.annotationId,
       record.documentId,
       now,
       now,
     )
-    return { annotationId: record.annotationId }
+    return { annotationId: record.annotationId, version: AI_DATA_VERSION }
   })
 
   ipcMain.handle("aiResults:delete", (_event, annotationId: string, documentId: string) => {

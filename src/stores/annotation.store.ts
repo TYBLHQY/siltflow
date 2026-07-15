@@ -19,6 +19,8 @@ export interface AnnotationItem {
   embedData: AnnotationEmbedData;
   /** AI analysis result — populated after translation request completes */
   aiResult?: AIAnnotationData | null;
+  /** AI data version from ai_results.version, undefined if not yet translated. */
+  aiVersion?: number | null;
   /** FSRS card state — set when first reviewed */
   fsrsCard?: Card;
 }
@@ -87,6 +89,12 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       .getState()
       .items.find((i) => i.id === id);
     if (current) {
+      // When aiResult is set (not null, not deletion), auto-assign the
+      // current data version so the UI can display it immediately without
+      // waiting for the next DB round-trip.
+      if (patch.aiResult && patch.aiResult !== null) {
+        patch.aiVersion = 1
+      }
       const merged = { ...current, ...patch };
       // Always persist the annotation core
       persistAnnotation(merged);

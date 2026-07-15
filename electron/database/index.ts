@@ -1,6 +1,7 @@
 import Database from "better-sqlite3"
 import { drizzle } from "drizzle-orm/better-sqlite3"
 import * as schema from "./schema"
+import { runMigrations } from "./migration"
 import fs from "node:fs"
 import path from "node:path"
 
@@ -8,7 +9,10 @@ import path from "node:path"
 // Bump this when making backward-incompatible migrations.  The value is
 // stored as PRAGMA user_version so we can detect and migrate existing
 // databases on upgrade.
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
+
+/** Current AI data version written to ai_results.version on save. */
+export const AI_DATA_VERSION = 1
 
 let db: ReturnType<typeof drizzle<typeof schema>> | null = null
 let sqlite: Database.Database | null = null
@@ -28,7 +32,10 @@ export function initDatabase(vaultPath: string) {
   // Check / migrate schema version
   const version = sqlite.pragma("user_version", { simple: true }) as number
   if (version < SCHEMA_VERSION) {
-    // Future: run version-gated migrations here before createTables
+    // Run version-gated migrations in order before createTables,
+    // so all database interactions see the final schema.
+    runMigrations(sqlite, version)
+
     createTables()
     sqlite!.pragma(`user_version = ${SCHEMA_VERSION}`)
   } else {
@@ -94,6 +101,7 @@ function createTables() {
       annotation_id TEXT NOT NULL,
       document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
       data TEXT NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (annotation_id, document_id)

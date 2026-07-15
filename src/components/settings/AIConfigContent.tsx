@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Bot } from "lucide-react";
 import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store";
+import { LANGUAGES } from "@/lib/languages";
 
 export function AIConfigContent() {
   const profiles = useAIStore((s) => s.profiles);
@@ -251,14 +252,9 @@ export function AIConfigContent() {
             useAIStore.getState().setDefaultTargetLang(e.target.value)
           }
         >
-          <option value="zh">中文</option>
-          <option value="en">English</option>
-          <option value="ja">日本語</option>
-          <option value="fr">Français</option>
-          <option value="de">Deutsch</option>
-          <option value="es">Español</option>
-          <option value="ko">한국어</option>
-          <option value="ru">Русский</option>
+          {LANGUAGES.map((l) => (
+            <option key={l.value} value={l.value}>{l.label}</option>
+          ))}
         </select>
         <p className="text-xs text-muted-foreground mt-0.5">
           Used for AI translation when no per-document override is set.

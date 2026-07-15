@@ -12,8 +12,8 @@ import { IconText } from "@/components/ui/icon-text";
 import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import { useTTS } from "@/hooks/useTts";
 import { useAnnotationStore } from "@/stores/annotation.store";
-import { useStyleStore, buildFontStack } from "@/stores/style.store";
-import { renderBoldText } from "@/components/ui/render-bold";
+import { inferGranularity, hasDetails } from "@/lib/annotation-helpers";
+import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
 import { FSRSStats } from "@/components/document/FSRSStats";
 
 interface AITranslateCardProps {
@@ -26,95 +26,6 @@ interface AITranslateCardProps {
   className?: string;
   expanded: boolean;
   onToggleExpand: (id: string) => void;
-}
-
-// ── Backward-compat helpers ─────────────────────────────────────────────
-
-function getTranslation(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-): string | undefined {
-  return ai.translation || ai.translate;
-}
-
-function getDefinitions(ai: NonNullable<AnnotationItem["aiResult"]>) {
-  if (ai.definitions && ai.definitions.length > 0) {
-    return ai.definitions.filter((d) => d.definition || d.gloss);
-  }
-  if (ai.words && ai.words.length > 0) {
-    return ai.words
-      .filter((w) => w.word)
-      .map((w) => ({
-        pos: w.pos,
-        definition: w.word,
-        gloss: w.meaning,
-        _legacyWord: w.word,
-      }));
-  }
-  return [];
-}
-
-function getCollocations(ai: NonNullable<AnnotationItem["aiResult"]>) {
-  if (ai.collocations && ai.collocations.length > 0) return ai.collocations;
-  if (ai.frequently && ai.frequently.length > 0) return ai.frequently;
-  return [];
-}
-
-function getIpa(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-): string | undefined {
-  return ai.pronunciation?.ipa || ai.phonetic;
-}
-
-function getDifficulty(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-): string | undefined {
-  return ai.metadata?.difficulty || ai.difficulty_level;
-}
-
-function getRegister(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-): string | undefined {
-  return ai.metadata?.register;
-}
-
-function getAlternatives(ai: NonNullable<AnnotationItem["aiResult"]>) {
-  if (ai.alternatives && ai.alternatives.length > 0) return ai.alternatives;
-  if (ai.words) {
-    const syns = ai.words.filter((w) => w.pos === "syn");
-    if (syns.length > 0)
-      return syns.map((s) => ({
-        expression: s.word,
-        register: undefined as string | undefined,
-      }));
-  }
-  return [];
-}
-
-function inferGranularity(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-  text: string,
-): string {
-  if (ai.granularity) return ai.granularity;
-  const t = text.trim();
-  if (t.includes("\n") || (t.split(" ").length > 30 && t.includes(".")))
-    return "passage";
-  if (t.split(/[.!?;]+/).filter(Boolean).length > 1) return "sentence";
-  if (t.split(" ").length > 2) return "phrase";
-  return "word";
-}
-
-function hasDetails(ai: NonNullable<AnnotationItem["aiResult"]>): boolean {
-  const coll = getCollocations(ai);
-  const alts = getAlternatives(ai);
-  const defs = getDefinitions(ai);
-  const exs = ai.examples;
-  const register = getRegister(ai);
-  if (coll.length > 0) return true;
-  if (alts.length > 0) return true;
-  if (exs && exs.length > 0) return true;
-  if (register) return true;
-  if (defs.length > 1) return true;
-  return false;
 }
 
 // ── Component ──────────────────────────────────────────────────────────
@@ -131,12 +42,12 @@ export function AITranslateCard({
   onToggleExpand,
 }: AITranslateCardProps) {
   const ai = item.aiResult;
+  const aiVersion = item.aiVersion ?? undefined;
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const tts = useTTS();
   const updateItem = useAnnotationStore((s) => s.updateItem);
-  const style = useStyleStore((s) => s.style);
 
   useEffect(() => {
     setEditText(item.text);
@@ -181,17 +92,8 @@ export function AITranslateCard({
     onClick?.();
   };
 
-  const translation = ai ? getTranslation(ai) : undefined;
-  const defs = ai ? getDefinitions(ai) : [];
-  const colls = ai ? getCollocations(ai) : [];
-  const ipa = ai ? getIpa(ai) : undefined;
-  const difficulty = ai ? getDifficulty(ai) : undefined;
-  const register = ai ? getRegister(ai) : undefined;
-  const alts = ai ? getAlternatives(ai) : [];
-  const examples = ai?.examples ?? [];
   const granularity = ai ? inferGranularity(ai, item.text) : "highlight";
-  const isWord = granularity === "word" || granularity === "phrase";
-  const isDetailAvailable = ai ? hasDetails(ai) : false;
+  const detailAvailable = ai ? hasDetails(ai) : false;
 
   return (
     <div
@@ -200,9 +102,8 @@ export function AITranslateCard({
       } ${className}`}
       onClick={handleCardClick}
     >
-      {/* Clickable area for expand/collapse — header + source text + action bar */}
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2 mb-1">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
           <IconText icon={Highlighter} size="xs">
             <span className="font-medium text-muted-foreground uppercase tracking-wider">
@@ -227,7 +128,7 @@ export function AITranslateCard({
         <KnuthPlassText text={item.text} className="mb-1" />
       )}
 
-      {/* Action bar — icon-only buttons */}
+      {/* Action bar */}
       <div className="flex flex-wrap items-center gap-1 mt-1.5">
         <button
           className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
@@ -299,160 +200,26 @@ export function AITranslateCard({
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
-      {/* End clickable area */}
 
-      {/* AI result content */}
+      {/* AI result */}
       {ai && (
-        <div
-          className="mt-1.5 space-y-1"
-          style={{
-            fontFamily: buildFontStack(style.fontFamilies),
-            fontSize: style.fontSize,
-          }}
-        >
-          {translation && (
-            <p className="font-medium text-primary leading-relaxed">
-              {renderBoldText(translation)}
-            </p>
-          )}
+        <div className="mt-1.5">
+          {/* Core: translation + meta tags + definitions (always shown) */}
+          <AIAnnotationResult item={item} version={aiVersion} showCore />
 
-          {/* Meta tags: difficulty + IPA + register */}
-          {(difficulty || (ipa && isWord) || register) && (
-            <div className="flex flex-wrap gap-1">
-              {difficulty && (
-                <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
-                  {difficulty}
-                </span>
-              )}
-              {ipa && isWord && (
-                <span className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo">
-                  {ipa.startsWith("/") ? ipa : `/${ipa}/`}
-                </span>
-              )}
-              {register && (
-                <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender">
-                  {register}
-                </span>
-              )}
-            </div>
-          )}
-
-          {defs.length > 0 && (
-            <div className="space-y-0.5">
-              {defs.slice(0, 5).map((d: any, i) => (
-                <div key={i} className="leading-relaxed">
-                  {d._legacyWord ? (
-                    <>
-                      <span className="font-medium">{d._legacyWord}</span>
-                      {d.pos && (
-                        <span className="text-muted-foreground/60 ml-1">
-                          {d.pos}
-                        </span>
-                      )}
-                      <span className="text-overlay0 ml-1">
-                        {d.gloss || d.meaning}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      {d.pos && (
-                        <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
-                          {d.pos}
-                        </span>
-                      )}
-                      {d.definition && (
-                        <span className="text-foreground">{d.definition}</span>
-                      )}
-                      {d.gloss && (
-                        <span className="text-overlay0 ml-1">
-                          {d.gloss}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Expanded details — animated */}
+          {/* Details: examples + collocations + alternatives (animated) */}
           <div
             className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-            style={{ gridTemplateRows: expanded && isDetailAvailable ? "1fr" : "0fr" }}
+            style={{ gridTemplateRows: expanded && detailAvailable ? "1fr" : "0fr" }}
           >
             <div className="overflow-hidden">
-              {isDetailAvailable && (
-                <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
-                  {examples.length > 0 && (
-                    <div>
-                      <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
-                        Examples
-                      </span>
-                      <ul className="space-y-1">
-                        {examples.slice(0, 5).map((ex: any, i) => (
-                          <li key={i}>
-                            <span className="text-foreground">
-                              {renderBoldText(ex.sentence)}
-                            </span>
-                            {ex.translation && (
-                              <span className="text-overlay0 block ml-0">
-                                {renderBoldText(ex.translation)}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {colls.length > 0 && (
-                    <div>
-                      <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
-                        Collocations
-                      </span>
-                      <div className="space-y-0.5">
-                        {colls.map((c: any, i) => (
-                          <div key={i} className="leading-relaxed">
-                            <span className="font-medium text-foreground">
-                              {c.phrase}
-                            </span>
-                            <span className="text-overlay0">
-                              {" "}
-                              {c.translation}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {alts.length > 0 && (
-                    <div>
-                      <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
-                        Alternatives
-                      </span>
-                      <div className="space-y-0.5">
-                        {alts.map((a: any, i) => (
-                          <div key={i} className="leading-relaxed">
-                            <span className="font-medium text-foreground">
-                              {a.expression}
-                            </span>
-                            {a.register && (
-                              <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender ml-1">
-                                {a.register}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {detailAvailable && (
+                <AIAnnotationResult item={item} version={aiVersion} showDetails />
               )}
             </div>
           </div>
 
-          {/* ── FSRS card stats (compact) ── */}
+          {/* FSRS card stats (compact) */}
           {item.fsrsCard && (
             <FSRSStats
               card={item.fsrsCard}
