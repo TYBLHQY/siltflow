@@ -11,10 +11,10 @@ import {
   PenLine,
   MousePointer2,
   BarChart3,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { PdfViewer } from "@/components/document/PdfViewer";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import {
   useAnnotationStore,
@@ -22,8 +22,21 @@ import {
 } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useShortcut } from "@/hooks/useShortcut";
-import { StatsDashboard } from "@/components/stats/StatsDashboard";
 import { UnifiedSettingsModal } from "@/components/settings/UnifiedSettingsModal";
+
+// Lazy-load PdfViewer and StatsDashboard so their heavy transitive deps
+// (pdfjs-dist ~3MB, recharts ~1.3MB) are not part of the initial bundle.
+import React from "react";
+const PdfViewer = React.lazy(() =>
+  import("@/components/document/PdfViewer").then((m) => ({
+    default: m.PdfViewer,
+  }))
+);
+const StatsDashboard = React.lazy(() =>
+  import("@/components/stats/StatsDashboard").then((m) => ({
+    default: m.StatsDashboard,
+  }))
+);
 
 // ---------------------------------------------------------------------------
 // Page navigation — jump to page (only shown when a PDF is open)
@@ -318,11 +331,19 @@ export function CenterPanel({
               />
             </div>
           </div>
-          <PdfViewer
-            className="h-full w-full"
-            src={documentPath!}
-            documentId={documentId!}
-          />
+          <React.Suspense
+            fallback={
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
+            <PdfViewer
+              className="h-full w-full"
+              src={documentPath!}
+              documentId={documentId!}
+            />
+          </React.Suspense>
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center">
@@ -339,7 +360,15 @@ export function CenterPanel({
           hideClose
           className="flex w-full max-w-5xl h-[calc(100vh-80px)] rounded-lg border bg-background shadow-xl p-0 gap-0"
         >
-          <StatsDashboard onClose={() => setShowStats(false)} />
+          <React.Suspense
+            fallback={
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
+            <StatsDashboard onClose={() => setShowStats(false)} />
+          </React.Suspense>
         </DialogContent>
       </Dialog>
     </div>
