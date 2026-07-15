@@ -2,6 +2,7 @@ import { Search, Loader2, BrainCircuit, FileText } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, memo, useEffect } from "react";
 import type { DocReviewMetrics } from "@/lib/doc-review";
+import { useDocumentStore } from "@/stores/document.store";
 
 interface ReviewTabProps {
   docMetrics: DocReviewMetrics[];
@@ -9,10 +10,6 @@ interface ReviewTabProps {
   reviewSearch: string;
   setReviewSearch: (v: string) => void;
   filteredMetrics: DocReviewMetrics[];
-  documents: { id: string; title: string }[];
-  currentDocument: { id: string; title: string } | null;
-  onSelectDocument: (doc: { id: string; title: string }) => void;
-  reviewConfirmRef?: React.Ref<HTMLDivElement>;
   reviewSearchRef: React.Ref<HTMLInputElement>;
   /** @deprecated no longer needed with virtual scrolling; kept for parent compatibility */
   reviewScrollRef?: React.Ref<HTMLDivElement>;
@@ -34,12 +31,11 @@ function urgencyLabel(avgRetrievability: number): string {
 const ReviewTabRow = memo(function ReviewTabRow({
   metric,
   isActive,
-  onSelectDocument,
 }: {
   metric: DocReviewMetrics;
   isActive: boolean;
-  onSelectDocument: (doc: { id: string; title: string }) => void;
 }) {
+  const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
   const hasTags = metric.totalCards > 0;
   return (
     <div
@@ -49,7 +45,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
           : "hover:bg-accent"
       } ${hasTags ? "py-2.5 pr-3" : "py-2 pr-3"}`}
-      onClick={() => onSelectDocument({ id: metric.documentId, title: metric.documentTitle })}
+      onClick={() => setCurrentDocument({ id: metric.documentId, title: metric.documentTitle })}
     >
       <div className="flex items-center gap-2 min-w-0">
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -88,15 +84,14 @@ export const ReviewTab = memo(function ReviewTab({
   reviewSearch,
   setReviewSearch,
   filteredMetrics,
-  documents: _documents,
-  currentDocument,
-  onSelectDocument,
   reviewSearchRef,
   scrollToDocId,
   onScrolledToDoc,
 }: ReviewTabProps) {
   // Virtual scrolling
   const parentRef = useRef<HTMLDivElement>(null);
+
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
 
   const virtualizer = useVirtualizer({
     count: filteredMetrics.length,
@@ -197,7 +192,6 @@ export const ReviewTab = memo(function ReviewTab({
                   <ReviewTabRow
                     metric={metric}
                     isActive={currentDocument?.id === metric.documentId}
-                    onSelectDocument={onSelectDocument}
                   />
                 </div>
               );

@@ -113,7 +113,8 @@ export interface DocsTreeHandle {
 }
 
 interface DocsTreeProps {
-  defaultParentId?: string | null;
+  /** Callback when a document is selected. If omitted, sets currentDocument on the store directly. */
+  onSelectDocument?: (doc: DocumentItem) => void;
 }
 
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(

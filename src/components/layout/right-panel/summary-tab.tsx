@@ -8,41 +8,101 @@ import {
   Bot,
   Trash2,
 } from "lucide-react";
+import { useState, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
 import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
+import { useSummaryStore } from "@/stores/summary.store";
+import { useDocumentStore } from "@/stores/document.store";
+import { useAIStore } from "@/stores/ai.store";
+import { useToastStore } from "@/stores/toast.store";
+import { summarizeSelectedPages } from "@/lib/summarize";
 
-interface SummaryTabProps {
-  numPages: number;
-  selPages: number[] | undefined;
-  allSelected: boolean;
-  togglePage: (pageNum: number) => void;
-  toggleAll: () => void;
-  summarizing: boolean;
-  handleSummarize: () => void;
-  editingSummary: boolean;
-  setEditingSummary: (v: boolean) => void;
-  summary: any;
-  handleEditSummary: (text: string) => void;
-  handleClearSummary: () => void;
-}
-
-export function SummaryTab({
-  numPages,
-  selPages,
-  allSelected,
-  togglePage,
-  toggleAll,
-  summarizing,
-  handleSummarize,
-  editingSummary,
-  setEditingSummary,
-  summary,
-  handleEditSummary,
-  handleClearSummary,
-}: SummaryTabProps) {
+export function SummaryTab() {
   const style = useStyleStore((s) => s.style);
+  const showToast = useToastStore((s) => s.show);
+  const activeProfile = useAIStore((s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null);
+
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
+  const summaries = useSummaryStore((s) => s.summaries);
+  const pageTexts = useSummaryStore((s) => s.pageTexts);
+  const selectedPages = useSummaryStore((s) => s.selectedPages);
+  const setSummary = useSummaryStore((s) => s.setSummary);
+  const clearSummary = useSummaryStore((s) => s.clearSummary);
+  const setSelectedPages = useSummaryStore((s) => s.setSelectedPages);
+
+  const docId = currentDocument?.id;
+  const texts = docId ? pageTexts[docId] : undefined;
+  const numPages = currentDocument?.totalPages ?? texts?.length ?? 0;
+  const selPages = docId ? selectedPages[docId] : undefined;
+  const summary = docId ? summaries[docId] : undefined;
+  const allSelected = selPages === undefined || selPages.length === numPages;
+
+  const [summarizing, setSummarizing] = useState(false);
+  const [editingSummary, setEditingSummary] = useState(false);
+
+  const togglePage = useCallback(
+    (pageNum: number) => {
+      if (!docId || !numPages) return;
+      const current = selPages ?? Array.from({ length: numPages }, (_, i) => i + 1);
+      if (current.includes(pageNum) && current.length === 1) return;
+      const next = current.includes(pageNum)
+        ? current.filter((p) => p !== pageNum)
+        : [...current, pageNum].sort((a, b) => a - b);
+      setSelectedPages(docId, next.length === numPages ? Array.from({ length: numPages }, (_, i) => i + 1) : next);
+    },
+    [docId, numPages, selPages, setSelectedPages],
+  );
+
+  const toggleAll = useCallback(() => {
+    if (!docId || !numPages) return;
+    if (allSelected) setSelectedPages(docId, []);
+    else setSelectedPages(docId, Array.from({ length: numPages }, (_, i) => i + 1));
+  }, [docId, numPages, allSelected, setSelectedPages]);
+
+  const handleSummarize = useCallback(async () => {
+    if (!docId || !texts) {
+      showToast("Open a document first", "info");
+      return;
+    }
+    if (!activeProfile) {
+      showToast("Please configure an AI provider in Settings > AI Config", "info");
+      return;
+    }
+
+    const pagesToSummarize = selPages ?? texts.map((_, i) => i + 1);
+    if (pagesToSummarize.length === 0) {
+      showToast("Select at least one page", "info");
+      return;
+    }
+
+    setSummarizing(true);
+    try {
+      const result = await summarizeSelectedPages(activeProfile, texts, pagesToSummarize);
+      setSummary(docId, result.summary, true, result.sourceLang, result.keyVocabulary, result.gist);
+      showToast("Summary generated", "info");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Summarization failed";
+      showToast(message, "error");
+    } finally {
+      setSummarizing(false);
+    }
+  }, [docId, texts, selPages, activeProfile, setSummary, showToast]);
+
+  const handleEditSummary = useCallback(
+    (text: string) => {
+      if (!docId) return;
+      setSummary(docId, text, false);
+    },
+    [docId, setSummary],
+  );
+
+  const handleClearSummary = useCallback(() => {
+    if (!docId) return;
+    clearSummary(docId);
+    setEditingSummary(false);
+  }, [docId, clearSummary]);
 
   if (numPages === 0) {
     return (

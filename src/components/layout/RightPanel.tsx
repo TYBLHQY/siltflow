@@ -1,15 +1,11 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
-import { useShortcut } from "@/hooks/useShortcut";
 import { Highlighter, FileText } from "lucide-react";
-import { useAnnotationStore } from "@/stores/annotation.store";
-import { useAIStore } from "@/stores/ai.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
-import { useToastStore } from "@/stores/toast.store";
-import { extractPageTexts, summarizeSelectedPages } from "@/lib/summarize";
+import { extractPageTexts } from "@/lib/summarize";
 import { AnnotationsTab } from "@/components/layout/right-panel/annotations-tab";
 import { SummaryTab } from "@/components/layout/right-panel/summary-tab";
 
@@ -19,28 +15,12 @@ interface RightPanelProps {
 }
 
 export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
-  const items = useAnnotationStore((s) => s.items);
-  const profiles = useAIStore((s) => s.profiles);
-  const updateItem = useAnnotationStore((s) => s.updateItem);
-  const showToast = useToastStore((s) => s.show);
-
-  const currentDocument = useDocumentStore((s) => s.currentDocument);
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
-  const summaries = useSummaryStore((s) => s.summaries);
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
   const pageTexts = useSummaryStore((s) => s.pageTexts);
-  const selectedPages = useSummaryStore((s) => s.selectedPages);
-  const setSummary = useSummaryStore((s) => s.setSummary);
-  const clearSummary = useSummaryStore((s) => s.clearSummary);
-  const defaultTargetLang = useAIStore((s) => s.defaultTargetLang);
   const setPageTexts = useSummaryStore((s) => s.setPageTexts);
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages);
-  const targetLangs = useSummaryStore((s) => s.targetLangs);
-  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight) ?? undefined;
 
-  const [studyPanelOpen, setStudyPanelOpen] = useState(false);
-  const [studyingIndex, setStudyingIndex] = useState(0);
-  const [answerRevealed, setAnswerRevealed] = useState(false);
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const annotationsScrollRef = useRef<HTMLDivElement>(null);
 
   // When a highlight is clicked in the PDF, scroll the matching annotation card
@@ -66,103 +46,15 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     return () => window.removeEventListener("siltflow:annotation-click", handler);
   }, [onTabChange]);
 
-  // Compute due annotations for the study panel
-  const dueItems = useMemo(
-    () =>
-      items.filter((item) => {
-        if (!item.fsrsCard) return true;
-        try {
-          const d =
-            item.fsrsCard.due instanceof Date
-              ? item.fsrsCard.due
-              : new Date(item.fsrsCard.due);
-          return d <= new Date();
-        } catch {
-          return true;
-        }
-      }),
-    [items],
-  );
-  const dueCount = dueItems.length;
-
-  const handleStartLearning = useCallback(() => {
-    if (dueItems.length === 0) {
-      showToast("No due annotations", "info");
-      return;
-    }
-    setStudyingIndex(0);
-    setAnswerRevealed(false);
-    setStudyPanelOpen(true);
-  }, [dueItems, showToast]);
-
-  const hasPdf = !!currentDocument?.id;
-  useShortcut("startLearning", handleStartLearning, { enabled: hasPdf && !studyPanelOpen });
-
-  const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null;
-
   const docId = currentDocument?.id;
-  const summary = docId ? summaries[docId] : undefined;
   const texts = docId ? pageTexts[docId] : undefined;
-  const selPages = docId ? selectedPages[docId] : undefined;
-  const sourceLang = summary?.sourceLang ?? "en";
-  const effectiveTargetLang =
-    (docId && targetLangs[docId]) || defaultTargetLang || "zh";
-
-  const [summarizing, setSummarizing] = useState(false);
-  const [editingSummary, setEditingSummary] = useState(false);
-  const [, setExtracting] = useState(false);
-  const [batchTranslating, setBatchTranslating] = useState(false);
-
-  // Batch translate all untranslated annotations
-  const handleBatchTranslate = useCallback(async () => {
-    const untranslated = items.filter((i) => i.aiResult === undefined);
-    if (untranslated.length === 0) {
-      showToast("All annotations already translated", "info");
-      return;
-    }
-    if (!activeProfile) {
-      showToast("Please configure an AI provider in Settings > AI Config", "info");
-      return;
-    }
-    if (!summary || !summary.text?.trim()) {
-      showToast("Please generate a summary first", "info");
-      onTabChange?.("summary");
-      return;
-    }
-
-    setBatchTranslating(true);
-    const results = await Promise.all(
-      untranslated.map(async (item) => {
-        updateItem(item.id, { aiResult: null });
-        try {
-          const { translateAnnotation, extractArticleContext } = await import("@/lib/translate");
-          const result = await translateAnnotation(activeProfile, {
-            text: item.text,
-            sourceLang,
-            targetLang: effectiveTargetLang,
-            contextSentence: item.text,
-            context: summary?.text ?? extractArticleContext(texts ? texts.map((t) => t).join(" ") : ""),
-          });
-          updateItem(item.id, { aiResult: result, text: result.cleaned_input || item.text });
-          return true;
-        } catch (err) {
-          const message = err instanceof Error ? err.message : "Translation failed";
-          showToast(`${message}`, "error");
-          updateItem(item.id, { aiResult: undefined });
-          return false;
-        }
-      }),
-    );
-    setBatchTranslating(false);
-    const completed = results.filter(Boolean).length;
-    if (completed > 0) showToast(`Translated ${completed} annotation${completed > 1 ? "s" : ""}`, "info");
-  }, [items, activeProfile, summary, texts, updateItem, showToast, onTabChange, effectiveTargetLang, sourceLang]);
-
-  // Extract page texts when a new pdfDocument arrives
   const docIdRef = useRef(docId);
   docIdRef.current = docId;
   const extractGen = useRef(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_extracting, setExtracting] = useState(false);
 
+  // Extract page texts when a new pdfDocument arrives
   useEffect(() => {
     if (!pdfDocument) return;
     const id = docIdRef.current;
@@ -188,76 +80,13 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
 
   // When page texts are first loaded, select only the first page by default
   useEffect(() => {
-    if (docId && texts && texts.length > 0 && selectedPages[docId] === undefined) {
-      setSelectedPages(docId, [1]);
+    if (docId && texts && texts.length > 0) {
+      const selectedPages = useSummaryStore.getState().selectedPages;
+      if (selectedPages[docId] === undefined) {
+        setSelectedPages(docId, [1]);
+      }
     }
-  }, [docId, texts, selectedPages, setSelectedPages]);
-
-  const numPages = currentDocument?.totalPages ?? texts?.length ?? 0;
-
-  const allSelected = selPages === undefined || selPages.length === numPages;
-
-  const togglePage = useCallback(
-    (pageNum: number) => {
-      if (!docId || !numPages) return;
-      const current = selPages ?? Array.from({ length: numPages }, (_, i) => i + 1);
-      if (current.includes(pageNum) && current.length === 1) return;
-      const next = current.includes(pageNum)
-        ? current.filter((p) => p !== pageNum)
-        : [...current, pageNum].sort((a, b) => a - b);
-      setSelectedPages(docId, next.length === numPages ? Array.from({ length: numPages }, (_, i) => i + 1) : next);
-    },
-    [docId, numPages, selPages, setSelectedPages],
-  );
-
-  const toggleAll = useCallback(() => {
-    if (!docId || !numPages) return;
-    if (allSelected) setSelectedPages(docId, []);
-    else setSelectedPages(docId, Array.from({ length: numPages }, (_, i) => i + 1));
-  }, [docId, numPages, allSelected, setSelectedPages]);
-
-  const handleSummarize = useCallback(async () => {
-    if (!docId || !texts) {
-      showToast("Open a document first", "info");
-      return;
-    }
-    if (!activeProfile) {
-      showToast("Please configure an AI provider in Settings > AI Config", "info");
-      return;
-    }
-
-    const pagesToSummarize = selPages ?? texts.map((_, i) => i + 1);
-    if (pagesToSummarize.length === 0) {
-      showToast("Select at least one page", "info");
-      return;
-    }
-
-    setSummarizing(true);
-    try {
-      const result = await summarizeSelectedPages(activeProfile, texts, pagesToSummarize);
-      setSummary(docId, result.summary, true, result.sourceLang, result.keyVocabulary, result.gist);
-      showToast("Summary generated", "info");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Summarization failed";
-      showToast(message, "error");
-    } finally {
-      setSummarizing(false);
-    }
-  }, [docId, texts, selPages, activeProfile, setSummary, showToast]);
-
-  const handleEditSummary = useCallback(
-    (text: string) => {
-      if (!docId) return;
-      setSummary(docId, text, false);
-    },
-    [docId, setSummary],
-  );
-
-  const handleClearSummary = useCallback(() => {
-    if (!docId) return;
-    clearSummary(docId);
-    setEditingSummary(false);
-  }, [docId, clearSummary]);
+  }, [docId, texts, setSelectedPages]);
 
   return (
     <div className="flex h-full flex-col">
@@ -280,48 +109,13 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
 
         <TabsContent value="annotations" className="flex-1 min-h-0 mt-0 flex flex-col">
           <AnnotationsTab
-            items={items}
-            profiles={profiles}
-            activeProfile={activeProfile}
-            docId={docId}
-            summary={summary}
-            texts={texts}
-            sourceLang={sourceLang}
-            effectiveTargetLang={effectiveTargetLang}
             onTabChange={onTabChange}
             annotationsScrollRef={annotationsScrollRef}
-            expandedCardId={expandedCardId}
-            setExpandedCardId={setExpandedCardId}
-            scrollToHighlight={scrollToHighlight}
-            handleStartLearning={handleStartLearning}
-            dueItems={dueItems}
-            dueCount={dueCount}
-            batchTranslating={batchTranslating}
-            handleBatchTranslate={handleBatchTranslate}
-            studyPanelOpen={studyPanelOpen}
-            studyingIndex={studyingIndex}
-            answerRevealed={answerRevealed}
-            setAnswerRevealed={setAnswerRevealed}
-            setStudyingIndex={setStudyingIndex}
-            onCloseStudyPanel={() => setStudyPanelOpen(false)}
           />
         </TabsContent>
 
         <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
-          <SummaryTab
-            numPages={numPages}
-            selPages={selPages}
-            allSelected={allSelected}
-            togglePage={togglePage}
-            toggleAll={toggleAll}
-            summarizing={summarizing}
-            handleSummarize={handleSummarize}
-            editingSummary={editingSummary}
-            setEditingSummary={setEditingSummary}
-            summary={summary}
-            handleEditSummary={handleEditSummary}
-            handleClearSummary={handleClearSummary}
-          />
+          <SummaryTab />
         </TabsContent>
       </Tabs>
     </div>

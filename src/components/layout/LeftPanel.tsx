@@ -93,7 +93,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   // ── Precise Zustand selectors (avoid cascading re-renders) ───────────
   const documents = useDocumentStore((s) => s.documents);
   const currentDocument = useDocumentStore((s) => s.currentDocument);
-  const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
   const addDocument = useDocumentStore((s) => s.addDocument);
   const loadFromDb = useDocumentStore((s) => s.loadFromDb);
 
@@ -356,9 +355,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
             reviewSearch={reviewSearch}
             setReviewSearch={setReviewSearch}
             filteredMetrics={filteredMetrics}
-            documents={documents}
-            currentDocument={currentDocument}
-            onSelectDocument={setCurrentDocument}
             reviewSearchRef={reviewSearchRef}
             scrollToDocId={scrollToDocId ?? undefined}
             onScrolledToDoc={handleScrolledToDoc}
