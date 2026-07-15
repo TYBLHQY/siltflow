@@ -360,16 +360,16 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   // NOTE: only clean pdfDocument and scroll helpers, NOT goToPage — the
   // library's utilsRef only fires ONCE (guarded by an internal ref), so
   // cleaning it in StrictMode's unmount/remount cycle would leave it null forever.
-  const pdfDocumentCleanup = usePdfViewerStore((s) => s.setPdfDocument);
+  // Also skip pdfDocument cleanup — React.lazy + strict effects can cause a
+  // double-load cycle (setPdfDocument(null) → new mount triggers another load).
   const setScrollToHighlightCleanup = usePdfViewerStore(
     (s) => s.setScrollToHighlight,
   );
   useEffect(() => {
     return () => {
-      pdfDocumentCleanup(null);
       setScrollToHighlightCleanup(null);
     };
-  }, [documentId, pdfDocumentCleanup, setScrollToHighlightCleanup]);
+  }, [documentId, setScrollToHighlightCleanup]);
 
   return (
     <div className={className}>
