@@ -1,5 +1,6 @@
 import { Search, Loader2, BrainCircuit, FileText } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef, memo, useEffect, useState } from "react";
 import type { DocReviewMetrics } from "@/lib/doc-review";
 
 interface ReviewTabProps {
@@ -11,8 +12,14 @@ interface ReviewTabProps {
   documents: { id: string; title: string }[];
   currentDocument: { id: string; title: string } | null;
   onSelectDocument: (doc: { id: string; title: string }) => void;
-  reviewScrollRef: React.Ref<HTMLDivElement>;
+  reviewConfirmRef?: React.Ref<HTMLDivElement>;
   reviewSearchRef: React.Ref<HTMLInputElement>;
+  /** @deprecated no longer needed with virtual scrolling; kept for parent compatibility */
+  reviewScrollRef?: React.Ref<HTMLDivElement>;
+  /** When non-empty, scroll to this doc (used when switching to review tab) */
+  scrollToDocId?: string;
+  /** Called after scroll-to completes */
+  onScrolledToDoc?: () => void;
 }
 
 function urgencyLabel(avgRetrievability: number): string {
@@ -22,18 +29,111 @@ function urgencyLabel(avgRetrievability: number): string {
   return "overdue";
 }
 
-export function ReviewTab({
+const ROW_HEIGHT = 72;
+
+// ── Row component ──────────────────────────────────────────────────────
+
+const ReviewTabRow = memo(function ReviewTabRow({
+  metric,
+  isActive,
+  onSelectDocument,
+}: {
+  metric: DocReviewMetrics;
+  isActive: boolean;
+  onSelectDocument: (doc: { id: string; title: string }) => void;
+}) {
+  return (
+    <div
+      data-doc-id={metric.documentId}
+      className={`group relative border-b border-border/50 pl-3 py-2.5 pr-3 text-sm transition-colors cursor-pointer ${
+        isActive
+          ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
+          : "hover:bg-accent"
+      }`}
+      style={{ height: ROW_HEIGHT }}
+      onClick={() => onSelectDocument({ id: metric.documentId, title: metric.documentTitle })}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span
+          className="truncate min-w-0 flex-1 select-none"
+          title={metric.documentTitle}
+        >
+          {metric.documentTitle}
+        </span>
+      </div>
+      {metric.totalCards > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+          <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">
+            {metric.newCardsCount} new
+          </span>
+          <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">
+            {metric.dueNowCount} due
+          </span>
+          <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">
+            {metric.dueSoonCount} soon
+          </span>
+          <span className="rounded bg-mauve/15 px-1 py-0.5 font-medium text-mauve">
+            {urgencyLabel(metric.avgRetrievability)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ── Main component ────────────────────────────────────────────────────
+
+export const ReviewTab = memo(function ReviewTab({
   docMetrics,
   metricsLoading,
   reviewSearch,
   setReviewSearch,
   filteredMetrics,
-  documents,
+  documents: _documents,
   currentDocument,
   onSelectDocument,
-  reviewScrollRef,
   reviewSearchRef,
+  scrollToDocId,
+  onScrolledToDoc,
 }: ReviewTabProps) {
+  // Virtual scrolling
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [_parentHeight, setParentHeight] = useState(400);
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setParentHeight(entry.contentRect.height);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const virtualizer = useVirtualizer({
+    count: filteredMetrics.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+  });
+
+  // Auto-scroll to the current document when switching to review tab
+  useEffect(() => {
+    if (!scrollToDocId || filteredMetrics.length === 0) return;
+    const idx = filteredMetrics.findIndex(
+      (m) => m.documentId === scrollToDocId,
+    );
+    if (idx >= 0) {
+      virtualizer.scrollToIndex(idx, { align: "center" });
+    }
+    onScrolledToDoc?.();
+  }, [scrollToDocId, filteredMetrics, virtualizer, onScrolledToDoc]);
+
+  const virtualItems = virtualizer.getVirtualItems();
+
   return (
     <>
       {/* Search filter bar */}
@@ -80,52 +180,44 @@ export function ReviewTab({
           )}
         </div>
       ) : (
-        <ScrollArea className="flex-1" ref={reviewScrollRef as any}>
-          <div className="space-y-0 w-full">
-            {filteredMetrics.map((m) => (
-              <div
-                key={m.documentId}
-                data-doc-id={m.documentId}
-                className={`group relative border-b border-border/50 pl-3 py-2.5 pr-3 text-sm transition-colors cursor-pointer ${
-                  currentDocument?.id === m.documentId
-                    ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
-                    : "hover:bg-accent"
-                }`}
-                onClick={() => {
-                  const doc = documents.find((d) => d.id === m.documentId);
-                  if (doc) onSelectDocument(doc);
-                }}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span
-                    className="truncate min-w-0 flex-1 select-none"
-                    title={m.documentTitle}
-                  >
-                    {m.documentTitle}
-                  </span>
+        <div
+          ref={parentRef}
+          className="flex-1 overflow-y-auto"
+          style={{ contain: "strict" }}
+        >
+          <div
+            style={{
+              height: virtualizer.getTotalSize(),
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualItems.map((virtualRow) => {
+              const metric = filteredMetrics[virtualRow.index];
+              if (!metric) return null;
+              return (
+                <div
+                  key={metric.documentId}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: ROW_HEIGHT,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <ReviewTabRow
+                    metric={metric}
+                    isActive={currentDocument?.id === metric.documentId}
+                    onSelectDocument={onSelectDocument}
+                  />
                 </div>
-                {m.totalCards > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                    <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">
-                      {m.newCardsCount} new
-                    </span>
-                    <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">
-                      {m.dueNowCount} due
-                    </span>
-                    <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">
-                      {m.dueSoonCount} soon
-                    </span>
-                    <span className="rounded bg-mauve/15 px-1 py-0.5 font-medium text-mauve">
-                      {urgencyLabel(m.avgRetrievability)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </>
   );
-}
+});

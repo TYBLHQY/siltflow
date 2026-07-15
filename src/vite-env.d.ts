@@ -136,6 +136,9 @@ interface SiltflowAPI {
       items: { id: string; sortOrder: number }[],
     ) => Promise<void>;
   };
+  review: {
+    getAllCardsWithDocuments: () => Promise<Record<string, { title: string; cardData: string[]; annotationIds: string[] }>>;
+  };
 }
 
 interface Window {

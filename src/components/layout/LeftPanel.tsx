@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, useDeferredValue } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
 import {
@@ -90,18 +90,34 @@ interface LeftPanelProps {
 }
 
 export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
-  const { documents, currentDocument, setCurrentDocument, addDocument, loadFromDb } =
-    useDocumentStore();
+  // ── Precise Zustand selectors (avoid cascading re-renders) ───────────
+  const documents = useDocumentStore((s) => s.documents);
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
+  const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
+  const addDocument = useDocumentStore((s) => s.addDocument);
+  const loadFromDb = useDocumentStore((s) => s.loadFromDb);
 
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
   const annotationItems = useAnnotationStore((s) => s.items);
   const [docMetrics, setDocMetrics] = useState<DocReviewMetrics[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [reviewSearch, setReviewSearch] = useState("");
+  const deferredReviewSearch = useDeferredValue(reviewSearch);
   const reviewSearchRef = useRef<HTMLInputElement>(null);
-  const reviewScrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
+
+  // ── Scroll-to-doc state for virtual list ─────────────────────────────
+  const [scrollToDocId, setScrollToDocId] = useState<string | null>(null);
+  const prevActiveTabRef = useRef(activeTab);
+  useEffect(() => {
+    // When switching TO "review" tab, signal the virtual list to scroll
+    if (activeTab === "review" && prevActiveTabRef.current !== "review" && currentDocument) {
+      setScrollToDocId(currentDocument.id);
+    }
+    prevActiveTabRef.current = activeTab;
+  }, [activeTab, currentDocument]);
+  const handleScrolledToDoc = useCallback(() => setScrollToDocId(null), []);
 
   // Ctrl+F in review tab → focus search input
   useEffect(() => {
@@ -115,14 +131,16 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
+  // ── Deferred filter: typing doesn't block rendering ─────────────────
   const filteredMetrics = useMemo(
     () =>
       docMetrics.filter((m) =>
-        m.documentTitle.toLowerCase().includes(reviewSearch.toLowerCase()),
+        m.documentTitle.toLowerCase().includes(deferredReviewSearch.toLowerCase()),
       ),
-    [docMetrics, reviewSearch],
+    [docMetrics, deferredReviewSearch],
   );
 
+  // ── Quick incremental metric update from in-memory items ────────────
   const computeMetricsFromItems = useCallback(() => {
     const docs = useDocumentStore.getState().documents;
     if (docs.length === 0) {
@@ -186,31 +204,34 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     });
   }, []);
 
+  // ── Full metric load via single batch IPC ───────────────────────────
   const loadMetricsFull = useCallback(async () => {
     setMetricsLoading(true);
     const docs = useDocumentStore.getState().documents;
     if (docs.length === 0) { setMetricsLoading(false); return; }
     try {
+      const data = await window.siltflow.review.getAllCardsWithDocuments();
+
+      // Build annotation id set per doc to find uncarded annotations
       const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {};
-      for (const doc of docs) byDoc[doc.id] = { title: doc.title, cards: [] };
       for (const doc of docs) {
-        const rows = await window.siltflow.fsrsCards.listByDocument(doc.id);
-        const cardAnnIds = new Set<string>();
-        for (const row of rows) {
-          cardAnnIds.add(row.annotationId);
-          try { byDoc[doc.id]!.cards.push(JSON.parse(row.data)); } catch { /* skip */ }
-        }
-        try {
-          const annotations = await window.siltflow.annotations.list(doc.id);
-          for (const ann of annotations) {
-            if (!cardAnnIds.has(ann.id)) {
-              byDoc[doc.id]!.cards.push({ state: 0, due: new Date(), stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0 } as import("ts-fsrs").Card);
-            }
+        const entry = data?.[doc.id];
+        const cards: import("ts-fsrs").Card[] = [];
+
+        if (entry) {
+          for (const cardStr of entry.cardData) {
+            try {
+              cards.push(JSON.parse(cardStr) as import("ts-fsrs").Card);
+            } catch { /* skip corrupt data */ }
           }
-        } catch { /* skip */ }
+        }
+
+        byDoc[doc.id] = { title: entry?.title ?? doc.title, cards };
       }
+
       setDocMetrics(computeDocMetrics(byDoc));
-    } catch {
+    } catch (err) {
+      console.error("batch load failed, falling back to incremental metrics", err);
       computeMetricsFromItems();
     } finally {
       setMetricsLoading(false);
@@ -259,16 +280,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   useEffect(() => {
     if (activeTab === "documents" && currentDocument) {
       const id = setTimeout(() => { docsTreeRef.current?.revealDocument(currentDocument.id); }, 50);
-      return () => clearTimeout(id);
-    }
-  }, [activeTab, currentDocument]);
-
-  useEffect(() => {
-    if (activeTab === "review" && currentDocument) {
-      const id = setTimeout(() => {
-        const el = reviewScrollRef.current?.querySelector(`[data-doc-id="${currentDocument.id}"]`);
-        el?.scrollIntoView({ block: "center", behavior: "smooth" });
-      }, 100);
       return () => clearTimeout(id);
     }
   }, [activeTab, currentDocument]);
@@ -366,8 +377,9 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
             documents={documents}
             currentDocument={currentDocument}
             onSelectDocument={setCurrentDocument}
-            reviewScrollRef={reviewScrollRef}
             reviewSearchRef={reviewSearchRef}
+            scrollToDocId={scrollToDocId ?? undefined}
+            onScrolledToDoc={handleScrolledToDoc}
           />
         </TabsContent>
       </Tabs>

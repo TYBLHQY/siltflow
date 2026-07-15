@@ -79,6 +79,9 @@ export interface SiltflowAPI {
     updateSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
     updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
   }
+  review: {
+    getAllCardsWithDocuments: () => Promise<Record<string, { title: string; cardData: string[]; annotationIds: string[] }>>
+  }
 }
 
 const api: SiltflowAPI = {
@@ -171,6 +174,9 @@ const api: SiltflowAPI = {
     moveFolder: (params: { folderId: string; targetParentId: string | null }) => ipcRenderer.invoke('folders:moveFolder', params),
     updateSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('folders:updateSortOrder', items),
     updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('documents:updateSortOrder', items),
+  },
+  review: {
+    getAllCardsWithDocuments: () => ipcRenderer.invoke('review:getAllCardsWithDocuments'),
   },
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),
