@@ -33,7 +33,6 @@ export interface SiltflowAPI {
     save: (doc: any) => Promise<any>
     updateMetadata: (params: { id: string; totalPages: number; metadata: string }) => Promise<void>
     delete: (id: string) => Promise<void>
-    deleteBatch: (ids: string[]) => Promise<void>
     rename: (params: { id: string; title: string }) => Promise<void>
   }
   annotations: {
@@ -65,7 +64,6 @@ export interface SiltflowAPI {
     listByAnnotation: (annotationId: string, documentId: string) => Promise<any[]>
     listAll: () => Promise<{ id: string; annotationId: string; documentId: string; data: string; createdAt: string }[]>
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
-    deleteByAnnotation: (annotationId: string, documentId: string) => Promise<void>
   }
   tts: {
     speak: (text: string, options?: { voice?: string; rate?: string; volume?: string; pitch?: string; binaryPath?: string }) => Promise<number[]>
@@ -78,8 +76,6 @@ export interface SiltflowAPI {
     delete: (id: string) => Promise<void>
     moveDocuments: (params: { docIds: string[]; targetFolderId: string | null }) => Promise<void>
     moveFolder: (params: { folderId: string; targetParentId: string | null }) => Promise<void>
-    updateSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
-    updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => Promise<void>
   }
   review: {
     getDocMetrics: () => Promise<import("../src/lib/doc-review").DocReviewMetrics[]>
@@ -135,7 +131,6 @@ const api: SiltflowAPI = {
     save: (doc) => ipcRenderer.invoke('documents:save', doc),
     updateMetadata: (params) => ipcRenderer.invoke('documents:updateMetadata', params),
     delete: (id) => ipcRenderer.invoke('documents:delete', id),
-    deleteBatch: (ids) => ipcRenderer.invoke('documents:deleteBatch', ids),
     rename: (params) => ipcRenderer.invoke('documents:rename', params),
   },
   annotations: {
@@ -167,7 +162,6 @@ const api: SiltflowAPI = {
     listByAnnotation: (annotationId, documentId) => ipcRenderer.invoke('reviewLogs:listByAnnotation', annotationId, documentId),
     listAll: () => ipcRenderer.invoke('reviewLogs:listAll'),
     save: (annotationId, documentId, data) => ipcRenderer.invoke('reviewLogs:save', { annotationId, documentId, data }),
-    deleteByAnnotation: (annotationId, documentId) => ipcRenderer.invoke('reviewLogs:deleteByAnnotation', annotationId, documentId),
   },
   folders: {
     list: () => ipcRenderer.invoke('folders:list'),
@@ -176,8 +170,6 @@ const api: SiltflowAPI = {
     delete: (id: string) => ipcRenderer.invoke('folders:delete', id),
     moveDocuments: (params: { docIds: string[]; targetFolderId: string | null }) => ipcRenderer.invoke('folders:moveDocuments', params),
     moveFolder: (params: { folderId: string; targetParentId: string | null }) => ipcRenderer.invoke('folders:moveFolder', params),
-    updateSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('folders:updateSortOrder', items),
-    updateDocSortOrder: (items: { id: string; sortOrder: number }[]) => ipcRenderer.invoke('documents:updateSortOrder', items),
   },
   review: {
     getDocMetrics: () => ipcRenderer.invoke('review:getDocMetrics'),

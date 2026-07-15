@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PDFDocumentProxy } from "pdfjs-dist";
+import { debounce } from "@/lib/utils";
 
 interface PdfViewerState {
   /** The current PDF document proxy (null when none loaded) */
@@ -83,20 +84,28 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
   setLastPage: (docId, page) =>
     set((s) => {
       const next = { ...s.lastPageByDocId, [docId]: page };
-      window.siltflow.vaultConfigSet({ lastPages: next });
+      debouncedSetLastPages(next);
       return { lastPageByDocId: next };
     }),
 
   quickAddEnabled: true,
   setQuickAddEnabled: (v) =>
     set(() => {
-      window.siltflow.vaultConfigSet({ quickAddEnabled: v });
+      debouncedSetQuickAdd(v);
       return { quickAddEnabled: v };
     }),
 
   pendingAnnotation: null,
   setPendingAnnotation: (ann) => set({ pendingAnnotation: ann }),
 }));
+
+const debouncedSetLastPages = debounce((lastPages: Record<string, number>) => {
+  window.siltflow.vaultConfigSet({ lastPages });
+}, 500);
+
+const debouncedSetQuickAdd = debounce((v: boolean) => {
+  window.siltflow.vaultConfigSet({ quickAddEnabled: v });
+}, 500);
 
 /** Load persisted last-page map from vault (call once on app boot). */
 export async function loadLastPages(cfg?: Record<string, unknown>) {

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { debounce } from "@/lib/utils";
 
 export interface ParagraphStyle {
   /** Ordered list of font names (CSS font-family stack) for content text. */
@@ -56,8 +57,12 @@ const DEFAULT_STYLE: ParagraphStyle = {
 };
 
 function persist(style: ParagraphStyle) {
-  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: style });
+  debouncedVaultSet(style);
 }
+
+const debouncedVaultSet = debounce((style: ParagraphStyle) => {
+  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: style });
+}, 300);
 
 export const useStyleStore = create<StyleState>((set) => ({
   style: { ...DEFAULT_STYLE },

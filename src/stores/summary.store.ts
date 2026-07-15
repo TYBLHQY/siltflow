@@ -49,12 +49,14 @@ interface SummaryState {
   getTargetLang: (documentId: string) => string;
 }
 
-async function persistSummary(
+function persistSummary(
   documentId: string,
   text: string,
   isAiGenerated: boolean,
 ) {
-  window.siltflow.summaries.save({ documentId, text, isAiGenerated });
+  window.siltflow.summaries.save({ documentId, text, isAiGenerated }).catch((err: any) => {
+    console.error("[summary.store] save failed:", err);
+  });
 }
 
 export const useSummaryStore = create<SummaryState>((set, get) => ({
@@ -86,7 +88,9 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   },
 
   clearSummary: (documentId) => {
-    window.siltflow.summaries.delete(documentId);
+    window.siltflow.summaries.delete(documentId).catch((err: any) => {
+      console.error("[summary.store] delete failed:", err);
+    });
     set((s) => {
       const next = { ...s.summaries };
       delete next[documentId];

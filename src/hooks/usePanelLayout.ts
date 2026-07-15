@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { debounce } from "@/lib/utils";
 
 const CONFIG_KEY = "panelLayout";
 
@@ -22,9 +23,15 @@ export function usePanelLayout() {
     };
   }, []);
 
+  const saveLayoutRef = useRef(
+    debounce((sizes: number[]) => {
+      window.siltflow.vaultConfigSet({ [CONFIG_KEY]: sizes });
+    }, 300),
+  );
+
   const saveLayout = (sizes: number[]) => {
     setLayout(sizes);
-    window.siltflow.vaultConfigSet({ [CONFIG_KEY]: sizes });
+    saveLayoutRef.current(sizes);
   };
 
   return { layout, loaded, saveLayout };

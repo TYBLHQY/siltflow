@@ -240,14 +240,6 @@ function SelectionTip() {
         content: { text: pendingAnnotation.text },
       },
     };
-    window.siltflow.annotations.save({
-      id,
-      documentId: docId,
-      type: "text",
-      text: pendingAnnotation.text,
-      pageNumber: pendingAnnotation.pageNumber,
-      embedData: JSON.stringify(item.embedData),
-    });
     addItem(item);
     setPendingAnnotation(null);
     // Clear text selection so the blue highlight disappears
@@ -320,15 +312,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
       } as GhostHighlight);
 
       if (quickAddEnabled) {
-        // Quick-add: persist immediately
-        window.siltflow.annotations.save({
-          id,
-          documentId,
-          type: ghost.type || "highlight",
-          text: cleanedText,
-          pageNumber,
-          embedData: JSON.stringify(item.embedData),
-        });
+        // Quick-add: persist immediately (addItem persists via annotation.store)
         setHighlights((prev) => [...prev, annotationToHighlight(item)]);
         addItem(item);
         window.getSelection()?.removeAllRanges();

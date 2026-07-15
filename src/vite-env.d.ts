@@ -43,7 +43,6 @@ interface SiltflowAPI {
       metadata: string;
     }) => Promise<void>;
     delete: (id: string) => Promise<void>;
-    deleteBatch: (ids: string[]) => Promise<void>;
     rename: (params: { id: string; title: string }) => Promise<void>;
   };
   annotations: {
@@ -100,7 +99,6 @@ interface SiltflowAPI {
       }[]
     >;
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
-    deleteByAnnotation: (annotationId: string, documentId: string) => Promise<void>;
   };
   tts: {
     speak: (
@@ -131,12 +129,6 @@ interface SiltflowAPI {
       folderId: string;
       targetParentId: string | null;
     }) => Promise<void>;
-    updateSortOrder: (
-      items: { id: string; sortOrder: number }[],
-    ) => Promise<void>;
-    updateDocSortOrder: (
-      items: { id: string; sortOrder: number }[],
-    ) => Promise<void>;
   };
   review: {
     getDocMetrics: () => Promise<import("@/lib/doc-review").DocReviewMetrics[]>;
