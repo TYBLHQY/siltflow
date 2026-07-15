@@ -13,6 +13,7 @@ interface SiltflowAPI {
     docs: { id: string; title: string; folderId: string | null }[];
   } | null>;
   loadFile: (filePath: string) => Promise<ArrayBuffer>;
+  dbSchemaVersion: () => Promise<number | null>;
 
   // Updates
   update: {

@@ -12,6 +12,7 @@ export interface SiltflowAPI {
     docs: { id: string; title: string; folderId: string | null }[]
   } | null>
   loadFile: (filePath: string) => Promise<ArrayBuffer>
+  dbSchemaVersion: () => Promise<number | null>
 
   // Updates
   update: {
@@ -90,6 +91,7 @@ const api: SiltflowAPI = {
   selectPdf: () => ipcRenderer.invoke('dialog:selectPdf'),
   importPdfFolder: () => ipcRenderer.invoke('dialog:importPdfFolder'),
   loadFile: (filePath: string) => ipcRenderer.invoke('file:load', filePath),
+  dbSchemaVersion: () => ipcRenderer.invoke('db:schemaVersion'),
 
   // Updates
   update: {

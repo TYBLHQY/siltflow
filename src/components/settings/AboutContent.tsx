@@ -15,6 +15,7 @@ export function AboutContent() {
   const [progress, setProgress] = useState(0);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [dbVersion, setDbVersion] = useState<number | null>(null);
 
   const checkUpdateOnStartup = useAppSettingsStore(
     (s) => s.checkUpdateOnStartup,
@@ -25,6 +26,11 @@ export function AboutContent() {
 
   const currentVersion = __APP_VERSION__;
   const releasesUrl = "https://github.com/TYBLHQY/siltflow/releases";
+
+  // Fetch DB schema version on mount
+  useEffect(() => {
+    window.siltflow.dbSchemaVersion().then(setDbVersion);
+  }, []);
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -99,6 +105,14 @@ export function AboutContent() {
         <label className="block text-xs font-medium">Current Version</label>
         <p className="text-sm">{currentVersion}</p>
       </div>
+
+      {/* DB Schema Version */}
+      {dbVersion !== null && (
+        <div className="space-y-1">
+          <label className="block text-xs font-medium">DB Schema Version</label>
+          <p className="text-sm">{dbVersion}</p>
+        </div>
+      )}
 
       {/* Update */}
       <div className="space-y-2">

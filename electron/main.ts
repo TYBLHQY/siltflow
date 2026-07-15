@@ -413,6 +413,13 @@ ipcMain.handle('shell:openExternal', async (_event, url: string) => {
   shell.openExternal(url)
 })
 
+// Expose the DB schema version to the renderer so About can display it
+ipcMain.handle('db:schemaVersion', () => {
+  const sql = getSqlite()
+  if (!sql) return null
+  return sql.pragma('user_version', { simple: true }) as number
+})
+
 // ── App Bootstrap ─────────────────────────────────────────────────
 app.whenReady().then(async () => {
   // Initialize database and register IPC handlers if vault is set
