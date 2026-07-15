@@ -26,6 +26,11 @@ import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { Plus } from "lucide-react";
+// PDF-related CSS loaded only when this component is mounted (lazy import)
+// These were moved from main.tsx to avoid blocking initial render.
+import "pdfjs-dist/web/pdf_viewer.css";
+import "react-pdf-highlighter-plus/style/style.css";
+import "react-pdf-highlighter-plus/style/pdf_viewer.css";
 
 // ---------------------------------------------------------------------------
 // SiltflowHighlight — our application-specific highlight extension
