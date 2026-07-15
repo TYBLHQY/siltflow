@@ -1,28 +1,18 @@
-import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Highlighter,
   CheckSquare,
   Sparkles,
-  Loader2,
-  Square,
-  FileText,
-  Pencil,
-  Bot,
-  Trash2,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
-import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { LearningModal } from "@/components/document/LearningModal";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useSummaryStore } from "@/stores/summary.store";
-import { useDocumentStore } from "@/stores/document.store";
-import { useStyleStore, buildFontStack } from "@/stores/style.store";
+import { useToastStore } from "@/stores/toast.store";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import type { Grade } from "ts-fsrs";
-import { useToastStore } from "@/stores/toast.store";
 
 interface AnnotationsTabProps {
   items: AnnotationItem[];
@@ -31,13 +21,12 @@ interface AnnotationsTabProps {
   docId: string | undefined;
   summary: any;
   texts: string[] | undefined;
-  selPages: number[] | undefined;
   sourceLang: string;
   effectiveTargetLang: string;
   onTabChange?: (tab: string) => void;
-  annotationsScrollRef: React.RefObject<HTMLDivElement | null>;
+  annotationsScrollRef: React.RefObject<HTMLDivElement>;
   expandedCardId: string | null;
-  setExpandedCardId: (id: string | null) => void;
+  setExpandedCardId: React.Dispatch<React.SetStateAction<string | null>>;
   scrollToHighlight?: (id: string) => void;
   handleStartLearning: () => void;
   dueItems: AnnotationItem[];
@@ -48,18 +37,16 @@ interface AnnotationsTabProps {
   studyingIndex: number;
   answerRevealed: boolean;
   setAnswerRevealed: (v: boolean) => void;
-  setStudyingIndex: (i: number) => void;
+  setStudyingIndex: (i: number | ((prev: number) => number)) => void;
   onCloseStudyPanel: () => void;
 }
 
 export function AnnotationsTab({
   items,
-  profiles,
   activeProfile,
   docId,
   summary,
   texts,
-  selPages,
   sourceLang,
   effectiveTargetLang,
   onTabChange,
@@ -159,7 +146,7 @@ export function AnnotationsTab({
               <option value="ko">한국어</option>
               <option value="ru">Русский</option>
               <option value="__default__">
-                Default ({useAnnotationStore.getState()?.items?.[0] ? "" : "zh"})
+                Default (zh)
               </option>
             </select>
           </span>
@@ -267,7 +254,7 @@ export function AnnotationsTab({
             reviewAnnotation(item.id, grade as Grade);
           }
           if (studyingIndex + 1 < dueItems.length) {
-            setStudyingIndex((i) => i + 1);
+            setStudyingIndex((i: number) => i + 1);
             setAnswerRevealed(false);
           } else {
             showToast("All cards reviewed! Good job!", "success");

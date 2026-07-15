@@ -14,7 +14,6 @@ import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 
 interface SummaryTabProps {
-  docId: string | undefined;
   numPages: number;
   selPages: number[] | undefined;
   allSelected: boolean;
@@ -30,7 +29,6 @@ interface SummaryTabProps {
 }
 
 export function SummaryTab({
-  docId,
   numPages,
   selPages,
   allSelected,

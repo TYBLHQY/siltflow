@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
-import { Highlighter, FileText, Sparkles, CheckSquare } from "lucide-react";
+import { Highlighter, FileText } from "lucide-react";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useAIStore } from "@/stores/ai.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
@@ -20,7 +20,6 @@ interface RightPanelProps {
 export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const items = useAnnotationStore((s) => s.items);
   const profiles = useAIStore((s) => s.profiles);
-  const removeItem = useAnnotationStore((s) => s.removeItem);
   const updateItem = useAnnotationStore((s) => s.updateItem);
   const showToast = useToastStore((s) => s.show);
 
@@ -34,7 +33,8 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const defaultTargetLang = useAIStore((s) => s.defaultTargetLang);
   const setPageTexts = useSummaryStore((s) => s.setPageTexts);
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages);
-  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight);
+  const targetLangs = useSummaryStore((s) => s.targetLangs);
+  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight) ?? undefined;
 
   const [studyPanelOpen, setStudyPanelOpen] = useState(false);
   const [studyingIndex, setStudyingIndex] = useState(0);
@@ -102,7 +102,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const selPages = docId ? selectedPages[docId] : undefined;
   const sourceLang = summary?.sourceLang ?? "en";
   const effectiveTargetLang =
-    (docId && summaries?._targetLangs?.[docId]) || defaultTargetLang || "zh";
+    (docId && targetLangs[docId]) || defaultTargetLang || "zh";
 
   const [summarizing, setSummarizing] = useState(false);
   const [editingSummary, setEditingSummary] = useState(false);
@@ -282,7 +282,6 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
             docId={docId}
             summary={summary}
             texts={texts}
-            selPages={selPages}
             sourceLang={sourceLang}
             effectiveTargetLang={effectiveTargetLang}
             onTabChange={onTabChange}
@@ -306,7 +305,6 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
 
         <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
           <SummaryTab
-            docId={docId}
             numPages={numPages}
             selPages={selPages}
             allSelected={allSelected}
