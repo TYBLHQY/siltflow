@@ -53,6 +53,7 @@ interface SiltflowAPI {
     delete: (id: string, documentId: string) => Promise<void>;
   };
   summaries: {
+    listAll: () => Promise<any[]>;
     get: (documentId: string) => Promise<any | null>;
     save: (summary: {
       documentId: string;
@@ -63,6 +64,7 @@ interface SiltflowAPI {
   };
   aiResults: {
     get: (annotationId: string, documentId: string) => Promise<string | null>;
+    listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>;
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
     delete: (annotationId: string, documentId: string) => Promise<void>;
   };

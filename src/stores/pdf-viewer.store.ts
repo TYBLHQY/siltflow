@@ -99,9 +99,9 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 }));
 
 /** Load persisted last-page map from vault (call once on app boot). */
-export async function loadLastPages() {
+export async function loadLastPages(cfg?: Record<string, unknown>) {
   try {
-    const cfg = await window.siltflow.vaultConfigGet();
+    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
     const lastPages = (cfg as Record<string, unknown>).lastPages as
       Record<string, number> | undefined;
     if (lastPages && typeof lastPages === "object") {

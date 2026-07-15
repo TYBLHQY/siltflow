@@ -230,22 +230,19 @@ export function CenterPanel({
     window.siltflow.annotations.list(documentId).then(async (saved) => {
       if (loadedDocRef.current !== documentId) return;
 
-      // Load ai_results and fsrs_cards for all annotations in batch
+      // Load ai_results and fsrs_cards for all annotations in batch (2 calls instead of 2N)
+      const [aiRows, fsrsRows] = await Promise.all([
+        window.siltflow.aiResults.listByDocument(documentId).catch(() => [] as { annotationId: string; data: string }[]),
+        window.siltflow.fsrsCards.listByDocument(documentId).catch(() => [] as { annotationId: string; data: string }[]),
+      ]);
+
       const aiResults = new Map<string, any>();
+      for (const r of aiRows) {
+        try { aiResults.set(r.annotationId, JSON.parse(r.data)); } catch { /* skip */ }
+      }
       const fsrsCards = new Map<string, any>();
-      for (const a of saved || []) {
-        try {
-          const r = await window.siltflow.aiResults.get(a.id, a.documentId);
-          if (r) aiResults.set(a.id, JSON.parse(r));
-        } catch {
-          /* not found */
-        }
-        try {
-          const c = await window.siltflow.fsrsCards.get(a.id, a.documentId);
-          if (c) fsrsCards.set(a.id, JSON.parse(c));
-        } catch {
-          /* not found */
-        }
+      for (const r of fsrsRows) {
+        try { fsrsCards.set(r.annotationId, JSON.parse(r.data)); } catch { /* skip */ }
       }
 
       setItems(

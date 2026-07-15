@@ -119,23 +119,20 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
 /** Call once on app boot to restore summaries from backend. */
 export async function loadSummariesFromVault() {
   try {
-    const docs = await window.siltflow.documents.list();
+    const all = await window.siltflow.summaries.listAll();
     const summaries: Record<string, DocSummary> = {};
-    for (const doc of docs) {
-      const s = await window.siltflow.summaries.get(doc.id);
-      if (s) {
-        summaries[doc.id] = {
-          text: s.text,
-          isAiGenerated: !!s.is_ai_generated,
-          sourceLang: s.source_lang || undefined,
-          keyVocabulary: s.key_vocabulary
-            ? typeof s.key_vocabulary === "string"
-              ? JSON.parse(s.key_vocabulary)
-              : s.key_vocabulary
-            : undefined,
-          gist: s.gist || undefined,
-        };
-      }
+    for (const s of all || []) {
+      summaries[s.documentId] = {
+        text: s.text,
+        isAiGenerated: !!s.is_ai_generated,
+        sourceLang: s.source_lang || undefined,
+        keyVocabulary: s.key_vocabulary
+          ? typeof s.key_vocabulary === "string"
+            ? JSON.parse(s.key_vocabulary)
+            : s.key_vocabulary
+          : undefined,
+        gist: s.gist || undefined,
+      };
     }
     useSummaryStore.setState({ summaries });
   } catch {

@@ -256,23 +256,22 @@ function persistToVault(profiles: AIProfile[]) {
 }
 
 /** Call once on app boot to restore profiles and settings from vault. */
-export async function loadFromVault() {
-  try {
-    const cfg = await window.siltflow.vaultConfigGet();
-    const saved = (cfg as Record<string, unknown>)[AI_VAULT_KEY];
-    if (Array.isArray(saved)) {
-      useAIStore.setState({ profiles: saved as AIProfile[], loaded: true });
-    }
-    const defaultTargetLang = (cfg as Record<string, unknown>)[
-      "defaultTargetLang"
-    ] as string | undefined;
-    if (defaultTargetLang) {
-      useAIStore.setState({ defaultTargetLang });
-    }
-    useAIStore.setState({ loaded: true });
-    return;
-  } catch {
-    /* ignore */
+export function loadFromVault(cfg?: Record<string, unknown>) {
+  if (cfg) return applyAIConfig(cfg);
+  // fallback: loads config independently (e.g. when called directly)
+  window.siltflow.vaultConfigGet().then(applyAIConfig).catch(() => {});
+}
+
+function applyAIConfig(cfg: Record<string, unknown>) {
+  const saved = (cfg as Record<string, unknown>)[AI_VAULT_KEY];
+  if (Array.isArray(saved)) {
+    useAIStore.setState({ profiles: saved as AIProfile[], loaded: true });
+  }
+  const defaultTargetLang = (cfg as Record<string, unknown>)[
+    "defaultTargetLang"
+  ] as string | undefined;
+  if (defaultTargetLang) {
+    useAIStore.setState({ defaultTargetLang });
   }
   useAIStore.setState({ loaded: true });
 }

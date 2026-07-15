@@ -173,9 +173,9 @@ export const useStyleStore = create<StyleState>((set) => ({
 }));
 
 /** Call once on app boot to restore style from vault. */
-export async function loadStyleFromVault() {
+export async function loadStyleFromVault(cfg?: Record<string, unknown>) {
   try {
-    const cfg = await window.siltflow.vaultConfigGet();
+    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
     const saved = (cfg as Record<string, unknown>)[STORAGE_KEY];
     if (saved && typeof saved === "object") {
       const s = saved as Record<string, unknown>;

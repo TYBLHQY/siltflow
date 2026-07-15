@@ -83,9 +83,9 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
 }));
 
 /** Call once on app boot to restore theme config from vault. */
-export async function loadThemeFromVault() {
+export async function loadThemeFromVault(cfg?: Record<string, unknown>) {
   try {
-    const cfg = await window.siltflow.vaultConfigGet();
+    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
     const saved = (cfg as Record<string, unknown>)[STORAGE_KEY] as
       Partial<ThemeConfig> | undefined;
     if (saved && typeof saved === "object") {

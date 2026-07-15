@@ -3,6 +3,12 @@ import { getDb, getSqlite, schema } from "../database"
 import { eq } from "drizzle-orm"
 
 export function registerSummaryHandlers() {
+  ipcMain.handle("summaries:listAll", () => {
+    const db = getDb()
+    if (!db) return []
+    return db.select().from(schema.summaries).all()
+  })
+
   ipcMain.handle("summaries:get", (_event, documentId: string) => {
     const db = getDb()
     if (!db) return null

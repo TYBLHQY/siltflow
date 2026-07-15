@@ -63,9 +63,9 @@ function persistToVault(params: FSRSParameters) {
   window.siltflow.vaultConfigSet({ [VAULT_KEY]: params });
 }
 
-export async function loadFSRSParams() {
+export async function loadFSRSParams(cfg?: Record<string, unknown>) {
   try {
-    const cfg = await window.siltflow.vaultConfigGet();
+    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
     const saved = (cfg as Record<string, unknown>)[VAULT_KEY] as
       Partial<FSRSParameters> | undefined;
     if (saved) {

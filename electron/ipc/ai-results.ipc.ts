@@ -9,6 +9,13 @@ export function registerAiResultHandlers() {
     return row?.data ?? null
   })
 
+  ipcMain.handle("aiResults:listByDocument", (_event, documentId: string) => {
+    const sql = getSqlite()
+    if (!sql) return []
+    const rows = sql.prepare("SELECT annotation_id, data FROM ai_results WHERE document_id = ?").all(documentId) as any[]
+    return rows.map((r: any) => ({ annotationId: r.annotation_id, data: r.data }))
+  })
+
   ipcMain.handle("aiResults:save", (_event, record: { annotationId: string; documentId: string; data: any }) => {
     const sql = getSqlite()
     if (!sql) return null

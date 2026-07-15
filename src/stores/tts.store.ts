@@ -149,9 +149,9 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
 }));
 
 /** Call once on app boot to restore TTS config from vault. */
-export async function loadTTSConfigFromVault() {
+export async function loadTTSConfigFromVault(cfg?: Record<string, unknown>) {
   try {
-    const cfg = await window.siltflow.vaultConfigGet();
+    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
     const saved = (cfg as Record<string, unknown>)[STORAGE_KEY];
     if (saved && typeof saved === "object") {
       useTTSStore.setState({

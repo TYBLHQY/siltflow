@@ -50,15 +50,18 @@ function App() {
 
   useEffect(() => {
     if (vaultReady && !aiLoaded) {
-      loadFromVault();
-      loadFSRSParams();
-      loadSummariesFromVault();
-      loadStyleFromVault();
-      loadTTSConfigFromVault();
-      loadShortcutsFromVault();
-      loadLastPages();
-      loadThemeFromVault();
-      loadAppSettingsFromVault();
+      // Single vaultConfigGet call, distribute to all loaders (1 IPC instead of 9)
+      window.siltflow.vaultConfigGet().then((cfg) => {
+        loadFromVault(cfg);
+        loadFSRSParams(cfg);
+        loadSummariesFromVault();
+        loadStyleFromVault(cfg);
+        loadTTSConfigFromVault(cfg);
+        loadShortcutsFromVault(cfg);
+        loadLastPages(cfg);
+        loadThemeFromVault(cfg);
+        loadAppSettingsFromVault(cfg);
+      });
     }
   }, [vaultReady, aiLoaded]);
 

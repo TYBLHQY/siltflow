@@ -43,12 +43,14 @@ export interface SiltflowAPI {
     delete: (id: string, documentId: string) => Promise<void>
   }
   summaries: {
+    listAll: () => Promise<any[]>
     get: (documentId: string) => Promise<any | null>
     save: (summary: { documentId: string; text: string; isAiGenerated: boolean }) => Promise<any>
     delete: (documentId: string) => Promise<void>
   }
   aiResults: {
     get: (annotationId: string, documentId: string) => Promise<string | null>
+    listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
   }
@@ -143,12 +145,14 @@ const api: SiltflowAPI = {
     delete: (id, documentId) => ipcRenderer.invoke('annotations:delete', id, documentId),
   },
   summaries: {
+    listAll: () => ipcRenderer.invoke('summaries:listAll'),
     get: (documentId) => ipcRenderer.invoke('summaries:get', documentId),
     save: (summary) => ipcRenderer.invoke('summaries:save', summary),
     delete: (documentId) => ipcRenderer.invoke('summaries:delete', documentId),
   },
   aiResults: {
     get: (annotationId, documentId) => ipcRenderer.invoke('aiResults:get', annotationId, documentId),
+    listByDocument: (documentId) => ipcRenderer.invoke('aiResults:listByDocument', documentId),
     save: (annotationId, documentId, data) => ipcRenderer.invoke('aiResults:save', { annotationId, documentId, data }),
     delete: (annotationId, documentId) => ipcRenderer.invoke('aiResults:delete', annotationId, documentId),
   },

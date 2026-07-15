@@ -264,9 +264,9 @@ function persistShortcuts(shortcuts: ShortcutEntry[]) {
 }
 
 /** Call once on app boot to restore shortcuts from vault. */
-export async function loadShortcutsFromVault() {
+export async function loadShortcutsFromVault(cfg?: Record<string, unknown>) {
   try {
-    const cfg = await window.siltflow.vaultConfigGet();
+    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
     const saved = (cfg as Record<string, unknown>)[VAULT_KEY] as
       Record<string, string> | undefined;
     if (saved && typeof saved === "object") {
