@@ -4,6 +4,12 @@ import * as schema from "./schema"
 import fs from "node:fs"
 import path from "node:path"
 
+// ── Schema version ───────────────────────────────────────────────────
+// Bump this when making backward-incompatible migrations.  The value is
+// stored as PRAGMA user_version so we can detect and migrate existing
+// databases on upgrade.
+const SCHEMA_VERSION = 1
+
 let db: ReturnType<typeof drizzle<typeof schema>> | null = null
 let sqlite: Database.Database | null = null
 
@@ -19,8 +25,15 @@ export function initDatabase(vaultPath: string) {
 
   db = drizzle(sqlite, { schema })
 
-  // Create tables
-  createTables()
+  // Check / migrate schema version
+  const version = sqlite.pragma("user_version", { simple: true }) as number
+  if (version < SCHEMA_VERSION) {
+    // Future: run version-gated migrations here before createTables
+    createTables()
+    sqlite!.pragma(`user_version = ${SCHEMA_VERSION}`)
+  } else {
+    createTables()
+  }
 
   return db
 }
