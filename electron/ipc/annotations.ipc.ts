@@ -1,17 +1,36 @@
 import { ipcMain } from "electron"
 import { getDb, getSqlite } from "../database"
-import { eq } from "drizzle-orm"
 import { schema } from "../database"
 
 export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:list", (_event, documentId: string) => {
-    const db = getDb()
-    if (!db) return []
-    return db
-      .select()
-      .from(schema.annotations)
-      .where(eq(schema.annotations.documentId, documentId))
-      .all()
+    const sql = getSqlite()
+    if (!sql) return []
+    // Single query with LEFT JOINs — includes ai_result + fsrs_card data
+    // so the renderer doesn't need N×2 separate IPC calls.
+    const rows = sql.prepare(`
+      SELECT
+        a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
+        a.created_at, a.updated_at,
+        ar.data AS ai_data,
+        fc.data AS fsrs_data
+      FROM annotations a
+      LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
+      LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
+      WHERE a.document_id = ?
+    `).all(documentId) as any[]
+    return rows.map((r: any) => ({
+      id: r.id,
+      document_id: r.document_id,
+      type: r.type,
+      text: r.text,
+      page_number: r.page_number,
+      embed_data: r.embed_data,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+      ai_data: r.ai_data ?? null,
+      fsrs_data: r.fsrs_data ?? null,
+    }))
   })
 
   ipcMain.handle("annotations:listAll", () => {

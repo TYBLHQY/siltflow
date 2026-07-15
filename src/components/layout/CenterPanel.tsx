@@ -230,31 +230,16 @@ export function CenterPanel({
     window.siltflow.annotations.list(documentId).then(async (saved) => {
       if (loadedDocRef.current !== documentId) return;
 
-      // Load ai_results and fsrs_cards for all annotations in batch (2 calls instead of 2N)
-      const [aiRows, fsrsRows] = await Promise.all([
-        window.siltflow.aiResults.listByDocument(documentId).catch(() => [] as { annotationId: string; data: string }[]),
-        window.siltflow.fsrsCards.listByDocument(documentId).catch(() => [] as { annotationId: string; data: string }[]),
-      ]);
-
-      const aiResults = new Map<string, any>();
-      for (const r of aiRows) {
-        try { aiResults.set(r.annotationId, JSON.parse(r.data)); } catch { /* skip */ }
-      }
-      const fsrsCards = new Map<string, any>();
-      for (const r of fsrsRows) {
-        try { fsrsCards.set(r.annotationId, JSON.parse(r.data)); } catch { /* skip */ }
-      }
-
       setItems(
         (saved || []).map((a: any) => ({
           id: a.id,
-          documentId: a.documentId,
+          documentId: a.document_id,
           type: a.type,
           text: a.text || "",
-          pageNumber: a.pageNumber ?? 1,
-          embedData: JSON.parse(a.embedData) as AnnotationEmbedData,
-          aiResult: aiResults.get(a.id) ?? undefined,
-          fsrsCard: fsrsCards.get(a.id) ?? undefined,
+          pageNumber: a.page_number ?? 1,
+          embedData: JSON.parse(a.embed_data) as AnnotationEmbedData,
+          aiResult: a.ai_data ? JSON.parse(a.ai_data) : undefined,
+          fsrsCard: a.fsrs_data ? JSON.parse(a.fsrs_data) : undefined,
         })),
       );
     });
