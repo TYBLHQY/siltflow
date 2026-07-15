@@ -19,6 +19,22 @@ import { useAIStore } from "@/stores/ai.store";
 import { useToastStore } from "@/stores/toast.store";
 import { summarizeSelectedPages } from "@/lib/summarize";
 
+/** Guard against stored full-JSON in the text field. */
+function safeSummaryText(summary: { text: string } | undefined): string {
+  if (!summary) return "";
+  const t = summary.text;
+  if (!t) return "";
+  try {
+    const parsed = JSON.parse(t);
+    if (parsed && typeof parsed === "object" && parsed.summary) {
+      return parsed.summary;
+    }
+  } catch {
+    /* not JSON, use as-is */
+  }
+  return t;
+}
+
 export function SummaryTab() {
   const style = useStyleStore((s) => s.style);
   const showToast = useToastStore((s) => s.show);
@@ -37,6 +53,7 @@ export function SummaryTab() {
   const numPages = currentDocument?.totalPages ?? texts?.length ?? 0;
   const selPages = docId ? selectedPages[docId] : undefined;
   const summary = docId ? summaries[docId] : undefined;
+  const summaryText = safeSummaryText(summary);
   const allSelected = selPages === undefined || selPages.length === numPages;
 
   const [summarizing, setSummarizing] = useState(false);
@@ -221,14 +238,14 @@ export function SummaryTab() {
                 fontFamily: buildFontStack(style.fontFamilies),
                 fontSize: style.fontSize,
               }}
-              value={summary.text}
+              value={summaryText}
               onChange={(e) => handleEditSummary(e.target.value)}
               autoFocus
             />
           ) : (
             <div className="h-full overflow-y-auto px-3 py-3">
               <KnuthPlassText
-                text={summary.text}
+                text={summaryText}
                 className="text-xs text-foreground rounded-md border border-transparent px-2 py-1.5"
               />
             </div>
