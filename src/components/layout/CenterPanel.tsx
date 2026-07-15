@@ -237,9 +237,9 @@ export function CenterPanel({
           type: a.type,
           text: a.text || "",
           pageNumber: a.page_number ?? 1,
-          embedData: JSON.parse(a.embed_data) as AnnotationEmbedData,
-          aiResult: a.ai_data ? JSON.parse(a.ai_data) : undefined,
-          fsrsCard: a.fsrs_data ? JSON.parse(a.fsrs_data) : undefined,
+          embedData: a.embed_data as AnnotationEmbedData,
+          aiResult: a.ai_data ?? undefined,
+          fsrsCard: a.fsrs_data ?? undefined,
         })),
       );
     });

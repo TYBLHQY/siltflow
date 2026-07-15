@@ -1,6 +1,15 @@
 import { ipcMain } from "electron"
 import { getDb, getSqlite } from "../database"
 import { schema } from "../database"
+import { invalidateReviewMetricsCache } from "./review.ipc"
+
+function tryParseJson(data: string, fallback: unknown): unknown {
+  try {
+    return JSON.parse(data)
+  } catch {
+    return fallback
+  }
+}
 
 export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:list", (_event, documentId: string) => {
@@ -19,17 +28,19 @@ export function registerAnnotationHandlers() {
       LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
       WHERE a.document_id = ?
     `).all(documentId) as any[]
+    // Pre-parse JSON fields in the main process so the renderer
+    // doesn't block the UI thread on N×sync JSON.parse calls.
     return rows.map((r: any) => ({
       id: r.id,
       document_id: r.document_id,
       type: r.type,
       text: r.text,
       page_number: r.page_number,
-      embed_data: r.embed_data,
+      embed_data: tryParseJson(r.embed_data, {}),
       created_at: r.created_at,
       updated_at: r.updated_at,
-      ai_data: r.ai_data ?? null,
-      fsrs_data: r.fsrs_data ?? null,
+      ai_data: r.ai_data ? tryParseJson(r.ai_data, null) : null,
+      fsrs_data: r.fsrs_data ? tryParseJson(r.fsrs_data, null) : null,
     }))
   })
 
@@ -56,6 +67,7 @@ export function registerAnnotationHandlers() {
       now,
       now,
     )
+    invalidateReviewMetricsCache()
     return { id: annotation.id }
   })
 
@@ -70,6 +82,7 @@ export function registerAnnotationHandlers() {
       sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM annotations WHERE id = ? AND document_id = ?").run(id, documentId)
       sql.exec("COMMIT")
+      invalidateReviewMetricsCache()
     } catch (err) {
       sql.exec("ROLLBACK")
       throw err

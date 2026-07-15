@@ -1,11 +1,10 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
 import { Highlighter, FileText } from "lucide-react";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
-import { extractPageTexts } from "@/lib/summarize";
 import { AnnotationsTab } from "@/components/layout/right-panel/annotations-tab";
 import { SummaryTab } from "@/components/layout/right-panel/summary-tab";
 
@@ -48,35 +47,31 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
 
   const docId = currentDocument?.id;
   const texts = docId ? pageTexts[docId] : undefined;
-  const docIdRef = useRef(docId);
-  docIdRef.current = docId;
-  const extractGen = useRef(0);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_extracting, setExtracting] = useState(false);
 
-  // Extract page texts when a new pdfDocument arrives
+  // Lazy page-text extraction: only run when Summary tab is active and texts aren't cached.
+  // This avoids blocking the main thread on every PDF open when the user
+  // may never open the Summary tab.
+  const extractionGen = useRef(0);
   useEffect(() => {
-    if (!pdfDocument) return;
-    const id = docIdRef.current;
-    if (!id) return;
-    if (pageTexts[id]) return;
+    if (!pdfDocument || !docId) return;
+    if (pageTexts[docId]) return; // already cached
+    if (activeTab !== "summary") return; // don't extract eagerly
 
-    const gen = ++extractGen.current;
-    setExtracting(true);
-
-    extractPageTexts(pdfDocument)
-      .then((texts) => {
-        if (gen !== extractGen.current) return;
-        setPageTexts(id, texts);
-      })
-      .catch((err) => {
-        if (gen !== extractGen.current) return;
+    const gen = ++extractionGen.current;
+    import("@/lib/summarize").then(({ extractPageTexts }) => {
+      if (gen !== extractionGen.current) return;
+      if (pageTexts[docId]) return; // re-check after async import
+      extractPageTexts(pdfDocument).then((texts) => {
+        if (gen !== extractionGen.current) return;
+        setPageTexts(docId, texts);
+      }).catch((err) => {
+        if (gen !== extractionGen.current) return;
         console.error("Failed to extract page texts:", err);
-      })
-      .finally(() => {
-        if (gen === extractGen.current) setExtracting(false);
       });
-  }, [pdfDocument, pageTexts, setExtracting, setPageTexts]);
+    }).catch((err) => {
+      console.error("Failed to load summarize module:", err);
+    });
+  }, [pdfDocument, docId, pageTexts, activeTab, setPageTexts]);
 
   // When page texts are first loaded, select only the first page by default
   useEffect(() => {

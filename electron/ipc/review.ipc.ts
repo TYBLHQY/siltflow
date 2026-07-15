@@ -24,6 +24,18 @@ interface FSRSCard {
   lapses: number
 }
 
+// ── In-memory cache for review metrics ─────────────────────────────
+// Invalidated whenever annotations or fsrs_cards are mutated.
+let metricsCache: { data: MetricsRow[]; version: number } | null = null
+let dataVersion = 0
+
+/** Call this from annotation/fsrs-card IPC handlers when data changes. */
+export function invalidateReviewMetricsCache() {
+  dataVersion++
+  metricsCache = null
+}
+// ───────────────────────────────────────────────────────────────────
+
 /**
  * Single batch IPC handler that returns pre-computed DocReviewMetrics
  * for every document — computed entirely in the main process so the
@@ -36,6 +48,11 @@ export function registerReviewHandlers() {
   ipcMain.handle("review:getDocMetrics", () => {
     const sql = getSqlite()
     if (!sql) return []
+
+    // Return cached result if still fresh
+    if (metricsCache) {
+      return metricsCache.data
+    }
 
     const docs = sql
       .prepare("SELECT id, title FROM documents ORDER BY title")
@@ -166,6 +183,9 @@ export function registerReviewHandlers() {
       b.compositeScore - a.compositeScore ||
       a.documentTitle.localeCompare(b.documentTitle),
     )
+
+    // Cache the result until invalidation
+    metricsCache = { data: results, version: dataVersion }
 
     return results
   })

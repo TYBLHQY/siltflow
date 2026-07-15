@@ -53,20 +53,65 @@ function buildTree(
   folders: FolderItem[],
   documents: DocumentItem[],
 ): NodeData[] {
+  // Pre-index: parentId → child folders (O(n))
+  const childrenByParent = new Map<string, FolderItem[]>();
+  const rootFolders: FolderItem[] = [];
+  for (const f of folders) {
+    const key = f.parentId ?? '';
+    if (key === '') {
+      rootFolders.push(f);
+    } else {
+      let list = childrenByParent.get(key);
+      if (!list) {
+        list = [];
+        childrenByParent.set(key, list);
+      }
+      list.push(f);
+    }
+  }
+
+  // Pre-index: folderId → child documents (O(n))
+  const docsByFolder = new Map<string, DocumentItem[]>();
+  const rootDocs: DocumentItem[] = [];
+  for (const d of documents) {
+    const key = d.folderId ?? '';
+    if (key === '') {
+      rootDocs.push(d);
+    } else {
+      let list = docsByFolder.get(key);
+      if (!list) {
+        list = [];
+        docsByFolder.set(key, list);
+      }
+      list.push(d);
+    }
+  }
+
   function buildSubTree(folder: FolderItem): NodeData {
     const children: NodeData[] = [];
-    for (const sf of folders.filter((f) => f.parentId === folder.id)) {
-      children.push(buildSubTree(sf));
+
+    // O(1) lookup: child folders
+    const subFolders = childrenByParent.get(folder.id);
+    if (subFolders) {
+      for (const sf of subFolders) {
+        children.push(buildSubTree(sf));
+      }
     }
-    for (const doc of documents.filter((d) => d.folderId === folder.id)) {
-      children.push({
-        id: `doc:${doc.id}`,
-        name: doc.title,
-        type: "document",
-        originalId: doc.id,
-        doc,
-      });
+
+    // O(1) lookup: docs in this folder
+    const folderDocs = docsByFolder.get(folder.id);
+    if (folderDocs) {
+      for (const doc of folderDocs) {
+        children.push({
+          id: `doc:${doc.id}`,
+          name: doc.title,
+          type: "document",
+          originalId: doc.id,
+          doc,
+        });
+      }
     }
+
     return {
       id: `folder:${folder.id}`,
       name: folder.name,
@@ -78,10 +123,14 @@ function buildTree(
   }
 
   const nodes: NodeData[] = [];
-  for (const f of folders.filter((f) => !f.parentId)) {
+
+  // Root-level folders (O(1) lookup from pre-filtered array)
+  for (const f of rootFolders) {
     nodes.push(buildSubTree(f));
   }
-  for (const doc of documents.filter((d) => !d.folderId)) {
+
+  // Root-level documents (O(1) lookup from pre-filtered array)
+  for (const doc of rootDocs) {
     nodes.push({
       id: `doc:${doc.id}`,
       name: doc.title,
@@ -90,6 +139,7 @@ function buildTree(
       doc,
     });
   }
+
   return nodes;
 }
 
@@ -115,11 +165,14 @@ export interface DocsTreeHandle {
 interface DocsTreeProps {
   /** Callback when a document is selected. If omitted, sets currentDocument on the store directly. */
   onSelectDocument?: (doc: DocumentItem) => void;
+  /** Increment to force a fresh mount with initialOpenState (no expansion animation). */
+  remountKey?: number;
 }
 
 export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
   function DocsTree(_props: DocsTreeProps, ref) {
     const documents = useDocumentStore((s) => s.documents);
+    const currentDocument = useDocumentStore((s) => s.currentDocument);
     const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
     const removeDocument = useDocumentStore((s) => s.removeDocument);
     const updateDocument = useDocumentStore((s) => s.updateDocument);
@@ -160,6 +213,35 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       () => buildTree(folders, documents),
       [folders, documents],
     );
+
+    // Pre-compute which folders should be open on initial mount.
+    // This avoids the visible "folded → expanded" animation when switching tabs.
+    const initialOpenState = useMemo(() => {
+      const state: Record<string, boolean> = {};
+      if (!currentDocument?.folderId) return state;
+      // Walk up the folder chain so nested folders also open.
+      const seen = new Set<string>();
+      let currentId: string | null | undefined = currentDocument.folderId;
+      while (currentId && !seen.has(currentId)) {
+        seen.add(currentId);
+        state[`folder:${currentId}`] = true;
+        const folder = folders.find((f) => f.id === currentId);
+        currentId = folder?.parentId ?? null;
+      }
+      return state;
+    }, [currentDocument?.folderId, folders]);
+
+    // Select current doc after initial mount (or remount).
+    const treeMountRef = useRef(false);
+    useEffect(() => {
+      if (!tree) return;
+      if (!treeMountRef.current) {
+        treeMountRef.current = true;
+        if (currentDocument?.id) {
+          tree.select(`doc:${currentDocument.id}`, { align: "center" });
+        }
+      }
+    }, [tree, currentDocument?.id]);
 
     // Refresh both folders and docs
     const refreshAll = useCallback(async () => {
@@ -366,6 +448,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       >
         <div className="absolute inset-0">
           <Tree
+            key={_props.remountKey ?? 0}
             data={treeData}
             onMove={handleMove}
             onRename={handleRename}
@@ -381,6 +464,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             rowHeight={32}
             indent={16}
             openByDefault={false}
+            initialOpenState={initialOpenState}
             width="100%"
             height={treeHeight}
             ref={(t) => setTree(t ?? null)}

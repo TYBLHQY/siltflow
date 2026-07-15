@@ -1,5 +1,6 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
+import { invalidateReviewMetricsCache } from "./review.ipc"
 
 export function registerFSRSCardHandlers() {
   ipcMain.handle("fsrsCards:get", (_event, annotationId: string, documentId: string) => {
@@ -47,6 +48,7 @@ export function registerFSRSCardHandlers() {
       now,
       now,
     )
+    invalidateReviewMetricsCache()
     return { annotationId: record.annotationId }
   })
 
@@ -54,5 +56,6 @@ export function registerFSRSCardHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
+    invalidateReviewMetricsCache()
   })
 }

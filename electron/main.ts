@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, protocol, net, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, protocol, dialog, ipcMain, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
@@ -431,13 +431,50 @@ app.whenReady().then(async () => {
   }
 
   // Register siltflow:// protocol → vault path
+  // Direct file read with proper Range header support (avoids net.fetch(file://) round-trip)
   protocol.handle('siltflow', (request) => {
     let relativePath = decodeURIComponent(request.url.slice('siltflow://'.length))
     if (relativePath.startsWith('/')) relativePath = relativePath.slice(1)
     const vault = getVaultPath()
     if (!vault) return new Response('Vault not set', { status: 404 })
     const fullPath = path.resolve(vault, relativePath)
-    return net.fetch(new URL(fullPath, 'file:///').href)
+
+    let raw: Buffer
+    try {
+      raw = fs.readFileSync(fullPath)
+    } catch {
+      return new Response('File not found', { status: 404 })
+    }
+
+    const data = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer
+
+    // Handle HTTP Range requests (pdfjs-dist uses partial range requests per page)
+    const rangeHeader = request.headers.get('Range')
+    if (rangeHeader) {
+      const match = rangeHeader.match(/bytes=(\d+)-(\d*)/)
+      if (match) {
+        const start = parseInt(match[1], 10)
+        const end = match[2] ? parseInt(match[2], 10) : data.byteLength - 1
+        const chunk = data.slice(start, end + 1)
+        return new Response(chunk, {
+          status: 206,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Range': `bytes ${start}-${end}/${data.byteLength}`,
+            'Content-Length': String(chunk.byteLength),
+            'Accept-Ranges': 'bytes',
+          },
+        })
+      }
+    }
+
+    return new Response(data, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Accept-Ranges': 'bytes',
+        'Content-Length': String(data.byteLength),
+      },
+    })
   })
 
   if (VITE_DEV_SERVER_URL) {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo, useDeferredValue } from "react";
+import { useLayoutEffect, useEffect, useState, useRef, useCallback, useMemo, useDeferredValue } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
 import {
@@ -257,13 +257,18 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   };
 
   const docsTreeRef = useRef<DocsTreeHandle>(null);
-
-  useEffect(() => {
-    if (activeTab === "documents" && currentDocument) {
-      const id = setTimeout(() => { docsTreeRef.current?.revealDocument(currentDocument.id); }, 50);
-      return () => clearTimeout(id);
+  const prevTabRef = useRef(activeTab);
+  // Force Tree to re-mount when switching to the Documents tab so initialOpenState
+  // takes effect on first render (no expanded → collapsed → expanded flicker).
+  // useLayoutEffect is required here: a useEffect gap would paint the folded state
+  // first, then remount — visible as a flicker.
+  const [treeRemount, setTreeRemount] = useState(0);
+  useLayoutEffect(() => {
+    if (activeTab === "documents" && prevTabRef.current !== "documents") {
+      setTreeRemount((c) => c + 1);
     }
-  }, [activeTab, currentDocument]);
+    prevTabRef.current = activeTab;
+  }, [activeTab]);
 
   return (
     <div className="flex h-full flex-col">
@@ -337,7 +342,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               </TooltipProvider>
             </div>
           </div>
-          <DocsTree ref={docsTreeRef} />
+          <DocsTree ref={docsTreeRef} remountKey={treeRemount} />
         </TabsContent>
 
         <TabsContent value="outline" className="flex-1 min-h-0 mt-0 flex flex-col">
