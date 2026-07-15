@@ -71,12 +71,6 @@ function getDifficulty(
   return ai.metadata?.difficulty || ai.difficulty_level;
 }
 
-function getTags(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-): string[] | undefined {
-  return ai.metadata?.tags || ai.category_tags;
-}
-
 function getRegister(
   ai: NonNullable<AnnotationItem["aiResult"]>,
 ): string | undefined {
@@ -192,7 +186,6 @@ export function AITranslateCard({
   const colls = ai ? getCollocations(ai) : [];
   const ipa = ai ? getIpa(ai) : undefined;
   const difficulty = ai ? getDifficulty(ai) : undefined;
-  const tags = ai ? getTags(ai) : undefined;
   const register = ai ? getRegister(ai) : undefined;
   const alts = ai ? getAlternatives(ai) : [];
   const examples = ai?.examples ?? [];
@@ -323,8 +316,8 @@ export function AITranslateCard({
             </p>
           )}
 
-          {/* Meta tags: difficulty + IPA + register + tags */}
-          {(difficulty || (ipa && isWord) || register || (tags && tags.length > 0)) && (
+          {/* Meta tags: difficulty + IPA + register */}
+          {(difficulty || (ipa && isWord) || register) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
                 <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
@@ -341,14 +334,6 @@ export function AITranslateCard({
                   {register}
                 </span>
               )}
-              {tags?.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center rounded bg-teal/15 px-1.5 py-0.5 text-teal"
-                >
-                  {tag}
-                </span>
-              ))}
             </div>
           )}
 

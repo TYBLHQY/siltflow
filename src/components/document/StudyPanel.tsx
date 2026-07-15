@@ -91,12 +91,6 @@ function getDifficulty(
   return ai.metadata?.difficulty || ai.difficulty_level;
 }
 
-function getTags(
-  ai: NonNullable<AnnotationItem["aiResult"]>,
-): string[] | undefined {
-  return ai.metadata?.tags || ai.category_tags;
-}
-
 function getRegister(
   ai: NonNullable<AnnotationItem["aiResult"]>,
 ): string | undefined {
@@ -199,7 +193,6 @@ export function StudyPanel({
   const colls = ai ? getCollocations(ai) : [];
   const ipa = ai ? getIpa(ai) : undefined;
   const difficulty = ai ? getDifficulty(ai) : undefined;
-  const tags = ai ? getTags(ai) : undefined;
   const register = ai ? getRegister(ai) : undefined;
   const examples = ai?.examples ?? [];
   const alts = ai ? getAlternatives(ai) : [];
@@ -261,8 +254,8 @@ export function StudyPanel({
               </p>
             )}
 
-            {/* Meta tags: difficulty + IPA + register + tags */}
-            {(difficulty || ipa || register || (tags && tags.length > 0)) && (
+            {/* Meta tags: difficulty + IPA + register */}
+            {(difficulty || ipa || register) && (
               <div className="flex flex-wrap gap-1">
                 {difficulty && (
                   <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
@@ -279,14 +272,6 @@ export function StudyPanel({
                     {register}
                   </span>
                 )}
-                {tags?.slice(0, 3).map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded bg-teal/15 px-1.5 py-0.5 text-teal"
-                  >
-                    {tag}
-                  </span>
-                ))}
               </div>
             )}
 
