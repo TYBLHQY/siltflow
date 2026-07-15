@@ -53,12 +53,28 @@ function buildTree(
   folders: FolderItem[],
   documents: DocumentItem[],
 ): NodeData[] {
+  // Build lookup maps (O(n)) instead of repeated .filter() calls (O(n²))
+  const childrenMap = new Map<string | null, FolderItem[]>();
+  for (const f of folders) {
+    const key = f.parentId ?? "__root__";
+    let list = childrenMap.get(key);
+    if (!list) { list = []; childrenMap.set(key, list); }
+    list.push(f);
+  }
+  const docByFolder = new Map<string | null, DocumentItem[]>();
+  for (const d of documents) {
+    const key = d.folderId ?? "__root__";
+    let list = docByFolder.get(key);
+    if (!list) { list = []; docByFolder.set(key, list); }
+    list.push(d);
+  }
+
   function buildSubTree(folder: FolderItem): NodeData {
     const children: NodeData[] = [];
-    for (const sf of folders.filter((f) => f.parentId === folder.id)) {
+    for (const sf of childrenMap.get(folder.id) ?? []) {
       children.push(buildSubTree(sf));
     }
-    for (const doc of documents.filter((d) => d.folderId === folder.id)) {
+    for (const doc of docByFolder.get(folder.id) ?? []) {
       children.push({
         id: `doc:${doc.id}`,
         name: doc.title,
@@ -78,10 +94,10 @@ function buildTree(
   }
 
   const nodes: NodeData[] = [];
-  for (const f of folders.filter((f) => !f.parentId)) {
+  for (const f of childrenMap.get(null) ?? []) {
     nodes.push(buildSubTree(f));
   }
-  for (const doc of documents.filter((d) => !d.folderId)) {
+  for (const doc of docByFolder.get("__root__") ?? []) {
     nodes.push({
       id: `doc:${doc.id}`,
       name: doc.title,
