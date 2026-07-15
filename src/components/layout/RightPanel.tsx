@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
+import { useShortcut } from "@/hooks/useShortcut";
 import { Highlighter, FileText } from "lucide-react";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useAIStore } from "@/stores/ai.store";
@@ -93,6 +94,9 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     setAnswerRevealed(false);
     setStudyPanelOpen(true);
   }, [dueItems, showToast]);
+
+  const hasPdf = !!currentDocument?.id;
+  useShortcut("startLearning", handleStartLearning, { enabled: hasPdf && !studyPanelOpen });
 
   const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null;
 
