@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { IconText } from "@/components/ui/icon-text";
-import { KnuthPlassText } from "@/components/ui/KnuthPlassText";
+import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import {
   Volume2,
   ArrowLeft,
@@ -9,7 +9,7 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react";
-import { useTTS } from "@/hooks/use-tts";
+import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";

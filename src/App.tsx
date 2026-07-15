@@ -18,7 +18,7 @@ import {
   loadAppSettingsFromVault,
   useAppSettingsStore,
 } from "@/stores/app.store";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/ui/toast";
 import { Download } from "lucide-react";
 import {
   Dialog,

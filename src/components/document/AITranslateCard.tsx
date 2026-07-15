@@ -9,8 +9,8 @@ import {
 import { useState, useRef, useEffect } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { IconText } from "@/components/ui/icon-text";
-import { KnuthPlassText } from "@/components/ui/KnuthPlassText";
-import { useTTS } from "@/hooks/use-tts";
+import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
+import { useTTS } from "@/hooks/useTts";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { renderBoldText } from "@/components/ui/render-bold";

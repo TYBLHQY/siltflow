@@ -22,7 +22,7 @@ import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useToastStore } from "@/stores/toast.store";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { LearningModal } from "@/components/document/LearningModal";
-import { KnuthPlassText } from "@/components/ui/KnuthPlassText";
+import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import { extractPageTexts, summarizeSelectedPages } from "@/lib/summarize";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import type { Grade } from "ts-fsrs";
