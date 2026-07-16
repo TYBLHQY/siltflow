@@ -9,7 +9,7 @@ interface AITranslateCardProps {
   id: string;
   item: AnnotationItem;
   onDelete: (id: string) => void;
-  onTranslate: (id: string) => void;
+  onTranslate: (id: string) => Promise<void>;
   onClick?: () => void;
   scrolled?: boolean;
   className?: string;

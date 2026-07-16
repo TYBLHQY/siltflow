@@ -3,17 +3,14 @@
  */
 import { useSyncExternalStore } from "react";
 import {
-  getTTSState,
+  getTTSStatus,
   onTTSStateChange,
   speakTTS,
   stopTTS,
 } from "@/lib/tts";
-import type { TTSState } from "@/lib/tts";
-
-export type { TTSState };
 
 export function useTTS() {
-  const state = useSyncExternalStore(onTTSStateChange, getTTSState);
+  const { state, speakingId } = useSyncExternalStore(onTTSStateChange, getTTSStatus);
 
-  return { state, speak: speakTTS, stop: stopTTS };
+  return { state, speakingId, speak: speakTTS, stop: stopTTS };
 }

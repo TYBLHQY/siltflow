@@ -2,6 +2,7 @@ import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
+import { useState } from "react";
 import {
   Highlighter,
   Pencil,
@@ -23,6 +24,7 @@ import {
   getAlternatives,
   inferGranularity,
 } from "@/lib/annotation-helpers";
+import type { DefinitionEntry } from "@/types/annotation";
 
 interface AIAnnotationResultProps {
   item: AnnotationItem;
@@ -37,11 +39,10 @@ interface AIAnnotationResultProps {
   // ── Action bar (callbacks & state) ──
   /** Show action bar between source text and AI content. */
   showActionBar?: boolean;
-  /** Is the translate operation in progress (shows spinner instead of translate icon). */
-  translating?: boolean;
   onEditToggle?: () => void;
   editing?: boolean;
-  onTranslate?: () => void;
+  /** Called when translate is clicked. Return a Promise so the spinner resolves when it completes. */
+  onTranslate?: () => void | Promise<void>;
   onDelete?: () => void;
 }
 
@@ -63,7 +64,6 @@ export function AIAnnotationResult({
   showDetails = false,
   enableShortcut = false,
   showActionBar = false,
-  translating,
   editing,
   onEditToggle,
   onTranslate,
@@ -73,15 +73,25 @@ export function AIAnnotationResult({
   const ai = item.aiResult;
   const tts = useTTS();
 
+  // ── Translate spinner management ──
+  const [translating, setTranslating] = useState(false);
+
+  async function handleTranslate() {
+    if (!onTranslate) return;
+    setTranslating(true);
+    try { await onTranslate(); } finally { setTranslating(false); }
+  }
+
   // ── listenCardAudio shortcut ──
   useShortcut("listenCardAudio", () => {
-    if (tts.state === "playing") tts.stop();
-    else tts.speak(item.text, undefined, item.aiResult?.source_lang);
+    if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
+    else tts.speak(item.text, undefined, item.aiResult?.source_lang, item.id);
   }, { enabled: enableShortcut && !!item });
 
   // When showCore is true we always render header + source text + action bar,
   // even without AI data. Only skip if there's nothing to show at all.
-  if (!ai && !showCore) return null;
+  // Keep mounted during translate so the spinner doesn't disappear.
+  if (!ai && !showCore && !translating) return null;
 
   const translation = ai ? getTranslation(ai) : undefined;
   const defs = ai ? getDefinitions(ai) : [];
@@ -144,16 +154,16 @@ export function AIAnnotationResult({
               {/* TTS button — always available when showActionBar */}
               <button
                 className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
-                  tts.state === "playing" ? "text-primary" : "text-maroon hover:bg-accent"
+                  tts.speakingId === item.id && tts.state === "playing" ? "text-primary" : "text-maroon hover:bg-accent"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (tts.state === "playing") tts.stop();
-                  else tts.speak(item.text, undefined, item.aiResult?.source_lang);
+                  if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
+                  else tts.speak(item.text, undefined, item.aiResult?.source_lang, item.id);
                 }}
-                title={tts.state === "playing" ? "Stop" : "Read aloud"}
+                title={tts.speakingId === item.id && tts.state === "playing" ? "Stop" : "Read aloud"}
               >
-                {tts.state === "loading" ? (
+                {tts.speakingId === item.id && tts.state === "loading" ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Volume2 className="h-3.5 w-3.5" />
@@ -165,7 +175,10 @@ export function AIAnnotationResult({
                   className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
                     translating ? "text-maroon/60" : "text-maroon hover:bg-accent"
                   }`}
-                  onClick={(e) => { e.stopPropagation(); onTranslate(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTranslate();
+                  }}
                   title="Translate"
                   disabled={translating}
                 >
@@ -220,7 +233,7 @@ export function AIAnnotationResult({
               <div className="font-bold text-peach mb-0.5 text-center">
                 Definitions
               </div>
-              {defs.slice(0, 5).map((d: any, i) => (
+              {defs.slice(0, 5).map((d: DefinitionEntry, i) => (
                 <div key={i} className="leading-relaxed">
                   {d.pos && (
                     <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
@@ -249,7 +262,7 @@ export function AIAnnotationResult({
                 Examples
               </span>
               <ul className="space-y-1">
-                {examples.slice(0, 5).map((ex: any, i) => (
+                {examples.slice(0, 5).map((ex, i) => (
                   <li key={i}>
                     <span className="text-foreground">
                       {renderBoldText(ex.sentence)}
@@ -271,7 +284,7 @@ export function AIAnnotationResult({
                 Collocations
               </span>
               <div className="space-y-0.5">
-                {colls.map((c: any, i) => (
+                {colls.map((c, i) => (
                   <div key={i} className="leading-relaxed">
                     <span className="font-medium text-foreground">
                       {c.phrase}
@@ -289,7 +302,7 @@ export function AIAnnotationResult({
                 Alternatives
               </span>
               <div className="space-y-0.5">
-                {alts.map((a: any, i) => (
+                {alts.map((a, i) => (
                   <div key={i} className="leading-relaxed">
                     <span className="font-medium text-foreground">
                       {a.expression}

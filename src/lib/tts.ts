@@ -10,26 +10,38 @@ import { useTTSStore } from "@/stores/tts.store";
 
 export type TTSState = "idle" | "loading" | "playing" | "error";
 
+export interface TTSStatus {
+  state: TTSState;
+  /** ID of the annotation item that started this playback, if any. */
+  speakingId: string | null;
+}
+
 const MIMO_ENDPOINT = "https://api.xiaomimimo.com/v1/chat/completions";
 
 // ── Module-level state & audio ref ──
 let state: TTSState = "idle";
+let speakingId: string | null = null;
 let audioRef: HTMLAudioElement | null = null;
-const listeners = new Set<(s: TTSState) => void>();
+const listeners = new Set<(s: TTSStatus) => void>();
+
+// Cache the last TTSStatus so useSyncExternalStore gets a stable reference.
+let cachedStatus: TTSStatus = { state: "idle", speakingId: null };
 
 function setState(next: TTSState) {
   state = next;
-  listeners.forEach((fn) => fn(next));
+  if (next === "idle" || next === "error") speakingId = null;
+  cachedStatus = { state, speakingId };
+  listeners.forEach((fn) => fn(cachedStatus));
 }
 
 /** Subscribe to state changes. Returns unsubscribe fn. */
-export function onTTSStateChange(fn: (s: TTSState) => void): () => void {
+export function onTTSStateChange(fn: (s: TTSStatus) => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
 
-export function getTTSState(): TTSState {
-  return state;
+export function getTTSStatus(): TTSStatus {
+  return cachedStatus;
 }
 
 // ── MiMo body builder ──
@@ -70,9 +82,14 @@ export async function speakTTS(
   text: string,
   voice?: string,
   language?: string,
+  /** ID of the annotation item requesting playback. */
+  annId?: string | null,
 ) {
   // Stop current playback
   stopTTS();
+
+  speakingId = annId ?? null;
+  listeners.forEach((fn) => fn({ state: "idle", speakingId }));
 
   const config = useTTSStore.getState().config;
 
