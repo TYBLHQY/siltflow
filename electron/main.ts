@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, protocol, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, Menu, protocol, dialog, ipcMain, shell, session, globalShortcut } from 'electron'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
@@ -19,7 +19,7 @@ import { registerReviewHandlers } from './ipc/review.ipc'
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'siltflow', privileges: { standard: true, supportFetchAPI: true, bypassCSP: true } },
+  { scheme: 'siltflow', privileges: { standard: true, supportFetchAPI: true, bypassCSP: true, corsEnabled: true, stream: true } },
 ])
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -98,9 +98,49 @@ let win: BrowserWindow | null
 
 async function installDevTools() {
   try {
-    const { default: installExtension, REACT_DEVELOPER_TOOLS } = await import('electron-devtools-installer')
-    await installExtension(REACT_DEVELOPER_TOOLS)
-    console.log('[DevTools] React Developer Tools installed')
+    // Download + load React DevTools using Electron's own session API.
+    // Bypasses electron-devtools-installer which breaks under Rolldown bundling
+    // in ESM mode (CJS→ESM interop helper is dropped during dynamic import).
+    const REACT_DEVTOOLS_ID = 'fmkadmapgofadopljbjfkapdkoienihi'
+    const extensionsStore = path.join(app.getPath('userData'), 'extensions')
+    const extDir = path.join(extensionsStore, REACT_DEVTOOLS_ID)
+
+    if (!fs.existsSync(path.join(extDir, 'manifest.json'))) {
+      console.log('[DevTools] Downloading React Developer Tools…')
+      if (!fs.existsSync(extensionsStore)) {
+        fs.mkdirSync(extensionsStore, { recursive: true })
+      }
+
+      // CRXv3 is essentially a ZIP archive with a 4-byte magic header.
+      // Strip the CRX header bytes and decompress the remainder.
+      const { execFileSync } = await import('node:child_process')
+      const crxPath = path.join(extensionsStore, `${REACT_DEVTOOLS_ID}.crx`)
+      const url = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx3&x=id%3D${REACT_DEVTOOLS_ID}%26uc&prodversion=${process.versions.chrome}`
+
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+      const buffer = Buffer.from(await response.arrayBuffer())
+      fs.writeFileSync(crxPath, buffer)
+
+      // CRXv3 header: magic(4) + crx_version(4) + header_len(4) + header_data(header_len) + zip_data(rest)
+      const magic = buffer.readUint32LE(0)
+      if (magic === 0x34327243) {
+        // 'Cr24' – CRXv3 header present
+        const headerLen = buffer.readUint32LE(8)
+        const zipStart = 12 + headerLen
+        const zipBuf = buffer.subarray(zipStart)
+        fs.mkdirSync(extDir, { recursive: true })
+        execFileSync('unzip', ['-o', '-d', extDir], { input: zipBuf })
+      } else {
+        // Already a plain zip or a newer CRX format
+        execFileSync('unzip', ['-o', '-d', extDir, crxPath])
+      }
+
+      fs.chmodSync(extDir, 0o755)
+    }
+
+    const ext = await session.defaultSession.extensions.loadExtension(extDir)
+    console.log(`[DevTools] React Developer Tools loaded: ${ext.name} v${ext.version}`)
   } catch (e) {
     console.log('[DevTools] Could not install React DevTools:', (e as Error).message)
   }
@@ -137,6 +177,10 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 }
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -448,6 +492,14 @@ app.whenReady().then(async () => {
 
     const data = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer
 
+    // Common CORS + PDF headers for all responses
+    const baseHeaders: Record<string, string> = {
+      'Access-Control-Allow-Origin': '*',
+      'Content-Type': 'application/pdf',
+      'Accept-Ranges': 'bytes',
+      'Content-Length': String(data.byteLength),
+    }
+
     // Handle HTTP Range requests (pdfjs-dist uses partial range requests per page)
     const rangeHeader = request.headers.get('Range')
     if (rangeHeader) {
@@ -459,25 +511,26 @@ app.whenReady().then(async () => {
         return new Response(chunk, {
           status: 206,
           headers: {
-            'Content-Type': 'application/pdf',
+            ...baseHeaders,
             'Content-Range': `bytes ${start}-${end}/${data.byteLength}`,
             'Content-Length': String(chunk.byteLength),
-            'Accept-Ranges': 'bytes',
           },
         })
       }
     }
 
     return new Response(data, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Accept-Ranges': 'bytes',
-        'Content-Length': String(data.byteLength),
-      },
+      headers: baseHeaders,
     })
   })
 
   if (VITE_DEV_SERVER_URL) {
+    // Register F12 as a toggle shortcut since Menu.setApplicationMenu(null)
+    // removes the menu bar and its default keyboard bindings.
+    globalShortcut.register('F12', () => {
+      win?.webContents.toggleDevTools()
+    })
+
     await installDevTools()
   }
   createWindow()

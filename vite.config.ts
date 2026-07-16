@@ -22,7 +22,7 @@ export default defineConfig({
   },
   build: {
     minify: 'esbuild',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/lucide-react')) return 'vendor-icons'
@@ -44,7 +44,7 @@ export default defineConfig({
         entry: 'electron/main.ts',
         vite: {
           build: {
-            rollupOptions: {
+            rolldownOptions: {
               external: ['better-sqlite3'],
             },
             minify: 'esbuild',

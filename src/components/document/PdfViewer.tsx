@@ -25,6 +25,9 @@ import {
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
 import type { PDFDocumentProxy } from "pdfjs-dist";
+// Import PDF worker URL explicitly instead of relying on the library's
+// DEFAULT_WORKER_SRC (which resolves to a wrong path in pnpm layouts).
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { Plus } from "lucide-react";
 // PDF-related CSS loaded only when this component is mounted (lazy import)
 // These were moved from main.tsx to avoid blocking initial render.
@@ -359,6 +362,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
     <div className={className}>
       <PdfLoader
         document={src}
+        workerSrc={pdfjsWorkerUrl}
         beforeLoad={() => (
           <div className="flex items-center justify-center h-full text-ctp-overlay0 text-sm">
             Loading PDF...
