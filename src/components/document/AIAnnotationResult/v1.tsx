@@ -3,16 +3,8 @@ import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useState } from "react";
-import {
-  Highlighter,
-  Pencil,
-  Volume2,
-  Loader2,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
-import { IconText } from "@/components/ui/icon-text";
-import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
+import { Pencil, Volume2, Loader2, Sparkles, Trash2 } from "lucide-react";
+
 import { renderBoldText } from "@/components/ui/render-bold";
 import {
   getTranslation,
@@ -79,14 +71,22 @@ export function AIAnnotationResultV1({
   async function handleTranslate() {
     if (!onTranslate) return;
     setTranslating(true);
-    try { await onTranslate(); } finally { setTranslating(false); }
+    try {
+      await onTranslate();
+    } finally {
+      setTranslating(false);
+    }
   }
 
   // ── listenCardAudio shortcut ──
-  useShortcut("listenCardAudio", () => {
-    if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
-    else tts.speak(item.text, undefined, item.aiResult?.source_lang, item.id);
-  }, { enabled: enableShortcut && !!item });
+  useShortcut(
+    "listenCardAudio",
+    () => {
+      if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
+      else tts.speak(item.text, undefined, item.aiResult?.source_lang, item.id);
+    },
+    { enabled: enableShortcut && !!item },
+  );
 
   // When showCore is true we always render header + source text + action bar,
   // even without AI data. Only skip if there's nothing to show at all.
@@ -100,7 +100,7 @@ export function AIAnnotationResultV1({
   const difficulty = ai ? getDifficulty(ai) : undefined;
   const register = ai ? getRegister(ai) : undefined;
   const alts = ai ? getAlternatives(ai) : [];
-  const examples = (ai?.examples) ?? [];
+  const examples = ai?.examples ?? [];
   const granularity = ai ? inferGranularity(ai, item.text) : "highlight";
   const isWord = granularity === "word" || granularity === "phrase";
 
@@ -118,11 +118,9 @@ export function AIAnnotationResultV1({
           {/* Header: granularity + page + version */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 min-w-0">
-              <IconText icon={Highlighter} size="xs">
-                <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
-                  {granularity}
-                </span>
-              </IconText>
+              <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
+                {granularity}
+              </span>
               <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
             </div>
             {item.aiVersion && (
@@ -133,7 +131,9 @@ export function AIAnnotationResultV1({
           </div>
 
           {/* Source text */}
-          <KnuthPlassText text={item.text} className="mb-1" />
+          <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed">
+            {item.text}
+          </p>
 
           {/* ── Action bar ── */}
           {showActionBar && (
@@ -142,9 +142,14 @@ export function AIAnnotationResultV1({
               {onEditToggle && (
                 <button
                   className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
-                    editing ? "text-ctp-mauve" : "text-ctp-maroon hover:bg-ctp-surface0"
+                    editing
+                      ? "text-ctp-mauve"
+                      : "text-ctp-maroon hover:bg-ctp-surface0"
                   }`}
-                  onClick={(e) => { e.stopPropagation(); onEditToggle(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditToggle();
+                  }}
                   title={editing ? "Save" : "Edit"}
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -154,14 +159,27 @@ export function AIAnnotationResultV1({
               {/* TTS button — always available when showActionBar */}
               <button
                 className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
-                  tts.speakingId === item.id && tts.state === "playing" ? "text-ctp-mauve" : "text-ctp-maroon hover:bg-ctp-surface0"
+                  tts.speakingId === item.id && tts.state === "playing"
+                    ? "text-ctp-mauve"
+                    : "text-ctp-maroon hover:bg-ctp-surface0"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
-                  else tts.speak(item.text, undefined, item.aiResult?.source_lang, item.id);
+                  if (tts.speakingId === item.id && tts.state === "playing")
+                    tts.stop();
+                  else
+                    tts.speak(
+                      item.text,
+                      undefined,
+                      item.aiResult?.source_lang,
+                      item.id,
+                    );
                 }}
-                title={tts.speakingId === item.id && tts.state === "playing" ? "Stop" : "Read aloud"}
+                title={
+                  tts.speakingId === item.id && tts.state === "playing"
+                    ? "Stop"
+                    : "Read aloud"
+                }
               >
                 {tts.speakingId === item.id && tts.state === "loading" ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -173,7 +191,9 @@ export function AIAnnotationResultV1({
               {onTranslate && (
                 <button
                   className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
-                    translating ? "text-ctp-maroon/60" : "text-ctp-maroon hover:bg-ctp-surface0"
+                    translating
+                      ? "text-ctp-maroon/60"
+                      : "text-ctp-maroon hover:bg-ctp-surface0"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -193,7 +213,10 @@ export function AIAnnotationResultV1({
               {onDelete && (
                 <button
                   className="ml-auto inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 hover:text-ctp-red transition-colors"
-                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
                   title="Delete"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

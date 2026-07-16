@@ -86,17 +86,35 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
           <span className={`font-medium ${STATE_COLORS[state] ?? ""}`}>
             {STATE_LABELS[state] ?? "Unknown"}
           </span>
-          <span>reps: <b className="text-ctp-text/80">{card.reps}</b></span>
-          <span>lapses: <b className="text-ctp-text/80">{card.lapses}</b></span>
+          <span>
+            reps: <b className="text-ctp-text/80">{card.reps}</b>
+          </span>
+          <span>
+            lapses: <b className="text-ctp-text/80">{card.lapses}</b>
+          </span>
         </div>
         {/* Row 2: stability / difficulty */}
         <div className="flex items-center gap-x-3">
-          <span>stability: <b className="text-ctp-text/80">{formatStability(card.stability)}</b></span>
-          <span>difficulty: <b className="text-ctp-text/80">{card.difficulty.toFixed(2)}</b></span>
+          <span>
+            stability:{" "}
+            <b className="text-ctp-text/80">
+              {formatStability(card.stability)}
+            </b>
+          </span>
+          <span>
+            difficulty:{" "}
+            <b className="text-ctp-text/80">{card.difficulty.toFixed(2)}</b>
+          </span>
         </div>
         {/* Row 3: due / last review */}
         <div className="flex items-center gap-x-3">
-          <span className={toDate(card.due) <= new Date() ? "text-ctp-red/80 font-medium" : ""}>
+          <span
+            className={
+              toDate(card.due) <= new Date()
+                ? "text-ctp-red/80 font-medium"
+                : ""
+            }
+          >
             {formatDue(card.due)}
           </span>
           {formatDate(card.last_review) && (
@@ -115,11 +133,16 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
       {/* Animated expand/collapse */}
       <div
         className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-        style={{ gridTemplateRows: historyExpanded && canShowHistory ? "1fr" : "0fr" }}
+        style={{
+          gridTemplateRows: historyExpanded && canShowHistory ? "1fr" : "0fr",
+        }}
       >
         <div className="overflow-hidden">
           {canShowHistory && (
-            <ReviewHistorySection annotationId={annotationId!} documentId={documentId!} />
+            <ReviewHistorySection
+              annotationId={annotationId!}
+              documentId={documentId!}
+            />
           )}
         </div>
       </div>

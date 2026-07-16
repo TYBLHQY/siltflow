@@ -98,7 +98,9 @@ export function AITranslateCard({
         <div className="mt-1.5">
           <div
             className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-            style={{ gridTemplateRows: expanded && detailAvailable ? "1fr" : "0fr" }}
+            style={{
+              gridTemplateRows: expanded && detailAvailable ? "1fr" : "0fr",
+            }}
           >
             <div className="overflow-hidden">
               {detailAvailable && (

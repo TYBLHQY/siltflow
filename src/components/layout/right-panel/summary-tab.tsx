@@ -12,7 +12,7 @@ import {
 import { useState, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
-import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
+
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
@@ -23,7 +23,9 @@ import { summarizeSelectedPages } from "@/lib/summarize";
 export function SummaryTab() {
   const style = useStyleStore((s) => s.style);
   const showToast = useToastStore((s) => s.show);
-  const activeProfile = useAIStore((s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null);
+  const activeProfile = useAIStore(
+    (s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null,
+  );
 
   const currentDocument = useDocumentStore((s) => s.currentDocument);
   const summaries = useSummaryStore((s) => s.summaries);
@@ -46,12 +48,18 @@ export function SummaryTab() {
   const togglePage = useCallback(
     (pageNum: number) => {
       if (!docId || !numPages) return;
-      const current = selPages ?? Array.from({ length: numPages }, (_, i) => i + 1);
+      const current =
+        selPages ?? Array.from({ length: numPages }, (_, i) => i + 1);
       if (current.includes(pageNum) && current.length === 1) return;
       const next = current.includes(pageNum)
         ? current.filter((p) => p !== pageNum)
         : [...current, pageNum].sort((a, b) => a - b);
-      setSelectedPages(docId, next.length === numPages ? Array.from({ length: numPages }, (_, i) => i + 1) : next);
+      setSelectedPages(
+        docId,
+        next.length === numPages
+          ? Array.from({ length: numPages }, (_, i) => i + 1)
+          : next,
+      );
     },
     [docId, numPages, selPages, setSelectedPages],
   );
@@ -59,7 +67,11 @@ export function SummaryTab() {
   const toggleAll = useCallback(() => {
     if (!docId || !numPages) return;
     if (allSelected) setSelectedPages(docId, []);
-    else setSelectedPages(docId, Array.from({ length: numPages }, (_, i) => i + 1));
+    else
+      setSelectedPages(
+        docId,
+        Array.from({ length: numPages }, (_, i) => i + 1),
+      );
   }, [docId, numPages, allSelected, setSelectedPages]);
 
   const handleSummarize = useCallback(async () => {
@@ -68,7 +80,10 @@ export function SummaryTab() {
       return;
     }
     if (!activeProfile) {
-      showToast("Please configure an AI provider in Settings > AI Config", "info");
+      showToast(
+        "Please configure an AI provider in Settings > AI Config",
+        "info",
+      );
       return;
     }
 
@@ -80,11 +95,23 @@ export function SummaryTab() {
 
     setSummarizing(true);
     try {
-      const result = await summarizeSelectedPages(activeProfile, texts, pagesToSummarize);
-      setSummary(docId, result.summary, true, result.sourceLang, result.keyVocabulary, result.gist);
+      const result = await summarizeSelectedPages(
+        activeProfile,
+        texts,
+        pagesToSummarize,
+      );
+      setSummary(
+        docId,
+        result.summary,
+        true,
+        result.sourceLang,
+        result.keyVocabulary,
+        result.gist,
+      );
       showToast("Summary generated", "info");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Summarization failed";
+      const message =
+        err instanceof Error ? err.message : "Summarization failed";
       showToast(message, "error");
     } finally {
       setSummarizing(false);
@@ -176,29 +203,26 @@ export function SummaryTab() {
           {editingSummary ? (
             <>
               <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditingSummary(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setEditingSummary(false)}
-            >
-              Save
-            </Button>
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingSummary(false)}
+              >
+                Cancel
+              </Button>
+              <Button size="sm" onClick={() => setEditingSummary(false)}>
+                Save
+              </Button>
             </>
           ) : (
             <>
               <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditingSummary(true)}
-            >
-              <Pencil className="h-3 w-3" />
-              Edit
-            </Button>
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingSummary(true)}
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </Button>
               {summary.isAiGenerated && (
                 <span className="text-xs text-ctp-overlay0/60 flex items-center gap-1">
                   <Bot className="h-2.5 w-2.5" />
@@ -206,14 +230,14 @@ export function SummaryTab() {
                 </span>
               )}
               <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto hover:text-ctp-red"
-              onClick={handleClearSummary}
-            >
-              <Trash2 className="h-3 w-3" />
-              Clear
-            </Button>
+                variant="ghost"
+                size="sm"
+                className="ml-auto hover:text-ctp-red"
+                onClick={handleClearSummary}
+              >
+                <Trash2 className="h-3 w-3" />
+                Clear
+              </Button>
             </>
           )}
         </div>
@@ -235,10 +259,9 @@ export function SummaryTab() {
             />
           ) : (
             <div className="h-full overflow-y-auto px-3 py-3">
-              <KnuthPlassText
-                text={summary.text}
-                className="text-xs text-ctp-text rounded-md border border-ctp-overlay0/20 px-2 py-1.5"
-              />
+              <p className="text-xs text-ctp-text whitespace-pre-wrap wrap-break-word leading-relaxed rounded-md border border-ctp-overlay0/20 px-2 py-1.5">
+                {summary.text}
+              </p>
             </div>
           )
         ) : (

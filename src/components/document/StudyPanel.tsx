@@ -2,12 +2,8 @@ import { useCallback } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { Button } from "@/components/ui/button";
 import { IconText } from "@/components/ui/icon-text";
-import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
-import {
-  ArrowLeft,
-  CheckSquare,
-  ExternalLink,
-} from "lucide-react";
+
+import { ArrowLeft, CheckSquare, ExternalLink } from "lucide-react";
 import { useShortcut } from "@/hooks/useShortcut";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
@@ -73,7 +69,9 @@ export function StudyPanel({
       scrollToHighlight?.(item.id);
       requestAnimationFrame(() => {
         window.dispatchEvent(
-          new CustomEvent("siltflow:annotation-click", { detail: { id: item.id } }),
+          new CustomEvent("siltflow:annotation-click", {
+            detail: { id: item.id },
+          }),
         );
       });
     });
@@ -118,11 +116,7 @@ export function StudyPanel({
     <div className="flex flex-1 flex-col min-h-0">
       {/* Header: card X of Y + back */}
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-        >
+        <Button variant="ghost" size="sm" onClick={onBack}>
           <IconText icon={ArrowLeft} size="xs">
             Back
           </IconText>
@@ -172,10 +166,9 @@ export function StudyPanel({
         ) : (
           /* ── Before reveal: question centered ── */
           <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-3">
-            <KnuthPlassText
-              text={item.text}
-              className="font-medium text-center"
-            />
+            <p className="font-medium text-center whitespace-pre-wrap wrap-break-word leading-relaxed">
+              {item.text}
+            </p>
             <p className="text-ctp-overlay0">Tap to reveal answer</p>
           </div>
         )}
