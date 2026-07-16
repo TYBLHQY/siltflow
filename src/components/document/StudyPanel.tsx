@@ -26,22 +26,22 @@ const GRADE_LABELS: { grade: number; label: string; color: string }[] = [
   {
     grade: 1,
     label: "Again",
-    color: "bg-red-500/10 text-red-600 hover:bg-red-500/20",
+    color: "bg-red/10 text-red hover:bg-red/20",
   },
   {
     grade: 2,
     label: "Hard",
-    color: "bg-orange-500/10 text-orange-600 hover:bg-orange-500/20",
+    color: "bg-maroon/10 text-maroon hover:bg-maroon/20",
   },
   {
     grade: 3,
     label: "Good",
-    color: "bg-green-500/10 text-green-600 hover:bg-green-500/20",
+    color: "bg-green/10 text-green hover:bg-green/20",
   },
   {
     grade: 4,
     label: "Easy",
-    color: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20",
+    color: "bg-sky/10 text-sky hover:bg-sky/20",
   },
 ];
 
