@@ -1,5 +1,17 @@
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
+import { useTTS } from "@/hooks/useTts";
+import { useShortcut } from "@/hooks/useShortcut";
+import {
+  Highlighter,
+  Pencil,
+  Volume2,
+  Loader2,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+import { IconText } from "@/components/ui/icon-text";
+import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import { renderBoldText } from "@/components/ui/render-bold";
 import {
   getTranslation,
@@ -14,12 +26,23 @@ import {
 
 interface AIAnnotationResultProps {
   item: AnnotationItem;
-  /** AI data version to show as a tag (e.g. "v1"). Omit to hide. */
-  version?: number;
-  /** Show core content: translation + meta tags + definitions. */
+  /** Show core content: header (granularity + page), source text, translation + meta tags + definitions. */
   showCore?: boolean;
   /** Show detail sections: examples + collocations + alternatives. */
   showDetails?: boolean;
+
+  /** Register the listenCardAudio keyboard shortcut (default: false). */
+  enableShortcut?: boolean;
+
+  // ── Action bar (callbacks & state) ──
+  /** Show action bar between source text and AI content. */
+  showActionBar?: boolean;
+  /** Is the translate operation in progress (shows spinner instead of translate icon). */
+  translating?: boolean;
+  onEditToggle?: () => void;
+  editing?: boolean;
+  onTranslate?: () => void;
+  onDelete?: () => void;
 }
 
 /**
@@ -29,30 +52,46 @@ interface AIAnnotationResultProps {
  * (learning modal) so that AI data format iteration only needs to
  * touch one component.
  *
- * - `showCore` controls the translation / meta tags / definitions block
+ * - `showCore` controls the header / source text / translation / meta tags / definitions block
  * - `showDetails` controls the examples / collocations / alternatives block
  * - FSRS stats are rendered by the caller directly so the animation
  *   wrapper in AITranslateCard can be placed around details only
  */
 export function AIAnnotationResult({
   item,
-  version,
   showCore = false,
   showDetails = false,
+  enableShortcut = false,
+  showActionBar = false,
+  translating,
+  editing,
+  onEditToggle,
+  onTranslate,
+  onDelete,
 }: AIAnnotationResultProps) {
   const style = useStyleStore((s) => s.style);
   const ai = item.aiResult;
-  if (!ai) return null;
+  const tts = useTTS();
 
-  const translation = getTranslation(ai);
-  const defs = getDefinitions(ai);
-  const colls = getCollocations(ai);
-  const ipa = getIpa(ai);
-  const difficulty = getDifficulty(ai);
-  const register = getRegister(ai);
-  const alts = getAlternatives(ai);
-  const examples = ai.examples ?? [];
-  const granularity = inferGranularity(ai, item.text);
+  // ── listenCardAudio shortcut ──
+  useShortcut("listenCardAudio", () => {
+    if (tts.state === "playing") tts.stop();
+    else tts.speak(item.text, undefined, item.aiResult?.source_lang);
+  }, { enabled: enableShortcut && !!item });
+
+  // When showCore is true we always render header + source text + action bar,
+  // even without AI data. Only skip if there's nothing to show at all.
+  if (!ai && !showCore) return null;
+
+  const translation = ai ? getTranslation(ai) : undefined;
+  const defs = ai ? getDefinitions(ai) : [];
+  const colls = ai ? getCollocations(ai) : [];
+  const ipa = ai ? getIpa(ai) : undefined;
+  const difficulty = ai ? getDifficulty(ai) : undefined;
+  const register = ai ? getRegister(ai) : undefined;
+  const alts = ai ? getAlternatives(ai) : [];
+  const examples = (ai?.examples) ?? [];
+  const granularity = ai ? inferGranularity(ai, item.text) : "highlight";
   const isWord = granularity === "word" || granularity === "phrase";
 
   return (
@@ -63,16 +102,100 @@ export function AIAnnotationResult({
         fontSize: style.fontSize,
       }}
     >
-      {/* ── Core: translation + meta tags + definitions ── */}
+      {/* ── Core: header + source text + translation + meta tags + definitions ── */}
       {showCore && (
         <>
+          {/* Header: granularity + page + version */}
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <IconText icon={Highlighter} size="xs">
+                <span className="font-medium text-muted-foreground uppercase tracking-wider">
+                  {granularity}
+                </span>
+              </IconText>
+              <span className="text-muted-foreground">p.{item.pageNumber}</span>
+            </div>
+            {item.aiVersion && (
+              <span className="shrink-0 inline-flex items-center rounded bg-subtext/15 px-1.5 py-0.5 text-subtext text-xs">
+                v{item.aiVersion}
+              </span>
+            )}
+          </div>
+
+          {/* Source text */}
+          <KnuthPlassText text={item.text} className="mb-1" />
+
+          {/* ── Action bar ── */}
+          {showActionBar && (
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+              {/* Edit button — only show if caller provides onEditToggle */}
+              {onEditToggle && (
+                <button
+                  className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
+                    editing ? "text-primary" : "text-maroon hover:bg-accent"
+                  }`}
+                  onClick={(e) => { e.stopPropagation(); onEditToggle(); }}
+                  title={editing ? "Save" : "Edit"}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
+
+              {/* TTS button — always available when showActionBar */}
+              <button
+                className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
+                  tts.state === "playing" ? "text-primary" : "text-maroon hover:bg-accent"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (tts.state === "playing") tts.stop();
+                  else tts.speak(item.text, undefined, item.aiResult?.source_lang);
+                }}
+                title={tts.state === "playing" ? "Stop" : "Read aloud"}
+              >
+                {tts.state === "loading" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Volume2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+
+              {onTranslate && (
+                <button
+                  className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
+                    translating ? "text-maroon/60" : "text-maroon hover:bg-accent"
+                  }`}
+                  onClick={(e) => { e.stopPropagation(); onTranslate(); }}
+                  title="Translate"
+                  disabled={translating}
+                >
+                  {translating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
+
+              {onDelete && (
+                <button
+                  className="ml-auto inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 text-maroon hover:bg-accent hover:text-destructive transition-colors"
+                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  title="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
           {translation && (
             <p className="font-medium text-primary leading-relaxed">
               {renderBoldText(translation)}
             </p>
           )}
 
-          {(difficulty || (ipa && isWord) || register || version) && (
+          {(difficulty || (ipa && isWord) || register) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
                 <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
@@ -89,16 +212,14 @@ export function AIAnnotationResult({
                   {register}
                 </span>
               )}
-              {version && (
-                <span className="inline-flex items-center rounded bg-subtext/15 px-1.5 py-0.5 text-subtext">
-                  v{version}
-                </span>
-              )}
             </div>
           )}
 
           {defs.length > 0 && (
             <div className="space-y-0.5">
+              <div className="font-bold text-peach mb-0.5 text-center">
+                Definitions
+              </div>
               {defs.slice(0, 5).map((d: any, i) => (
                 <div key={i} className="leading-relaxed">
                   {d.pos && (
@@ -121,7 +242,7 @@ export function AIAnnotationResult({
 
       {/* ── Details: examples + collocations + alternatives ── */}
       {showDetails && (
-        <div className="space-y-1.5 text-muted-foreground border-t pt-1.5 leading-relaxed">
+        <div className="space-y-1.5 text-muted-foreground pt-1.5 leading-relaxed">
           {examples.length > 0 && (
             <div>
               <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">

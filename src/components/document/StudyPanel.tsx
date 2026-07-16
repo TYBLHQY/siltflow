@@ -3,18 +3,15 @@ import type { AnnotationItem } from "@/stores/annotation.store";
 import { IconText } from "@/components/ui/icon-text";
 import { KnuthPlassText } from "@/components/ui/knuth-plass-text";
 import {
-  Volume2,
   ArrowLeft,
   CheckSquare,
-  Loader2,
   ExternalLink,
 } from "lucide-react";
-import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
-import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
 import { FSRSStats } from "@/components/document/FSRSStats";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface StudyPanelProps {
   items: AnnotationItem[];
@@ -57,8 +54,6 @@ export function StudyPanel({
   onBack,
 }: StudyPanelProps) {
   const item = items[studyingIndex];
-  const tts = useTTS();
-  const style = useStyleStore((s) => s.style);
   const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight);
 
   const handleReveal = useCallback(() => {
@@ -69,12 +64,6 @@ export function StudyPanel({
   const handleGradeHard = useCallback(() => onRate(2), [onRate]);
   const handleGradeGood = useCallback(() => onRate(3), [onRate]);
   const handleGradeEasy = useCallback(() => onRate(4), [onRate]);
-
-  const handleListen = useCallback(() => {
-    if (!item) return;
-    if (tts.state === "playing") tts.stop();
-    else tts.speak(item.text, undefined, item.aiResult?.source_lang);
-  }, [item, tts]);
 
   const handleGoToHighlight = useCallback(() => {
     if (!item) return;
@@ -106,7 +95,7 @@ export function StudyPanel({
     enabled: !!item && answerRevealed,
   });
   useShortcut("backFromLearning", onBack, { enabled: !!item });
-  useShortcut("listenCardAudio", handleListen, { enabled: !!item });
+  // listenCardAudio is handled inside AIAnnotationResult
 
   if (!item) {
     return (
@@ -121,14 +110,13 @@ export function StudyPanel({
   }
 
   const ai = item.aiResult;
-  const aiVersion = item.aiVersion ?? undefined;
   const total = items.length;
   const current = studyingIndex + 1;
 
   return (
     <div className="flex flex-1 flex-col min-h-0">
       {/* Header: card X of Y + back */}
-      <div className="flex items-center justify-between border-b px-3 py-1.5 shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 shrink-0">
         <button
           className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
           onClick={onBack}
@@ -154,71 +142,44 @@ export function StudyPanel({
         className="flex-1 min-h-0 flex flex-col cursor-pointer"
         onClick={handleReveal}
       >
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-3">
-          <KnuthPlassText
-            text={item.text}
-            className="font-medium text-center"
-          />
+        {answerRevealed && ai ? (
+          /* ── Answer revealed: full card ── */
+          <div className="px-3 pb-3 min-h-0 flex-1">
+            <ScrollArea className="h-full rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm">
+              <div className="px-3 py-2.5 space-y-2">
+                <AIAnnotationResult
+                  item={item}
+                  showCore
+                  showDetails
+                  showActionBar
+                  enableShortcut
+                />
 
-          {!answerRevealed && (
-            <p className="text-muted-foreground">Tap to reveal answer</p>
-          )}
-        </div>
-
-        {/* Answer (revealed) */}
-        {answerRevealed && ai && (
-          <div
-            className="border-t px-4 py-3 space-y-2 overflow-y-auto"
-            style={{
-              fontFamily: buildFontStack(style.fontFamilies),
-              fontSize: style.fontSize,
-            }}
-          >
-            <AIAnnotationResult
-              item={item}
-              version={aiVersion}
-              showCore
-              showDetails
+                {/* FSRS card stats */}
+                {item.fsrsCard && (
+                  <FSRSStats
+                    card={item.fsrsCard}
+                    annotationId={item.id}
+                    documentId={item.documentId}
+                  />
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        ) : (
+          /* ── Before reveal: question centered ── */
+          <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-3">
+            <KnuthPlassText
+              text={item.text}
+              className="font-medium text-center"
             />
-
-            {/* FSRS card stats */}
-            {item.fsrsCard && (
-              <FSRSStats
-                card={item.fsrsCard}
-                annotationId={item.id}
-                documentId={item.documentId}
-              />
-            )}
+            <p className="text-muted-foreground">Tap to reveal answer</p>
           </div>
         )}
       </div>
 
       {/* Action bar */}
-      <div className="border-t px-3 py-2 shrink-0 space-y-2">
-        {/* TTS button */}
-        <button
-          className={`flex items-center gap-1 transition-colors ${
-            tts.state === "playing"
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (tts.state === "playing") tts.stop();
-            else tts.speak(item.text, undefined, item.aiResult?.source_lang);
-          }}
-        >
-          {tts.state === "loading" ? (
-            <IconText icon={Loader2} size="xs">
-              Stop
-            </IconText>
-          ) : (
-            <IconText icon={Volume2} size="xs">
-              {tts.state === "playing" ? "Stop" : "Listen"}
-            </IconText>
-          )}
-        </button>
-
+      <div className="px-3 pb-2 shrink-0 space-y-2">
         {/* Rating buttons (only visible after reveal) */}
         {answerRevealed && (
           <div className="flex gap-1">
