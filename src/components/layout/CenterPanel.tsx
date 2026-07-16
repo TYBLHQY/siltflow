@@ -306,7 +306,7 @@ export function CenterPanel({
           <div className="absolute top-0 left-0 right-0 z-10 h-1 pointer-events-none">
             <div className="relative h-full w-full bg-ctp-teal/10">
               <div
-                className="absolute inset-y-0 left-0 bg-ctp-skytransition-[width] duration-150 ease-out"
+                className="absolute inset-y-0 left-0 bg-ctp-sky transition-[width] duration-150 ease-out"
                 style={{
                   width: currentDocument?.totalPages
                     ? `${(Math.min(currentPage, currentDocument.totalPages) / currentDocument.totalPages) * 100}%`
