@@ -133,7 +133,6 @@ export function StudyPanel({
         <Button
           variant="ghost"
           size="icon"
-          className="h-auto"
           onClick={handleGoToHighlight}
           title="Go to highlight in PDF"
         >
