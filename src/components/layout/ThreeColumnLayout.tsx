@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
 import { LeftPanel } from "./LeftPanel";
@@ -98,8 +98,10 @@ export function ThreeColumnLayout() {
   useShortcut("toggleQuickAdd", handleToggleQuickAdd, { enabled: hasPdf });
   // ──────────────────────────────────────────────────────────────────────────
 
-  // Wait for layout to restore before rendering
-  if (!loaded) return null;
+  // Wait for layout to restore before rendering the interactive splitter,
+  // but always render a full-height placeholder to prevent CLS (Cumulative
+  // Layout Shift) from the jump 0 → screen.
+  if (!loaded) return <div className="h-screen w-screen" />;
 
   // Convert saved percentages to pixel sizes based on a typical window.
   // If saved layout exists, weight left/right as initial sizes in pixels.
