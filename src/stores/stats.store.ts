@@ -74,7 +74,10 @@ export const useStatsStore = create<StatsStoreState>((set) => ({
         error: null,
         dataVersion: Date.now(),
       });
-    } catch (err: any) {
+    } catch (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      err: any
+    ) {
       set({
         loading: false,
         error: err?.message ?? "Failed to load statistics data",

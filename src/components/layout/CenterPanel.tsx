@@ -231,6 +231,7 @@ export function CenterPanel({
       if (loadedDocRef.current !== documentId) return;
 
       setItems(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (saved || []).map((a: any) => ({
           id: a.id,
           documentId: a.document_id,

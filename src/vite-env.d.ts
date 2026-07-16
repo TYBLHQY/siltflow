@@ -34,8 +34,11 @@ interface SiltflowAPI {
     onError: (fn: (message: string) => void) => () => void;
   };
   documents: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: () => Promise<any[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: (id: string) => Promise<any | null>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (doc: any) => Promise<any>;
     updateMetadata: (params: {
       id: string;
@@ -46,29 +49,37 @@ interface SiltflowAPI {
     rename: (params: { id: string; title: string }) => Promise<void>;
   };
   annotations: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: (documentId: string) => Promise<any[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listAll: () => Promise<any[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotation: any) => Promise<any>;
     delete: (id: string, documentId: string) => Promise<void>;
   };
   summaries: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listAll: () => Promise<any[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: (documentId: string) => Promise<any | null>;
     save: (summary: {
       documentId: string;
       text: string;
       isAiGenerated: boolean;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) => Promise<any>;
     delete: (documentId: string) => Promise<void>;
   };
   aiResults: {
     get: (annotationId: string, documentId: string) => Promise<string | null>;
     listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
     delete: (annotationId: string, documentId: string) => Promise<void>;
   };
   fsrsCards: {
     get: (annotationId: string, documentId: string) => Promise<string | null>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
     delete: (annotationId: string, documentId: string) => Promise<void>;
     listByDocument: (
@@ -88,6 +99,7 @@ interface SiltflowAPI {
     listByAnnotation: (
       annotationId: string,
       documentId: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) => Promise<any[]>;
     listAll: () => Promise<
       {
@@ -98,6 +110,7 @@ interface SiltflowAPI {
         createdAt: string;
       }[]
     >;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
   };
   tts: {
@@ -114,10 +127,12 @@ interface SiltflowAPI {
     listVoices: (binaryPath?: string) => Promise<string[]>;
   };
   folders: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: () => Promise<any[]>;
     create: (params: {
       name: string;
       parentId?: string | null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) => Promise<any>;
     rename: (params: { id: string; name: string }) => Promise<void>;
     delete: (id: string) => Promise<void>;

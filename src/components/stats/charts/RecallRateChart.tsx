@@ -47,6 +47,7 @@ export function RecallRateChart() {
             ))}
           </Pie>
           <Tooltip
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(_value: any, _name: any) => {
               const item = data.find((d) => d.name === _name);
               const pct = total > 0 ? ((item?.value ?? 0) / total * 100).toFixed(1) : "0.0";

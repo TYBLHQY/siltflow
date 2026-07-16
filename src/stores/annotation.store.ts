@@ -43,7 +43,9 @@ function persistAnnotation(item: AnnotationItem) {
     text: item.text,
     pageNumber: item.pageNumber,
     embedData: JSON.stringify(item.embedData),
-  }).catch((err: any) => {
+  }).catch(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (err: any) => {
     console.error("[annotation.store] persistAnnotation failed:", err);
   });
 }
@@ -55,12 +57,16 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   addItem: (item) => {
     persistAnnotation(item);
     if (item.aiResult) {
-      window.siltflow.aiResults.save(item.id, item.documentId, item.aiResult).catch((err: any) => {
+      window.siltflow.aiResults.save(item.id, item.documentId, item.aiResult).catch(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err: any) => {
         console.error("[annotation.store] aiResults.save failed:", err);
       });
     }
     if (item.fsrsCard) {
-      window.siltflow.fsrsCards.save(item.id, item.documentId, item.fsrsCard).catch((err: any) => {
+      window.siltflow.fsrsCards.save(item.id, item.documentId, item.fsrsCard).catch(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err: any) => {
         console.error("[annotation.store] fsrsCards.save failed:", err);
       });
     }
@@ -75,7 +81,9 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       // Backend deletes in a single transaction (annotation + ai_results + fsrs_cards + review_logs)
       window.siltflow.annotations
         .delete(id, current.documentId)
-        .catch((err: any) => {
+        .catch(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (err: any) => {
           console.error("[annotation.store] annotations.delete failed:", err);
         });
       // Clear in-memory cache
@@ -100,12 +108,16 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       persistAnnotation(merged);
       // Persist side tables if changed
       if (patch.aiResult !== undefined) {
-        window.siltflow.aiResults.save(id, current.documentId, patch.aiResult).catch((err: any) => {
+        window.siltflow.aiResults.save(id, current.documentId, patch.aiResult).catch(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (err: any) => {
           console.error("[annotation.store] aiResults.save failed:", err);
         });
       }
       if (patch.fsrsCard !== undefined) {
-        window.siltflow.fsrsCards.save(id, current.documentId, patch.fsrsCard).catch((err: any) => {
+        window.siltflow.fsrsCards.save(id, current.documentId, patch.fsrsCard).catch(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (err: any) => {
           console.error("[annotation.store] fsrsCards.save failed:", err);
         });
       }

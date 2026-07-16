@@ -32,6 +32,11 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
+// Disable GPU sandbox to suppress MESA-LOADER permission-denied warning
+// when chrome-sandbox lacks SUID bit.  Only affects the GPU process —
+// the renderer sandbox (more critical for security) remains active.
+app.commandLine.appendSwitch('disable-gpu-sandbox')
+
 // ── Vault Management ──────────────────────────────────────────────
 const VAULT_CONFIG_DIR = app.getPath('userData')
 const VAULT_POINTER_PATH = path.join(VAULT_CONFIG_DIR, 'vault-path.json')
@@ -44,7 +49,7 @@ function getVaultPath(): string {
     if (data.vaultPath && fs.existsSync(data.vaultPath)) {
       return data.vaultPath
     }
-  } catch {}
+  } catch { /* VAULT_POINTER_PATH not yet created */ }
   return ''
 }
 
@@ -440,8 +445,8 @@ autoUpdater.on('error', (err) => {
 ipcMain.handle('update:check', async () => {
   try {
     await autoUpdater.checkForUpdates()
-  } catch (err: any) {
-    sendUpdateEvent('update:error', err?.message ?? String(err))
+  } catch (err: unknown) {
+    sendUpdateEvent('update:error', (err as Error)?.message ?? String(err))
   }
 })
 

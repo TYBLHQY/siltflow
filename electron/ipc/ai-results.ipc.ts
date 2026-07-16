@@ -6,6 +6,7 @@ export function registerAiResultHandlers() {
   ipcMain.handle("aiResults:get", (_event, annotationId: string, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const row = sql.prepare("SELECT data FROM ai_results WHERE annotation_id = ? AND document_id = ?").get(annotationId, documentId) as any
     return row?.data ?? null
   })
@@ -13,10 +14,13 @@ export function registerAiResultHandlers() {
   ipcMain.handle("aiResults:listByDocument", (_event, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = sql.prepare("SELECT annotation_id, data FROM ai_results WHERE document_id = ?").all(documentId) as any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return rows.map((r: any) => ({ annotationId: r.annotation_id, data: r.data }))
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ipcMain.handle("aiResults:save", (_event, record: { annotationId: string; documentId: string; data: any }) => {
     const sql = getSqlite()
     if (!sql) return null

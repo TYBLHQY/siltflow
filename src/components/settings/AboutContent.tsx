@@ -37,6 +37,7 @@ export function AboutContent() {
     const unsubs: (() => void)[] = [];
 
     unsubs.push(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       window.siltflow.update.onAvailable((info: any) => {
         const tag = info?.version || info?.tag_name || "";
         setLatestVersion(tag.startsWith("v") ? tag.slice(1) : tag);

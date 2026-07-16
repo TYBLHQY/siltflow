@@ -28,41 +28,54 @@ export interface SiltflowAPI {
 
   // Database
   documents: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: () => Promise<any[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: (id: string) => Promise<any | null>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (doc: any) => Promise<any>
     updateMetadata: (params: { id: string; totalPages: number; metadata: string }) => Promise<void>
     delete: (id: string) => Promise<void>
     rename: (params: { id: string; title: string }) => Promise<void>
   }
   annotations: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: (documentId: string) => Promise<any[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listAll: () => Promise<any[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotation: any) => Promise<any>
     delete: (id: string, documentId: string) => Promise<void>
   }
   summaries: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listAll: () => Promise<any[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: (documentId: string) => Promise<any | null>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (summary: { documentId: string; text: string; isAiGenerated: boolean }) => Promise<any>
     delete: (documentId: string) => Promise<void>
   }
   aiResults: {
     get: (annotationId: string, documentId: string) => Promise<string | null>
     listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
   }
   fsrsCards: {
     get: (annotationId: string, documentId: string) => Promise<string | null>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
     delete: (annotationId: string, documentId: string) => Promise<void>
     listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>
     listAll: () => Promise<{ annotationId: string; documentId: string; data: string; createdAt: string; updatedAt: string }[]>
   }
   reviewLogs: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listByAnnotation: (annotationId: string, documentId: string) => Promise<any[]>
     listAll: () => Promise<{ id: string; annotationId: string; documentId: string; data: string; createdAt: string }[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>
   }
   tts: {
@@ -70,7 +83,9 @@ export interface SiltflowAPI {
     listVoices: (binaryPath?: string) => Promise<string[]>
   }
   folders: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: () => Promise<any[]>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     create: (params: { name: string; parentId?: string | null }) => Promise<any>
     rename: (params: { id: string; name: string }) => Promise<void>
     delete: (id: string) => Promise<void>

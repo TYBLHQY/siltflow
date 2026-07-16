@@ -420,7 +420,7 @@ export function computeRetentionTradeoff(
 // Overview
 // ---------------------------------------------------------------------------
 
-export function computeOverviewStats(cards: Card[], _reviewLogs: { data: string }[]): OverviewStats {
+export function computeOverviewStats(cards: Card[]): OverviewStats {
   const now = Date.now();
   const dayMs = 86400000;
   let dueToday = 0,

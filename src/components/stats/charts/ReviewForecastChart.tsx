@@ -54,6 +54,7 @@ export function ReviewForecastChart() {
             stroke="var(--catppuccin-color-text)"
           />
           <Tooltip
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [`${value} due`, ""]}
             contentStyle={{
               fontSize: 12,
@@ -61,6 +62,7 @@ export function ReviewForecastChart() {
               border: "1px solid var(--catppuccin-color-overlay0)",
               background: "var(--tooltip-bg)",
             }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             labelFormatter={(label: any) => {
               const d = new Date(String(label) + "T00:00:00");
               return d.toLocaleDateString("en-US", {

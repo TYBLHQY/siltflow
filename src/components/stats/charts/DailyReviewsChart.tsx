@@ -51,6 +51,7 @@ export function DailyReviewsChart() {
             tick={{ fontSize: 10 }}
           />
           <Tooltip
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any, name: any) => [
               `${value} reviews`,
               name === "learnCount" ? "Learning" : "Review",

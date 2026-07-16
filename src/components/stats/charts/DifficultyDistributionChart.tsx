@@ -44,6 +44,7 @@ export function DifficultyDistributionChart() {
             tick={{ fontSize: 10 }}
           />
           <Tooltip
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [`${value} cards`, ""]}
             contentStyle={{
               fontSize: 12,

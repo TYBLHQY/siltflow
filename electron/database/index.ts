@@ -65,7 +65,9 @@ function createTables() {
   `)
 
   // Drop old-style annotations table if it exists with wrong PK
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isOldSchema = cols.length > 0 && cols.filter((c: any) => c.pk > 0).length === 1
   if (isOldSchema) {
     sqlite.exec("DROP TABLE annotations")
@@ -87,10 +89,13 @@ function createTables() {
   `)
 
   // Migrate: drop old ai_result / fsrs_card columns if present (now in own tables)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const annoCols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (annoCols.some((c: any) => c.name === 'ai_result')) {
     sqlite.exec("ALTER TABLE annotations DROP COLUMN ai_result")
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (annoCols.some((c: any) => c.name === 'fsrs_card')) {
     sqlite.exec("ALTER TABLE annotations DROP COLUMN fsrs_card")
   }
@@ -158,23 +163,30 @@ function createTables() {
   `)
 
   // Add folder_id column to documents if missing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const docCols = sqlite.prepare("PRAGMA table_info('documents')").all() as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!docCols.some((c: any) => c.name === 'folder_id')) {
     sqlite.exec("ALTER TABLE documents ADD COLUMN folder_id TEXT")
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!docCols.some((c: any) => c.name === 'sort_order')) {
     sqlite.exec("ALTER TABLE documents ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!docCols.some((c: any) => c.name === 'original_name')) {
     try {
       sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT")
     } catch { /* already present in CREATE TABLE */ }
   }
-  // Drop legacy columns if they exist
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (docCols.some((c: any) => c.name === 'file_name')) {
+    // eslint-disable-next-line no-empty
     try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_name") } catch {}
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (docCols.some((c: any) => c.name === 'file_path')) {
+    // eslint-disable-next-line no-empty
     try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_path") } catch {}
   }
 }

@@ -54,7 +54,9 @@ function persistSummary(
   text: string,
   isAiGenerated: boolean,
 ) {
-  window.siltflow.summaries.save({ documentId, text, isAiGenerated }).catch((err: any) => {
+  window.siltflow.summaries.save({ documentId, text, isAiGenerated }).catch(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (err: any) => {
     console.error("[summary.store] save failed:", err);
   });
 }
@@ -88,7 +90,9 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   },
 
   clearSummary: (documentId) => {
-    window.siltflow.summaries.delete(documentId).catch((err: any) => {
+    window.siltflow.summaries.delete(documentId).catch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (err: any) => {
       console.error("[summary.store] delete failed:", err);
     });
     set((s) => {

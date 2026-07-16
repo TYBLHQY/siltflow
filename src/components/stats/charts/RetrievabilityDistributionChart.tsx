@@ -15,10 +15,10 @@ import { useStatsStore } from "@/stores/stats.store";
 
 export function RetrievabilityDistributionChart() {
   const parsedCards = useStatsStore((s) => s.parsedCards);
-  const rawReviewLogs = useStatsStore((s) => s.rawReviewLogs);
   const dataVersion = useStatsStore((s) => s.dataVersion);
   const loading = useStatsStore((s) => s.loading);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cards = useMemo(() => Array.from(parsedCards.values()), [parsedCards, dataVersion]);
 
   const data = useMemo(
@@ -28,9 +28,9 @@ export function RetrievabilityDistributionChart() {
   );
 
   const overview = useMemo(
-    () => computeOverviewStats(cards, rawReviewLogs),
+    () => computeOverviewStats(cards),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cards, rawReviewLogs, dataVersion],
+    [cards, dataVersion],
   );
 
   const isEmpty = data.every((d) => d.count === 0);

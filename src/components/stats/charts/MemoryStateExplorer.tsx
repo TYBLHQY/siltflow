@@ -66,6 +66,7 @@ export function MemoryStateExplorer() {
 
   // Build annotation list from raw card data
   const annotations = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const list: { id: string; documentId: string; text: string; card: any }[] = [];
     for (const row of rawCards) {
       try {
@@ -82,6 +83,7 @@ export function MemoryStateExplorer() {
       }
     }
     return list.sort((a, b) => (b.card.stability ?? 0) - (a.card.stability ?? 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawCards, dataVersion, annotationsMap]);
 
   // Auto-select first annotation when data loads

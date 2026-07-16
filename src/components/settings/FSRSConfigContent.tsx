@@ -106,6 +106,7 @@ export function FSRSConfigContent() {
                         const n = parseInt(e.target.value, 10) || 1;
                         const arr = [...(params.learning_steps as string[])];
                         arr[idx] = `${n}m`;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         updateParam("learning_steps" as const, arr as any);
                       }}
                     />
@@ -139,6 +140,7 @@ export function FSRSConfigContent() {
                       onChange={(e) => {
                         const n = parseInt(e.target.value, 10) || 10;
                         const arr = [`${n}m`];
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         updateParam("relearning_steps" as const, arr as any);
                       }}
                     />

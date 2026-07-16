@@ -49,7 +49,6 @@ function formatFloat(n: number): string {
 
 export function OverviewCards() {
   const rawCards = useStatsStore((s) => s.rawCards);
-  const rawReviewLogs = useStatsStore((s) => s.rawReviewLogs);
   const parsedCards = useStatsStore((s) => s.parsedCards);
   const loading = useStatsStore((s) => s.loading);
 
@@ -87,8 +86,7 @@ export function OverviewCards() {
   }
 
   const cards = Array.from(parsedCards.values());
-  const logs = rawReviewLogs;
-  const stats = computeOverviewStats(cards, logs);
+  const stats = computeOverviewStats(cards);
 
   const items: StatCardData[] = [
     {

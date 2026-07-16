@@ -51,10 +51,13 @@ interface PdfViewerState {
   pendingAnnotation: {
     text: string;
     pageNumber: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     position: any;
   } | null;
   setPendingAnnotation: (
-    ann: { text: string; pageNumber: number; position: any } | null,
+    ann: { text: string; pageNumber: number;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      position: any; } | null,
   ) => void;
 }
 

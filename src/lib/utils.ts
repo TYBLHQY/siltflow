@@ -9,6 +9,7 @@ export function cn(...inputs: ClassValue[]) {
  * Create a debounced version of a function.
  * The debounced function returns a Promise that resolves with the latest call's result.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   delay: number,

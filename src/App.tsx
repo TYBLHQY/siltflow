@@ -93,6 +93,7 @@ function App() {
     const timer = setTimeout(() => {
       setUpdateDialog("checking");
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const unsubAvailable = window.siltflow.update.onAvailable((info: any) => {
         const tag = info?.version || info?.tag_name || "";
         setUpdateDialog({
@@ -219,9 +220,11 @@ function App() {
           <DialogHeader>
             <DialogTitle>Update Available</DialogTitle>
             <DialogDescription>
+              {/* eslint-disable @typescript-eslint/no-explicit-any */}
               {downloaded
                 ? `Version ${(updateDialog as any)?.latestVersion} has been downloaded and is ready to install.`
                 : `Version ${(updateDialog as any)?.latestVersion} is available.`}
+              {/* eslint-enable @typescript-eslint/no-explicit-any */}
             </DialogDescription>
           </DialogHeader>
 
@@ -237,14 +240,17 @@ function App() {
             <div className="flex items-center justify-between">
               <span className="text-ctp-overlay0">New version</span>
               <span className="font-medium text-ctp-green">
-                v{(updateDialog as any)?.latestVersion}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              v{(updateDialog as any)?.latestVersion}
               </span>
             </div>
             <button
               onClick={() =>
+                /* eslint-disable @typescript-eslint/no-explicit-any */
                 window.siltflow.openExternal(
                   `https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`,
                 )
+                /* eslint-enable @typescript-eslint/no-explicit-any */
               }
               className="block text-xs text-ctp-mauve hover:underline mt-1"
             >

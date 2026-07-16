@@ -80,7 +80,9 @@ export async function chatCompletion(
 
     // Deep search fallback for providers that nest content differently
     const deep =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (response as any)?.choices?.[0]?.delta?.content ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (response as any)?.choices?.[0]?.text ||
       "";
     if (deep) {

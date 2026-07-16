@@ -19,7 +19,9 @@ export function runMigrations(sqlite: Database.Database, currentVersion: number)
 // ── Migration 1→2: add version column to ai_results ────────────────
 
 function migrateV1toV2(sqlite: Database.Database) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const aiCols = sqlite.prepare("PRAGMA table_info('ai_results')").all() as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!aiCols.some((c: any) => c.name === "version")) {
     sqlite.exec("ALTER TABLE ai_results ADD COLUMN version INTEGER NOT NULL DEFAULT 1")
   }

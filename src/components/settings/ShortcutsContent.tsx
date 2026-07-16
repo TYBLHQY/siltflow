@@ -90,6 +90,7 @@ export function ShortcutsContent() {
       }
 
       if (parts.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setShortcutKeys(editingId as any, parts.join("+"));
       }
       setEditingId(null);

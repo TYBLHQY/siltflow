@@ -8,7 +8,9 @@ export function registerReviewLogHandlers() {
     if (!sql) return []
     const rows = sql
       .prepare("SELECT id, annotation_id, document_id, data, created_at FROM review_logs WHERE annotation_id = ? AND document_id = ? ORDER BY created_at DESC")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .all(annotationId, documentId) as any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return rows.map((r: any) => ({
       id: r.id,
       annotationId: r.annotation_id,
@@ -23,7 +25,9 @@ export function registerReviewLogHandlers() {
     if (!sql) return []
     const rows = sql
       .prepare("SELECT id, annotation_id, document_id, data, created_at FROM review_logs ORDER BY created_at ASC")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .all() as any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return rows.map((r: any) => ({
       id: r.id,
       annotationId: r.annotation_id,
@@ -33,6 +37,7 @@ export function registerReviewLogHandlers() {
     }))
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ipcMain.handle("reviewLogs:save", (_event, record: { annotationId: string; documentId: string; data: any }) => {
     const sql = getSqlite()
     if (!sql) return null

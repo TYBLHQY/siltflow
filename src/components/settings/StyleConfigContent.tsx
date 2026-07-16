@@ -20,8 +20,10 @@ function useSystemFonts(): string[] {
       return;
     }
     let cancelled = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (self as any)
       .queryLocalFonts()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((items: any[]) => {
         if (cancelled) return;
         const seen = new Set<string>();
@@ -448,7 +450,10 @@ export function StyleConfigContent() {
           <select
             className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
             value={themeConfig.lightTheme}
-            onChange={(e) => setLightTheme(e.target.value as any)}
+            onChange={(e) =>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              setLightTheme(e.target.value as any)
+            }
           >
             <option value="latte">Latte</option>
           </select>
@@ -460,7 +465,10 @@ export function StyleConfigContent() {
           <select
             className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
             value={themeConfig.darkTheme}
-            onChange={(e) => setDarkTheme(e.target.value as any)}
+            onChange={(e) =>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              setDarkTheme(e.target.value as any)
+            }
           >
             <option value="frappe">Frappé</option>
             <option value="macchiato">Macchiato</option>

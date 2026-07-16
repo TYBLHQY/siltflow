@@ -77,6 +77,7 @@ export function RetentionOptimizationChart() {
               border: "1px solid var(--catppuccin-color-overlay0)",
               background: "var(--tooltip-bg)",
             }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any, name: any) => {
               if (name === "Reviews/day") return [(Number(value) as number).toFixed(1), name as string];
               if (name === "Avg stability (d)")

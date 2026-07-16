@@ -28,9 +28,12 @@ export function registerAnnotationHandlers() {
       LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
       LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
       WHERE a.document_id = ?
-    `).all(documentId) as any[]
+    `)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .all(documentId) as any[]
     // Pre-parse JSON fields in the main process so the renderer
     // doesn't block the UI thread on N×sync JSON.parse calls.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return rows.map((r: any) => ({
       id: r.id,
       document_id: r.document_id,
@@ -52,6 +55,7 @@ export function registerAnnotationHandlers() {
     return db.select().from(schema.annotations).all()
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ipcMain.handle("annotations:save", (_event, annotation: any) => {
     const sql = getSqlite()
     if (!sql) return null
