@@ -5,14 +5,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { forwardRef } from "react";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ctp-mauve/50 focus-visible:ring-[3px] aria-invalid:ring-ctp-red/20 dark:aria-invalid:ring-ctp-red/40 aria-invalid:border-ctp-red",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ctp-mauve/50 focus-visible:ring-ctp-mauve/50 focus-visible:ring-[3px] aria-invalid:ring-ctp-red/20 dark:aria-invalid:ring-ctp-red/40 aria-invalid:border-ctp-red",
   {
     variants: {
       variant: {
         default:
           "bg-ctp-mauve text-ctp-crust shadow-xs hover:bg-ctp-mauve/90",
         destructive:
-          "bg-ctp-red text-white shadow-xs hover:bg-ctp-red/90 focus-visible:ring-ctp-red/20 dark:focus-visible:ring-ctp-red/40 dark:bg-ctp-red/60",
+          "bg-ctp-red text-ctp-crust shadow-xs hover:bg-ctp-red/90 focus-visible:ring-ctp-red/20 dark:focus-visible:ring-ctp-red/40 dark:bg-ctp-red/60",
         outline:
           "border bg-ctp-base shadow-xs hover:bg-ctp-surface0 hover:text-ctp-crust dark:bg-ctp-surface0/30 dark:border-ctp-surface0 dark:hover:bg-ctp-surface0/50",
         secondary:

@@ -39,9 +39,9 @@ export function Toast() {
         : AlertCircle;
 
   const darkColorMap = {
-    info: "border-blue-600 bg-blue-950/90 text-blue-200 backdrop-blur-sm",
-    success: "border-green-600 bg-green-950/90 text-green-200 backdrop-blur-sm",
-    error: "border-red-600 bg-red-950/90 text-red-200 backdrop-blur-sm",
+    info: "border-ctp-blue-600 bg-ctp-blue-950/90 text-ctp-base backdrop-blur-sm",
+    success: "border-ctp-green-600 bg-ctp-green-950/90 text-ctp-base backdrop-blur-sm",
+    error: "border-ctp-red-600 bg-ctp-red-950/90 text-ctp-base backdrop-blur-sm",
   };
 
   return (

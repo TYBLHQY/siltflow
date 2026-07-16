@@ -19,7 +19,7 @@ export function ChartCard({
   children,
 }: ChartCardProps) {
   return (
-    <div className="flex flex-col rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm p-4">
+    <div className="flex flex-col rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-4">
       <h3 className="mb-3 text-xs font-semibold text-ctp-overlay0 uppercase tracking-wider">
         {title}
       </h3>
@@ -29,7 +29,7 @@ export function ChartCard({
         </div>
       ) : error ? (
         <div className="flex flex-1 items-center justify-center py-8">
-          <p className="text-xs text-red-500">{error}</p>
+          <p className="text-xs text-ctp-red">{error}</p>
         </div>
       ) : isEmpty ? (
         <div className="flex flex-1 items-center justify-center py-8">

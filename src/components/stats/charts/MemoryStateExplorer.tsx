@@ -205,7 +205,7 @@ export function MemoryStateExplorer() {
         {selectedAnnotation ? (
           <>
             {/* Card info — fixed */}
-            <div className="rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm px-4 py-3 shrink-0">
+            <div className="rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm px-4 py-3 shrink-0">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-medium truncate">
                   {selectedAnnotation.text}
@@ -224,7 +224,7 @@ export function MemoryStateExplorer() {
 
             {/* Chart card — fixed */}
             {logs.length >= 2 ? (
-              <div className="rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm p-4 mt-4 shrink-0">
+              <div className="rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-4 mt-4 shrink-0">
                 <h4 className="mb-2 text-xs font-semibold text-ctp-overlay0 uppercase tracking-wider">
                   Stability & Difficulty Over Time
                 </h4>
@@ -316,7 +316,7 @@ export function MemoryStateExplorer() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm mt-4 px-4 py-6 text-center text-xs text-ctp-overlay0 shrink-0">
+              <div className="rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm mt-4 px-4 py-6 text-center text-xs text-ctp-overlay0 shrink-0">
                 {logs.length === 1
                   ? "Only one review recorded — need at least 2 to show evolution"
                   : "No review history for this card yet"}
@@ -347,7 +347,7 @@ export function MemoryStateExplorer() {
                         <div className="flex-1 px-3 py-1.5 text-ctp-text">{log.date}</div>
                         <div className="flex-1 px-3 py-1.5">
                           <span
-                            className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-white"
+                            className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-ctp-base"
                             style={{ backgroundColor: GRADE_COLORS[log.grade] ?? "var(--catppuccin-color-lavender)" }}
                           >
                             {GRADE_LABELS[log.grade] ?? log.grade}

@@ -18,10 +18,10 @@ const STATE_LABELS: Record<number, string> = {
 };
 
 const STATE_BG: Record<number, string> = {
-  0: "bg-sky/15 text-ctp-sky",
-  1: "bg-yellow/15 text-ctp-yellow",
-  2: "bg-green/15 text-ctp-green",
-  3: "bg-red/15 text-ctp-red",
+  0: "bg-ctp-sky/15 text-ctp-sky",
+  1: "bg-ctp-yellow/15 text-ctp-yellow",
+  2: "bg-ctp-green/15 text-ctp-green",
+  3: "bg-ctp-red/15 text-ctp-red",
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────

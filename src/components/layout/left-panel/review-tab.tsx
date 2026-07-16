@@ -42,7 +42,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
       data-doc-id={metric.documentId}
       className={`group relative border-b border-ctp-overlay0/50 pl-3 text-sm transition-colors cursor-pointer ${
         isActive
-          ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
+          ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-ctp-yellow"
           : "hover:bg-ctp-surface0"
       } ${hasTags ? "py-2.5 pr-3" : "py-2 pr-3"}`}
       onClick={() => setCurrentDocument({ id: metric.documentId, title: metric.documentTitle })}
@@ -58,13 +58,13 @@ const ReviewTabRow = memo(function ReviewTabRow({
       </div>
       {hasTags && (
         <div className="flex flex-wrap items-center gap-2 mt-0.5">
-          <span className="rounded bg-blue-500/10 px-1 py-0.5 font-medium text-blue-600">
+          <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
             {metric.newCardsCount} new
           </span>
-          <span className="rounded bg-red-500/10 px-1 py-0.5 font-medium text-red-600">
+          <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
             {metric.dueNowCount} due
           </span>
-          <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">
+          <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
             {metric.dueSoonCount} soon
           </span>
           <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">

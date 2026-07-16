@@ -140,8 +140,8 @@ export function AboutContent() {
         )}
 
         {updateState === "available" && (
-          <div className="rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2">
-            <p className="text-xs font-medium text-green-600 mb-1.5">
+          <div className="rounded-md border border-ctp-green/30 bg-ctp-green/10 px-3 py-2">
+            <p className="text-xs font-medium text-ctp-green mb-1.5">
               v{latestVersion} is available
             </p>
             <button
@@ -180,8 +180,8 @@ export function AboutContent() {
         )}
 
         {updateState === "downloaded" && (
-          <div className="rounded-md border border-blue-500/30 bg-blue-500/10 px-3 py-2">
-            <p className="text-xs font-medium text-blue-600 mb-1.5">
+          <div className="rounded-md border border-ctp-blue/30 bg-ctp-blue/10 px-3 py-2">
+            <p className="text-xs font-medium text-ctp-blue mb-1.5">
               Update ready to install
             </p>
             <button
@@ -195,11 +195,11 @@ export function AboutContent() {
         )}
 
         {updateState === "error" && (
-          <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2">
-            <p className="text-xs font-medium text-red-600 mb-1">
+          <div className="rounded-md border border-ctp-red/30 bg-ctp-red/10 px-3 py-2">
+            <p className="text-xs font-medium text-ctp-red mb-1">
               Update check failed
             </p>
-            <p className="text-xs text-red-500 mb-1.5">{errorMsg}</p>
+            <p className="text-xs text-ctp-red mb-1.5">{errorMsg}</p>
             <button
               className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
               onClick={handleCheck}

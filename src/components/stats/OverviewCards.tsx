@@ -18,7 +18,7 @@ interface StatCardData {
 
 function StatCard({ icon: Icon, label, value, color }: StatCardData) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm px-4 py-3">
+    <div className="flex items-center gap-3 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm px-4 py-3">
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: color + "20" }}
@@ -60,7 +60,7 @@ export function OverviewCards() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="animate-pulse rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm px-4 py-3"
+            className="animate-pulse rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm px-4 py-3"
           >
             <div className="mb-2 h-9 w-9 rounded-full bg-ctp-surface0" />
             <div className="mb-1 h-5 w-16 rounded bg-ctp-surface0" />
@@ -75,7 +75,7 @@ export function OverviewCards() {
   if (!rawCards.length) {
     return (
       <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
-        <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle px-4 py-8">
+        <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ctp-overlay0/80 bg-card px-4 py-8">
           <BrainCircuit className="h-8 w-8 text-ctp-overlay0/50" />
           <p className="text-sm font-medium text-ctp-overlay0">No cards yet</p>
           <p className="text-xs text-ctp-overlay0/60 text-center max-w-xs">

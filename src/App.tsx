@@ -235,7 +235,7 @@ function App() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-ctp-overlay0">New version</span>
-              <span className="font-medium text-green-600">
+              <span className="font-medium text-ctp-green">
                 v{(updateDialog as any)?.latestVersion}
               </span>
             </div>

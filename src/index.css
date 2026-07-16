@@ -10,6 +10,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  --color-card: var(--card-bg);
+
   --font-sans:
     ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
@@ -36,6 +38,7 @@
 
 .latte {
   --tooltip-bg: white;
+  --card-bg: white;
   --heatmap-0: #ebedf0;
 }
 
@@ -43,6 +46,7 @@
 .macchiato,
 .mocha {
   --tooltip-bg: var(--catppuccin-color-mantle);
+  --card-bg: var(--catppuccin-color-mantle);
   --heatmap-0: #161b22;
 }
 

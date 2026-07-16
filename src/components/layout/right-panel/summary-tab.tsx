@@ -229,7 +229,7 @@ export function SummaryTab() {
             <div className="h-full overflow-y-auto px-3 py-3">
               <KnuthPlassText
                 text={summary.text}
-                className="text-xs text-ctp-text rounded-md border border-transparent px-2 py-1.5"
+                className="text-xs text-ctp-text rounded-md border border-ctp-overlay0/20 px-2 py-1.5"
               />
             </div>
           )

@@ -26,7 +26,7 @@ const GRADE_LABELS: { grade: number; label: string; color: string }[] = [
   {
     grade: 1,
     label: "Again",
-    color: "bg-red/10 text-ctp-redhover:bg-red/20",
+    color: "bg-ctp-red/10 text-ctp-red hover:bg-ctp-red/20",
   },
   {
     grade: 2,
@@ -36,12 +36,12 @@ const GRADE_LABELS: { grade: number; label: string; color: string }[] = [
   {
     grade: 3,
     label: "Good",
-    color: "bg-green/10 text-ctp-green hover:bg-green/20",
+    color: "bg-ctp-green/10 text-ctp-green hover:bg-ctp-green/20",
   },
   {
     grade: 4,
     label: "Easy",
-    color: "bg-sky/10 text-ctp-sky hover:bg-sky/20",
+    color: "bg-ctp-sky/10 text-ctp-sky hover:bg-ctp-sky/20",
   },
 ];
 
@@ -145,7 +145,7 @@ export function StudyPanel({
         {answerRevealed && ai ? (
           /* ── Answer revealed: full card ── */
           <div className="px-3 pb-3 min-h-0 flex-1">
-            <ScrollArea className="h-full rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm">
+            <ScrollArea className="h-full rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm">
               <div className="px-3 py-2.5 space-y-2">
                 <AIAnnotationResult
                   item={item}

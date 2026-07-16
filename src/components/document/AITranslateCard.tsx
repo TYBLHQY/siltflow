@@ -56,7 +56,7 @@ export function AITranslateCard({
 
   return (
     <div
-      className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm p-3 transition-colors cursor-pointer ${
+      className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-3 transition-colors cursor-pointer ${
         scrolled ? "bg-ctp-surface0/40 border-accent" : "hover:border-accent"
       } ${className}`}
       onClick={handleCardClick}
