@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   CheckSquare,
   Square,
@@ -116,8 +117,9 @@ export function SummaryTab() {
     <div className="flex flex-col flex-1 min-h-0">
       {/* Page selection */}
       <div className="border-b px-3 py-2 space-y-1">
-        <button
-          className="flex items-center gap-1.5 text-xs font-medium text-ctp-overlay0 hover:text-ctp-text transition-colors"
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-1.5 text-xs font-medium px-0"
           onClick={toggleAll}
         >
           {allSelected ? (
@@ -126,31 +128,33 @@ export function SummaryTab() {
             <Square className="h-3.5 w-3.5 shrink-0" />
           )}
           {numPages} pages
-        </button>
+        </Button>
         <ScrollArea className="max-h-32">
           <div className="flex flex-wrap gap-1">
             {Array.from({ length: numPages }, (_, i) => {
               const p = i + 1;
               const selected = selPages === undefined || selPages.includes(p);
               return (
-                <button
+                <Button
                   key={p}
-                  className={`inline-flex items-center justify-center h-6 min-w-[24px] rounded px-1 text-xs font-medium transition-colors ${
+                  variant="ghost"
+                  size="sm"
+                  className={`h-6 min-w-[24px] px-1 text-xs font-medium ${
                     selected
                       ? "bg-ctp-mauve/10 text-ctp-mauve"
-                      : "text-ctp-overlay0 hover:bg-ctp-surface0"
+                      : "text-ctp-overlay0"
                   }`}
                   onClick={() => togglePage(p)}
                 >
                   {p}
-                </button>
+                </Button>
               );
             })}
           </div>
         </ScrollArea>
 
-        <button
-          className="flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors disabled:opacity-50 w-full justify-center"
+        <Button
+          className="w-full justify-center"
           onClick={handleSummarize}
           disabled={summarizing}
         >
@@ -163,7 +167,7 @@ export function SummaryTab() {
               {summary ? "Regenerate" : "AI Summarize"}
             </IconText>
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Summary toolbar */}
@@ -171,41 +175,45 @@ export function SummaryTab() {
         <div className="flex items-center gap-2 border-b px-3 py-1.5 shrink-0">
           {editingSummary ? (
             <>
-              <button
-                className="ml-auto rounded-md px-3 py-1 text-xs text-ctp-overlay0 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-                onClick={() => setEditingSummary(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="rounded-md bg-ctp-mauve px-3 py-1 text-xs text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
-                onClick={() => setEditingSummary(false)}
-              >
-                Save
-              </button>
+              <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingSummary(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setEditingSummary(false)}
+            >
+              Save
+            </Button>
             </>
           ) : (
             <>
-              <button
-                className="flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-text"
-                onClick={() => setEditingSummary(true)}
-              >
-                <Pencil className="h-3 w-3" />
-                Edit
-              </button>
+              <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingSummary(true)}
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </Button>
               {summary.isAiGenerated && (
                 <span className="text-xs text-ctp-overlay0/60 flex items-center gap-1">
                   <Bot className="h-2.5 w-2.5" />
                   AI-generated
                 </span>
               )}
-              <button
-                className="ml-auto flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-red"
-                onClick={handleClearSummary}
-              >
-                <Trash2 className="h-3 w-3" />
-                Clear
-              </button>
+              <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto hover:text-ctp-red"
+              onClick={handleClearSummary}
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear
+            </Button>
             </>
           )}
         </div>

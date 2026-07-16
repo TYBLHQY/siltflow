@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Highlighter,
   CheckSquare,
@@ -165,16 +166,17 @@ export function AnnotationsTab({
     <>
       {items.length > 0 && (
         <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
-          <button
-            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-ctp-mauve px-3 py-1.5 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+          <Button
+            className="w-full"
             onClick={handleStartLearning}
           >
             <IconText icon={CheckSquare} size="xs" className="gap-0">
               Start Learning ({dueCount})
             </IconText>
-          </button>
-          <button
-            className="flex w-full items-center justify-center gap-1 rounded-md border border-ctp-overlay0/50 px-3 py-1.5 text-xs font-medium text-ctp-text hover:bg-ctp-surface0 hover:text-ctp-text transition-colors disabled:opacity-50"
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
             onClick={handleBatchTranslate}
             disabled={batchTranslating}
             title="Translate all untranslated annotations"
@@ -182,7 +184,7 @@ export function AnnotationsTab({
             <IconText icon={Sparkles} size="xs" className="gap-0">
               {batchTranslating ? "Translating..." : "Batch Translate"}
             </IconText>
-          </button>
+          </Button>
         </div>
       )}
       {items.length > 0 && docId && (

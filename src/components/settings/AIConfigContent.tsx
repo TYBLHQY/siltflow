@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Bot } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store";
 import { LANGUAGES } from "@/lib/languages";
 
@@ -75,28 +76,31 @@ export function AIConfigContent() {
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 {!profile.active && (
-                  <button
-                    className="text-xs text-ctp-mauve hover:underline"
-                    onClick={() => setActiveProfile(profile.id)}
-                  >
-                    Activate
-                  </button>
+                  <Button
+                  variant="link"
+                  className="text-xs"
+                  onClick={() => setActiveProfile(profile.id)}
+                >
+                  Activate
+                </Button>
                 )}
-                <button
-                  className="text-xs text-ctp-overlay0 hover:text-ctp-text"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setRenameId(profile.id);
                     setRenameValue(profile.name);
                   }}
                 >
                   Rename
-                </button>
-                <button
-                  className="text-xs text-ctp-red hover:underline"
+                </Button>
+                <Button
+                  variant="link"
+                  className="text-xs text-ctp-red"
                   onClick={() => removeProfile(profile.id)}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -206,14 +210,16 @@ export function AIConfigContent() {
             )}
 
             {/* Toggle config edit */}
-            <button
-              className="mt-1 text-xs text-ctp-overlay0 hover:text-ctp-text"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-1"
               onClick={() =>
                 setEditingId(editingId === profile.id ? null : profile.id)
               }
             >
               {editingId === profile.id ? "Collapse" : "Edit params"}
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -226,15 +232,16 @@ export function AIConfigContent() {
         <div className="mt-2 flex flex-wrap gap-1.5">
           {availableProviders.map(
             (provider: { key: string; label: string }) => (
-              <button
+              <Button
                 key={provider.key}
-                className="rounded-md border bg-ctp-base px-2.5 py-1 text-xs transition-colors hover:bg-ctp-surface0"
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   addProfile(provider.key);
                 }}
               >
                 {provider.label}
-              </button>
+              </Button>
             ),
           )}
         </div>

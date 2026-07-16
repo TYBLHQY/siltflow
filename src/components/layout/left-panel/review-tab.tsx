@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Search, Loader2, BrainCircuit, FileText } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, memo, useEffect } from "react";
@@ -144,12 +145,13 @@ export const ReviewTab = memo(function ReviewTab({
               <p className="text-xs text-center">
                 No documents match your search
               </p>
-              <button
-                className="text-ctp-mauve hover:underline text-xs mt-1"
+              <Button
+                variant="link"
+                className="mt-1 text-xs"
                 onClick={() => setReviewSearch("")}
               >
                 Clear filter
-              </button>
+              </Button>
             </>
           ) : (
             <>

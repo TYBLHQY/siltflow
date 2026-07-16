@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useDocumentStore, type DocumentItem } from "@/stores/document.store";
 import { useFolderStore, type FolderItem } from "@/stores/folder.store";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -563,14 +564,14 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <button
-                className="rounded-md border border-ctp-overlay0/50 px-4 py-2 text-sm font-medium text-ctp-overlay0 hover:bg-ctp-surface0 transition-colors"
+              <Button
+                variant="outline"
                 onClick={() => setDeleteConfirm(null)}
               >
                 Cancel
-              </button>
-              <button
-                className="rounded-md bg-ctp-red px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-red/90 transition-colors"
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={async () => {
                   if (deleteConfirm) {
                     await deleteFolder(deleteConfirm.id);
@@ -579,7 +580,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
                 }}
               >
                 Delete
-              </button>
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

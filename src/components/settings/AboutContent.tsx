@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Download, ExternalLink } from "lucide-react";
 import { useAppSettingsStore } from "@/stores/app.store";
+import { Button } from "@/components/ui/button";
 
 export function AboutContent() {
   const [updateState, setUpdateState] = useState<
@@ -144,13 +145,13 @@ export function AboutContent() {
             <p className="text-xs font-medium text-ctp-green mb-1.5">
               v{latestVersion} is available
             </p>
-            <button
-              className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+            <Button
+              size="sm"
               onClick={handleDownload}
             >
               <Download className="h-3 w-3" />
               Download Update
-            </button>
+            </Button>
           </div>
         )}
 
@@ -184,13 +185,13 @@ export function AboutContent() {
             <p className="text-xs font-medium text-ctp-blue mb-1.5">
               Update ready to install
             </p>
-            <button
-              className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+            <Button
+              size="sm"
               onClick={handleInstall}
             >
               <Download className="h-3 w-3" />
               Restart &amp; Install
-            </button>
+            </Button>
           </div>
         )}
 
@@ -200,23 +201,23 @@ export function AboutContent() {
               Update check failed
             </p>
             <p className="text-xs text-ctp-red mb-1.5">{errorMsg}</p>
-            <button
-              className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+            <Button
+              size="sm"
               onClick={handleCheck}
             >
               Retry
-            </button>
+            </Button>
           </div>
         )}
 
         {updateState === "idle" && (
-          <button
-            className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1.5 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+          <Button
+            size="sm"
             onClick={handleCheck}
           >
             <Download className="h-3 w-3" />
             Check for Updates
-          </button>
+          </Button>
         )}
       </div>
 

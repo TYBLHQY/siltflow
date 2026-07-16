@@ -19,6 +19,7 @@ import {
   useAppSettingsStore,
 } from "@/stores/app.store";
 import { Toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import {
   Dialog,
@@ -289,20 +290,21 @@ function App() {
 
           <DialogFooter className="flex-col items-start gap-3">
             {downloaded ? (
-              <button
-                className="w-full rounded-md bg-ctp-mauve px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+              <Button
+                className="w-full"
                 onClick={() => window.siltflow.update.install()}
               >
                 Restart &amp; Install
-              </button>
+              </Button>
             ) : downloading ? (
               <span className="text-xs text-ctp-overlay0">
                 Downloading…
               </span>
             ) : (
               <div className="flex gap-2 w-full">
-                <button
-                  className="flex-1 rounded-md border border-ctp-overlay0/50 px-4 py-2 text-sm font-medium text-ctp-overlay0 hover:bg-ctp-surface0 transition-colors"
+                <Button
+                  variant="outline"
+                  className="flex-1"
                   onClick={() => {
                     setUpdateDialog(null);
                     setDownloaded(false);
@@ -311,9 +313,9 @@ function App() {
                   }}
                 >
                   Later
-                </button>
-                <button
-                  className="flex-1 rounded-md bg-ctp-mauve px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
+                </Button>
+                <Button
+                  className="flex-1"
                   onClick={() => {
                     setDownloading(true);
                     window.siltflow.update.download();
@@ -321,7 +323,7 @@ function App() {
                 >
                   <Download className="h-4 w-4 inline mr-1" />
                   Download
-                </button>
+                </Button>
               </div>
             )}
           </DialogFooter>
