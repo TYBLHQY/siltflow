@@ -18,7 +18,7 @@ interface StatCardData {
 
 function StatCard({ icon: Icon, label, value, color }: StatCardData) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-3">
+    <div className="flex items-center gap-3 rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm px-4 py-3">
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: color + "20" }}
@@ -29,7 +29,7 @@ function StatCard({ icon: Icon, label, value, color }: StatCardData) {
         <p className="text-lg font-semibold leading-tight tracking-tight">
           {value ?? "—"}
         </p>
-        <p className="truncate text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-xs text-ctp-overlay0">{label}</p>
       </div>
     </div>
   );
@@ -60,11 +60,11 @@ export function OverviewCards() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="animate-pulse rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-3"
+            className="animate-pulse rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm px-4 py-3"
           >
-            <div className="mb-2 h-9 w-9 rounded-full bg-muted" />
-            <div className="mb-1 h-5 w-16 rounded bg-muted" />
-            <div className="h-3 w-20 rounded bg-muted" />
+            <div className="mb-2 h-9 w-9 rounded-full bg-ctp-surface0" />
+            <div className="mb-1 h-5 w-16 rounded bg-ctp-surface0" />
+            <div className="h-3 w-20 rounded bg-ctp-surface0" />
           </div>
         ))}
       </div>
@@ -75,10 +75,10 @@ export function OverviewCards() {
   if (!rawCards.length) {
     return (
       <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
-        <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/80 bg-white dark:bg-mantle px-4 py-8">
-          <BrainCircuit className="h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm font-medium text-muted-foreground">No cards yet</p>
-          <p className="text-xs text-muted-foreground/60 text-center max-w-xs">
+        <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle px-4 py-8">
+          <BrainCircuit className="h-8 w-8 text-ctp-overlay0/50" />
+          <p className="text-sm font-medium text-ctp-overlay0">No cards yet</p>
+          <p className="text-xs text-ctp-overlay0/60 text-center max-w-xs">
             Add notes or highlight something to start building your memory
           </p>
         </div>
@@ -95,37 +95,37 @@ export function OverviewCards() {
       icon: BrainCircuit,
       label: "Total cards",
       value: formatNum(stats.total),
-      color: "var(--mauve)",
+      color: "var(--catppuccin-color-mauve)",
     },
     {
       icon: Bell,
       label: "Due today",
       value: formatNum(stats.dueToday),
-      color: "var(--red)",
+      color: "var(--catppuccin-color-red)",
     },
     {
       icon: Sparkles,
       label: "New cards",
       value: formatNum(stats.newCards),
-      color: "var(--blue)",
+      color: "var(--catppuccin-color-blue)",
     },
     {
       icon: BookOpen,
       label: "Learning",
       value: formatNum(stats.learning),
-      color: "var(--yellow)",
+      color: "var(--catppuccin-color-yellow)",
     },
     {
       icon: Target,
       label: "Retrievability",
       value: formatPct(stats.avgRetrievability),
-      color: "var(--green)",
+      color: "var(--catppuccin-color-green)",
     },
     {
       icon: Calendar,
       label: "Avg stability",
       value: formatFloat(stats.avgStability) + "d",
-      color: "var(--teal)",
+      color: "var(--catppuccin-color-teal)",
     },
   ];
 

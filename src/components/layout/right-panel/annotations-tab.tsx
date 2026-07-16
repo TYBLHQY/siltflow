@@ -166,7 +166,7 @@ export function AnnotationsTab({
       {items.length > 0 && (
         <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
           <button
-            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-ctp-mauve px-3 py-1.5 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
             onClick={handleStartLearning}
           >
             <IconText icon={CheckSquare} size="xs" className="gap-0">
@@ -174,7 +174,7 @@ export function AnnotationsTab({
             </IconText>
           </button>
           <button
-            className="flex w-full items-center justify-center gap-1 rounded-md border border-border/50 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1 rounded-md border border-ctp-overlay0/50 px-3 py-1.5 text-xs font-medium text-ctp-text hover:bg-ctp-surface0 hover:text-ctp-text transition-colors disabled:opacity-50"
             onClick={handleBatchTranslate}
             disabled={batchTranslating}
             title="Translate all untranslated annotations"
@@ -187,10 +187,10 @@ export function AnnotationsTab({
       )}
       {items.length > 0 && docId && (
         <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-xs">
-          <span className="flex items-center gap-1 text-muted-foreground">
+          <span className="flex items-center gap-1 text-ctp-overlay0">
             <span className="font-medium">Source:</span>
             <select
-              className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-xs"
+              className="bg-transparent text-ctp-text border-b border-dotted border-ctp-overlay0/50 outline-none text-xs"
               value={sourceLang}
               onChange={(e) => {
                 if (docId && summary) {
@@ -210,10 +210,10 @@ export function AnnotationsTab({
               ))}
             </select>
           </span>
-          <span className="flex items-center gap-1 text-muted-foreground">
+          <span className="flex items-center gap-1 text-ctp-overlay0">
             <span className="font-medium">Target:</span>
             <select
-              className="bg-transparent text-foreground border-b border-dotted border-border/50 outline-none text-xs"
+              className="bg-transparent text-ctp-text border-b border-dotted border-ctp-overlay0/50 outline-none text-xs"
               value={effectiveTargetLang}
               onChange={(e) => {
                 const val = e.target.value;
@@ -232,7 +232,7 @@ export function AnnotationsTab({
         </div>
       )}
       {items.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
+        <div className="flex flex-1 flex-col items-center justify-center text-ctp-overlay0 px-4">
           <Highlighter className="h-8 w-8 mb-2" />
           <p className="text-xs text-center">
             Highlight text in the document to add annotations

@@ -66,10 +66,10 @@ export interface OverviewStats {
 // ---------------------------------------------------------------------------
 
 const GRADE_COLORS: Record<string, string> = {
-  Again: "var(--red)",
-  Hard: "var(--peach)",
-  Good: "var(--green)",
-  Easy: "var(--blue)",
+  Again: "var(--catppuccin-color-red)",
+  Hard: "var(--catppuccin-color-peach)",
+  Good: "var(--catppuccin-color-green)",
+  Easy: "var(--catppuccin-color-blue)",
 };
 
 const GRADE_NAMES: Record<number, "Again" | "Hard" | "Good" | "Easy"> = {

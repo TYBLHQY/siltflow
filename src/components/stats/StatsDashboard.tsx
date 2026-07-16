@@ -56,12 +56,12 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
       {/* Header */}
       <div className="flex h-10 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <BarChart3 className="h-4 w-4 text-ctp-overlay0" />
           <h2 className="text-sm font-semibold">Statistics</h2>
         </div>
         {onClose && (
           <button
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
@@ -82,8 +82,8 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
               className={cn(
                 "flex-1 rounded-md border px-3 py-2 text-xs font-semibold transition-colors",
                 activePanel === p.id
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-text hover:bg-accent",
+                  ? "border-ctp-mauve bg-ctp-mauve text-ctp-crust"
+                  : "border-ctp-overlay0 text-ctp-text hover:bg-ctp-surface0",
               )}
               onClick={() => setActivePanel(p.id)}
             >

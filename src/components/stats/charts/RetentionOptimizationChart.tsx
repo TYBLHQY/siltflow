@@ -41,33 +41,33 @@ export function RetentionOptimizationChart() {
             dataKey="targetRetention"
             tick={{ fontSize: 10 }}
             tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            stroke="var(--text)"
+            stroke="var(--catppuccin-color-text)"
           />
           <YAxis
             yAxisId="left"
             tick={{ fontSize: 10 }}
-            stroke="var(--text)"
+            stroke="var(--catppuccin-color-text)"
             label={{
               value: "Reviews/day",
               angle: -90,
               position: "insideLeft",
               offset: 0,
               fontSize: 10,
-              fill: "var(--text)",
+              fill: "var(--catppuccin-color-text)",
             }}
           />
           <YAxis
             yAxisId="right"
             orientation="right"
             tick={{ fontSize: 10 }}
-            stroke="var(--text)"
+            stroke="var(--catppuccin-color-text)"
             label={{
               value: "Avg stability (d)",
               angle: 90,
               position: "insideRight",
               offset: 0,
               fontSize: 10,
-              fill: "var(--text)",
+              fill: "var(--catppuccin-color-text)",
             }}
           />
           <Tooltip
@@ -88,8 +88,8 @@ export function RetentionOptimizationChart() {
             wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
               const colors: Record<string, string> = {
-                "Reviews/day": "var(--peach)",
-                "Avg stability (d)": "var(--mauve)",
+                "Reviews/day": "var(--catppuccin-color-peach)",
+                "Avg stability (d)": "var(--catppuccin-color-mauve)",
               };
               return (
                 <div className="mt-2 flex justify-center gap-4 text-xs">
@@ -98,15 +98,15 @@ export function RetentionOptimizationChart() {
                       {(entry.value as string) === "Avg stability (d)" ? (
                         <span
                           className="inline-block h-0.5 w-3 rounded-full"
-                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--text)" }}
+                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }}
                         />
                       ) : (
                         <span
                           className="inline-block h-2 w-2 rounded-sm"
-                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--text)" }}
+                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }}
                         />
                       )}
-                      <span className="text-foreground">{entry.value}</span>
+                      <span className="text-ctp-text">{entry.value}</span>
                     </div>
                   ))}
                 </div>
@@ -117,7 +117,7 @@ export function RetentionOptimizationChart() {
             yAxisId="left"
             dataKey="workload"
             name="Reviews/day"
-            fill="var(--peach)"
+            fill="var(--catppuccin-color-peach)"
             radius={[3, 3, 0, 0]}
             opacity={0.8}
           />
@@ -126,7 +126,7 @@ export function RetentionOptimizationChart() {
             type="monotone"
             dataKey="avgStability"
             name="Avg stability (d)"
-            stroke="var(--mauve)"
+            stroke="var(--catppuccin-color-mauve)"
             strokeWidth={2}
             dot={{ r: 4 }}
           />

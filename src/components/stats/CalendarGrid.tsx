@@ -198,11 +198,11 @@ export function CalendarGrid({
 }: CalendarGridProps) {
   // Default classes are semantic => good in light/dark
   const levels = levelClassNames ?? [
-    "bg-muted",
-    "bg-primary/20",
-    "bg-primary/35",
-    "bg-primary/55",
-    "bg-primary/75",
+    "bg-ctp-surface0",
+    "bg-ctp-mauve/20",
+    "bg-ctp-mauve/35",
+    "bg-ctp-mauve/55",
+    "bg-ctp-mauve/75",
   ];
 
   const levelCount = palette?.length ? palette.length : levels.length;
@@ -319,7 +319,7 @@ export function CalendarGrid({
   ) : !showLegend ? null : (
     <div className={cn("min-w-35", legendCfg.className)}>
       {showText ? (
-        <div className="mb-2 text-xs text-muted-foreground">
+        <div className="mb-2 text-xs text-ctp-overlay0">
           {lessText} {showArrow ? <span aria-hidden>→</span> : null} {moreText}
         </div>
       ) : null}
@@ -358,7 +358,7 @@ export function CalendarGrid({
         <div className="font-medium">
           {cell.value} {unit}
         </div>
-        <div className="text-muted-foreground">{cell.label}</div>
+        <div className="text-ctp-overlay0">{cell.label}</div>
       </div>
     );
   };
@@ -391,7 +391,7 @@ export function CalendarGrid({
                     {monthLabels.map((m) => (
                       <div
                         key={m.colIndex}
-                        className="absolute text-xs text-muted-foreground"
+                        className="absolute text-xs text-ctp-overlay0"
                         style={{
                           left: m.colIndex * (cellSize + cellGap),
                           top: 0,
@@ -415,7 +415,7 @@ export function CalendarGrid({
                     {Array.from({ length: 7 }).map((_, rowIdx) => (
                       <div
                         key={rowIdx}
-                        className="flex items-center justify-end text-xs text-muted-foreground"
+                        className="flex items-center justify-end text-xs text-ctp-overlay0"
                         style={{ width: 40, height: cellSize }}
                       >
                         {weekdayIndices.includes(rowIdx)
@@ -450,7 +450,7 @@ export function CalendarGrid({
                                 disabled={cell.disabled}
                                 onClick={() => !cell.disabled && onCellClick?.(cell)}
                                 className={cn(
-                                  "rounded-[3px] outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                  "rounded-[3px] outline-none ring-offset-ctp-base focus-visible:ring-2 focus-visible:ring-ctp-mauve focus-visible:ring-offset-2",
                                   !palette?.length && cls,
                                   cell.disabled && "cursor-default opacity-30 pointer-events-none",
                                 )}

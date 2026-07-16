@@ -94,7 +94,7 @@ export function AboutContent() {
       {/* App info */}
       <div>
         <h3 className="text-sm font-semibold mb-2">Siltflow</h3>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-ctp-overlay0">
           A language learning document reader with spaced repetition and AI
           translation.
         </p>
@@ -133,7 +133,7 @@ export function AboutContent() {
         </div>
 
         {updateState === "checking" && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-ctp-overlay0">
             <Loader2 className="h-3 w-3 animate-spin" />
             Checking for updates…
           </div>
@@ -145,7 +145,7 @@ export function AboutContent() {
               v{latestVersion} is available
             </p>
             <button
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
               onClick={handleDownload}
             >
               <Download className="h-3 w-3" />
@@ -155,7 +155,7 @@ export function AboutContent() {
         )}
 
         {updateState === "latest" && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-ctp-overlay0">
             You are on the latest version.
           </p>
         )}
@@ -163,16 +163,16 @@ export function AboutContent() {
         {updateState === "downloading" && (
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-ctp-overlay0">
                 Downloading…
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-ctp-overlay0">
                 {Math.round(progress)}%
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-ctp-surface0">
               <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
+                className="h-full rounded-full bg-ctp-mauve transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -185,7 +185,7 @@ export function AboutContent() {
               Update ready to install
             </p>
             <button
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
               onClick={handleInstall}
             >
               <Download className="h-3 w-3" />
@@ -201,7 +201,7 @@ export function AboutContent() {
             </p>
             <p className="text-xs text-red-500 mb-1.5">{errorMsg}</p>
             <button
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
               onClick={handleCheck}
             >
               Retry
@@ -211,7 +211,7 @@ export function AboutContent() {
 
         {updateState === "idle" && (
           <button
-            className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1.5 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
             onClick={handleCheck}
           >
             <Download className="h-3 w-3" />
@@ -226,7 +226,7 @@ export function AboutContent() {
           href={releasesUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          className="inline-flex items-center gap-1 text-xs text-ctp-mauve hover:underline"
         >
           <ExternalLink className="h-3 w-3" />
           View all releases on GitHub

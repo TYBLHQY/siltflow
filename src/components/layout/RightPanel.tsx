@@ -92,7 +92,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
         className="flex flex-col flex-1 min-h-0"
       >
         <div className="flex h-10 items-center border-b px-3">
-          <TabsList className="w-full h-7 text-foreground">
+          <TabsList className="w-full h-7 text-ctp-text">
             <TabsTrigger value="annotations" className="flex-1 text-xs px-2 py-0.5 h-6">
               <IconText icon={Highlighter} size="xs">Annotations</IconText>
             </TabsTrigger>

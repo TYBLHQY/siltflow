@@ -119,14 +119,14 @@ export function AIAnnotationResultV1({
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 min-w-0">
               <IconText icon={Highlighter} size="xs">
-                <span className="font-medium text-muted-foreground uppercase tracking-wider">
+                <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
                   {granularity}
                 </span>
               </IconText>
-              <span className="text-muted-foreground">p.{item.pageNumber}</span>
+              <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
             </div>
             {item.aiVersion && (
-              <span className="shrink-0 inline-flex items-center rounded bg-subtext/15 px-1.5 py-0.5 text-subtext text-xs">
+              <span className="shrink-0 inline-flex items-center rounded bg-ctp-subtext/15 px-1.5 py-0.5 text-ctp-subtext text-xs">
                 v{item.aiVersion}
               </span>
             )}
@@ -141,8 +141,8 @@ export function AIAnnotationResultV1({
               {/* Edit button — only show if caller provides onEditToggle */}
               {onEditToggle && (
                 <button
-                  className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
-                    editing ? "text-primary" : "text-maroon hover:bg-accent"
+                  className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
+                    editing ? "text-ctp-mauve" : "text-ctp-maroon hover:bg-ctp-surface0"
                   }`}
                   onClick={(e) => { e.stopPropagation(); onEditToggle(); }}
                   title={editing ? "Save" : "Edit"}
@@ -153,8 +153,8 @@ export function AIAnnotationResultV1({
 
               {/* TTS button — always available when showActionBar */}
               <button
-                className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
-                  tts.speakingId === item.id && tts.state === "playing" ? "text-primary" : "text-maroon hover:bg-accent"
+                className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
+                  tts.speakingId === item.id && tts.state === "playing" ? "text-ctp-mauve" : "text-ctp-maroon hover:bg-ctp-surface0"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -172,8 +172,8 @@ export function AIAnnotationResultV1({
 
               {onTranslate && (
                 <button
-                  className={`inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 transition-colors ${
-                    translating ? "text-maroon/60" : "text-maroon hover:bg-accent"
+                  className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
+                    translating ? "text-ctp-maroon/60" : "text-ctp-maroon hover:bg-ctp-surface0"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -192,7 +192,7 @@ export function AIAnnotationResultV1({
 
               {onDelete && (
                 <button
-                  className="ml-auto inline-flex items-center justify-center rounded border border-border/50 bg-muted/40 p-1 text-maroon hover:bg-accent hover:text-destructive transition-colors"
+                  className="ml-auto inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 hover:text-ctp-red transition-colors"
                   onClick={(e) => { e.stopPropagation(); onDelete(); }}
                   title="Delete"
                 >
@@ -203,7 +203,7 @@ export function AIAnnotationResultV1({
           )}
 
           {translation && (
-            <p className="font-medium text-primary leading-relaxed">
+            <p className="font-medium text-ctp-mauve leading-relaxed">
               {renderBoldText(translation)}
             </p>
           )}
@@ -211,17 +211,17 @@ export function AIAnnotationResultV1({
           {(difficulty || (ipa && isWord) || register) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
-                <span className="inline-flex items-center rounded bg-rosewater/15 px-1.5 py-0.5 text-rosewater">
+                <span className="inline-flex items-center rounded bg-ctp-rosewater/15 px-1.5 py-0.5 text-ctp-rosewater">
                   {difficulty}
                 </span>
               )}
               {ipa && isWord && (
-                <span className="inline-flex items-center rounded bg-flamingo/15 px-1.5 py-0.5 text-flamingo">
+                <span className="inline-flex items-center rounded bg-ctp-flamingo/15 px-1.5 py-0.5 text-ctp-flamingo">
                   {ipa.startsWith("/") ? ipa : `/${ipa}/`}
                 </span>
               )}
               {register && (
-                <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender">
+                <span className="inline-flex items-center rounded bg-ctp-lavender/15 px-1.5 py-0.5 text-ctp-lavender">
                   {register}
                 </span>
               )}
@@ -230,21 +230,21 @@ export function AIAnnotationResultV1({
 
           {defs.length > 0 && (
             <div className="space-y-0.5">
-              <div className="font-bold text-peach mb-0.5 text-center">
+              <div className="font-bold text-ctp-peach mb-0.5 text-center">
                 Definitions
               </div>
               {defs.slice(0, 5).map((d: DefinitionEntry, i) => (
                 <div key={i} className="leading-relaxed">
                   {d.pos && (
-                    <span className="inline-flex items-center rounded bg-peach/15 px-1.5 py-0.5 text-peach mr-1">
+                    <span className="inline-flex items-center rounded bg-ctp-peach/15 px-1.5 py-0.5 text-ctp-peach mr-1">
                       {d.pos}
                     </span>
                   )}
                   {d.definition && (
-                    <span className="text-foreground">{d.definition}</span>
+                    <span className="text-ctp-text">{d.definition}</span>
                   )}
                   {d.gloss && (
-                    <span className="text-overlay0 ml-1">{d.gloss}</span>
+                    <span className="text-ctp-overlay0 ml-1">{d.gloss}</span>
                   )}
                 </div>
               ))}
@@ -255,20 +255,20 @@ export function AIAnnotationResultV1({
 
       {/* ── Details: examples + collocations + alternatives ── */}
       {showDetails && (
-        <div className="space-y-1.5 text-muted-foreground pt-1.5 leading-relaxed">
+        <div className="space-y-1.5 text-ctp-overlay0 pt-1.5 leading-relaxed">
           {examples.length > 0 && (
             <div>
-              <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+              <span className="font-bold text-ctp-peach flex items-center justify-center mb-0.5 text-center">
                 Examples
               </span>
               <ul className="space-y-1">
                 {examples.slice(0, 5).map((ex, i) => (
                   <li key={i}>
-                    <span className="text-foreground">
+                    <span className="text-ctp-text">
                       {renderBoldText(ex.sentence)}
                     </span>
                     {ex.translation && (
-                      <span className="text-overlay0 block ml-0">
+                      <span className="text-ctp-overlay0 block ml-0">
                         {renderBoldText(ex.translation)}
                       </span>
                     )}
@@ -280,16 +280,16 @@ export function AIAnnotationResultV1({
 
           {colls.length > 0 && (
             <div>
-              <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+              <span className="font-bold text-ctp-peach flex items-center justify-center mb-0.5 text-center">
                 Collocations
               </span>
               <div className="space-y-0.5">
                 {colls.map((c, i) => (
                   <div key={i} className="leading-relaxed">
-                    <span className="font-medium text-foreground">
+                    <span className="font-medium text-ctp-text">
                       {c.phrase}
                     </span>
-                    <span className="text-overlay0"> {c.translation}</span>
+                    <span className="text-ctp-overlay0"> {c.translation}</span>
                   </div>
                 ))}
               </div>
@@ -298,17 +298,17 @@ export function AIAnnotationResultV1({
 
           {alts.length > 0 && (
             <div>
-              <span className="font-bold text-peach flex items-center justify-center mb-0.5 text-center">
+              <span className="font-bold text-ctp-peach flex items-center justify-center mb-0.5 text-center">
                 Alternatives
               </span>
               <div className="space-y-0.5">
                 {alts.map((a, i) => (
                   <div key={i} className="leading-relaxed">
-                    <span className="font-medium text-foreground">
+                    <span className="font-medium text-ctp-text">
                       {a.expression}
                     </span>
                     {a.register && (
-                      <span className="inline-flex items-center rounded bg-lavender/15 px-1.5 py-0.5 text-lavender ml-1">
+                      <span className="inline-flex items-center rounded bg-ctp-lavender/15 px-1.5 py-0.5 text-ctp-lavender ml-1">
                         {a.register}
                       </span>
                     )}

@@ -32,10 +32,10 @@ interface ParsedReviewLog {
 }
 
 const GRADE_COLORS: Record<number, string> = {
-  1: "var(--red)",
-  2: "var(--peach)",
-  3: "var(--green)",
-  4: "var(--blue)",
+  1: "var(--catppuccin-color-red)",
+  2: "var(--catppuccin-color-peach)",
+  3: "var(--catppuccin-color-green)",
+  4: "var(--catppuccin-color-blue)",
 };
 
 const GRADE_LABELS: Record<number, string> = {
@@ -153,9 +153,9 @@ export function MemoryStateExplorer() {
       {/* Card list */}
       <div className="lg:w-72 shrink-0 flex flex-col">
         <div className="relative mb-2 shrink-0">
-          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ctp-overlay0" />
           <input
-            className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
+            className="w-full rounded-md border bg-ctp-base pl-7 pr-2 py-1.5 text-xs outline-none placeholder:text-ctp-overlay0/50"
             placeholder="Search cards..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -165,7 +165,7 @@ export function MemoryStateExplorer() {
           <ScrollArea className="h-full rounded-md border">
             <div className="space-y-0.5">
               {filtered.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-center text-muted-foreground">
+                <p className="px-3 py-4 text-xs text-center text-ctp-overlay0">
                   {search ? "No matching cards" : "No cards reviewed yet"}
                 </p>
               ) : (
@@ -175,8 +175,8 @@ export function MemoryStateExplorer() {
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
                       selectedId === a.id
-                        ? "bg-accent text-text"
-                        : "hover:bg-accent/50 text-text",
+                        ? "bg-ctp-surface0 text-ctp-text"
+                        : "hover:bg-ctp-surface0/50 text-ctp-text",
                     )}
                     onClick={() => setSelectedId(a.id)}
                   >
@@ -189,7 +189,7 @@ export function MemoryStateExplorer() {
                     <span className="flex-1 truncate" title={a.text}>
                       {a.text}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="shrink-0 text-xs text-ctp-overlay0">
                       S={typeof a.card.stability === "number" ? a.card.stability.toFixed(1) : "?"}
                     </span>
                   </button>
@@ -205,16 +205,16 @@ export function MemoryStateExplorer() {
         {selectedAnnotation ? (
           <>
             {/* Card info — fixed */}
-            <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm px-4 py-3 shrink-0">
+            <div className="rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm px-4 py-3 shrink-0">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-medium truncate">
                   {selectedAnnotation.text}
                 </span>
-                <span className="text-muted-foreground shrink-0">
+                <span className="text-ctp-overlay0 shrink-0">
                   Document: {selectedAnnotation.documentId.slice(0, 12)}...
                 </span>
               </div>
-              <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <div className="mt-1 flex flex-wrap gap-3 text-xs text-ctp-overlay0">
                 <span>Stability: <strong>{selectedAnnotation.card.stability?.toFixed(1)}d</strong></span>
                 <span>Difficulty: <strong>{selectedAnnotation.card.difficulty?.toFixed(2)}</strong></span>
                 <span>Reps: <strong>{selectedAnnotation.card.reps ?? 0}</strong></span>
@@ -224,8 +224,8 @@ export function MemoryStateExplorer() {
 
             {/* Chart card — fixed */}
             {logs.length >= 2 ? (
-              <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-4 mt-4 shrink-0">
-                <h4 className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm p-4 mt-4 shrink-0">
+                <h4 className="mb-2 text-xs font-semibold text-ctp-overlay0 uppercase tracking-wider">
                   Stability & Difficulty Over Time
                 </h4>
                 <ResponsiveContainer width="100%" height={200}>
@@ -234,18 +234,18 @@ export function MemoryStateExplorer() {
                     <XAxis
                       dataKey="date"
                       tick={{ fontSize: 9 }}
-                      stroke="var(--text)"
+                      stroke="var(--catppuccin-color-text)"
                     />
                     <YAxis
                       yAxisId="stability"
                       tick={{ fontSize: 9 }}
-                      stroke="var(--text)"
+                      stroke="var(--catppuccin-color-text)"
                       label={{
                         value: "Stability",
                         angle: -90,
                         position: "insideLeft",
                         fontSize: 9,
-                        fill: "var(--text)",
+                        fill: "var(--catppuccin-color-text)",
                       }}
                     />
                     <YAxis
@@ -253,13 +253,13 @@ export function MemoryStateExplorer() {
                       orientation="right"
                       domain={[0, 1]}
                       tick={{ fontSize: 9 }}
-                      stroke="var(--text)"
+                      stroke="var(--catppuccin-color-text)"
                       label={{
                         value: "Difficulty",
                         angle: 90,
                         position: "insideRight",
                         fontSize: 9,
-                        fill: "var(--text)",
+                        fill: "var(--catppuccin-color-text)",
                       }}
                     />
                     <Tooltip
@@ -274,8 +274,8 @@ export function MemoryStateExplorer() {
                       wrapperStyle={{ fontSize: 10 }}
                       content={({ payload }) => {
                         const colors: Record<string, string> = {
-                          "Stability": "var(--mauve)",
-                          "Difficulty": "var(--pink)",
+                          "Stability": "var(--catppuccin-color-mauve)",
+                          "Difficulty": "var(--catppuccin-color-pink)",
                         };
                         return (
                           <div className="flex justify-center gap-4 text-xs">
@@ -283,9 +283,9 @@ export function MemoryStateExplorer() {
                               <div key={entry.value} className="flex items-center gap-1">
                                 <span
                                   className="inline-block h-0.5 w-3 rounded-full"
-                                  style={{ backgroundColor: colors[entry.value as string] ?? "var(--text)" }}
+                                  style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }}
                                 />
-                                <span className="text-foreground">{entry.value}</span>
+                                <span className="text-ctp-text">{entry.value}</span>
                               </div>
                             ))}
                           </div>
@@ -297,7 +297,7 @@ export function MemoryStateExplorer() {
                       type="monotone"
                       dataKey="stability"
                       name="Stability"
-                      stroke="var(--mauve)"
+                      stroke="var(--catppuccin-color-mauve)"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       connectNulls
@@ -307,7 +307,7 @@ export function MemoryStateExplorer() {
                       type="monotone"
                       dataKey="difficulty"
                       name="Difficulty"
-                      stroke="var(--pink)"
+                      stroke="var(--catppuccin-color-pink)"
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       connectNulls
@@ -316,7 +316,7 @@ export function MemoryStateExplorer() {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm mt-4 px-4 py-6 text-center text-xs text-muted-foreground shrink-0">
+              <div className="rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm mt-4 px-4 py-6 text-center text-xs text-ctp-overlay0 shrink-0">
                 {logs.length === 1
                   ? "Only one review recorded — need at least 2 to show evolution"
                   : "No review history for this card yet"}
@@ -325,15 +325,15 @@ export function MemoryStateExplorer() {
 
             {/* Review log table — fixed header + scrollable body */}
             {logs.length > 0 && (
-              <div className="flex-1 min-h-0 mt-4 flex flex-col rounded-md border border-border/80">
+              <div className="flex-1 min-h-0 mt-4 flex flex-col rounded-md border border-ctp-overlay0/80">
                 {/* Fixed table header */}
-                <div className="shrink-0 bg-muted/50 border-b border-border/50">
+                <div className="shrink-0 bg-ctp-surface0/50 border-b border-ctp-overlay0/50">
                   <div className="flex w-full text-xs">
-                    <div className="flex-1 px-3 py-1.5 font-medium text-text">Date</div>
-                    <div className="flex-1 px-3 py-1.5 font-medium text-text">Grade</div>
-                    <div className="w-20 px-3 py-1.5 text-right font-medium text-text">Stability</div>
-                    <div className="w-20 px-3 py-1.5 text-right font-medium text-text">Difficulty</div>
-                    <div className="w-16 px-3 py-1.5 text-right font-medium text-text">Interval</div>
+                    <div className="flex-1 px-3 py-1.5 font-medium text-ctp-text">Date</div>
+                    <div className="flex-1 px-3 py-1.5 font-medium text-ctp-text">Grade</div>
+                    <div className="w-20 px-3 py-1.5 text-right font-medium text-ctp-text">Stability</div>
+                    <div className="w-20 px-3 py-1.5 text-right font-medium text-ctp-text">Difficulty</div>
+                    <div className="w-16 px-3 py-1.5 text-right font-medium text-ctp-text">Interval</div>
                   </div>
                 </div>
                 {/* Scrollable table body */}
@@ -342,20 +342,20 @@ export function MemoryStateExplorer() {
                     {logs.map((log, i) => (
                       <div
                         key={i}
-                        className="flex w-full text-xs border-b border-border/50 last:border-0"
+                        className="flex w-full text-xs border-b border-ctp-overlay0/50 last:border-0"
                       >
-                        <div className="flex-1 px-3 py-1.5 text-foreground">{log.date}</div>
+                        <div className="flex-1 px-3 py-1.5 text-ctp-text">{log.date}</div>
                         <div className="flex-1 px-3 py-1.5">
                           <span
                             className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-white"
-                            style={{ backgroundColor: GRADE_COLORS[log.grade] ?? "var(--lavender)" }}
+                            style={{ backgroundColor: GRADE_COLORS[log.grade] ?? "var(--catppuccin-color-lavender)" }}
                           >
                             {GRADE_LABELS[log.grade] ?? log.grade}
                           </span>
                         </div>
-                        <div className="w-20 px-3 py-1.5 text-right text-foreground">{log.stability.toFixed(1)}d</div>
-                        <div className="w-20 px-3 py-1.5 text-right text-foreground">{log.difficulty.toFixed(2)}</div>
-                        <div className="w-16 px-3 py-1.5 text-right text-foreground">{log.scheduledDays}d</div>
+                        <div className="w-20 px-3 py-1.5 text-right text-ctp-text">{log.stability.toFixed(1)}d</div>
+                        <div className="w-20 px-3 py-1.5 text-right text-ctp-text">{log.difficulty.toFixed(2)}</div>
+                        <div className="w-16 px-3 py-1.5 text-right text-ctp-text">{log.scheduledDays}d</div>
                       </div>
                     ))}
                   </ScrollArea>
@@ -364,7 +364,7 @@ export function MemoryStateExplorer() {
             )}
           </>
         ) : (
-          <div className="flex items-center justify-center flex-1 text-xs text-muted-foreground">
+          <div className="flex items-center justify-center flex-1 text-xs text-ctp-overlay0">
             Select a card to view its memory timeline
           </div>
         )}

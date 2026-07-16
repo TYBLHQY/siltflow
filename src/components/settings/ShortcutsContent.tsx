@@ -108,7 +108,7 @@ export function ShortcutsContent() {
       </div>
 
       {capturing && editingId && (
-        <div className="mb-3 rounded-md border border-primary bg-primary/5 px-3 py-2 text-xs text-primary">
+        <div className="mb-3 rounded-md border border-ctp-mauve bg-ctp-mauve/5 px-3 py-2 text-xs text-ctp-mauve">
           Press the key combination for this shortcut (or Escape to cancel)...
         </div>
       )}
@@ -119,30 +119,30 @@ export function ShortcutsContent() {
           if (visible.length === 0) return null;
           return (
             <div key={context}>
-              <h3 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+              <h3 className="text-xs font-medium text-ctp-overlay0 mb-1 uppercase tracking-wider">
                 {contextLabels[context] ?? context}
               </h3>
               <div className="space-y-1">
                 {visible.map((s) => (
                   <div
                     key={s.actionId}
-                    className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent transition-colors text-xs gap-2"
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-ctp-surface0 transition-colors text-xs gap-2"
                   >
-                    <span className="text-foreground min-w-0 flex-1">
+                    <span className="text-ctp-text min-w-0 flex-1">
                       {s.label}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       {editingId === s.actionId ? (
-                        <span className="inline-flex items-center rounded border border-primary bg-primary/10 px-2 py-0.5 text-xs font-mono">
+                        <span className="inline-flex items-center rounded border border-ctp-mauve bg-ctp-mauve/10 px-2 py-0.5 text-xs font-mono">
                           (listening...)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-mono">
+                        <span className="inline-flex items-center rounded bg-ctp-surface0 px-2 py-0.5 text-xs font-mono">
                           {formatShortcut(s.keys)}
                         </span>
                       )}
                       <button
-                        className="text-xs text-muted-foreground hover:text-foreground ml-1"
+                        className="text-xs text-ctp-overlay0 hover:text-ctp-text ml-1"
                         onClick={() => handleStartCapture(s.actionId)}
                         title="Change shortcut"
                       >
@@ -150,7 +150,7 @@ export function ShortcutsContent() {
                       </button>
                       {s.keys !== s.defaultKeys && (
                         <button
-                          className="text-xs text-muted-foreground hover:text-destructive"
+                          className="text-xs text-ctp-overlay0 hover:text-ctp-red"
                           onClick={() => resetShortcut(s.actionId)}
                           title="Reset to default"
                         >
@@ -170,7 +170,7 @@ export function ShortcutsContent() {
         <Button
           variant="outline"
           size="sm"
-          className="text-xs text-destructive"
+          className="text-xs text-ctp-red"
           onClick={resetAllShortcuts}
         >
           Reset all to defaults

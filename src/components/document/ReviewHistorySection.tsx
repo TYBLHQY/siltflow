@@ -4,10 +4,10 @@ import { useReviewLogStore, type ReviewLogEntry } from "@/stores/review-log.stor
 // ── Grade labels & colors ────────────────────────────────────────────────
 
 const GRADE_INFO: Record<number, { label: string; color: string }> = {
-  1: { label: "Again", color: "text-red" },
+  1: { label: "Again", color: "text-ctp-red" },
   2: { label: "Hard", color: "text-orange" },
-  3: { label: "Good", color: "text-green" },
-  4: { label: "Easy", color: "text-blue" },
+  3: { label: "Good", color: "text-ctp-green" },
+  4: { label: "Easy", color: "text-ctp-blue" },
 };
 
 const STATE_LABELS: Record<number, string> = {
@@ -18,10 +18,10 @@ const STATE_LABELS: Record<number, string> = {
 };
 
 const STATE_BG: Record<number, string> = {
-  0: "bg-sky/15 text-sky",
-  1: "bg-yellow/15 text-yellow",
-  2: "bg-green/15 text-green",
-  3: "bg-red/15 text-red",
+  0: "bg-sky/15 text-ctp-sky",
+  1: "bg-yellow/15 text-ctp-yellow",
+  2: "bg-green/15 text-ctp-green",
+  3: "bg-red/15 text-ctp-red",
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -98,13 +98,13 @@ export function ReviewHistorySection({
 
   if (loading) {
     return (
-      <div className="text-xs text-muted-foreground/50 py-1 text-center">Loading history…</div>
+      <div className="text-xs text-ctp-overlay0/50 py-1 text-center">Loading history…</div>
     );
   }
 
   if (!logs || logs.length === 0) {
     return (
-      <div className="text-xs text-muted-foreground/50 py-1 text-center">No review history yet</div>
+      <div className="text-xs text-ctp-overlay0/50 py-1 text-center">No review history yet</div>
     );
   }
 
@@ -119,10 +119,10 @@ export function ReviewHistorySection({
         return (
           <div
             key={entry.id}
-            className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded bg-muted/30 px-1.5 py-1"
+            className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded bg-ctp-surface0/30 px-1.5 py-1"
           >
             {/* Time */}
-            <span className="text-muted-foreground/60 shrink-0 tabular-nums">
+            <span className="text-ctp-overlay0/60 shrink-0 tabular-nums">
               {formatTime(log.review)}
             </span>
 
@@ -141,7 +141,7 @@ export function ReviewHistorySection({
             </span>
 
             {/* Arrow */}
-            <span className="text-muted-foreground/40 shrink-0">→</span>
+            <span className="text-ctp-overlay0/40 shrink-0">→</span>
 
             {/* New state */}
             <span
@@ -153,9 +153,9 @@ export function ReviewHistorySection({
             </span>
 
             {/* Stability */}
-            <span className="text-maroon/70 shrink-0">
+            <span className="text-ctp-maroon/70 shrink-0">
               S:
-              <b className="text-foreground/80 ml-0.5">
+              <b className="text-ctp-text/80 ml-0.5">
                 {log.stability < 30
                   ? log.stability.toFixed(1)
                   : Math.round(log.stability)}
@@ -163,16 +163,16 @@ export function ReviewHistorySection({
             </span>
 
             {/* Difficulty */}
-            <span className="text-maroon/70 shrink-0">
+            <span className="text-ctp-maroon/70 shrink-0">
               D:
-              <b className="text-foreground/80 ml-0.5">
+              <b className="text-ctp-text/80 ml-0.5">
                 {card.difficulty.toFixed(2)}
               </b>
             </span>
 
             {/* Scheduled interval */}
             {card.scheduled_days > 0 && (
-              <span className="text-muted-foreground/50 shrink-0 tabular-nums">
+              <span className="text-ctp-overlay0/50 shrink-0 tabular-nums">
                 +{formatInterval(card.scheduled_days)}
               </span>
             )}

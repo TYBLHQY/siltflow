@@ -47,14 +47,14 @@ function DocumentOutlinePanel() {
   if (!pdfDocument || outlineLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-ctp-overlay0" />
       </div>
     );
   }
 
   if (!hasOutline) {
     return (
-      <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground px-4">
+      <div className="flex flex-col items-center gap-2 py-8 text-ctp-overlay0 px-4">
         <BookText className="h-8 w-8" />
         <p className="text-xs text-center">No outline available</p>
         <p className="text-xs text-center">
@@ -73,9 +73,9 @@ function DocumentOutlinePanel() {
         onNavigate={(item) => goToPage?.(item.pageNumber)}
         classNames={{ container: "py-2" }}
         itemClassNames={{
-          container: "rounded-md px-2 py-1 hover:bg-accent transition-colors cursor-pointer",
-          title: "hover:text-accent-foreground",
-          expandButton: "text-muted-foreground",
+          container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
+          title: "hover:text-ctp-crust",
+          expandButton: "text-ctp-overlay0",
           expandIcon: "h-3 w-3",
         }}
         itemStyles={{ title: { fontSize } }}
@@ -279,7 +279,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         className="flex flex-col flex-1 min-h-0"
       >
         <div className="flex h-10 items-center border-b px-3">
-          <TabsList className="w-full h-7 text-foreground">
+          <TabsList className="w-full h-7 text-ctp-text">
             <TabsTrigger value="documents" className="flex-1 text-xs px-2 py-0.5 h-6">
               <IconText icon={FileText} size="xs">Docs</IconText>
             </TabsTrigger>
@@ -300,7 +300,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                         onClick={handleImport}
                       >
                         <FileUp className="size-4" />
@@ -313,7 +313,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                         onClick={handleImportFolder}
                       >
                         <FolderUp className="size-4" />
@@ -329,7 +329,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                       onClick={() => docsTreeRef.current?.createFolder()}
                     >
                       <FolderPlus className="size-4" />
@@ -347,7 +347,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
         <TabsContent value="outline" className="flex-1 min-h-0 mt-0 flex flex-col">
           {pdfDocument ? <DocumentOutlinePanel /> : (
-            <div className="flex items-center justify-center h-full text-muted-foreground px-4">
+            <div className="flex items-center justify-center h-full text-ctp-overlay0 px-4">
               <p className="text-xs text-center">No document selected</p>
             </div>
           )}

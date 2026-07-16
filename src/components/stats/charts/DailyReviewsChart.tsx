@@ -65,7 +65,7 @@ export function DailyReviewsChart() {
           <Legend verticalAlign="bottom"
             wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
-              const swatchColors = ["var(--green)", "var(--peach)"];
+              const swatchColors = ["var(--catppuccin-color-green)", "var(--catppuccin-color-peach)"];
               const labels = ["Learning", "Review"];
               return (
                 <div className="mt-2 flex justify-center gap-4 text-xs">
@@ -75,7 +75,7 @@ export function DailyReviewsChart() {
                         className="inline-block h-2 w-2 rounded-full"
                         style={{ backgroundColor: swatchColors[idx] }}
                       />
-                      <span className="text-foreground">{labels[idx]}</span>
+                      <span className="text-ctp-text">{labels[idx]}</span>
                     </div>
                   ))}
                 </div>
@@ -86,14 +86,14 @@ export function DailyReviewsChart() {
             dataKey="learnCount"
             name="learnCount"
             stackId="a"
-            fill="var(--green)"
+            fill="var(--catppuccin-color-green)"
             radius={[0, 0, 0, 0]}
           />
           <Bar
             dataKey="reviewCount"
             name="reviewCount"
             stackId="a"
-            fill="var(--peach)"
+            fill="var(--catppuccin-color-peach)"
             radius={[3, 3, 0, 0]}
           />
         </BarChart>
@@ -104,8 +104,8 @@ export function DailyReviewsChart() {
             key={r.label}
             className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
               range.days === r.days
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground hover:bg-accent"
+                ? "bg-ctp-mauve text-ctp-crust"
+                : "bg-ctp-surface0 text-ctp-text hover:bg-ctp-surface0"
             }`}
             onClick={() => setRange(r)}
           >

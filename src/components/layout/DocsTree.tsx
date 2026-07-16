@@ -477,11 +477,11 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
 
         {contextMenu?.type === "document" && (
           <div
-            className="fixed z-50 w-28 rounded-md border bg-popover p-1 shadow-md"
+            className="fixed z-50 w-28 rounded-md border bg-ctp-surface0 p-1 shadow-md"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-ctp-surface0"
               onClick={() => {
                 // Find the tree node and trigger inline edit
                 for (const n of tree?.visibleNodes ?? []) {
@@ -495,9 +495,9 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             >
               <Pencil className="h-3 w-3" /> Rename
             </button>
-            <hr className="my-1 border-border/50" />
+            <hr className="my-1 border-ctp-overlay0/50" />
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-ctp-red transition-colors hover:bg-ctp-surface0"
               onClick={() => handleDeleteDoc(contextMenu.target)}
             >
               <Trash2 className="h-3 w-3" /> Delete
@@ -507,24 +507,24 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
 
         {contextMenu?.type === "folder" && (
           <div
-            className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
+            className="fixed z-50 w-36 rounded-md border bg-ctp-surface0 p-1 shadow-md"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-ctp-surface0"
               onClick={() => handleNewSubfolder(contextMenu.target)}
             >
               <Plus className="h-3 w-3" /> Subfolder
             </button>
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-ctp-surface0"
               onClick={() => handleRenameFolder(contextMenu.target)}
             >
               <Pencil className="h-3 w-3" /> Rename
             </button>
-            <hr className="my-1 border-border/50" />
+            <hr className="my-1 border-ctp-overlay0/50" />
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs text-ctp-red transition-colors hover:bg-ctp-surface0"
               onClick={() => handleDeleteFolder(contextMenu.target)}
             >
               <Trash2 className="h-3 w-3" /> Delete
@@ -534,11 +534,11 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
 
         {contextMenu?.type === "empty" && (
           <div
-            className="fixed z-50 w-36 rounded-md border bg-popover p-1 shadow-md"
+            className="fixed z-50 w-36 rounded-md border bg-ctp-surface0 p-1 shadow-md"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <button
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors hover:bg-ctp-surface0"
               onClick={() => handleNewFolder()}
             >
               <Plus className="h-3 w-3" /> New Folder
@@ -564,13 +564,13 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             </DialogHeader>
             <DialogFooter>
               <button
-                className="rounded-md border border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+                className="rounded-md border border-ctp-overlay0/50 px-4 py-2 text-sm font-medium text-ctp-overlay0 hover:bg-ctp-surface0 transition-colors"
                 onClick={() => setDeleteConfirm(null)}
               >
                 Cancel
               </button>
               <button
-                className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                className="rounded-md bg-ctp-red px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-red/90 transition-colors"
                 onClick={async () => {
                   if (deleteConfirm) {
                     await deleteFolder(deleteConfirm.id);
@@ -623,7 +623,7 @@ function DocTreeNode({
         gap: "6px",
       }}
       ref={dragHandle}
-      className="w-full cursor-pointer hover:bg-accent/50"
+      className="w-full cursor-pointer hover:bg-ctp-surface0/50"
       onPointerDown={(e) => {
         // Prevent react-arborist's native selection on click
         e.stopPropagation();
@@ -648,10 +648,10 @@ function DocTreeNode({
             e.stopPropagation();
             node.toggle();
           }}
-          className="flex items-center justify-center h-5 w-5 rounded hover:bg-accent shrink-0"
+          className="flex items-center justify-center h-5 w-5 rounded hover:bg-ctp-surface0 shrink-0"
         >
           <ChevronRight
-            className={`h-3.5 w-3.5 transition-transform text-muted-foreground ${node.isOpen ? "rotate-90" : ""}`}
+            className={`h-3.5 w-3.5 transition-transform text-ctp-overlay0 ${node.isOpen ? "rotate-90" : ""}`}
           />
         </button>
       ) : (
@@ -660,17 +660,17 @@ function DocTreeNode({
 
       {data.type === "folder" ? (
         node.isOpen ? (
-          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <FolderOpen className="h-4 w-4 shrink-0 text-ctp-overlay0" />
         ) : (
-          <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Folder className="h-4 w-4 shrink-0 text-ctp-overlay0" />
         )
       ) : (
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <FileText className="h-4 w-4 shrink-0 text-ctp-overlay0" />
       )}
 
       {node.isEditing ? (
         <input
-          className="flex-1 min-w-0 rounded border border-primary bg-background px-1 py-0 text-xs outline-none"
+          className="flex-1 min-w-0 rounded border border-ctp-mauve bg-ctp-base px-1 py-0 text-xs outline-none"
           defaultValue={data.name}
           autoFocus
           onBlur={(e) => {

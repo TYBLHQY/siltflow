@@ -104,9 +104,9 @@ export function StyleConfigContent() {
             {style.fontFamilies.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-1 rounded-md border bg-background px-2 py-1"
+                className="flex items-center gap-1 rounded-md border bg-ctp-base px-2 py-1"
               >
-                <span className="text-xs text-muted-foreground w-4 shrink-0">
+                <span className="text-xs text-ctp-overlay0 w-4 shrink-0">
                   {i + 1}.
                 </span>
                 <span
@@ -116,7 +116,7 @@ export function StyleConfigContent() {
                   {f}
                 </span>
                 <button
-                  className="text-xs text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                  className="text-xs text-ctp-overlay0 hover:text-ctp-red shrink-0 disabled:opacity-30"
                   onClick={() => removeFontFamily(i)}
                   disabled={style.fontFamilies.length <= 1}
                 >
@@ -124,7 +124,7 @@ export function StyleConfigContent() {
                 </button>
                 {i > 0 && (
                   <button
-                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-ctp-overlay0 hover:text-ctp-text shrink-0"
                     onClick={() => {
                       const arr = [...style.fontFamilies];
                       [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
@@ -136,7 +136,7 @@ export function StyleConfigContent() {
                 )}
                 {i < style.fontFamilies.length - 1 && (
                   <button
-                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-ctp-overlay0 hover:text-ctp-text shrink-0"
                     onClick={() => {
                       const arr = [...style.fontFamilies];
                       [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
@@ -154,9 +154,9 @@ export function StyleConfigContent() {
           {showFontList ? (
             <>
               <div className="relative mb-2">
-                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ctp-overlay0" />
                 <input
-                  className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
+                  className="w-full rounded-md border bg-ctp-base pl-7 pr-2 py-1.5 text-xs"
                   placeholder="Search fonts…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -171,8 +171,8 @@ export function StyleConfigContent() {
                       key={font}
                       className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
                         isAdded
-                          ? "text-muted-foreground cursor-default"
-                          : "hover:bg-accent text-foreground"
+                          ? "text-ctp-overlay0 cursor-default"
+                          : "hover:bg-ctp-surface0 text-ctp-text"
                       }`}
                       onClick={() => {
                         if (!isAdded) {
@@ -189,19 +189,19 @@ export function StyleConfigContent() {
                         {font}
                       </span>
                       {isAdded && (
-                        <span className="text-primary shrink-0">✓</span>
+                        <span className="text-ctp-mauve shrink-0">✓</span>
                       )}
                     </button>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
+                  <p className="px-2.5 py-3 text-xs text-ctp-overlay0 text-center">
                     No fonts match &quot;{search}&quot;
                   </p>
                 )}
               </div>
               <button
-                className="mt-1 text-xs text-muted-foreground hover:text-foreground"
+                className="mt-1 text-xs text-ctp-overlay0 hover:text-ctp-text"
                 onClick={() => {
                   setShowFontList(false);
                   setSearch("");
@@ -212,7 +212,7 @@ export function StyleConfigContent() {
             </>
           ) : (
             <button
-              className="flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="flex items-center gap-1 rounded-md border border-ctp-overlay0/50 bg-ctp-surface0/40 px-3 py-1.5 text-xs text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
               onClick={() => setShowFontList(true)}
             >
               + Add font
@@ -231,9 +231,9 @@ export function StyleConfigContent() {
             {style.systemFontFamilies.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-1 rounded-md border bg-background px-2 py-1"
+                className="flex items-center gap-1 rounded-md border bg-ctp-base px-2 py-1"
               >
-                <span className="text-xs text-muted-foreground w-4 shrink-0">
+                <span className="text-xs text-ctp-overlay0 w-4 shrink-0">
                   {i + 1}.
                 </span>
                 <span
@@ -243,7 +243,7 @@ export function StyleConfigContent() {
                   {f}
                 </span>
                 <button
-                  className="text-xs text-muted-foreground hover:text-destructive shrink-0 disabled:opacity-30"
+                  className="text-xs text-ctp-overlay0 hover:text-ctp-red shrink-0 disabled:opacity-30"
                   onClick={() => removeSystemFontFamily(i)}
                   disabled={style.systemFontFamilies.length <= 1}
                 >
@@ -251,7 +251,7 @@ export function StyleConfigContent() {
                 </button>
                 {i > 0 && (
                   <button
-                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-ctp-overlay0 hover:text-ctp-text shrink-0"
                     onClick={() => {
                       const arr = [...style.systemFontFamilies];
                       [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
@@ -263,7 +263,7 @@ export function StyleConfigContent() {
                 )}
                 {i < style.systemFontFamilies.length - 1 && (
                   <button
-                    className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                    className="text-xs text-ctp-overlay0 hover:text-ctp-text shrink-0"
                     onClick={() => {
                       const arr = [...style.systemFontFamilies];
                       [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
@@ -281,9 +281,9 @@ export function StyleConfigContent() {
           {showSystemFontList ? (
             <>
               <div className="relative mb-2">
-                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ctp-overlay0" />
                 <input
-                  className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-xs"
+                  className="w-full rounded-md border bg-ctp-base pl-7 pr-2 py-1.5 text-xs"
                   placeholder="Search fonts…"
                   value={search2}
                   onChange={(e) => setSearch2(e.target.value)}
@@ -298,8 +298,8 @@ export function StyleConfigContent() {
                       key={font}
                       className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
                         isAdded
-                          ? "text-muted-foreground cursor-default"
-                          : "hover:bg-accent text-foreground"
+                          ? "text-ctp-overlay0 cursor-default"
+                          : "hover:bg-ctp-surface0 text-ctp-text"
                       }`}
                       onClick={() => {
                         if (!isAdded) {
@@ -316,19 +316,19 @@ export function StyleConfigContent() {
                         {font}
                       </span>
                       {isAdded && (
-                        <span className="text-primary shrink-0">✓</span>
+                        <span className="text-ctp-mauve shrink-0">✓</span>
                       )}
                     </button>
                   );
                 })}
                 {filtered2.length === 0 && (
-                  <p className="px-2.5 py-3 text-xs text-muted-foreground text-center">
+                  <p className="px-2.5 py-3 text-xs text-ctp-overlay0 text-center">
                     No fonts match &quot;{search2}&quot;
                   </p>
                 )}
               </div>
               <button
-                className="mt-1 text-xs text-muted-foreground hover:text-foreground"
+                className="mt-1 text-xs text-ctp-overlay0 hover:text-ctp-text"
                 onClick={() => {
                   setShowSystemFontList(false);
                   setSearch2("");
@@ -339,7 +339,7 @@ export function StyleConfigContent() {
             </>
           ) : (
             <button
-              className="flex items-center gap-1 rounded-md border border-border/50 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="flex items-center gap-1 rounded-md border border-ctp-overlay0/50 bg-ctp-surface0/40 px-3 py-1.5 text-xs text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
               onClick={() => {
                 setShowSystemFontList(true);
                 setSearch2("");
@@ -348,7 +348,7 @@ export function StyleConfigContent() {
               + Add font
             </button>
           )}
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-ctp-overlay0 mt-1">
             Controls all UI text (buttons, bars, lists, panels).
           </p>
         </div>
@@ -431,8 +431,8 @@ export function StyleConfigContent() {
                 key={mode}
                 className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   themeConfig.themeMode === mode
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border/50 text-muted-foreground hover:bg-accent"
+                    ? "bg-ctp-mauve text-ctp-crust"
+                    : "border border-ctp-overlay0/50 text-ctp-overlay0 hover:bg-ctp-surface0"
                 }`}
                 onClick={() => setThemeMode(mode)}
               >
@@ -446,7 +446,7 @@ export function StyleConfigContent() {
         <div className="mb-3">
           <label className="block text-xs font-medium mb-1">Light theme</label>
           <select
-            className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+            className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
             value={themeConfig.lightTheme}
             onChange={(e) => setLightTheme(e.target.value as any)}
           >
@@ -458,7 +458,7 @@ export function StyleConfigContent() {
         <div className="mb-3">
           <label className="block text-xs font-medium mb-1">Dark theme</label>
           <select
-            className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+            className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
             value={themeConfig.darkTheme}
             onChange={(e) => setDarkTheme(e.target.value as any)}
           >
@@ -487,7 +487,7 @@ export function StyleConfigContent() {
         <Button
           variant="outline"
           size="sm"
-          className="text-xs text-destructive"
+          className="text-xs text-ctp-red"
           onClick={reset}
         >
           Reset to defaults

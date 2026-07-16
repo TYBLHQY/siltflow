@@ -52,7 +52,7 @@ export function IntervalDistributionChart() {
               background: "var(--tooltip-bg)",
             }}
           />
-          <Bar dataKey="count" fill="var(--sapphire)" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill="var(--catppuccin-color-sapphire)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

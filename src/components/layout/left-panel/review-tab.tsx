@@ -40,15 +40,15 @@ const ReviewTabRow = memo(function ReviewTabRow({
   return (
     <div
       data-doc-id={metric.documentId}
-      className={`group relative border-b border-border/50 pl-3 text-sm transition-colors cursor-pointer ${
+      className={`group relative border-b border-ctp-overlay0/50 pl-3 text-sm transition-colors cursor-pointer ${
         isActive
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-yellow-500"
-          : "hover:bg-accent"
+          : "hover:bg-ctp-surface0"
       } ${hasTags ? "py-2.5 pr-3" : "py-2 pr-3"}`}
       onClick={() => setCurrentDocument({ id: metric.documentId, title: metric.documentTitle })}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <FileText className="h-4 w-4 shrink-0 text-ctp-overlay0" />
         <span
           className="truncate min-w-0 flex-1 select-none"
           title={metric.documentTitle}
@@ -67,7 +67,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
           <span className="rounded bg-orange-500/10 px-1 py-0.5 font-medium text-orange-600">
             {metric.dueSoonCount} soon
           </span>
-          <span className="rounded bg-mauve/15 px-1 py-0.5 font-medium text-mauve">
+          <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
             {urgencyLabel(metric.avgRetrievability)}
           </span>
         </div>
@@ -120,24 +120,24 @@ export const ReviewTab = memo(function ReviewTab({
       {/* Search filter bar */}
       <div className="shrink-0 border-b">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ctp-overlay0" />
           <input
             ref={reviewSearchRef}
             type="text"
             placeholder="Search documents..."
             value={reviewSearch}
             onChange={(e) => setReviewSearch(e.target.value)}
-            className="w-full border-0 bg-transparent py-1.5 pl-8 pr-2 text-xs outline-none placeholder:text-muted-foreground/50"
+            className="w-full border-0 bg-transparent py-1.5 pl-8 pr-2 text-xs outline-none placeholder:text-ctp-overlay0/50"
           />
         </div>
       </div>
 
       {metricsLoading ? (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <Loader2 className="h-5 w-5 animate-spin text-ctp-overlay0" />
         </div>
       ) : filteredMetrics.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center text-muted-foreground px-4">
+        <div className="flex flex-1 flex-col items-center justify-center text-ctp-overlay0 px-4">
           <BrainCircuit className="h-8 w-8 mb-2" />
           {reviewSearch && docMetrics.length > 0 ? (
             <>
@@ -145,7 +145,7 @@ export const ReviewTab = memo(function ReviewTab({
                 No documents match your search
               </p>
               <button
-                className="text-primary hover:underline text-xs mt-1"
+                className="text-ctp-mauve hover:underline text-xs mt-1"
                 onClick={() => setReviewSearch("")}
               >
                 Clear filter

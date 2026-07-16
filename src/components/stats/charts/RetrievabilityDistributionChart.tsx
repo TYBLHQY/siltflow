@@ -68,10 +68,10 @@ export function RetrievabilityDistributionChart() {
               value: "avg",
               position: "top",
               fontSize: 10,
-              fill: "var(--red)",
+              fill: "var(--catppuccin-color-red)",
             }}
           />
-          <Bar dataKey="count" fill="var(--maroon)" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill="var(--catppuccin-color-maroon)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

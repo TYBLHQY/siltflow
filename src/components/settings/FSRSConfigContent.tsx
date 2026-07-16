@@ -31,7 +31,7 @@ export function FSRSConfigContent() {
               updateParam("request_retention", parseFloat(e.target.value))
             }
           />
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-ctp-overlay0 mt-0.5">
             Higher = more reviews, better retention. Default: 85%
           </p>
         </div>
@@ -52,7 +52,7 @@ export function FSRSConfigContent() {
               updateParam("maximum_interval", parseInt(e.target.value, 10))
             }
           />
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-ctp-overlay0 mt-0.5">
             Max days between reviews. Default: 365
           </p>
         </div>
@@ -100,7 +100,7 @@ export function FSRSConfigContent() {
                     <input
                       type="number"
                       min={1}
-                      className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
+                      className="w-full rounded-md border bg-ctp-base px-2 py-1.5 text-xs"
                       value={val}
                       onChange={(e) => {
                         const n = parseInt(e.target.value, 10) || 1;
@@ -109,7 +109,7 @@ export function FSRSConfigContent() {
                         updateParam("learning_steps" as const, arr as any);
                       }}
                     />
-                    <span className="text-xs text-muted-foreground shrink-0">
+                    <span className="text-xs text-ctp-overlay0 shrink-0">
                       m
                     </span>
                   </div>
@@ -134,7 +134,7 @@ export function FSRSConfigContent() {
                     <input
                       type="number"
                       min={1}
-                      className="w-full rounded-md border bg-background px-2 py-1.5 text-xs"
+                      className="w-full rounded-md border bg-ctp-base px-2 py-1.5 text-xs"
                       value={val}
                       onChange={(e) => {
                         const n = parseInt(e.target.value, 10) || 10;
@@ -142,7 +142,7 @@ export function FSRSConfigContent() {
                         updateParam("relearning_steps" as const, arr as any);
                       }}
                     />
-                    <span className="text-xs text-muted-foreground shrink-0">
+                    <span className="text-xs text-ctp-overlay0 shrink-0">
                       m
                     </span>
                   </div>
@@ -157,7 +157,7 @@ export function FSRSConfigContent() {
         <Button
           variant="outline"
           size="sm"
-          className="text-xs text-destructive"
+          className="text-xs text-ctp-red"
           onClick={resetParams}
         >
           Reset to defaults

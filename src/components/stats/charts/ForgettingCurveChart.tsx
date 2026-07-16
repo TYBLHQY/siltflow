@@ -14,11 +14,11 @@ import { computeForgettingCurves, FORGETTING_LABELS } from "@/lib/stats-computat
 import { useStatsStore } from "@/stores/stats.store";
 
 const LINE_COLORS = [
-  "var(--mauve)",
-  "var(--blue)",
-  "var(--green)",
-  "var(--peach)",
-  "var(--red)",
+  "var(--catppuccin-color-mauve)",
+  "var(--catppuccin-color-blue)",
+  "var(--catppuccin-color-green)",
+  "var(--catppuccin-color-peach)",
+  "var(--catppuccin-color-red)",
 ];
 
 export function ForgettingCurveChart() {
@@ -55,20 +55,20 @@ export function ForgettingCurveChart() {
           <XAxis
             dataKey="day"
             tick={{ fontSize: 10 }}
-            stroke="var(--text)"
+            stroke="var(--catppuccin-color-text)"
             label={{
               value: "Days elapsed",
               position: "insideBottomRight",
               offset: -4,
               fontSize: 10,
-              fill: "var(--text)",
+              fill: "var(--catppuccin-color-text)",
             }}
           />
           <YAxis
             domain={[0, 1]}
             tick={{ fontSize: 10 }}
             tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            stroke="var(--text)"
+            stroke="var(--catppuccin-color-text)"
           />
           <Tooltip
             contentStyle={{
@@ -80,8 +80,8 @@ export function ForgettingCurveChart() {
             content={({ active, payload: tpPayload, label }) => {
               if (!active || !tpPayload?.length) return null;
               return (
-                <div className="rounded-md border border-border bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-sm">
-                  <div className="mb-1 font-medium text-foreground">{label}d</div>
+                <div className="rounded-md border border-ctp-overlay0 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-sm">
+                  <div className="mb-1 font-medium text-ctp-text">{label}d</div>
                   {FORGETTING_LABELS.map((lbl) => {
                     const entry = tpPayload.find((p) => p.name === lbl);
                     if (!entry) return null;
@@ -90,7 +90,7 @@ export function ForgettingCurveChart() {
                       <div key={lbl} className="flex items-center gap-2">
                         <span className="inline-block h-1 w-2 rounded-full" style={{ backgroundColor: LINE_COLORS[idx] }} />
                         <span style={{ color: LINE_COLORS[idx] }}>{lbl}</span>
-                        <span className="text-foreground">{(Number(entry.value) * 100).toFixed(1)}%</span>
+                        <span className="text-ctp-text">{(Number(entry.value) * 100).toFixed(1)}%</span>
                       </div>
                     );
                   })}
@@ -108,7 +108,7 @@ export function ForgettingCurveChart() {
                       className="inline-block h-0.5 w-3 rounded-full"
                       style={{ backgroundColor: LINE_COLORS[idx] }}
                     />
-                    <span className="text-foreground">{lbl}</span>
+                    <span className="text-ctp-text">{lbl}</span>
                   </div>
                 ))}
               </div>
@@ -133,8 +133,8 @@ export function ForgettingCurveChart() {
             key={d}
             className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
               maxDays === d
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-foreground hover:bg-accent"
+                ? "bg-ctp-mauve text-ctp-crust"
+                : "bg-ctp-surface0 text-ctp-text hover:bg-ctp-surface0"
             }`}
             onClick={() => setMaxDays(d)}
           >

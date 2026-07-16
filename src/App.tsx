@@ -157,14 +157,14 @@ function App() {
 
     // Remove all flavor classes
     html.classList.remove(
-      "catppuccin-latte",
-      "catppuccin-frappe",
-      "catppuccin-macchiato",
-      "catppuccin-mocha",
+      "latte",
+      "frappe",
+      "macchiato",
+      "mocha",
     );
 
     // Add the resolved flavor class
-    html.classList.add(`catppuccin-${resolved.flavor}`);
+    html.classList.add(resolved.flavor);
 
     // Sync .dark class for shadcn compatibility
     html.classList.toggle("dark", resolved.isDark);
@@ -226,7 +226,7 @@ function App() {
 
           <div className="space-y-2 px-2 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Current version</span>
+              <span className="text-ctp-overlay0">Current version</span>
               <span className="font-medium">
                 {__APP_VERSION__.startsWith("v")
                   ? __APP_VERSION__
@@ -234,7 +234,7 @@ function App() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">New version</span>
+              <span className="text-ctp-overlay0">New version</span>
               <span className="font-medium text-green-600">
                 v{(updateDialog as any)?.latestVersion}
               </span>
@@ -245,7 +245,7 @@ function App() {
                   `https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`,
                 )
               }
-              className="block text-xs text-primary hover:underline mt-1"
+              className="block text-xs text-ctp-mauve hover:underline mt-1"
             >
               View release notes →
             </button>
@@ -262,7 +262,7 @@ function App() {
             />
             <label
               htmlFor="autoCheckToggle"
-              className="text-xs text-muted-foreground"
+              className="text-xs text-ctp-overlay0"
             >
               Check for updates on startup
             </label>
@@ -271,16 +271,16 @@ function App() {
           {downloading && (
             <div className="space-y-1 px-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-ctp-overlay0">
                   Downloading…
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-ctp-overlay0">
                   {Math.round(progress)}%
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-ctp-surface0">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  className="h-full rounded-full bg-ctp-mauve transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -290,19 +290,19 @@ function App() {
           <DialogFooter className="flex-col items-start gap-3">
             {downloaded ? (
               <button
-                className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="w-full rounded-md bg-ctp-mauve px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
                 onClick={() => window.siltflow.update.install()}
               >
                 Restart &amp; Install
               </button>
             ) : downloading ? (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-ctp-overlay0">
                 Downloading…
               </span>
             ) : (
               <div className="flex gap-2 w-full">
                 <button
-                  className="flex-1 rounded-md border border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
+                  className="flex-1 rounded-md border border-ctp-overlay0/50 px-4 py-2 text-sm font-medium text-ctp-overlay0 hover:bg-ctp-surface0 transition-colors"
                   onClick={() => {
                     setUpdateDialog(null);
                     setDownloaded(false);
@@ -313,7 +313,7 @@ function App() {
                   Later
                 </button>
                 <button
-                  className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                  className="flex-1 rounded-md bg-ctp-mauve px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
                   onClick={() => {
                     setDownloading(true);
                     window.siltflow.update.download();

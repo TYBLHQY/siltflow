@@ -34,21 +34,21 @@ export function VaultSetup({ onReady }: VaultSetupProps) {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="h-screen w-screen flex items-center justify-center bg-ctp-base">
+        <Loader2 className="h-6 w-6 animate-spin text-ctp-overlay0" />
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-background">
+    <div className="h-screen w-screen flex items-center justify-center bg-ctp-base">
       <div className="flex flex-col items-center gap-6 max-w-sm text-center px-4">
-        <div className="rounded-full bg-accent p-4">
-          <FolderOpen className="h-8 w-8 text-primary" />
+        <div className="rounded-full bg-ctp-surface0 p-4">
+          <FolderOpen className="h-8 w-8 text-ctp-mauve" />
         </div>
         <div>
           <h1 className="text-xl font-semibold mb-2">Welcome to Siltflow</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ctp-overlay0">
             Choose a vault directory to store your documents, annotations, and
             learning data. You can change this later in settings.
           </p>

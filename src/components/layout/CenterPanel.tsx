@@ -64,7 +64,7 @@ function PageNav() {
 
   return (
     <div className="flex items-center h-full shrink-0">
-      <div className="flex items-center gap-0.5 rounded-md border border-border/50 bg-muted/40 px-2 text-xs text-foreground">
+      <div className="flex items-center gap-0.5 rounded-md border border-ctp-overlay0/50 bg-ctp-surface0/40 px-2 text-xs text-ctp-text">
         {focused ? (
           <input
             className="w-10 bg-transparent py-0.5 text-center outline-none"
@@ -86,7 +86,7 @@ function PageNav() {
           />
         ) : (
           <button
-            className="rounded px-1 py-0.5 hover:bg-accent transition-colors"
+            className="rounded px-1 py-0.5 hover:bg-ctp-surface0 transition-colors"
             onClick={() => setFocused(true)}
             title="Jump to page"
           >
@@ -110,7 +110,7 @@ function QuickAddToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className={`h-6 w-6 ${quickAddEnabled ? "bg-accent" : ""}`}
+      className={`h-6 w-6 ${quickAddEnabled ? "bg-ctp-surface0" : ""}`}
       onClick={() => setQuickAddEnabled(!quickAddEnabled)}
       title={
         quickAddEnabled
@@ -154,7 +154,7 @@ function FitWidthButton() {
     <Button
       variant="ghost"
       size="icon"
-      className={`h-6 w-6 ${fitWidth ? "bg-accent" : ""}`}
+      className={`h-6 w-6 ${fitWidth ? "bg-ctp-surface0" : ""}`}
       onClick={toggle}
       title="Fit to width"
     >
@@ -303,9 +303,9 @@ export function CenterPanel({
         <div className="flex-1 min-h-0 relative">
           {/* Sticky progress bar */}
           <div className="absolute top-0 left-0 right-0 z-10 h-1 pointer-events-none">
-            <div className="relative h-full w-full bg-teal/10">
+            <div className="relative h-full w-full bg-ctp-teal/10">
               <div
-                className="absolute inset-y-0 left-0 bg-sky transition-[width] duration-150 ease-out"
+                className="absolute inset-y-0 left-0 bg-ctp-skytransition-[width] duration-150 ease-out"
                 style={{
                   width: currentDocument?.totalPages
                     ? `${(Math.min(currentPage, currentDocument.totalPages) / currentDocument.totalPages) * 100}%`
@@ -317,7 +317,7 @@ export function CenterPanel({
           <React.Suspense
             fallback={
               <div className="flex-1 flex items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="h-6 w-6 animate-spin text-ctp-overlay0" />
               </div>
             }
           >
@@ -330,7 +330,7 @@ export function CenterPanel({
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <div className="flex flex-col items-center gap-2 text-ctp-overlay0">
             <BookOpen className="h-12 w-12" />
             <p className="text-sm">Select a document to start reading</p>
           </div>
@@ -341,12 +341,12 @@ export function CenterPanel({
       <Dialog open={showStats} onOpenChange={(open) => { if (!open) setShowStats(false); }}>
         <DialogContent
           hideClose
-          className="flex w-full max-w-5xl h-[calc(100vh-80px)] rounded-lg border bg-background shadow-xl p-0 gap-0"
+          className="flex w-full max-w-5xl h-[calc(100vh-80px)] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"
         >
           <React.Suspense
             fallback={
               <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="h-6 w-6 animate-spin text-ctp-overlay0" />
               </div>
             }
           >

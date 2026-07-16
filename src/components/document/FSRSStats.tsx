@@ -17,10 +17,10 @@ const STATE_LABELS: Record<number, string> = {
 };
 
 const STATE_COLORS: Record<number, string> = {
-  0: "text-sky",
-  1: "text-yellow",
-  2: "text-green",
-  3: "text-red",
+  0: "text-ctp-sky",
+  1: "text-ctp-yellow",
+  2: "text-ctp-green",
+  3: "text-ctp-red",
 };
 
 function formatDue(due: Date | string): string {
@@ -78,7 +78,7 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
   return (
     <>
       <div
-        className="flex flex-col gap-1 text-xs text-muted-foreground mt-1 border-t border-border/20 pt-1"
+        className="flex flex-col gap-1 text-xs text-ctp-overlay0 mt-1 border-t border-ctp-overlay0/20 pt-1"
         onClick={handleToggle}
       >
         {/* Row 1: state / reps / lapses */}
@@ -86,27 +86,27 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
           <span className={`font-medium ${STATE_COLORS[state] ?? ""}`}>
             {STATE_LABELS[state] ?? "Unknown"}
           </span>
-          <span>reps: <b className="text-foreground/80">{card.reps}</b></span>
-          <span>lapses: <b className="text-foreground/80">{card.lapses}</b></span>
+          <span>reps: <b className="text-ctp-text/80">{card.reps}</b></span>
+          <span>lapses: <b className="text-ctp-text/80">{card.lapses}</b></span>
         </div>
         {/* Row 2: stability / difficulty */}
         <div className="flex items-center gap-x-3">
-          <span>stability: <b className="text-foreground/80">{formatStability(card.stability)}</b></span>
-          <span>difficulty: <b className="text-foreground/80">{card.difficulty.toFixed(2)}</b></span>
+          <span>stability: <b className="text-ctp-text/80">{formatStability(card.stability)}</b></span>
+          <span>difficulty: <b className="text-ctp-text/80">{card.difficulty.toFixed(2)}</b></span>
         </div>
         {/* Row 3: due / last review */}
         <div className="flex items-center gap-x-3">
-          <span className={toDate(card.due) <= new Date() ? "text-red/80 font-medium" : ""}>
+          <span className={toDate(card.due) <= new Date() ? "text-ctp-red/80 font-medium" : ""}>
             {formatDue(card.due)}
           </span>
           {formatDate(card.last_review) && (
-            <span className="text-muted-foreground/80">
+            <span className="text-ctp-overlay0/80">
               last: {formatDate(card.last_review)}
             </span>
           )}
           {/* Collapse hint indicator */}
           {canShowHistory && (
-            <span className="ml-auto text-muted-foreground/40 select-none">
+            <span className="ml-auto text-ctp-overlay0/40 select-none">
               {historyExpanded ? "▾" : "▸"}
             </span>
           )}

@@ -106,7 +106,7 @@ export function SummaryTab() {
 
   if (numPages === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center text-muted-foreground px-4">
+      <div className="flex flex-1 items-center justify-center text-ctp-overlay0 px-4">
         <p className="text-xs text-center">No document text available</p>
       </div>
     );
@@ -117,11 +117,11 @@ export function SummaryTab() {
       {/* Page selection */}
       <div className="border-b px-3 py-2 space-y-1">
         <button
-          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium text-ctp-overlay0 hover:text-ctp-text transition-colors"
           onClick={toggleAll}
         >
           {allSelected ? (
-            <CheckSquare className="h-3.5 w-3.5 text-primary shrink-0" />
+            <CheckSquare className="h-3.5 w-3.5 text-ctp-mauve shrink-0" />
           ) : (
             <Square className="h-3.5 w-3.5 shrink-0" />
           )}
@@ -137,8 +137,8 @@ export function SummaryTab() {
                   key={p}
                   className={`inline-flex items-center justify-center h-6 min-w-[24px] rounded px-1 text-xs font-medium transition-colors ${
                     selected
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent"
+                      ? "bg-ctp-mauve/10 text-ctp-mauve"
+                      : "text-ctp-overlay0 hover:bg-ctp-surface0"
                   }`}
                   onClick={() => togglePage(p)}
                 >
@@ -150,7 +150,7 @@ export function SummaryTab() {
         </ScrollArea>
 
         <button
-          className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 w-full justify-center"
+          className="flex items-center gap-1 rounded-md bg-ctp-mauve px-3 py-1 text-xs font-medium text-ctp-crust hover:bg-ctp-mauve/90 transition-colors disabled:opacity-50 w-full justify-center"
           onClick={handleSummarize}
           disabled={summarizing}
         >
@@ -172,13 +172,13 @@ export function SummaryTab() {
           {editingSummary ? (
             <>
               <button
-                className="ml-auto rounded-md px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                className="ml-auto rounded-md px-3 py-1 text-xs text-ctp-overlay0 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
                 onClick={() => setEditingSummary(false)}
               >
                 Cancel
               </button>
               <button
-                className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="rounded-md bg-ctp-mauve px-3 py-1 text-xs text-ctp-crust hover:bg-ctp-mauve/90 transition-colors"
                 onClick={() => setEditingSummary(false)}
               >
                 Save
@@ -187,20 +187,20 @@ export function SummaryTab() {
           ) : (
             <>
               <button
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-text"
                 onClick={() => setEditingSummary(true)}
               >
                 <Pencil className="h-3 w-3" />
                 Edit
               </button>
               {summary.isAiGenerated && (
-                <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
+                <span className="text-xs text-ctp-overlay0/60 flex items-center gap-1">
                   <Bot className="h-2.5 w-2.5" />
                   AI-generated
                 </span>
               )}
               <button
-                className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+                className="ml-auto flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-red"
                 onClick={handleClearSummary}
               >
                 <Trash2 className="h-3 w-3" />
@@ -216,7 +216,7 @@ export function SummaryTab() {
         {summary ? (
           editingSummary ? (
             <textarea
-              className="h-full w-full resize-none border-0 bg-background p-3 leading-relaxed"
+              className="h-full w-full resize-none border-0 bg-ctp-base p-3 leading-relaxed"
               style={{
                 fontFamily: buildFontStack(style.fontFamilies),
                 fontSize: style.fontSize,
@@ -229,12 +229,12 @@ export function SummaryTab() {
             <div className="h-full overflow-y-auto px-3 py-3">
               <KnuthPlassText
                 text={summary.text}
-                className="text-xs text-foreground rounded-md border border-transparent px-2 py-1.5"
+                className="text-xs text-ctp-text rounded-md border border-transparent px-2 py-1.5"
               />
             </div>
           )
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground px-4 gap-1">
+          <div className="flex flex-col items-center justify-center h-full text-ctp-overlay0 px-4 gap-1">
             <FileText className="h-8 w-8 mb-1" />
             <p className="text-xs text-center">
               Select pages above and click AI Summarize

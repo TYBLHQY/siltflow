@@ -47,7 +47,7 @@ export function UnifiedSettingsModal({
     >
       <DialogContent
         hideClose
-        className="flex w-full max-w-3xl h-[calc(100vh-80px)] rounded-lg border bg-background shadow-xl p-0 gap-0"
+        className="flex w-full max-w-3xl h-[calc(100vh-80px)] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"
       >
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
@@ -64,8 +64,8 @@ export function UnifiedSettingsModal({
                   key={t.id}
                   className={`flex items-center gap-2 rounded-md px-2.5 py-2 text-xs text-left transition-colors ${
                     tab === t.id
-                      ? "bg-accent text-foreground font-medium"
-                      : "text-foreground hover:text-foreground hover:bg-accent/50"
+                      ? "bg-ctp-surface0 text-ctp-text font-medium"
+                      : "text-ctp-text hover:text-ctp-text hover:bg-ctp-surface0/50"
                   }`}
                   onClick={() => setTab(t.id)}
                 >
@@ -83,7 +83,7 @@ export function UnifiedSettingsModal({
           <div className="flex items-center justify-between px-5 pt-5 pb-0">
             <div />
             <button
-              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
               onClick={onClose}
             >
               <X className="h-4 w-4" />

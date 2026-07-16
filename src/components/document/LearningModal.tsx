@@ -53,7 +53,7 @@ export function LearningModal({
     >
       <DialogContent
         hideClose
-        className="flex w-full max-w-2xl h-[calc(100vh-80px)] flex-col rounded-lg border bg-background shadow-xl p-0 gap-0"
+        className="flex w-full max-w-2xl h-[calc(100vh-80px)] flex-col rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"
         style={{ maxHeight: learnPanelHeight }}
       >
         {items.length > 0 && (

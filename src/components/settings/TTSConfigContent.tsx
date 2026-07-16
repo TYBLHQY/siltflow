@@ -46,8 +46,8 @@ export function TTSConfigContent() {
             <button
               className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 config.provider === "edge-tts"
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border/50 text-muted-foreground hover:bg-accent"
+                  ? "bg-ctp-mauve text-ctp-crust"
+                  : "border border-ctp-overlay0/50 text-ctp-overlay0 hover:bg-ctp-surface0"
               }`}
               onClick={() => setConfig({ provider: "edge-tts" })}
             >
@@ -56,8 +56,8 @@ export function TTSConfigContent() {
             <button
               className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 config.provider === "mimo"
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border/50 text-muted-foreground hover:bg-accent"
+                  ? "bg-ctp-mauve text-ctp-crust"
+                  : "border border-ctp-overlay0/50 text-ctp-overlay0 hover:bg-ctp-surface0"
               }`}
               onClick={() => setConfig({ provider: "mimo" })}
             >
@@ -75,12 +75,12 @@ export function TTSConfigContent() {
                 Binary path
               </label>
               <input
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
                 value={config.binaryPath}
                 onChange={(e) => setConfig({ binaryPath: e.target.value })}
                 placeholder="edge-tts (via PATH)"
               />
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-ctp-overlay0 mt-0.5">
                 Absolute path or leave empty to search via PATH.
               </p>
             </div>
@@ -147,7 +147,7 @@ export function TTSConfigContent() {
                   Voices (per language)
                 </label>
                 <button
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  className="flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-text disabled:opacity-50"
                   onClick={() => refreshVoices()}
                   disabled={loadingVoices}
                   title="Refresh voice list from edge-tts --list-voices"
@@ -179,7 +179,7 @@ export function TTSConfigContent() {
                       </span>
                       {list && list.length > 0 ? (
                         <select
-                          className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
+                          className="flex-1 rounded-md border bg-ctp-base px-2 py-1 text-xs"
                           value={list.includes(current) ? current : ""}
                           onChange={(e) =>
                             setConfig({
@@ -201,7 +201,7 @@ export function TTSConfigContent() {
                         </select>
                       ) : (
                         <input
-                          className="flex-1 rounded-md border bg-background px-2 py-1 text-xs"
+                          className="flex-1 rounded-md border bg-ctp-base px-2 py-1 text-xs"
                           value={current}
                           onChange={(e) =>
                             setConfig({
@@ -220,7 +220,7 @@ export function TTSConfigContent() {
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-ctp-overlay0">
               Requires <code>pip install edge-tts</code> · Voices provided by
               Microsoft Edge online TTS.
             </p>
@@ -235,12 +235,12 @@ export function TTSConfigContent() {
               <label className="block text-xs font-medium mb-1">API Key</label>
               <input
                 type="password"
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
                 value={config.mimoApiKey}
                 onChange={(e) => setConfig({ mimoApiKey: e.target.value })}
                 placeholder="mimo-xxx..."
               />
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-ctp-overlay0 mt-0.5">
                 Get your API key from{" "}
                 <a
                   className="underline"
@@ -257,7 +257,7 @@ export function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">Model</label>
               <select
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
                 value={config.mimoModel}
                 onChange={(e) => setConfig({ mimoModel: e.target.value })}
               >
@@ -273,7 +273,7 @@ export function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">Voice</label>
               <select
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
                 value={
                   MIMO_PRESET_VOICES.some((v) => v.id === config.mimoVoice)
                     ? config.mimoVoice
@@ -296,7 +296,7 @@ export function TTSConfigContent() {
               {/* Custom voice input */}
               {!MIMO_PRESET_VOICES.some((v) => v.id === config.mimoVoice) && (
                 <input
-                  className="mt-1 w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+                  className="mt-1 w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
                   value={config.mimoVoice}
                   onChange={(e) => setConfig({ mimoVoice: e.target.value })}
                   placeholder="Custom voice ID"
@@ -308,18 +308,18 @@ export function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">
                 Style prompt{" "}
-                <span className="text-xs text-muted-foreground font-normal">
+                <span className="text-xs text-ctp-overlay0 font-normal">
                   (tone description)
                 </span>
               </label>
               <textarea
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs resize-none"
+                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs resize-none"
                 rows={2}
                 value={config.mimoStylePrompt}
                 onChange={(e) => setConfig({ mimoStylePrompt: e.target.value })}
                 placeholder="e.g. Bright, bouncy tone."
               />
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-ctp-overlay0 mt-0.5">
                 Sent as a <code>user</code> message before the text. Use{" "}
                 <strong>Director Mode</strong> for detailed control:{" "}
                 <code>{"【角色】... 【场景】... 【指导】..."}</code>
@@ -330,22 +330,22 @@ export function TTSConfigContent() {
             <div>
               <label className="block text-xs font-medium mb-1">
                 Inline tag{" "}
-                <span className="text-xs text-muted-foreground font-normal">
+                <span className="text-xs text-ctp-overlay0 font-normal">
                   (prepended to text)
                 </span>
               </label>
               <input
-                className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
                 value={config.mimoInlineTag}
                 onChange={(e) => setConfig({ mimoInlineTag: e.target.value })}
                 placeholder="e.g. (温柔) or (紧张，深呼吸)"
               />
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-ctp-overlay0 mt-0.5">
                 Wrap in parentheses. Examples: <code>(开心)</code>{" "}
                 <code>(颤抖)</code> <code>(轻声笑)</code>.
               </p>
               <details className="mt-1">
-                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                <summary className="text-xs text-ctp-overlay0 cursor-pointer hover:text-ctp-text">
                   Quick tags
                 </summary>
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -380,8 +380,8 @@ export function TTSConfigContent() {
                       key={tag}
                       className={`rounded px-1.5 py-0.5 text-xs transition-colors ${
                         config.mimoInlineTag === `(${tag})`
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                          ? "bg-ctp-mauve text-ctp-crust"
+                          : "bg-ctp-surface0 text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text"
                       }`}
                       onClick={() =>
                         setConfig({
@@ -399,7 +399,7 @@ export function TTSConfigContent() {
               </details>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-ctp-overlay0">
               Powered by XiaoMi MiMo API ·{" "}
               <a
                 className="underline"

@@ -249,9 +249,9 @@ function SelectionTip() {
   if (!pendingAnnotation) return null;
 
   return (
-    <div className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 shadow-lg">
+    <div className="flex items-center gap-1 rounded-md bg-ctp-mauve px-2 py-1 shadow-lg">
       <button
-        className="flex items-center gap-1 text-xs font-medium text-primary-foreground hover:opacity-80 transition-opacity"
+        className="flex items-center gap-1 text-xs font-medium text-ctp-crust hover:opacity-80 transition-opacity"
         onClick={handleAdd}
       >
         <Plus className="h-3 w-3" />
@@ -360,12 +360,12 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
       <PdfLoader
         document={src}
         beforeLoad={() => (
-          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+          <div className="flex items-center justify-center h-full text-ctp-overlay0 text-sm">
             Loading PDF...
           </div>
         )}
         errorMessage={() => (
-          <div className="flex items-center justify-center h-full text-destructive text-sm">
+          <div className="flex items-center justify-center h-full text-ctp-red text-sm">
             Failed to load PDF
           </div>
         )}

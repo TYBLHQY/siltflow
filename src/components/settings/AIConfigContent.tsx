@@ -34,7 +34,7 @@ export function AIConfigContent() {
           <div
             key={profile.id}
             className={`rounded-md border p-3 transition-colors ${
-              profile.active ? "border-primary" : ""
+              profile.active ? "border-ctp-mauve" : ""
             }`}
           >
             {/* Header row */}
@@ -42,7 +42,7 @@ export function AIConfigContent() {
               <div className="flex items-center gap-2 min-w-0">
                 {renameId === profile.id ? (
                   <input
-                    className="w-40 rounded border bg-background px-2 py-0.5 text-sm"
+                    className="w-40 rounded border bg-ctp-base px-2 py-0.5 text-sm"
                     autoFocus
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
@@ -69,21 +69,21 @@ export function AIConfigContent() {
                     {profile.name}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground uppercase">
+                <span className="text-xs text-ctp-overlay0 uppercase">
                   {profile.providerKey}
                 </span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 {!profile.active && (
                   <button
-                    className="text-xs text-primary hover:underline"
+                    className="text-xs text-ctp-mauve hover:underline"
                     onClick={() => setActiveProfile(profile.id)}
                   >
                     Activate
                   </button>
                 )}
                 <button
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs text-ctp-overlay0 hover:text-ctp-text"
                   onClick={() => {
                     setRenameId(profile.id);
                     setRenameValue(profile.name);
@@ -92,7 +92,7 @@ export function AIConfigContent() {
                   Rename
                 </button>
                 <button
-                  className="text-xs text-destructive hover:underline"
+                  className="text-xs text-ctp-red hover:underline"
                   onClick={() => removeProfile(profile.id)}
                 >
                   Delete
@@ -105,11 +105,11 @@ export function AIConfigContent() {
               <>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-ctp-overlay0 mb-0.5">
                       Base URL
                     </label>
                     <input
-                      className="w-full rounded border bg-background px-2 py-1 text-xs"
+                      className="w-full rounded border bg-ctp-base px-2 py-1 text-xs"
                       value={profile.baseUrl}
                       onChange={(e) =>
                         updateProfile(profile.id, { baseUrl: e.target.value })
@@ -117,11 +117,11 @@ export function AIConfigContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-ctp-overlay0 mb-0.5">
                       Model
                     </label>
                     <input
-                      className="w-full rounded border bg-background px-2 py-1 text-xs"
+                      className="w-full rounded border bg-ctp-base px-2 py-1 text-xs"
                       value={profile.model}
                       onChange={(e) =>
                         updateProfile(profile.id, { model: e.target.value })
@@ -130,12 +130,12 @@ export function AIConfigContent() {
                   </div>
                 </div>
                 <div className="mb-2">
-                  <label className="block text-xs text-muted-foreground mb-0.5">
+                  <label className="block text-xs text-ctp-overlay0 mb-0.5">
                     API Key
                   </label>
                   <input
                     type="password"
-                    className="w-full rounded border bg-background px-2 py-1 text-xs"
+                    className="w-full rounded border bg-ctp-base px-2 py-1 text-xs"
                     value={profile.apiKey}
                     onChange={(e) =>
                       updateProfile(profile.id, { apiKey: e.target.value })
@@ -144,7 +144,7 @@ export function AIConfigContent() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-ctp-overlay0 mb-0.5">
                       Temperature
                     </label>
                     <input
@@ -162,13 +162,13 @@ export function AIConfigContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-ctp-overlay0 mb-0.5">
                       Max Tokens
                     </label>
                     <input
                       type="number"
                       min="1"
-                      className="w-full rounded border bg-background px-2 py-1 text-xs"
+                      className="w-full rounded border bg-ctp-base px-2 py-1 text-xs"
                       value={profile.maxTokens}
                       onChange={(e) =>
                         updateProfile(profile.id, {
@@ -178,7 +178,7 @@ export function AIConfigContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted-foreground mb-0.5">
+                    <label className="block text-xs text-ctp-overlay0 mb-0.5">
                       Top P
                     </label>
                     <input
@@ -198,7 +198,7 @@ export function AIConfigContent() {
                 </div>
               </>
             ) : (
-              <div className="flex gap-2 text-xs text-muted-foreground">
+              <div className="flex gap-2 text-xs text-ctp-overlay0">
                 <span className="truncate">{profile.baseUrl}</span>
                 <span>·</span>
                 <span>{profile.model}</span>
@@ -207,7 +207,7 @@ export function AIConfigContent() {
 
             {/* Toggle config edit */}
             <button
-              className="mt-1 text-xs text-muted-foreground hover:text-foreground"
+              className="mt-1 text-xs text-ctp-overlay0 hover:text-ctp-text"
               onClick={() =>
                 setEditingId(editingId === profile.id ? null : profile.id)
               }
@@ -220,7 +220,7 @@ export function AIConfigContent() {
 
       {/* Add provider */}
       <details className="mt-3">
-        <summary className="cursor-pointer text-xs text-primary hover:underline">
+        <summary className="cursor-pointer text-xs text-ctp-mauve hover:underline">
           + Add provider
         </summary>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -228,7 +228,7 @@ export function AIConfigContent() {
             (provider: { key: string; label: string }) => (
               <button
                 key={provider.key}
-                className="rounded-md border bg-background px-2.5 py-1 text-xs transition-colors hover:bg-accent"
+                className="rounded-md border bg-ctp-base px-2.5 py-1 text-xs transition-colors hover:bg-ctp-surface0"
                 onClick={() => {
                   addProfile(provider.key);
                 }}
@@ -246,7 +246,7 @@ export function AIConfigContent() {
           <label className="text-xs font-medium">Default target language</label>
         </div>
         <select
-          className="w-full rounded-md border bg-background px-3 py-1.5 text-xs"
+          className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
           value={useAIStore.getState().defaultTargetLang}
           onChange={(e) =>
             useAIStore.getState().setDefaultTargetLang(e.target.value)
@@ -256,7 +256,7 @@ export function AIConfigContent() {
             <option key={l.value} value={l.value}>{l.label}</option>
           ))}
         </select>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="text-xs text-ctp-overlay0 mt-0.5">
           Used for AI translation when no per-document override is set.
         </p>
       </div>

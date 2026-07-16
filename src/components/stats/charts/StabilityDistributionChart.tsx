@@ -52,7 +52,7 @@ export function StabilityDistributionChart() {
               background: "var(--tooltip-bg)",
             }}
           />
-          <Bar dataKey="count" fill="var(--peach)" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="count" fill="var(--catppuccin-color-peach)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

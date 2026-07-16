@@ -26,22 +26,22 @@ const GRADE_LABELS: { grade: number; label: string; color: string }[] = [
   {
     grade: 1,
     label: "Again",
-    color: "bg-red/10 text-red hover:bg-red/20",
+    color: "bg-red/10 text-ctp-redhover:bg-red/20",
   },
   {
     grade: 2,
     label: "Hard",
-    color: "bg-maroon/10 text-maroon hover:bg-maroon/20",
+    color: "bg-ctp-maroon/10 text-ctp-maroon hover:bg-ctp-maroon/20",
   },
   {
     grade: 3,
     label: "Good",
-    color: "bg-green/10 text-green hover:bg-green/20",
+    color: "bg-green/10 text-ctp-green hover:bg-green/20",
   },
   {
     grade: 4,
     label: "Easy",
-    color: "bg-sky/10 text-sky hover:bg-sky/20",
+    color: "bg-sky/10 text-ctp-sky hover:bg-sky/20",
   },
 ];
 
@@ -99,10 +99,10 @@ export function StudyPanel({
 
   if (!item) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground px-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
         <CheckSquare className="h-10 w-10" />
-        <p className="font-medium text-foreground">All caught up!</p>
-        <button className="text-primary hover:underline" onClick={onBack}>
+        <p className="font-medium text-ctp-text">All caught up!</p>
+        <button className="text-ctp-mauve hover:underline" onClick={onBack}>
           Back to annotations
         </button>
       </div>
@@ -118,18 +118,18 @@ export function StudyPanel({
       {/* Header: card X of Y + back */}
       <div className="flex items-center justify-between px-3 py-1.5 shrink-0">
         <button
-          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 text-ctp-overlay0 hover:text-ctp-text"
           onClick={onBack}
         >
           <IconText icon={ArrowLeft} size="xs">
             Back
           </IconText>
         </button>
-        <span className="text-muted-foreground">
+        <span className="text-ctp-overlay0">
           {current} / {total}
         </span>
         <button
-          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 text-ctp-overlay0 hover:text-ctp-text"
           onClick={handleGoToHighlight}
           title="Go to highlight in PDF"
         >
@@ -145,7 +145,7 @@ export function StudyPanel({
         {answerRevealed && ai ? (
           /* ── Answer revealed: full card ── */
           <div className="px-3 pb-3 min-h-0 flex-1">
-            <ScrollArea className="h-full rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm">
+            <ScrollArea className="h-full rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm">
               <div className="px-3 py-2.5 space-y-2">
                 <AIAnnotationResult
                   item={item}
@@ -173,7 +173,7 @@ export function StudyPanel({
               text={item.text}
               className="font-medium text-center"
             />
-            <p className="text-muted-foreground">Tap to reveal answer</p>
+            <p className="text-ctp-overlay0">Tap to reveal answer</p>
           </div>
         )}
       </div>

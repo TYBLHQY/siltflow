@@ -56,8 +56,8 @@ export function AITranslateCard({
 
   return (
     <div
-      className={`w-full min-w-0 rounded-lg border border-border/80 bg-white dark:bg-mantle shadow-sm p-3 transition-colors cursor-pointer ${
-        scrolled ? "bg-accent/40 border-accent" : "hover:border-accent"
+      className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-white dark:bg-ctp-mantle shadow-sm p-3 transition-colors cursor-pointer ${
+        scrolled ? "bg-ctp-surface0/40 border-accent" : "hover:border-accent"
       } ${className}`}
       onClick={handleCardClick}
     >
@@ -65,7 +65,7 @@ export function AITranslateCard({
       {editing ? (
         <textarea
           ref={inputRef}
-          className="w-full rounded border bg-background px-2 py-1 resize-none min-h-[60px]"
+          className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-15"
           value={editText}
           onChange={(e) => setEditText(e.target.value)}
           onKeyDown={(e) => {
