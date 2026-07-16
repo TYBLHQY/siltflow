@@ -5,7 +5,7 @@ import { useReviewLogStore, type ReviewLogEntry } from "@/stores/review-log.stor
 
 const GRADE_INFO: Record<number, { label: string; color: string }> = {
   1: { label: "Again", color: "text-ctp-red" },
-  2: { label: "Hard", color: "text-orange" },
+  2: { label: "Hard", color: "text-ctp-peach" },
   3: { label: "Good", color: "text-ctp-green" },
   4: { label: "Easy", color: "text-ctp-blue" },
 };
@@ -114,7 +114,7 @@ export function ReviewHistorySection({
         const parsed = parseEntryData(entry);
         if (!parsed) return null;
         const { grade, log, card } = parsed;
-        const gInfo = GRADE_INFO[grade] ?? { label: "?", color: "text-muted" };
+        const gInfo = GRADE_INFO[grade] ?? { label: "?", color: "text-ctp-overlay0" };
 
         return (
           <div
@@ -134,7 +134,7 @@ export function ReviewHistorySection({
             {/* State transition */}
             <span
               className={`inline-flex items-center rounded px-1 py-0.5 leading-none ${
-                STATE_BG[log.state] ?? "text-muted"
+                STATE_BG[log.state] ?? "text-ctp-overlay0"
               }`}
             >
               {STATE_LABELS[log.state] ?? "?"}
@@ -146,7 +146,7 @@ export function ReviewHistorySection({
             {/* New state */}
             <span
               className={`inline-flex items-center rounded px-1 py-0.5 leading-none ${
-                STATE_BG[card.state] ?? "text-muted"
+                STATE_BG[card.state] ?? "text-ctp-overlay0"
               }`}
             >
               {STATE_LABELS[card.state] ?? "?"}

@@ -51,7 +51,7 @@ export function ForgettingCurveChart() {
           data={filtered}
           margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+          <CartesianGrid strokeDasharray="3 3" className="stroke-ctp-overlay0/50" />
           <XAxis
             dataKey="day"
             tick={{ fontSize: 10 }}
@@ -74,7 +74,7 @@ export function ForgettingCurveChart() {
             contentStyle={{
               fontSize: 12,
               borderRadius: 6,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--catppuccin-color-overlay0)",
               background: "var(--tooltip-bg)",
             }}
             content={({ active, payload: tpPayload, label }) => {

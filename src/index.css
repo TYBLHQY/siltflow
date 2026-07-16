@@ -19,50 +19,31 @@
     "Courier New", monospace;
 }
 
-/* ── Flavour-specific semantic variables ──
- * Base Catppuccin colour values are provided by @catppuccin/tailwindcss/mocha.css.
- * Here we only remap them to project-specific semantic names and maintain
- * non-colour values that the package doesn't set (radius, calendar colours). */
+/* ── Flavour-specific variables ──
+ * Non-colour values that @catppuccin/tailwindcss doesn't set.
+ * Colour values come from the package's mocha.css. */
 
-:root,
+:root {
+  --radius: 0.625rem;
+
+  /* Heatmap colour palette (GitHub-style contribution graph).
+     Levels 1-4 use the same green ramp across all flavours. */
+  --heatmap-1: #9be9a8;
+  --heatmap-2: #54d17a;
+  --heatmap-3: #2da44e;
+  --heatmap-4: #116329;
+}
+
 .latte {
-  --radius: 0.625rem;
   --tooltip-bg: white;
-  --cal-0: #ebedf0;
-  --cal-1: #9be9a8;
-  --cal-2: #54d17a;
-  --cal-3: #2da44e;
-  --cal-4: #116329;
+  --heatmap-0: #ebedf0;
 }
 
-.frappe {
-  --radius: 0.625rem;
-  --tooltip-bg: var(--catppuccin-color-mantle);
-  --cal-0: #161b22;
-  --cal-1: #0e4429;
-  --cal-2: #006d32;
-  --cal-3: #26a641;
-  --cal-4: #39d353;
-}
-
-.macchiato {
-  --radius: 0.625rem;
-  --tooltip-bg: var(--catppuccin-color-mantle);
-  --cal-0: #161b22;
-  --cal-1: #0e4429;
-  --cal-2: #006d32;
-  --cal-3: #26a641;
-  --cal-4: #39d353;
-}
-
+.frappe,
+.macchiato,
 .mocha {
-  --radius: 0.625rem;
   --tooltip-bg: var(--catppuccin-color-mantle);
-  --cal-0: #161b22;
-  --cal-1: #0e4429;
-  --cal-2: #006d32;
-  --cal-3: #26a641;
-  --cal-4: #39d353;
+  --heatmap-0: #161b22;
 }
 
 @layer base {
@@ -211,7 +192,7 @@ div[data-pdf-scrollbar="false"] .PdfHighlighter::-webkit-scrollbar {
 /* ── Annotation card flash highlight ── */
 @keyframes annotation-flash {
   0% {
-    outline: 3px solid var(--peach);
+    outline: 3px solid var(--catppuccin-color-peach);
     outline-offset: -3px;
   }
   100% {

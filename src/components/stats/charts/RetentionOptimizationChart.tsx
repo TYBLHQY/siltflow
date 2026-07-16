@@ -36,7 +36,7 @@ export function RetentionOptimizationChart() {
     >
       <ResponsiveContainer width="100%" height={260}>
         <ComposedChart data={data} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+          <CartesianGrid strokeDasharray="3 3" className="stroke-ctp-overlay0/50" />
           <XAxis
             dataKey="targetRetention"
             tick={{ fontSize: 10 }}
@@ -74,7 +74,7 @@ export function RetentionOptimizationChart() {
             contentStyle={{
               fontSize: 12,
               borderRadius: 6,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--catppuccin-color-overlay0)",
               background: "var(--tooltip-bg)",
             }}
             formatter={(value: any, name: any) => {

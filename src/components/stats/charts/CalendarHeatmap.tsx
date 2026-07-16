@@ -5,11 +5,11 @@ import { computeCalendarHeatmap } from "@/lib/stats-computation";
 import { useStatsStore } from "@/stores/stats.store";
 
 const PANEL_COLORS = [
-  "var(--cal-0)",
-  "#9be9a8",
-  "#54d17a",
-  "#2da44e",
-  "#116329",
+  "var(--heatmap-0)",
+  "var(--heatmap-1)",
+  "var(--heatmap-2)",
+  "var(--heatmap-3)",
+  "var(--heatmap-4)",
 ];
 
 export function CalendarHeatmap() {

@@ -55,7 +55,7 @@ export function RecallRateChart() {
             contentStyle={{
               fontSize: 12,
               borderRadius: 6,
-              border: "1px solid var(--border)",
+              border: "1px solid var(--catppuccin-color-overlay0)",
               background: "var(--tooltip-bg)",
             }}
           />
