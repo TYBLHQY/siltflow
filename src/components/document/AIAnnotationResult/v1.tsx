@@ -26,7 +26,7 @@ import {
 } from "@/lib/annotation-helpers";
 import type { DefinitionEntry } from "@/types/annotation";
 
-interface AIAnnotationResultProps {
+interface AIAnnotationResultV1Props {
   item: AnnotationItem;
   /** Show core content: header (granularity + page), source text, translation + meta tags + definitions. */
   showCore?: boolean;
@@ -58,7 +58,7 @@ interface AIAnnotationResultProps {
  * - FSRS stats are rendered by the caller directly so the animation
  *   wrapper in AITranslateCard can be placed around details only
  */
-export function AIAnnotationResult({
+export function AIAnnotationResultV1({
   item,
   showCore = false,
   showDetails = false,
@@ -68,7 +68,7 @@ export function AIAnnotationResult({
   onEditToggle,
   onTranslate,
   onDelete,
-}: AIAnnotationResultProps) {
+}: AIAnnotationResultV1Props) {
   const style = useStyleStore((s) => s.style);
   const ai = item.aiResult;
   const tts = useTTS();
