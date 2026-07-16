@@ -18,7 +18,7 @@ interface StatCardData {
 
 function StatCard({ icon: Icon, label, value, color }: StatCardData) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm px-4 py-3">
+    <div className="flex items-center gap-0.5 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm pl-0.5 pr-4 py-3">
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: color + "20" }}
