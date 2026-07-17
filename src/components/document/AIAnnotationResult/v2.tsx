@@ -139,13 +139,14 @@ function SelectionTTSButton({
       {/* Floating play button above selection */}
       {btn && (
         <button
-          className="fixed z-50 flex items-center justify-center rounded-full shadow-lg transition-opacity hover:opacity-80"
+          className="fixed z-50 flex items-center justify-center shadow-lg transition-opacity hover:opacity-80"
           style={{
             top: btn.top,
             left: btn.left,
             width: 28,
             height: 28,
             transform: "translate(-50%, -100%)",
+            borderRadius: 8,
             backgroundColor: "var(--selection-tip-bg)",
             color: "var(--selection-tip-fg)",
           }}
