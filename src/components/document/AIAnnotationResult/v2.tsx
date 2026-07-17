@@ -204,7 +204,7 @@ function WordView({
       {output.meanings.length > 0 && (
         <div>
           <SectionHeader>Meanings</SectionHeader>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {output.meanings.map((m, i) => (
               <div key={i} className="flex items-baseline gap-1">
                 <span className="inline-flex items-center rounded bg-ctp-sky/15 px-1.5 py-0.5 text-ctp-sky text-xs font-medium">
@@ -270,7 +270,7 @@ function WordView({
       {output.collocations.length > 0 && (
         <div>
           <SectionHeader>Collocations</SectionHeader>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {output.collocations.map((c, i) => (
               <div key={i} className="leading-relaxed">
                 <SelectionTTSButton language={sourceLang} annId={annId}>
@@ -289,7 +289,7 @@ function WordView({
       {output.synonyms.length > 0 && (
         <div>
           <SectionHeader>Synonyms</SectionHeader>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {output.synonyms.map((s, i) => (
               <SelectionTTSButton key={i} language={sourceLang} annId={annId}>
                 <div className="text-ctp-text leading-relaxed">{s}</div>
@@ -317,7 +317,7 @@ function PhraseView({
     <div className="space-y-2 leading-relaxed">
       {output.translation && (
         <SelectionTTSButton language={targetLang} annId={annId}>
-          <p className="font-medium text-ctp-mauve">{output.translation}</p>
+          <p className="font-medium text-ctp-text">{output.translation}</p>
         </SelectionTTSButton>
       )}
 
@@ -358,7 +358,7 @@ function SentenceView({
   if (!output.translation) return null;
   return (
     <SelectionTTSButton language={targetLang} annId={annId}>
-      <p className="font-medium text-ctp-mauve leading-relaxed">
+      <p className="font-medium text-ctp-text leading-relaxed">
         {output.translation}
       </p>
     </SelectionTTSButton>
