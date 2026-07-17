@@ -69,7 +69,7 @@ export interface AITranslateMetadata {
 // ---------------------------------------------------------------------------
 // Full AI annotation payload
 // ---------------------------------------------------------------------------
-export interface AIAnnotationData {
+export interface AIAnnotationDataV1 {
   /** Natural translation. */
   translation: string;
   /** Source language code (ISO 639-1). */

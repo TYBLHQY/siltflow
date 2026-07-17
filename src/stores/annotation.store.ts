@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { ScaledPosition, Content } from "react-pdf-highlighter-plus";
-import type { AIAnnotationData } from "@/types/annotation";
+import type { AIAnnotationDataV1 } from "@/types/annotation";
 import type { Card } from "ts-fsrs";
 import { useReviewLogStore } from "@/stores/review-log.store";
 
@@ -18,7 +18,7 @@ export interface AnnotationItem {
   pageNumber: number;
   embedData: AnnotationEmbedData;
   /** AI analysis result — populated after translation request completes */
-  aiResult?: AIAnnotationData | null;
+  aiResult?: AIAnnotationDataV1 | null;
   /** AI data version from ai_results.version, undefined if not yet translated. */
   aiVersion?: number | null;
   /** FSRS card state — set when first reviewed */

@@ -9,7 +9,7 @@
 
 import type { AIProfile } from "@/stores/ai.store";
 import { chatCompletion } from "@/lib/ai";
-import type { AIAnnotationData } from "@/types/annotation";
+import type { AIAnnotationDataV1 } from "@/types/annotation";
 
 // ===========================================================================
 // Types
@@ -121,7 +121,7 @@ Source language: ${sourceLang}. Target language: ${targetLang}.`;
 export async function translateAnnotation(
   profile: AIProfile,
   options: TranslateOptions,
-): Promise<AIAnnotationData> {
+): Promise<AIAnnotationDataV1> {
   const sourceLang = options.sourceLang ?? "auto";
   const targetLang = options.targetLang ?? "zh";
 
@@ -172,7 +172,7 @@ export async function translateAnnotation(
     .replace(/\s*```$/i, "")
     .trim();
 
-  return JSON.parse(cleaned) as AIAnnotationData;
+  return JSON.parse(cleaned) as AIAnnotationDataV1;
 }
 
 // ===========================================================================
