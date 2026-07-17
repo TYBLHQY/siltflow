@@ -34,6 +34,12 @@
   --heatmap-2: #54d17a;
   --heatmap-3: #2da44e;
   --heatmap-4: #116329;
+
+  /* SelectionTip — fixed colours for selection-driven floating buttons.
+     These are kept constant across all Catppuccin flavours so the button
+     is recognisable regardless of theme. */
+  --selection-tip-bg: #1c1b18;
+  --selection-tip-fg: #efece5;
 }
 
 .latte {

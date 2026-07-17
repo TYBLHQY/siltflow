@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
+import { useSummaryStore } from "@/stores/summary.store";
 import { Pencil, Volume2, Loader2, Sparkles, Trash2 } from "lucide-react";
 import type {
   AIAnnotationDataV2,
@@ -45,6 +46,115 @@ function isPhraseOutput(
   return "translation" in output && "examples" in output;
 }
 
+// ── SelectionTTSButton ──────────────────────────────────────────────────────
+// Floating play button that appears above text selection within its container.
+// Used for both source-language and target-language text blocks.
+
+interface SelectionButtonState {
+  text: string;
+  lang: string | undefined;
+  top: number;
+  left: number;
+}
+
+function SelectionTTSButton({
+  language,
+  annId,
+  children,
+}: {
+  language?: string;
+  annId?: string | null;
+  children: ReactNode;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tts = useTTS();
+  const [btn, setBtn] = useState<SelectionButtonState | null>(null);
+
+  // ── Detect text selection inside container ──
+
+  const handleMouseUp = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+      setBtn(null);
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!containerRef.current?.contains(range.commonAncestorContainer)) {
+      setBtn(null);
+      return;
+    }
+    const rect = range.getBoundingClientRect();
+    if (!rect || rect.width === 0) {
+      setBtn(null);
+      return;
+    }
+    setBtn({
+      text: sel.toString(),
+      lang: language,
+      top: rect.top,
+      left: rect.left + rect.width / 2,
+    });
+  }, [language]);
+
+  // ── Hide on outside click / scroll / Escape ──
+
+  useEffect(() => {
+    if (!btn) return;
+
+    const hide = () => setBtn(null);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") hide();
+    };
+
+    document.addEventListener("mousedown", hide);
+    document.addEventListener("wheel", hide, { passive: true });
+    document.addEventListener("scroll", hide, { passive: true });
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", hide);
+      document.removeEventListener("wheel", hide);
+      document.removeEventListener("scroll", hide);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [btn]);
+
+  // ── Play selected text via TTS ──
+
+  const handlePlay = useCallback(() => {
+    if (!btn) return;
+    tts.speak(btn.text, undefined, btn.lang, annId);
+    setBtn(null);
+  }, [btn, tts, annId]);
+
+  return (
+    <div ref={containerRef} onMouseUp={handleMouseUp}>
+      {children}
+
+      {/* Floating play button above selection */}
+      {btn && (
+        <button
+          className="fixed z-50 flex items-center justify-center rounded-full shadow-lg transition-opacity hover:opacity-80"
+          style={{
+            top: btn.top,
+            left: btn.left,
+            width: 28,
+            height: 28,
+            transform: "translate(-50%, -100%)",
+            backgroundColor: "var(--selection-tip-bg)",
+            color: "var(--selection-tip-fg)",
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={handlePlay}
+          title="Read aloud"
+        >
+          <Volume2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Section header with left divider ──
 
 function SectionHeader({ children }: { children: ReactNode }) {
@@ -60,7 +170,17 @@ function SectionHeader({ children }: { children: ReactNode }) {
 
 // ── Sub-renderers ──────────────────────────────────────────────────────────
 
-function WordView({ output }: { output: WordOutputV2 }) {
+function WordView({
+  output,
+  sourceLang,
+  targetLang,
+  annId,
+}: {
+  output: WordOutputV2;
+  sourceLang?: string;
+  targetLang?: string;
+  annId?: string | null;
+}) {
   return (
     <div className="space-y-2 leading-relaxed">
       {/* CEFR */}
@@ -83,7 +203,9 @@ function WordView({ output }: { output: WordOutputV2 }) {
                 <span className="inline-flex items-center rounded bg-ctp-sky/15 px-1.5 py-0.5 text-ctp-sky text-xs font-medium">
                   {m.pos}
                 </span>
-                <span className="text-ctp-text">{m.translation}</span>
+                <SelectionTTSButton language={targetLang} annId={annId}>
+                  <span className="text-ctp-text">{m.translation}</span>
+                </SelectionTTSButton>
               </div>
             ))}
           </div>
@@ -100,10 +222,14 @@ function WordView({ output }: { output: WordOutputV2 }) {
                 <span className="inline-flex items-center rounded bg-ctp-sky/15 px-1.5 py-0.5 text-ctp-sky text-xs font-medium mr-1">
                   {d.pos}
                 </span>
-                <span className="text-ctp-text">{d.definition.source}</span>
-                <span className="text-ctp-overlay0 block ml-0">
-                  {d.definition.target}
-                </span>
+                <SelectionTTSButton language={sourceLang} annId={annId}>
+                  <span className="text-ctp-text">{d.definition.source}</span>
+                </SelectionTTSButton>
+                <SelectionTTSButton language={targetLang} annId={annId}>
+                  <span className="text-ctp-overlay0 block ml-0">
+                    {d.definition.target}
+                  </span>
+                </SelectionTTSButton>
               </div>
             ))}
           </div>
@@ -117,11 +243,15 @@ function WordView({ output }: { output: WordOutputV2 }) {
           <ul className="space-y-1">
             {output.examples.map((ex, i) => (
               <li key={i}>
-                <span className="text-ctp-text">{ex.sentence}</span>
+                <SelectionTTSButton language={sourceLang} annId={annId}>
+                  <span className="text-ctp-text">{ex.sentence}</span>
+                </SelectionTTSButton>
                 {ex.translation && (
-                  <span className="text-ctp-overlay0 block ml-0">
-                    {ex.translation}
-                  </span>
+                  <SelectionTTSButton language={targetLang} annId={annId}>
+                    <span className="text-ctp-overlay0 block ml-0">
+                      {ex.translation}
+                    </span>
+                  </SelectionTTSButton>
                 )}
               </li>
             ))}
@@ -136,8 +266,12 @@ function WordView({ output }: { output: WordOutputV2 }) {
           <div className="space-y-0.5">
             {output.collocations.map((c, i) => (
               <div key={i} className="leading-relaxed">
-                <span className="text-ctp-text">{c.phrase}</span>
-                <span className="text-ctp-overlay0"> {c.translation}</span>
+                <SelectionTTSButton language={sourceLang} annId={annId}>
+                  <span className="text-ctp-text">{c.phrase}</span>
+                </SelectionTTSButton>
+                <SelectionTTSButton language={targetLang} annId={annId}>
+                  <span className="text-ctp-overlay0"> {c.translation}</span>
+                </SelectionTTSButton>
               </div>
             ))}
           </div>
@@ -150,9 +284,9 @@ function WordView({ output }: { output: WordOutputV2 }) {
           <SectionHeader>Synonyms</SectionHeader>
           <div className="space-y-0.5">
             {output.synonyms.map((s, i) => (
-              <div key={i} className="text-ctp-text leading-relaxed">
-                {s}
-              </div>
+              <SelectionTTSButton key={i} language={sourceLang} annId={annId}>
+                <div className="text-ctp-text leading-relaxed">{s}</div>
+              </SelectionTTSButton>
             ))}
           </div>
         </div>
@@ -161,11 +295,23 @@ function WordView({ output }: { output: WordOutputV2 }) {
   );
 }
 
-function PhraseView({ output }: { output: PhraseOutputV2 }) {
+function PhraseView({
+  output,
+  sourceLang,
+  targetLang,
+  annId,
+}: {
+  output: PhraseOutputV2;
+  sourceLang?: string;
+  targetLang?: string;
+  annId?: string | null;
+}) {
   return (
     <div className="space-y-2 leading-relaxed">
       {output.translation && (
-        <p className="font-medium text-ctp-mauve">{output.translation}</p>
+        <SelectionTTSButton language={targetLang} annId={annId}>
+          <p className="font-medium text-ctp-mauve">{output.translation}</p>
+        </SelectionTTSButton>
       )}
 
       {output.examples.length > 0 && (
@@ -174,11 +320,15 @@ function PhraseView({ output }: { output: PhraseOutputV2 }) {
           <ul className="space-y-1">
             {output.examples.map((ex, i) => (
               <li key={i}>
-                <span className="text-ctp-text">{ex.sentence}</span>
+                <SelectionTTSButton language={sourceLang} annId={annId}>
+                  <span className="text-ctp-text">{ex.sentence}</span>
+                </SelectionTTSButton>
                 {ex.translation && (
-                  <span className="text-ctp-overlay0 block ml-0">
-                    {ex.translation}
-                  </span>
+                  <SelectionTTSButton language={targetLang} annId={annId}>
+                    <span className="text-ctp-overlay0 block ml-0">
+                      {ex.translation}
+                    </span>
+                  </SelectionTTSButton>
                 )}
               </li>
             ))}
@@ -189,12 +339,22 @@ function PhraseView({ output }: { output: PhraseOutputV2 }) {
   );
 }
 
-function SentenceView({ output }: { output: SentenceOutputV2 }) {
+function SentenceView({
+  output,
+  targetLang,
+  annId,
+}: {
+  output: SentenceOutputV2;
+  targetLang?: string;
+  annId?: string | null;
+}) {
   if (!output.translation) return null;
   return (
-    <p className="font-medium text-ctp-mauve leading-relaxed">
-      {output.translation}
-    </p>
+    <SelectionTTSButton language={targetLang} annId={annId}>
+      <p className="font-medium text-ctp-mauve leading-relaxed">
+        {output.translation}
+      </p>
+    </SelectionTTSButton>
   );
 }
 
@@ -213,6 +373,9 @@ export function AIAnnotationResultV2({
   const style = useStyleStore((s) => s.style);
   const ai = item.aiResult as AIAnnotationDataV2 | undefined;
   const tts = useTTS();
+  const targetLang = useSummaryStore(
+    (s) => s.targetLangs[item.documentId],
+  ) ?? "zh-CN";
 
   // ── Translate spinner ──
   const [translating, setTranslating] = useState(false);
@@ -266,10 +429,12 @@ export function AIAnnotationResultV2({
             </span>
           </div>
 
-          {/* Source text */}
-          <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed">
-            {ai?.input?.normalized ?? item.text}
-          </p>
+          {/* Source text — with TTS selection */}
+          <SelectionTTSButton language={ai?.input?.source_lang} annId={item.id}>
+            <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed">
+              {ai?.input?.normalized ?? item.text}
+            </p>
+          </SelectionTTSButton>
 
           {/* ── Action bar ── */}
           {showActionBar && (
@@ -359,11 +524,29 @@ export function AIAnnotationResultV2({
             </div>
           )}
 
-          {/* ── Output section ── */}
-          {output && isWordOutput(output) && <WordView output={output} />}
-          {output && isPhraseOutput(output) && <PhraseView output={output} />}
+          {/* ── Output section — mixed source/target lang TTS selection ── */}
+          {output && isWordOutput(output) && (
+            <WordView
+              output={output}
+              sourceLang={ai?.input?.source_lang}
+              targetLang={targetLang}
+              annId={item.id}
+            />
+          )}
+          {output && isPhraseOutput(output) && (
+            <PhraseView
+              output={output}
+              sourceLang={ai?.input?.source_lang}
+              targetLang={targetLang}
+              annId={item.id}
+            />
+          )}
           {output && isSentenceOutput(output) && (
-            <SentenceView output={output} />
+            <SentenceView
+              output={output}
+              targetLang={targetLang}
+              annId={item.id}
+            />
           )}
         </>
       )}
