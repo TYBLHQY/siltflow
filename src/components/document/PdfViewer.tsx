@@ -24,8 +24,8 @@ import {
 } from "@/stores/annotation.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
-import { useSummaryStore } from "@/stores/summary.store";
 import { useTTS } from "@/hooks/useTts";
+import type { AIAnnotationDataV2 } from "@/types/annotation";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 // Import PDF worker URL explicitly instead of relying on the library's
 // DEFAULT_WORKER_SRC (which resolves to a wrong path in pnpm layouts).
@@ -45,6 +45,8 @@ export interface SiltflowHighlight extends RPHLHighlight {
   comment?: string;
   /** Text-highlight background color. */
   highlightColor?: string;
+  /** Source language from the annotation's AI result (BCP 47). */
+  sourceLang?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,6 +63,9 @@ export interface SiltflowHighlight extends RPHLHighlight {
  */
 function annotationToHighlight(item: AnnotationItem): SiltflowHighlight {
   const embed = item.embedData as AnnotationItem["embedData"];
+  // Source language: prefer the annotation's own AI result (same as card TTS),
+  // fall back to the item's text language if available.
+  const ai = item.aiResult as AIAnnotationDataV2 | undefined;
   return {
     id: item.id,
     type: (item.type as SiltflowHighlight["type"]) || "text",
@@ -78,6 +83,7 @@ function annotationToHighlight(item: AnnotationItem): SiltflowHighlight {
       rects: [],
     },
     comment: "",
+    sourceLang: ai?.input?.source_lang,
   };
 }
 
@@ -134,18 +140,15 @@ function SiltflowHighlightContainer({
     onHighlightClick?.(highlight.id);
   }, [onHighlightClick, highlight.id]);
 
-  // TTS button for the highlight toolbar
+  // TTS button for the highlight toolbar — source language comes from
+  // the annotation's AI result (same as card TTS), not from the doc summary.
   const tts = useTTS();
-  const docId = useDocumentStore((s) => s.currentDocument?.id);
-  const sourceLang = useSummaryStore((s) =>
-    docId ? s.summaries[docId]?.sourceLang : undefined,
-  );
 
   const highlightTTSButton = highlight.content?.text ? (
     <button
       onClick={(e) => {
         e.stopPropagation();
-        tts.speak(highlight.content!.text!, undefined, sourceLang, undefined);
+        tts.speak(highlight.content!.text!, undefined, highlight.sourceLang, undefined);
       }}
       title="Read aloud"
       className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
