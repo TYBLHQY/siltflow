@@ -49,13 +49,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build + Package (no implicit publish)
+      - name: Build + Package
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # pnpm appends -- args to the last command, so --publish=never reaches electron-builder
-        run: pnpm build -- --publish=never
+        # --publish=never prevents duplicate release creation by electron-builder
+        run: pnpm exec tsc && pnpm exec vite build && pnpm exec electron-builder --publish=never
 
       - name: Upload artifacts to release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
