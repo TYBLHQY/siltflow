@@ -49,6 +49,7 @@
     "icon": "build/icons",
     "category": "Utility",
     "maintainer": "MYQ <myq@localhost>",
+    "syncDesktopName": true,
     "target": [
       "deb",
       "AppImage"
