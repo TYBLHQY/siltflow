@@ -49,15 +49,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build (tsc + vite)
-        run: tsc && vite build
+      - name: Build + Package (no implicit publish)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Package (electron-builder, no implicit publish)
-        run: electron-builder --publish=never
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # pnpm appends -- args to the last command, so --publish=never reaches electron-builder
+        run: pnpm build -- --publish=never
 
       - name: Upload artifacts to release
         env:
