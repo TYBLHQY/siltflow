@@ -166,9 +166,8 @@ function SelectionTTSButton({
 
 function SectionHeader({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center mb-0.5">
-      <div className="flex-1 border-t border-dashed border-ctp-overlay0/30" />
-      <span className="text-ctp-text text-xs font-medium ml-3 whitespace-nowrap">
+    <div className="mb-0.5 pl-3">
+      <span className="text-ctp-text text-xs font-medium whitespace-nowrap">
         {children}
       </span>
     </div>
