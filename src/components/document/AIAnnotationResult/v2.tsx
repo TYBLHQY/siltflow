@@ -93,11 +93,12 @@ function SelectionTTSButton({
       setBtn(null);
       return;
     }
+    const containerRect = container.getBoundingClientRect();
     setBtn({
       text: sel.toString(),
       lang: language,
-      top: rect.top,
-      left: rect.left + rect.width / 2,
+      top: rect.top - containerRect.top,
+      left: rect.left - containerRect.left + rect.width / 2,
     });
   }, [language]);
 
@@ -133,13 +134,13 @@ function SelectionTTSButton({
   }, [btn, tts, annId]);
 
   return (
-    <div ref={containerRef} onMouseUp={handleMouseUp}>
+    <div ref={containerRef} onMouseUp={handleMouseUp} className="relative">
       {children}
 
       {/* Floating play button above selection */}
       {btn && (
         <button
-          className="fixed z-50 flex items-center justify-center shadow-lg transition-opacity hover:opacity-80"
+          className="absolute z-50 flex items-center justify-center shadow-lg transition-opacity hover:opacity-80"
           style={{
             top: btn.top,
             left: btn.left,
