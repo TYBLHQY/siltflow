@@ -72,7 +72,7 @@ function SelectionTTSButton({
 
   // ── Detect text selection inside container ──
 
-  const handleMouseUp = useCallback(() => {
+  const showButtonFromSelection = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       setBtn(null);
@@ -95,6 +95,17 @@ function SelectionTTSButton({
       left: rect.left + rect.width / 2,
     });
   }, [language]);
+
+  const handleMouseUp = useCallback(() => {
+    // Single-click release: only show if text is already selected
+    // (e.g. after a prior double/triple-click or keyboard selection).
+    showButtonFromSelection();
+  }, [showButtonFromSelection]);
+
+  const handleDoubleClick = useCallback(() => {
+    // Double-click selects word; triple-click selects paragraph.
+    showButtonFromSelection();
+  }, [showButtonFromSelection]);
 
   // ── Hide on outside click / scroll / Escape ──
 
@@ -128,7 +139,7 @@ function SelectionTTSButton({
   }, [btn, tts, annId]);
 
   return (
-    <div ref={containerRef} onMouseUp={handleMouseUp}>
+    <div ref={containerRef} onMouseUp={handleMouseUp} onDoubleClick={handleDoubleClick}>
       {children}
 
       {/* Floating play button above selection */}
