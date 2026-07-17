@@ -163,7 +163,7 @@ const api: SiltflowAPI = {
   aiResults: {
     get: (annotationId, documentId) => ipcRenderer.invoke('aiResults:get', annotationId, documentId),
     listByDocument: (documentId) => ipcRenderer.invoke('aiResults:listByDocument', documentId),
-    save: (annotationId, documentId, data) => ipcRenderer.invoke('aiResults:save', { annotationId, documentId, data }),
+    save: (annotationId: string, documentId: string, data: unknown, version?: number) => ipcRenderer.invoke('aiResults:save', { annotationId, documentId, data, version }),
     delete: (annotationId, documentId) => ipcRenderer.invoke('aiResults:delete', annotationId, documentId),
   },
   fsrsCards: {
