@@ -20,12 +20,12 @@ export function TTSConfigContent() {
   }, [hasCachedLists, refreshVoices]);
 
   const langMeta = [
-    { id: "zh", label: "简体中文" },
-    { id: "en", label: "English" },
-    { id: "de", label: "Deutsch" },
-    { id: "ja", label: "日本語" },
-    { id: "fr", label: "Français" },
-    { id: "es", label: "Español" },
+    { id: "zh-CN", label: "简体中文" },
+    { id: "en-US", label: "English (US)" },
+    { id: "de-DE", label: "Deutsch" },
+    { id: "ja-JP", label: "日本語" },
+    { id: "fr-FR", label: "Français" },
+    { id: "es-ES", label: "Español" },
   ];
 
   return (

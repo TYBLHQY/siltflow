@@ -82,9 +82,9 @@ export function AnnotationsTab({
   const summary = docId ? summaries[docId] : undefined;
   const texts = docId ? pageTexts[docId] : undefined;
   const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null;
-  const sourceLang = summary?.sourceLang ?? "en";
+  const sourceLang = summary?.sourceLang ?? "en-US";
   const effectiveTargetLang =
-    (docId && targetLangs[docId]) || defaultTargetLang || "zh";
+    (docId && targetLangs[docId]) || defaultTargetLang || "zh-CN";
 
   // ── Local state ────────────────────────────────────────────────────
   const [studyPanelOpen, setStudyPanelOpen] = useState(false);

@@ -195,7 +195,7 @@ interface AIStoreState {
 export const useAIStore = create<AIStoreState>()((set, get) => ({
   loaded: false,
   profiles: [],
-  defaultTargetLang: "zh",
+  defaultTargetLang: "zh-CN",
 
   addProfile: (providerKey: string) => {
     const preset = BUILTIN_PROVIDERS.find((p) => p.key === providerKey);

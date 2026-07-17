@@ -52,12 +52,12 @@ const DEFAULT_CONFIG: TTSConfig = {
   pitch: "+0Hz",
   defaultVoice: "en-US-EmmaMultilingualNeural",
   perLanguageVoices: {
-    zh: "zh-CN-XiaoxiaoNeural",
-    en: "en-US-EmmaMultilingualNeural",
-    de: "de-DE-KatjaNeural",
-    ja: "ja-JP-NanamiNeural",
-    fr: "fr-FR-DeniseNeural",
-    es: "es-ES-ElviraNeural",
+    "zh-CN": "zh-CN-XiaoxiaoNeural",
+    "en-US": "en-US-EmmaMultilingualNeural",
+    "de-DE": "de-DE-KatjaNeural",
+    "ja-JP": "ja-JP-NanamiNeural",
+    "fr-FR": "fr-FR-DeniseNeural",
+    "es-ES": "es-ES-ElviraNeural",
   },
   voiceLists: {},
   mimoApiKey: "",
@@ -114,14 +114,14 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
         config.binaryPath || undefined,
       );
 
-      // Group by language prefix
+      // Group by BCP 47 primary subtag prefix
       const prefixMap: Record<string, string> = {
-        zh: "zh-",
-        en: "en-",
-        de: "de-",
-        ja: "ja-",
-        fr: "fr-",
-        es: "es-",
+        "zh-CN": "zh-",
+        "en-US": "en-",
+        "de-DE": "de-",
+        "ja-JP": "ja-",
+        "fr-FR": "fr-",
+        "es-ES": "es-",
       };
       const lists: Record<string, string[]> = {};
       for (const [langId, prefix] of Object.entries(prefixMap)) {
@@ -141,8 +141,15 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
   getVoice: (language?: string) => {
     const { config } = get();
     if (config.provider === "mimo") return config.mimoVoice;
-    if (language && config.perLanguageVoices[language]) {
-      return config.perLanguageVoices[language];
+    if (language) {
+      // Exact BCP 47 match: "en-US" → "en-US-EmmaMultilingualNeural"
+      if (config.perLanguageVoices[language]) return config.perLanguageVoices[language];
+      // Prefix match: "en" / "en-GB" → "en-US-EmmaMultilingualNeural"
+      const primary = language.split("-")[0];
+      const match = Object.keys(config.perLanguageVoices).find((k) =>
+        k.startsWith(primary),
+      );
+      if (match) return config.perLanguageVoices[match];
     }
     return config.defaultVoice;
   },

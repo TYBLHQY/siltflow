@@ -20,9 +20,9 @@ export interface TranslateOptions {
   text: string;
   /** The sentence from the document that contains this text. */
   contextSentence?: string;
-  /** Source language code (ISO 639-1). Auto-detected if omitted. */
+  /** Source language code (BCP 47). Auto-detected if omitted. */
   sourceLang?: string;
-  /** Target language code. Default: "zh" */
+  /** Target language code. Default: "zh-CN" */
   targetLang: string;
   /** Optional article background context (see extractArticleContext). */
   context?: string;
@@ -38,12 +38,13 @@ function buildTranslatePrompt(
   sourceLang: string,
   targetLang: string,
 ): string {
-  const isSameLanguage = sourceLang === targetLang;
+  const isSameLanguage =
+    sourceLang.split("-")[0] === targetLang.split("-")[0];
 
   const BASE_SCHEMA = `{
   "translation": "<natural translation>",
-  "source_lang": "<ISO 639-1>",
-  "target_lang": "<ISO 639-1>",
+  "source_lang": "<BCP 47 e.g. en-US, zh-CN>",
+  "target_lang": "<BCP 47 e.g. en-US, zh-CN>",
   "cleaned_input": "<normalized user text>",
   "lemma": "<base/dictionary form>",
   "pos": "<part-of-speech tag>",
@@ -86,7 +87,7 @@ CONSTRAINTS:
 - 'metadata.register': pick the most specific register tag. Use format: [level/domain], e.g. "formal/academic", "casual/slang", "neutral". Level values: frozen, formal, consultative, casual, intimate, neutral. Domain values: academic, technical, literary, slang. Always include at least the level; add domain when applicable.
 - 'metadata.tags': max 3 domain tags.
 - POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
-- Use ISO 639-1 language codes.
+- Use BCP 47 language codes (e.g. en-US, zh-CN, ja-JP).
 - cleaned_input: normalize whitespace, remove artifacts.
 Source language: ${sourceLang}. Target language: ${targetLang}.`;
   } else {
@@ -108,7 +109,7 @@ CONSTRAINTS:
 - 'metadata.register': pick the most specific register tag. Use format: [level/domain], e.g. "formal/academic", "casual/slang", "neutral". Level values: frozen, formal, consultative, casual, intimate, neutral. Domain values: academic, technical, literary, slang. Always include at least the level; add domain when applicable.
 - 'metadata.tags': max 3 domain tags.
 - POS tags: v, n, adj, adv, pron, prep, conj, interj, art, num, det.
-- Use ISO 639-1 language codes.
+- Use BCP 47 language codes (e.g. en-US, zh-CN, ja-JP).
 - cleaned_input: normalize whitespace, remove artifacts.
 Source language: ${sourceLang}. Target language: ${targetLang}.`;
   }
@@ -123,7 +124,7 @@ export async function translateAnnotation(
   options: TranslateOptions,
 ): Promise<AIAnnotationDataV1> {
   const sourceLang = options.sourceLang ?? "auto";
-  const targetLang = options.targetLang ?? "zh";
+  const targetLang = options.targetLang ?? "zh-CN";
 
   let systemContent = buildTranslatePrompt(
     sourceLang,

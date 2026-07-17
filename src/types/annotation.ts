@@ -72,9 +72,9 @@ export interface AITranslateMetadata {
 export interface AIAnnotationDataV1 {
   /** Natural translation. */
   translation: string;
-  /** Source language code (ISO 639-1). */
+  /** Source language code (BCP 47). */
   source_lang: string;
-  /** Target language code. */
+  /** Target language code (BCP 47). */
   target_lang: string;
   /** Normalized user input. */
   cleaned_input: string;
