@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
@@ -45,17 +45,38 @@ function isPhraseOutput(
   return "translation" in output && "examples" in output;
 }
 
+// ── Section header with left divider ──
+
+function SectionHeader({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center mb-0.5">
+      <div className="flex-1 h-px bg-ctp-overlay0/30" />
+      <span className="text-ctp-text text-xs font-medium ml-3 whitespace-nowrap">
+        {children}
+      </span>
+    </div>
+  );
+}
+
 // ── Sub-renderers ──────────────────────────────────────────────────────────
 
 function WordView({ output }: { output: WordOutputV2 }) {
   return (
     <div className="space-y-2 leading-relaxed">
+      {/* CEFR */}
+      {output.cefr && (
+        <div>
+          <SectionHeader>CEFR</SectionHeader>
+          <span className="inline-flex items-center rounded bg-ctp-rosewater/15 px-1.5 py-0.5 text-ctp-rosewater text-xs font-medium">
+            {output.cefr}
+          </span>
+        </div>
+      )}
+
       {/* Meanings — ordered by frequency */}
       {output.meanings.length > 0 && (
         <div>
-          <div className="font-bold text-ctp-peach mb-0.5 text-center">
-            Meanings
-          </div>
+          <SectionHeader>Meanings</SectionHeader>
           <div className="space-y-0.5">
             {output.meanings.map((m, i) => (
               <div key={i} className="flex items-baseline gap-1">
@@ -72,9 +93,7 @@ function WordView({ output }: { output: WordOutputV2 }) {
       {/* Definitions */}
       {output.definitions.length > 0 && (
         <div>
-          <div className="font-bold text-ctp-peach mb-0.5 text-center">
-            Definitions
-          </div>
+          <SectionHeader>Definitions</SectionHeader>
           <div className="space-y-1">
             {output.definitions.map((d, i) => (
               <div key={i} className="leading-relaxed">
@@ -94,9 +113,7 @@ function WordView({ output }: { output: WordOutputV2 }) {
       {/* Examples */}
       {output.examples.length > 0 && (
         <div>
-          <div className="font-bold text-ctp-peach mb-0.5 text-center">
-            Examples
-          </div>
+          <SectionHeader>Examples</SectionHeader>
           <ul className="space-y-1">
             {output.examples.map((ex, i) => (
               <li key={i}>
@@ -115,13 +132,11 @@ function WordView({ output }: { output: WordOutputV2 }) {
       {/* Collocations */}
       {output.collocations.length > 0 && (
         <div>
-          <div className="font-bold text-ctp-peach mb-0.5 text-center">
-            Collocations
-          </div>
+          <SectionHeader>Collocations</SectionHeader>
           <div className="space-y-0.5">
             {output.collocations.map((c, i) => (
               <div key={i} className="leading-relaxed">
-                <span className="font-medium text-ctp-text">{c.phrase}</span>
+                <span className="text-ctp-text">{c.phrase}</span>
                 <span className="text-ctp-overlay0"> {c.translation}</span>
               </div>
             ))}
@@ -132,29 +147,14 @@ function WordView({ output }: { output: WordOutputV2 }) {
       {/* Synonyms */}
       {output.synonyms.length > 0 && (
         <div>
-          <div className="font-bold text-ctp-peach mb-0.5 text-center">
-            Synonyms
-          </div>
-          <div className="flex flex-wrap gap-1">
+          <SectionHeader>Synonyms</SectionHeader>
+          <div className="space-y-0.5">
             {output.synonyms.map((s, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center rounded bg-ctp-green/15 px-1.5 py-0.5 text-ctp-green text-xs"
-              >
+              <div key={i} className="text-ctp-text leading-relaxed">
                 {s}
-              </span>
+              </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* CEFR badge */}
-      {output.cefr && (
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-ctp-subtext">CEFR</span>
-          <span className="inline-flex items-center rounded bg-ctp-rosewater/15 px-1.5 py-0.5 text-ctp-rosewater text-xs font-medium">
-            {output.cefr}
-          </span>
         </div>
       )}
     </div>
@@ -170,9 +170,7 @@ function PhraseView({ output }: { output: PhraseOutputV2 }) {
 
       {output.examples.length > 0 && (
         <div>
-          <div className="font-bold text-ctp-peach mb-0.5 text-center">
-            Examples
-          </div>
+          <SectionHeader>Examples</SectionHeader>
           <ul className="space-y-1">
             {output.examples.map((ex, i) => (
               <li key={i}>

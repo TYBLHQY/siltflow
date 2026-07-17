@@ -130,7 +130,7 @@ RULES (apply to ALL types):
 const WORD_SCHEMA = `Schema:
 {
   "meanings": [
-    {"pos": "<UD POS tag>", "translation": "<most common translation>"}
+    {"pos": "<UD POS tag>", "translation": "<translation for this sense>"}
   ],
   "definitions": [
     {
@@ -139,14 +139,25 @@ const WORD_SCHEMA = `Schema:
     }
   ],
   "examples": [
-    {"sentence": "<example sentence using the word>", "translation": "<translation of the example>"}
+    {"sentence": "<example sentence using the word in this sense>", "translation": "<translation of the example>"}
   ],
   "collocations": [
     {"phrase": "<common collocation using the word>", "translation": "<translation>"}
   ],
   "synonyms": ["<synonym1>", "<synonym2>"],
   "cefr": "<A1|A2|B1|B2|C1|C2>"
-}`;
+}
+
+INSTRUCTIONS for meanings:
+- The word may have multiple distinct senses (一词多义). Cover ALL major senses, prioritizing the most relevant to the provided CONTEXT.
+- Group senses by part of speech — return separate entries for each distinct sense, even under the same POS.
+- Stay within the 1-5 item limit: prioritize the most frequent / context-relevant senses.
+- Example: for "run" → meanings could include {pos:"VERB", translation:"奔跑"} and {pos:"VERB", translation:"运营"} and {pos:"NOUN", translation:"跑步"} — covering major verb and noun senses.
+
+INSTRUCTIONS for synonyms:
+- Each synonym must be a SINGLE WORD, not a phrase or compound expression.
+- Do NOT include phrasal verbs (e.g. "carry out"), compound expressions (e.g. "in spite of"), or any multi-word entries.
+- Collocations are handled separately — synonyms must NOT overlap with collocations.`;
 
 const PHRASE_SCHEMA = `Schema:
 {

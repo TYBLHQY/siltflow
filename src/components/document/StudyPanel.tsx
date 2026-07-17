@@ -166,7 +166,7 @@ export function StudyPanel({
         ) : (
           /* ── Before reveal: question centered ── */
           <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 gap-3">
-            <p className="font-medium text-center whitespace-pre-wrap wrap-break-word leading-relaxed">
+            <p className="text-lg font-medium text-center whitespace-pre-wrap wrap-break-word leading-relaxed">
               {item.text}
             </p>
             <p className="text-ctp-overlay0">Tap to reveal answer</p>
