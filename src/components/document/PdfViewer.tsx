@@ -253,20 +253,22 @@ function SelectionTip() {
 
   return (
     <div
-      className="flex items-center gap-1 px-2 py-1 shadow-lg"
+      className="flex items-center justify-center shadow-lg"
       style={{
+        width: 28,
+        height: 28,
         borderRadius: 8,
         backgroundColor: "var(--selection-tip-bg)",
         color: "var(--selection-tip-fg)",
       }}
     >
       <button
-        className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-opacity"
+        className="flex items-center justify-center hover:opacity-80 transition-opacity"
         style={{ color: "var(--selection-tip-fg)" }}
         onClick={handleAdd}
+        title="Add annotation"
       >
-        <Plus className="h-3 w-3" />
-        Add
+        <Plus className="h-3.5 w-3.5" />
       </button>
     </div>
   );
