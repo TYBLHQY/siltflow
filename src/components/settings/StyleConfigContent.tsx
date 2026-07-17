@@ -476,18 +476,22 @@ export function StyleConfigContent() {
           </select>
         </div>
 
-        {/* PDF dark invert */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="pdfDarkInvert"
-            className="rounded"
-            checked={themeConfig.pdfDarkInvert}
-            onChange={(e) => setPdfDarkInvert(e.target.checked)}
-          />
-          <label htmlFor="pdfDarkInvert" className="text-xs">
-            Invert PDF in dark mode
+        {/* PDF dark mode scheme */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1">
+            PDF dark mode
           </label>
+          <select
+            className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
+            value={themeConfig.pdfDarkInvert}
+            onChange={(e) =>
+              setPdfDarkInvert(e.target.value as "off" | "invert" | "themed")
+            }
+          >
+            <option value="off">Off — original colors</option>
+            <option value="invert">Invert — black background, white text</option>
+            <option value="themed">Themed — matches app background</option>
+          </select>
         </div>
       </div>
 

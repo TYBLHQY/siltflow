@@ -2,12 +2,13 @@ import { create } from "zustand";
 
 export type ThemeFlavor = "latte" | "frappe" | "macchiato" | "mocha";
 export type ThemeMode = "auto" | "light" | "dark";
+export type PdfDarkInvert = "off" | "invert" | "themed";
 
 export interface ThemeConfig {
   lightTheme: ThemeFlavor;
   darkTheme: ThemeFlavor;
   themeMode: ThemeMode;
-  pdfDarkInvert: boolean;
+  pdfDarkInvert: PdfDarkInvert;
 }
 
 interface ThemeStoreState {
@@ -15,7 +16,7 @@ interface ThemeStoreState {
   setLightTheme: (flavor: ThemeFlavor) => void;
   setDarkTheme: (flavor: ThemeFlavor) => void;
   setThemeMode: (mode: ThemeMode) => void;
-  setPdfDarkInvert: (v: boolean) => void;
+  setPdfDarkInvert: (v: PdfDarkInvert) => void;
   resolveTheme: () => { flavor: ThemeFlavor; isDark: boolean };
 }
 
@@ -25,7 +26,7 @@ const DEFAULT_CONFIG: ThemeConfig = {
   lightTheme: "latte",
   darkTheme: "mocha",
   themeMode: "auto",
-  pdfDarkInvert: true,
+  pdfDarkInvert: "invert",
 };
 
 function persist(config: ThemeConfig) {
@@ -89,8 +90,13 @@ export async function loadThemeFromVault(cfg?: Record<string, unknown>) {
     const saved = (cfg as Record<string, unknown>)[STORAGE_KEY] as
       Partial<ThemeConfig> | undefined;
     if (saved && typeof saved === "object") {
+      // Migrate legacy boolean pdfDarkInvert
+      const migrated = { ...saved };
+      if (typeof migrated.pdfDarkInvert === "boolean") {
+        migrated.pdfDarkInvert = migrated.pdfDarkInvert ? "invert" : "off";
+      }
       useThemeStore.setState({
-        config: { ...DEFAULT_CONFIG, ...saved },
+        config: { ...DEFAULT_CONFIG, ...migrated },
       });
     }
   } catch {

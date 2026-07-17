@@ -171,8 +171,8 @@ function App() {
     // Sync .dark class for shadcn compatibility
     html.classList.toggle("dark", resolved.isDark);
 
-    // Apply PDF dark invert
-    html.dataset.pdfDarkInvert = themeConfig.pdfDarkInvert ? "true" : "false";
+    // Apply PDF dark invert scheme
+    html.dataset.pdfDarkInvert = themeConfig.pdfDarkInvert;
   }, [resolveTheme, themeConfig.pdfDarkInvert]);
 
   // Apply on config change

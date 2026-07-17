@@ -133,20 +133,82 @@
   background: var(--catppuccin-color-base) !important;
 }
 
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter :is(canvas, .textLayer) {
+/* PDF dark mode scheme: off — no transform */
+
+html[data-pdf-dark-invert="off"].dark .PdfHighlighter :is(canvas, .textLayer) {
+  filter: none;
+}
+
+/* PDF dark mode scheme: invert — full invert (default) */
+
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter :is(canvas, .textLayer) {
   filter: invert(1) hue-rotate(180deg);
 }
 
-html[data-pdf-dark-invert="true"].dark
+/* PDF dark mode scheme: themed — invert + screen blend
+   White bg → invert to black → screen blend → transparent (reveals base)
+   Black text → invert to white → screen blend → stays white */
+
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter :is(canvas, .textLayer) {
+  filter: invert(1) hue-rotate(180deg);
+  mix-blend-mode: screen;
+}
+
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .page {
+  background-color: transparent !important;
+}
+
+/* ── Peach highlight (invert + themed) ──────────────────────────────
+   Both modes replace the library's default yellow highlight with a
+   semi-transparent peach colour. In invert mode this means we also
+   strip the invert filter from the highlight layer so the peach shows
+   in its original hue.                                        */
+
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter {
+  --highlight-peach: rgb(250 180 120 / 0.3);
+  --highlight-selected-peach: rgb(250 180 120 / 0.55);
+}
+
+html[data-pdf-dark-invert="invert"].dark
   .PdfHighlighter
   .PdfHighlighter__highlight-layer,
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter .TextHighlight,
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter .AreaHighlight,
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter .DrawingHighlight,
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter .ShapeHighlight,
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter .FreetextHighlight,
-html[data-pdf-dark-invert="true"].dark .PdfHighlighter .ImageHighlight {
-  filter: invert(1) hue-rotate(180deg);
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .TextHighlight,
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .AreaHighlight,
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .DrawingHighlight,
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .ShapeHighlight,
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .FreetextHighlight,
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .ImageHighlight,
+html[data-pdf-dark-invert="themed"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .TextHighlight,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .AreaHighlight,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .DrawingHighlight,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .ShapeHighlight,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .FreetextHighlight,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .ImageHighlight {
+  filter: none;
+  mix-blend-mode: normal;
+}
+
+html[data-pdf-dark-invert="invert"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer
+  .TextHighlight__part,
+html[data-pdf-dark-invert="invert"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer
+  .AreaHighlight__part,
+html[data-pdf-dark-invert="themed"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer
+  .TextHighlight__part,
+html[data-pdf-dark-invert="themed"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer
+  .AreaHighlight__part {
+  background: var(--highlight-peach) !important;
 }
 
 /* PdfHighlighter: scrollbar controlled by data-pdf-scrollbar attribute */
