@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Pencil, Volume2, Loader2, Sparkles, Trash2 } from "lucide-react";
 
 import { renderBoldText } from "@/components/ui/render-bold";
+import type { AIAnnotationDataV1 } from "@/types/annotation";
 import {
   getTranslation,
   getDefinitions,
@@ -62,7 +63,7 @@ export function AIAnnotationResultV1({
   onDelete,
 }: AIAnnotationResultV1Props) {
   const style = useStyleStore((s) => s.style);
-  const ai = item.aiResult;
+  const ai = item.aiResult as AIAnnotationDataV1 | null | undefined;
   const tts = useTTS();
 
   // ── Translate spinner management ──
@@ -83,7 +84,7 @@ export function AIAnnotationResultV1({
     "listenCardAudio",
     () => {
       if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
-      else tts.speak(item.text, undefined, item.aiResult?.source_lang, item.id);
+      else tts.speak(item.text, undefined, ai?.source_lang, item.id);
     },
     { enabled: enableShortcut && !!item },
   );
@@ -171,7 +172,7 @@ export function AIAnnotationResultV1({
                     tts.speak(
                       item.text,
                       undefined,
-                      item.aiResult?.source_lang,
+                      ai?.source_lang,
                       item.id,
                     );
                 }}

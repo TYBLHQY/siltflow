@@ -1,0 +1,307 @@
+/**
+ * ====================================================================
+ * V2 AI Translation — Two-stage pipeline
+ *
+ * 1. input AI: normalize text, detect source_lang, infer type
+ * 2. output AI: generate type-specific analysis (word/phrase/sentence)
+ *
+ * Static-first prompt design for Prompt Caching Optimization.
+ * ====================================================================
+ */
+
+import type { AIProfile } from "@/stores/ai.store";
+import { chatCompletion } from "@/lib/ai";
+import { inferGranularity } from "@/lib/annotation-helpers";
+import type {
+  AIAnnotationDataV2,
+  AIAnnotationInputV2,
+  AIAnnotationOutputV2,
+} from "@/types/annotation";
+
+// ===========================================================================
+// Constants
+// ===========================================================================
+
+/** Maximum context length in characters for the output AI prompt. */
+const MAX_CONTEXT_LENGTH = 5000;
+
+// ===========================================================================
+// Input AI
+// ===========================================================================
+
+const INPUT_SYSTEM_PROMPT = `You are a text normalization assistant. Analyze the given text and produce a clean input record.
+
+Output ONLY valid JSON — no surrounding text, no markdown fences, no commentary.
+
+Schema:
+{
+  "text": "<original text>",
+  "normalized": "<normalized version — strip leading/trailing whitespace, normalize unicode>",
+  "source_lang": "<BCP 47 language code — use the provided hint but verify it; if unsure output 'und'>",
+  "type": "<word|phrase|sentence — use the provided hint but verify; sentence = complete sentence with punctuation, phrase = 2-5 words, word = single word>"
+}
+
+CONSTRAINTS:
+- source_lang: verify the provided hint; if the text is clearly in a different language, correct it
+- type: verify the provided hint; single word → "word", 2-5 word group → "phrase", complete sentence → "sentence"
+- normalized: remove extra whitespace, normalize NFC unicode, preserve case`;
+
+function buildInputUserMessage(
+  text: string,
+  sourceLangHint: string,
+  targetLang: string,
+  typeHint: string,
+): string {
+  let msg = `Text: ${text}`;
+  msg += `\nSource language hint: ${sourceLangHint}`;
+  msg += `\nTarget language: ${targetLang}`;
+  msg += `\nType hint: ${typeHint}`;
+  return msg;
+}
+
+async function callInputAI(
+  profile: AIProfile,
+  text: string,
+  sourceLangHint: string,
+  targetLang: string,
+  typeHint: string,
+  signal?: AbortSignal,
+): Promise<AIAnnotationInputV2> {
+  const userContent = buildInputUserMessage(
+    text,
+    sourceLangHint,
+    targetLang,
+    typeHint,
+  );
+
+  let raw = "";
+  await chatCompletion(
+    profile,
+    [
+      { role: "system", content: INPUT_SYSTEM_PROMPT },
+      { role: "user", content: userContent },
+    ],
+    (chunk) => {
+      raw += chunk.content;
+    },
+    signal,
+  );
+
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const parsed = JSON.parse(cleaned) as AIAnnotationInputV2;
+
+  // Validate type — fallback to program's hint if AI returns unexpected value
+  if (!["word", "phrase", "sentence"].includes(parsed.type)) {
+    parsed.type = typeHint as AIAnnotationInputV2["type"];
+  }
+
+  return parsed;
+}
+
+// ===========================================================================
+// Output AI — type-specific prompts
+// ===========================================================================
+
+/**
+ * Static system prompt preamble shared across all V2 output types.
+ * No variables — fully cacheable.
+ */
+const OUTPUT_SYSTEM_PREAMBLE = `You are a bilingual lexicographer providing translation and language analysis. Given the input record, document context, and a type-specific schema, produce the requested output.
+
+Output ONLY valid JSON — no surrounding text, no markdown fences, no commentary.
+
+RULES (apply to ALL types):
+- All text fields must be plain text only — NO markdown formatting (no bold, italics, lists, headings, code fences, or any other markup).
+- Use Universal Dependencies POS tags: NOUN, VERB, ADJ, ADV, PRON, DET, ADP, AUX, CONJ, SCONJ, PART, NUM, PROPN, INTJ.
+- CEFR levels: A1, A2, B1, B2, C1, C2.
+- Lists must have 1-5 items. Prefer 3-4 results for rich analysis.
+- Translations must be natural and idiomatic in the target language.`;
+
+/**
+ * Per-type JSON schemas appended to the static preamble.
+ * These are also static (no variables) — the input data follows in the user message.
+ */
+
+const WORD_SCHEMA = `Schema:
+{
+  "meanings": [
+    {"pos": "<UD POS tag>", "translation": "<most common translation>"}
+  ],
+  "definitions": [
+    {
+      "pos": "<UD POS tag>",
+      "definition": {"source": "<definition in source language>", "target": "<translation of the definition>"}
+    }
+  ],
+  "examples": [
+    {"sentence": "<example sentence using the word>", "translation": "<translation of the example>"}
+  ],
+  "collocations": [
+    {"phrase": "<common collocation using the word>", "translation": "<translation>"}
+  ],
+  "synonyms": ["<synonym1>", "<synonym2>"],
+  "cefr": "<A1|A2|B1|B2|C1|C2>"
+}`;
+
+const PHRASE_SCHEMA = `Schema:
+{
+  "translation": "<natural translation of the entire phrase>",
+  "examples": [
+    {"sentence": "<example sentence using the phrase>", "translation": "<translation>"}
+  ]
+}`;
+
+const SENTENCE_SCHEMA = `Schema:
+{
+  "translation": "<natural translation of the entire sentence>"
+}`;
+
+function getTypeSchema(type: AIAnnotationInputV2["type"]): string {
+  switch (type) {
+    case "word":
+      return WORD_SCHEMA;
+    case "phrase":
+      return PHRASE_SCHEMA;
+    case "sentence":
+      return SENTENCE_SCHEMA;
+  }
+}
+
+function buildOutputUserMessage(
+  input: AIAnnotationInputV2,
+  targetLang: string,
+  context: string | undefined,
+): string {
+  const inputJson = JSON.stringify(input);
+  const lines: string[] = [];
+  lines.push(`Target language: ${targetLang}`);
+  lines.push(`Input: ${inputJson}`);
+  if (context) {
+    const truncated =
+      context.length > MAX_CONTEXT_LENGTH
+        ? context.slice(0, MAX_CONTEXT_LENGTH) + "…"
+        : context;
+    lines.push(
+      `\nCONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncated}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+// ===========================================================================
+// Output AI dispatcher
+// ===========================================================================
+
+async function callOutputAI(
+  profile: AIProfile,
+  input: AIAnnotationInputV2,
+  targetLang: string,
+  context: string | undefined,
+  signal?: AbortSignal,
+): Promise<AIAnnotationOutputV2> {
+  const typeSchema = getTypeSchema(input.type);
+
+  // system = [static preamble] + [static type schema] (both fully cacheable)
+  const systemContent = `${OUTPUT_SYSTEM_PREAMBLE}\n\n${typeSchema}`;
+  const userContent = buildOutputUserMessage(input, targetLang, context);
+
+  let raw = "";
+  await chatCompletion(
+    profile,
+    [
+      { role: "system", content: systemContent },
+      { role: "user", content: userContent },
+    ],
+    (chunk) => {
+      raw += chunk.content;
+    },
+    signal,
+  );
+
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  return JSON.parse(cleaned) as AIAnnotationOutputV2;
+}
+
+// ===========================================================================
+// Public API
+// ===========================================================================
+
+export interface TranslateV2Options {
+  /** The selected text to translate / analyse. */
+  text: string;
+  /** Source language hint from user config (BCP 47). */
+  sourceLang?: string;
+  /** Target language for translation (BCP 47). */
+  targetLang: string;
+  /** Document summary / article context for disambiguation. */
+  context?: string;
+  /** AbortSignal for cancellation. */
+  signal?: AbortSignal;
+}
+
+/**
+ * Main V2 translation pipeline.
+ *
+ * 1. Program infers a type hint from the text.
+ * 2. input AI normalizes input, detects source_lang, validates type.
+ * 3. output AI produces type-specific analysis.
+ *
+ * Returns the full AIAnnotationDataV2 result.
+ */
+export async function translateAnnotationV2(
+  profile: AIProfile,
+  options: TranslateV2Options,
+): Promise<AIAnnotationDataV2> {
+  const sourceLangHint = options.sourceLang ?? "und";
+  const targetLang = options.targetLang ?? "zh-CN";
+
+  // Step 1: Program infers type
+  // inferGranularity returns "word"|"phrase"|"sentence"|"passage"
+  // We map "passage" → "sentence" since V2 only has three types.
+  const programType = inferGranularity(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    {} as any,
+    options.text,
+  );
+  const typeHint = programType === "passage" ? "sentence" : programType;
+
+  // Step 2: Input AI
+  const input = await callInputAI(
+    profile,
+    options.text,
+    sourceLangHint,
+    targetLang,
+    typeHint,
+    options.signal,
+  );
+
+  // Step 3: Output AI
+  const output = await callOutputAI(
+    profile,
+    input,
+    targetLang,
+    options.context,
+    options.signal,
+  );
+
+  // Step 4: Assemble result
+  return {
+    input,
+    context: options.context
+      ? options.context.length > MAX_CONTEXT_LENGTH
+        ? options.context.slice(0, MAX_CONTEXT_LENGTH) + "…"
+        : options.context
+      : null,
+    output,
+  };
+}

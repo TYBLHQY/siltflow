@@ -1,9 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Highlighter,
-  CheckSquare,
-  Sparkles,
-} from "lucide-react";
+import { Highlighter, CheckSquare, Sparkles } from "lucide-react";
 import { useState, useCallback, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
@@ -27,8 +23,9 @@ interface AnnotationsTabProps {
   annotationsScrollRef: React.RefObject<HTMLDivElement>;
 }
 
-// ── Shared translation helper ───────────────────────────────────────
-// Both single-annotation and batch-annotation translation use this.
+// ── Shared translation helpers ──────────────────────────────────────
+// Both single-annotation and batch-annotation translation use these.
+// V1 → single AI call (AIAnnotationDataV1). V2 → two-stage AI call (AIAnnotationDataV2).
 
 async function translateItem(
   item: { id: string; text: string },
@@ -42,7 +39,8 @@ async function translateItem(
 ): Promise<boolean> {
   updateItem(item.id, { aiResult: null });
   try {
-    const { translateAnnotation, extractArticleContext } = await import("@/lib/translate");
+    const { translateAnnotation, extractArticleContext } =
+      await import("@/lib/translate");
     const result = await translateAnnotation(profile, {
       text: item.text,
       sourceLang,
@@ -50,7 +48,45 @@ async function translateItem(
       contextSentence: item.text,
       context: summary ?? extractArticleContext((texts ?? []).join(" ")),
     });
-    updateItem(item.id, { aiResult: result, text: result.cleaned_input || item.text });
+    updateItem(item.id, {
+      aiResult: result,
+      text: result.cleaned_input || item.text,
+    });
+    return true;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Translation failed";
+    showToast(message, "error");
+    updateItem(item.id, { aiResult: undefined });
+    return false;
+  }
+}
+
+async function translateItemV2(
+  item: { id: string; text: string },
+  profile: AIProfile,
+  sourceLang: string,
+  targetLang: string,
+  summary: string | undefined,
+  texts: string[] | undefined,
+  updateItem: (id: string, patch: Partial<AnnotationItem>) => void,
+  showToast: (message: string, type: "info" | "success" | "error") => void,
+): Promise<boolean> {
+  updateItem(item.id, { aiResult: null });
+  try {
+    const { translateAnnotationV2 } = await import("@/lib/translate-v2");
+    const { extractArticleContext } = await import("@/lib/translate");
+    const context = summary ?? extractArticleContext((texts ?? []).join(" "));
+    const result = await translateAnnotationV2(profile, {
+      text: item.text,
+      sourceLang,
+      targetLang,
+      context,
+    });
+    updateItem(item.id, {
+      aiResult: result,
+      text: result.input.normalized || item.text,
+      aiVersion: 2,
+    });
     return true;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Translation failed";
@@ -76,7 +112,8 @@ export function AnnotationsTab({
   const targetLangs = useSummaryStore((s) => s.targetLangs);
   const setTargetLang = useSummaryStore((s) => s.setTargetLang);
   const currentDocument = useDocumentStore((s) => s.currentDocument);
-  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight) ?? undefined;
+  const scrollToHighlight =
+    usePdfViewerStore((s) => s.scrollToHighlight) ?? undefined;
 
   const docId = currentDocument?.id;
   const summary = docId ? summaries[docId] : undefined;
@@ -123,7 +160,9 @@ export function AnnotationsTab({
     setStudyPanelOpen(true);
   }, [dueItems, showToast]);
 
-  useShortcut("startLearning", handleStartLearning, { enabled: hasPdf && !studyPanelOpen });
+  useShortcut("startLearning", handleStartLearning, {
+    enabled: hasPdf && !studyPanelOpen,
+  });
 
   // ── Batch translate ────────────────────────────────────────────────
   const handleBatchTranslate = useCallback(async () => {
@@ -133,7 +172,10 @@ export function AnnotationsTab({
       return;
     }
     if (!activeProfile) {
-      showToast("Please configure an AI provider in Settings > AI Config", "info");
+      showToast(
+        "Please configure an AI provider in Settings > AI Config",
+        "info",
+      );
       return;
     }
     if (!summary || !summary.text?.trim()) {
@@ -144,8 +186,12 @@ export function AnnotationsTab({
 
     setBatchTranslating(true);
     const results = await Promise.all(
-      untranslated.map((item) =>
-        translateItem(
+      untranslated.map((item) => {
+        const fn =
+          item.text.trim().split(/\s+/).length <= 2
+            ? translateItemV2
+            : translateItem;
+        return fn(
           item,
           activeProfile,
           sourceLang,
@@ -154,22 +200,33 @@ export function AnnotationsTab({
           texts,
           updateItem,
           showToast,
-        ),
-      ),
+        );
+      }),
     );
     setBatchTranslating(false);
     const completed = results.filter(Boolean).length;
-    if (completed > 0) showToast(`Translated ${completed} annotation${completed > 1 ? "s" : ""}`, "info");
-  }, [items, activeProfile, summary, texts, updateItem, showToast, onTabChange, effectiveTargetLang, sourceLang]);
+    if (completed > 0)
+      showToast(
+        `Translated ${completed} annotation${completed > 1 ? "s" : ""}`,
+        "info",
+      );
+  }, [
+    items,
+    activeProfile,
+    summary,
+    texts,
+    updateItem,
+    showToast,
+    onTabChange,
+    effectiveTargetLang,
+    sourceLang,
+  ]);
 
   return (
     <>
       {items.length > 0 && (
         <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
-          <Button
-            className="w-full"
-            onClick={handleStartLearning}
-          >
+          <Button className="w-full" onClick={handleStartLearning}>
             <IconText icon={CheckSquare} size="xs" className="gap-0">
               Start Learning ({dueCount})
             </IconText>
@@ -208,7 +265,9 @@ export function AnnotationsTab({
               }}
             >
               {LANGUAGES_WITH_AUTO.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
               ))}
             </select>
           </span>
@@ -224,11 +283,11 @@ export function AnnotationsTab({
               }}
             >
               {LANGUAGES.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
               ))}
-              <option value="__default__">
-                Default (zh)
-              </option>
+              <option value="__default__">Default (zh)</option>
             </select>
           </span>
         </div>
@@ -288,7 +347,11 @@ export function AnnotationsTab({
                         return;
                       }
 
-                      await translateItem(
+                      const fn =
+                        item.text.trim().split(/\s+/).length <= 2
+                          ? translateItemV2
+                          : translateItem;
+                      await fn(
                         item,
                         profile,
                         sourceLang,

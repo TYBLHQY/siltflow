@@ -52,7 +52,8 @@ export function AITranslateCard({
     onClick?.();
   };
 
-  const detailAvailable = ai ? hasDetails(ai) : false;
+  // hasDetails only applies to V1 data; V2 uses its own type-based layout
+  const detailAvailable = ai && "translation" in ai ? hasDetails(ai) : false;
 
   return (
     <div

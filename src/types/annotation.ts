@@ -131,3 +131,102 @@ export interface AIAnnotationDataV1 {
     term_local?: string;
   }>;
 }
+
+// ===========================================================================
+// V2 types — word / phrase / sentence
+// ===========================================================================
+
+// ── V2 Input (common) ─────────────────────────────────────────────────────
+
+export interface AIAnnotationInputV2 {
+  /** Original user-selected text. */
+  text: string;
+  /** Normalized version (whitespace, unicode NFC). */
+  normalized: string;
+  /** BCP 47 language code (verified by input AI). */
+  source_lang: string;
+  /** Content type, validated by input AI. */
+  type: "word" | "phrase" | "sentence";
+}
+
+// ── V2 Output: word ────────────────────────────────────────────────────────
+
+export interface WordMeaning {
+  /** UD POS tag: NOUN, VERB, ADV, ADJ, PRON, etc. */
+  pos: string;
+  /** Translation of this sense in target language. */
+  translation: string;
+}
+
+export interface WordDefinitionEntry {
+  /** UD POS tag. */
+  pos: string;
+  /** Definition in source language + its translation. */
+  definition: {
+    /** Explanation in the source language. */
+    source: string;
+    /** Translation of the explanation in target language. */
+    target: string;
+  };
+}
+
+export interface WordExample {
+  /** Example sentence in source language. */
+  sentence: string;
+  /** Translation of the example. */
+  translation: string;
+}
+
+export interface WordCollocation {
+  /** Common collocation / usage pattern. */
+  phrase: string;
+  /** Translation of the collocation. */
+  translation: string;
+}
+
+export interface WordOutputV2 {
+  /** Senses ordered by frequency (most common first). 1-5 items. */
+  meanings: WordMeaning[];
+  /** Detailed definitions. 1-5 items. */
+  definitions: WordDefinitionEntry[];
+  /** Usage examples. 1-5 items. */
+  examples: WordExample[];
+  /** Common collocations. 1-5 items. */
+  collocations: WordCollocation[];
+  /** Synonyms (source language only, no translation). 1-5 items. */
+  synonyms: string[];
+  /** CEFR level: A1, A2, B1, B2, C1, C2. */
+  cefr: string;
+}
+
+// ── V2 Output: phrase ──────────────────────────────────────────────────────
+
+export interface PhraseOutputV2 {
+  /** Natural translation of the entire phrase. */
+  translation: string;
+  /** Usage examples. 1-5 items. */
+  examples: WordExample[];
+}
+
+// ── V2 Output: sentence ────────────────────────────────────────────────────
+
+export interface SentenceOutputV2 {
+  /** Natural translation of the entire sentence. */
+  translation: string;
+}
+
+// ── Combined V2 output ─────────────────────────────────────────────────────
+
+export type AIAnnotationOutputV2 =
+  WordOutputV2 | PhraseOutputV2 | SentenceOutputV2;
+
+// ── V2 full result ─────────────────────────────────────────────────────────
+
+export interface AIAnnotationDataV2 {
+  /** Input fields (produced by input AI). */
+  input: AIAnnotationInputV2;
+  /** Document context (up to 5000 chars). */
+  context: string | null;
+  /** Type-specific output (produced by output AI). */
+  output: AIAnnotationOutputV2;
+}

@@ -12,9 +12,9 @@
  * is assumed to follow the current AIAnnotationData schema.
  */
 
-import type { AnnotationItem } from "@/stores/annotation.store";
+import type { AIAnnotationDataV1 } from "@/types/annotation";
 
-type AIResult = NonNullable<AnnotationItem["aiResult"]>;
+type AIResult = AIAnnotationDataV1;
 
 // ── Translation ─────────────────────────────────────────────────────
 
