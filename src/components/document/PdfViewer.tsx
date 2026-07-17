@@ -252,9 +252,17 @@ function SelectionTip() {
   if (!pendingAnnotation) return null;
 
   return (
-    <div className="flex items-center gap-1 rounded-md bg-ctp-mauve px-2 py-1 shadow-lg">
+    <div
+      className="flex items-center gap-1 px-2 py-1 shadow-lg"
+      style={{
+        borderRadius: 8,
+        backgroundColor: "var(--selection-tip-bg)",
+        color: "var(--selection-tip-fg)",
+      }}
+    >
       <button
-        className="flex items-center gap-1 text-xs font-medium text-ctp-crust hover:opacity-80 transition-opacity"
+        className="flex items-center gap-1 text-xs font-medium hover:opacity-80 transition-opacity"
+        style={{ color: "var(--selection-tip-fg)" }}
         onClick={handleAdd}
       >
         <Plus className="h-3 w-3" />
