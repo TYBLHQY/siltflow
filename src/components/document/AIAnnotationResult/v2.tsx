@@ -432,7 +432,7 @@ export function AIAnnotationResultV2({
           {/* Header: granularity + page + version */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
+              <span className="font-medium text-ctp-maroon uppercase tracking-wider">
                 {granularity}
               </span>
               <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
