@@ -49,12 +49,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm build
+      - name: Build (tsc + vite)
+        run: tsc && vite build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish release
+      - name: Package (electron-builder, no implicit publish)
+        run: electron-builder --publish=never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          # Create release on first run, upload on every run
+          gh release create "$TAG" --generate-notes --title "${TAG#v}" --target "${{ github.sha }}" || true
+          for f in release/*/*; do
+            if [ -f "$f" ]; then
+              echo "Uploading: $f"
+              gh release upload "$TAG" "$f" --clobber
+            fi
+          done
+
+      - name: Mark release as published (Linux only)
         if: matrix.target == 'linux'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
