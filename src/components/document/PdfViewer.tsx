@@ -136,10 +136,10 @@ function SiltflowHighlightContainer({
 
   // TTS button for the highlight toolbar
   const tts = useTTS();
-  const sourceLang = useSummaryStore((s) => {
-    const docId = useDocumentStore.getState().currentDocument?.id;
-    return docId ? s.summaries[docId]?.sourceLang : undefined;
-  });
+  const docId = useDocumentStore((s) => s.currentDocument?.id);
+  const sourceLang = useSummaryStore((s) =>
+    docId ? s.summaries[docId]?.sourceLang : undefined,
+  );
 
   const highlightTTSButton = highlight.content?.text ? (
     <button
