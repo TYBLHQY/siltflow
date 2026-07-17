@@ -123,6 +123,8 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       // Persist side tables if changed
       if (patch.aiResult !== undefined) {
         const saveVersion = patch.aiVersion ?? 1;
+        // Persist to DB. Use the caller-assigned version so V2 data
+        // survives app refresh (the IPC previously always wrote version=1).
         window.siltflow.aiResults
           .save(id, current.documentId, patch.aiResult, saveVersion)
           .catch(

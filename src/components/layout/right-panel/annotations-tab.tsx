@@ -23,43 +23,9 @@ interface AnnotationsTabProps {
   annotationsScrollRef: React.RefObject<HTMLDivElement>;
 }
 
-// ── Shared translation helpers ──────────────────────────────────────
-// Both single-annotation and batch-annotation translation use these.
-// V1 → single AI call (AIAnnotationDataV1). V2 → two-stage AI call (AIAnnotationDataV2).
-
-async function translateItem(
-  item: { id: string; text: string },
-  profile: AIProfile,
-  sourceLang: string,
-  targetLang: string,
-  summary: string | undefined,
-  texts: string[] | undefined,
-  updateItem: (id: string, patch: Partial<AnnotationItem>) => void,
-  showToast: (message: string, type: "info" | "success" | "error") => void,
-): Promise<boolean> {
-  updateItem(item.id, { aiResult: null });
-  try {
-    const { translateAnnotation, extractArticleContext } =
-      await import("@/lib/translate");
-    const result = await translateAnnotation(profile, {
-      text: item.text,
-      sourceLang,
-      targetLang,
-      contextSentence: item.text,
-      context: summary ?? extractArticleContext((texts ?? []).join(" ")),
-    });
-    updateItem(item.id, {
-      aiResult: result,
-      text: result.cleaned_input || item.text,
-    });
-    return true;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Translation failed";
-    showToast(message, "error");
-    updateItem(item.id, { aiResult: undefined });
-    return false;
-  }
-}
+// ── V2 shared translation helper ──────────────────────────────────────
+// V1 translate (single AI call for AIAnnotationDataV1) is no longer active.
+// All new translations use the V2 two-stage pipeline below.
 
 async function translateItemV2(
   item: { id: string; text: string },
@@ -186,12 +152,8 @@ export function AnnotationsTab({
 
     setBatchTranslating(true);
     const results = await Promise.all(
-      untranslated.map((item) => {
-        const fn =
-          item.text.trim().split(/\s+/).length <= 2
-            ? translateItemV2
-            : translateItem;
-        return fn(
+      untranslated.map((item) =>
+        translateItemV2(
           item,
           activeProfile,
           sourceLang,
@@ -200,8 +162,8 @@ export function AnnotationsTab({
           texts,
           updateItem,
           showToast,
-        );
-      }),
+        ),
+      ),
     );
     setBatchTranslating(false);
     const completed = results.filter(Boolean).length;
@@ -347,11 +309,7 @@ export function AnnotationsTab({
                         return;
                       }
 
-                      const fn =
-                        item.text.trim().split(/\s+/).length <= 2
-                          ? translateItemV2
-                          : translateItem;
-                      await fn(
+                      await translateItemV2(
                         item,
                         profile,
                         sourceLang,
