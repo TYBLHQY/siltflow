@@ -64,8 +64,7 @@ export function inferGranularity(
   text: string,
 ): string {
   const t = text.trim();
-  if (t.includes("\n") || (t.split(" ").length > 30 && t.includes(".")))
-    return "passage";
+  if (t.includes("\n") || t.split(" ").length > 30) return "sentence";
   if (t.split(/[.!?;]+/).filter(Boolean).length > 1) return "sentence";
   if (t.split(" ").length > 2) return "phrase";
   return "word";

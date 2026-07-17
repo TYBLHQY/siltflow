@@ -266,14 +266,12 @@ export async function translateAnnotationV2(
   const targetLang = options.targetLang ?? "zh-CN";
 
   // Step 1: Program infers type
-  // inferGranularity returns "word"|"phrase"|"sentence"|"passage"
-  // We map "passage" → "sentence" since V2 only has three types.
-  const programType = inferGranularity(
+  // inferGranularity returns "word"|"phrase"|"sentence"
+  const typeHint = inferGranularity(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     {} as any,
     options.text,
   );
-  const typeHint = programType === "passage" ? "sentence" : programType;
 
   // Step 2: Input AI
   const input = await callInputAI(
