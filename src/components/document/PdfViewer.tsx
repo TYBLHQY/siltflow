@@ -24,11 +24,13 @@ import {
 } from "@/stores/annotation.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
+import { useSummaryStore } from "@/stores/summary.store";
+import { useTTS } from "@/hooks/useTts";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 // Import PDF worker URL explicitly instead of relying on the library's
 // DEFAULT_WORKER_SRC (which resolves to a wrong path in pnpm layouts).
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Plus } from "lucide-react";
+import { Plus, Volume2 } from "lucide-react";
 // PDF-related CSS loaded only when this component is mounted (lazy import)
 // These were moved from main.tsx to avoid blocking initial render.
 import "pdfjs-dist/web/pdf_viewer.css";
@@ -132,6 +134,27 @@ function SiltflowHighlightContainer({
     onHighlightClick?.(highlight.id);
   }, [onHighlightClick, highlight.id]);
 
+  // TTS button for the highlight toolbar
+  const tts = useTTS();
+  const sourceLang = useSummaryStore((s) => {
+    const docId = useDocumentStore.getState().currentDocument?.id;
+    return docId ? s.summaries[docId]?.sourceLang : undefined;
+  });
+
+  const highlightTTSButton = highlight.content?.text ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        tts.speak(highlight.content!.text!, undefined, sourceLang, undefined);
+      }}
+      title="Read aloud"
+      className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
+      style={{ color: "var(--selection-tip-fg)" }}
+    >
+      <Volume2 className="h-3.5 w-3.5" />
+    </button>
+  ) : null;
+
   switch (highlight.type) {
     case "text":
       return (
@@ -143,6 +166,7 @@ function SiltflowHighlightContainer({
           onDelete={handleDelete}
           copyText={highlight.content?.text}
           onClick={handleClick}
+          extraButtons={highlightTTSButton}
         />
       );
 
