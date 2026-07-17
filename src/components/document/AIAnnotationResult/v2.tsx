@@ -316,9 +316,12 @@ function PhraseView({
   return (
     <div className="space-y-2 leading-relaxed">
       {output.translation && (
-        <SelectionTTSButton language={targetLang} annId={annId}>
-          <p className="font-medium text-ctp-text">{output.translation}</p>
-        </SelectionTTSButton>
+        <div>
+          <SectionHeader>Translation</SectionHeader>
+          <SelectionTTSButton language={targetLang} annId={annId}>
+            <p className="font-medium text-ctp-text">{output.translation}</p>
+          </SelectionTTSButton>
+        </div>
       )}
 
       {output.examples.length > 0 && (
@@ -357,11 +360,14 @@ function SentenceView({
 }) {
   if (!output.translation) return null;
   return (
-    <SelectionTTSButton language={targetLang} annId={annId}>
-      <p className="font-medium text-ctp-text leading-relaxed">
-        {output.translation}
-      </p>
-    </SelectionTTSButton>
+    <div>
+      <SectionHeader>Translation</SectionHeader>
+      <SelectionTTSButton language={targetLang} annId={annId}>
+        <p className="font-medium text-ctp-text leading-relaxed">
+          {output.translation}
+        </p>
+      </SelectionTTSButton>
+    </div>
   );
 }
 
@@ -438,7 +444,7 @@ export function AIAnnotationResultV2({
 
           {/* Source text — with TTS selection */}
           <SelectionTTSButton language={ai?.input?.source_lang} annId={item.id}>
-            <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed">
+            <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed font-semibold">
               {ai?.input?.normalized ?? item.text}
             </p>
           </SelectionTTSButton>
