@@ -23,7 +23,29 @@ interface AIAnnotationResultV2Props {
   onDelete?: () => void;
 }
 
-// ── Sub-renderers ─────────────────────────────────────────────────────────
+// ── Render helpers ─────────────────────────────────────────────────────────
+
+function isWordOutput(
+  output: AIAnnotationDataV2["output"],
+): output is WordOutputV2 {
+  return "meanings" in output;
+}
+
+function isSentenceOutput(
+  output: AIAnnotationDataV2["output"],
+): output is SentenceOutputV2 {
+  // Sentence has ONLY "translation" — no examples, no meanings
+  return "translation" in output && !("examples" in output);
+}
+
+function isPhraseOutput(
+  output: AIAnnotationDataV2["output"],
+): output is PhraseOutputV2 {
+  // Phrase has "translation" + "examples"
+  return "translation" in output && "examples" in output;
+}
+
+// ── Sub-renderers ──────────────────────────────────────────────────────────
 
 function WordView({ output }: { output: WordOutputV2 }) {
   return (
@@ -183,8 +205,6 @@ function SentenceView({ output }: { output: SentenceOutputV2 }) {
 export function AIAnnotationResultV2({
   item,
   showCore = false,
-  // V2 uses type-based layout instead of showDetails/expanded toggle
-  showDetails: _showDetails,
   enableShortcut = false,
   showActionBar = false,
   editing,
@@ -341,11 +361,11 @@ export function AIAnnotationResultV2({
             </div>
           )}
 
-          {/* ── Output section — dispatch by input.type (verified by input AI) ── */}
-          {output && ai?.input.type === "word" && <WordView output={output as WordOutputV2} />}
-          {output && ai?.input.type === "phrase" && <PhraseView output={output as PhraseOutputV2} />}
-          {output && ai?.input.type === "sentence" && (
-            <SentenceView output={output as SentenceOutputV2} />
+          {/* ── Output section ── */}
+          {output && isWordOutput(output) && <WordView output={output} />}
+          {output && isPhraseOutput(output) && <PhraseView output={output} />}
+          {output && isSentenceOutput(output) && (
+            <SentenceView output={output} />
           )}
         </>
       )}
