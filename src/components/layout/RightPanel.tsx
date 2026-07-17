@@ -7,6 +7,7 @@ import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { AnnotationsTab } from "@/components/layout/right-panel/annotations-tab";
 import { SummaryTab } from "@/components/layout/right-panel/summary-tab";
+import { extractPageTexts } from "@/lib/summarize";
 
 interface RightPanelProps {
   activeTab?: string;
@@ -58,18 +59,12 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     if (activeTab !== "summary") return; // don't extract eagerly
 
     const gen = ++extractionGen.current;
-    import("@/lib/summarize").then(({ extractPageTexts }) => {
+    extractPageTexts(pdfDocument).then((texts) => {
       if (gen !== extractionGen.current) return;
-      if (pageTexts[docId]) return; // re-check after async import
-      extractPageTexts(pdfDocument).then((texts) => {
-        if (gen !== extractionGen.current) return;
-        setPageTexts(docId, texts);
-      }).catch((err) => {
-        if (gen !== extractionGen.current) return;
-        console.error("Failed to extract page texts:", err);
-      });
+      setPageTexts(docId, texts);
     }).catch((err) => {
-      console.error("Failed to load summarize module:", err);
+      if (gen !== extractionGen.current) return;
+      console.error("Failed to extract page texts:", err);
     });
   }, [pdfDocument, docId, pageTexts, activeTab, setPageTexts]);
 
