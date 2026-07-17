@@ -190,17 +190,17 @@ function buildOutputUserMessage(
 ): string {
   const inputJson = JSON.stringify(input);
   const lines: string[] = [];
-  lines.push(`Target language: ${targetLang}`);
-  lines.push(`Input: ${inputJson}`);
   if (context) {
     const truncated =
       context.length > MAX_CONTEXT_LENGTH
         ? context.slice(0, MAX_CONTEXT_LENGTH) + "…"
         : context;
     lines.push(
-      `\nCONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncated}`,
+      `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncated}`,
     );
   }
+  lines.push(`Target language: ${targetLang}`);
+  lines.push(`Input: ${inputJson}`);
   return lines.join("\n");
 }
 
