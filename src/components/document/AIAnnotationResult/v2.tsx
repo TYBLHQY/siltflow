@@ -168,7 +168,7 @@ function SectionHeader({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center mb-0.5">
       <div className="flex-1 border-t border-dashed border-ctp-overlay0/30" />
-      <span className="text-ctp-text text-xs font-medium ml-3 whitespace-nowrap">
+      <span className="text-ctp-maroon text-xs font-medium ml-3 whitespace-nowrap">
         {children}
       </span>
     </div>
