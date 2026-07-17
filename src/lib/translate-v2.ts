@@ -36,14 +36,17 @@ Output ONLY valid JSON — no surrounding text, no markdown fences, no commentar
 Schema:
 {
   "text": "<original text>",
-  "normalized": "<normalized version — strip leading/trailing whitespace, normalize unicode>",
+  "normalized": "<normalized version — trim whitespace, normalize to NFC unicode>",
   "source_lang": "<BCP 47 language code — use the provided hint but verify it; if unsure output 'und'>",
-  "type": "<word|phrase|sentence — use the provided hint but verify; sentence = complete sentence with punctuation, phrase = 2-5 words, word = single word>"
+  "type": "<word|phrase|sentence — use the provided hint but verify>"
 }
 
 CONSTRAINTS:
 - source_lang: verify the provided hint; if the text is clearly in a different language, correct it
-- type: verify the provided hint; single word → "word", 2-5 word group → "phrase", complete sentence → "sentence"
+- type: verify the provided hint:
+  * "word" = single word (including contractions like "don't", "it's")
+  * "phrase" = multi-word expression that does NOT contain a subject-predicate pair
+  * "sentence" = expression with a subject and predicate, typically ending with punctuation (.!?)
 - normalized: remove extra whitespace, normalize NFC unicode, preserve case`;
 
 function buildInputUserMessage(
@@ -117,10 +120,12 @@ Output ONLY valid JSON — no surrounding text, no markdown fences, no commentar
 
 RULES (apply to ALL types):
 - All text fields must be plain text only — NO markdown formatting (no bold, italics, lists, headings, code fences, or any other markup).
-- Use Universal Dependencies POS tags: NOUN, VERB, ADJ, ADV, PRON, DET, ADP, AUX, CONJ, SCONJ, PART, NUM, PROPN, INTJ.
+- Use ONLY Universal Dependencies POS tags: NOUN, VERB, ADJ, ADV, PRON, DET, ADP, AUX, CONJ, SCONJ, PART, NUM, PROPN, INTJ. Do NOT use any other tag set (e.g., no Penn Treebank tags like NN, VB, JJ).
 - CEFR levels: A1, A2, B1, B2, C1, C2.
-- Lists must have 1-5 items. Prefer 3-4 results for rich analysis.
-- Translations must be natural and idiomatic in the target language.`;
+- Lists must have 1-5 items. Prioritize quality over quantity — 2 excellent results are better than 5 mediocre ones. For words with many senses, select the most frequent and context-relevant ones.
+- Translations must be natural and idiomatic in the target language.
+- For idioms and culturally specific expressions, provide the closest natural equivalent rather than a literal translation.
+- Maintain the original register in translations (formal ↔ formal, casual ↔ casual).`;
 
 /**
  * Per-type JSON schemas appended to the static preamble.
@@ -155,9 +160,15 @@ INSTRUCTIONS for meanings:
 - Example: for "run" → meanings could include {pos:"VERB", translation:"奔跑"} and {pos:"VERB", translation:"运营"} and {pos:"NOUN", translation:"跑步"} — covering major verb and noun senses.
 
 INSTRUCTIONS for synonyms:
-- Each synonym must be a SINGLE WORD, not a phrase or compound expression.
+- synonyms: 1-5 items. Each synonym must be a SINGLE WORD, not a phrase or compound expression.
 - Do NOT include phrasal verbs (e.g. "carry out"), compound expressions (e.g. "in spite of"), or any multi-word entries.
-- Collocations are handled separately — synonyms must NOT overlap with collocations.`;
+- Collocations are handled separately — synonyms must NOT overlap with collocations.
+
+RELATIONSHIP between meanings and definitions:
+- "meanings" are CONCISE glosses in the target language (1-5 words each). They serve as quick look-up translations.
+- "definitions" are FULL dictionary-style explanations, first in the source language then translated.
+- Each definition SHOULD correspond to a meaning entry for the same sense — but with expanded detail.
+- Do NOT copy-paste the same text between meanings and definitions.`;
 
 const PHRASE_SCHEMA = `Schema:
 {
@@ -199,7 +210,7 @@ function buildOutputUserMessage(
       `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncated}`,
     );
   }
-  lines.push(`Target language: ${targetLang}`);
+  lines.push(`IMPORTANT: All translations must be in ${targetLang}.`);
   lines.push(`Input: ${inputJson}`);
   return lines.join("\n");
 }
