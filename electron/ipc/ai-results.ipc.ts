@@ -21,7 +21,7 @@ export function registerAiResultHandlers() {
   })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ipcMain.handle("aiResults:save", (_event, record: { annotationId: string; documentId: string; data: any }) => {
+  ipcMain.handle("aiResults:save", (_event, record: { annotationId: string; documentId: string; data: any; version?: number }) => {
     const sql = getSqlite()
     if (!sql) return null
     const now = new Date().toISOString()
@@ -32,13 +32,13 @@ export function registerAiResultHandlers() {
       record.annotationId,
       record.documentId,
       JSON.stringify(record.data),
-      AI_DATA_VERSION,
+      record.version ?? AI_DATA_VERSION,
       record.annotationId,
       record.documentId,
       now,
       now,
     )
-    return { annotationId: record.annotationId, version: AI_DATA_VERSION }
+    return { annotationId: record.annotationId, version: record.version ?? AI_DATA_VERSION }
   })
 
   ipcMain.handle("aiResults:delete", (_event, annotationId: string, documentId: string) => {

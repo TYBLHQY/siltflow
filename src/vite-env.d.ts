@@ -74,7 +74,7 @@ interface SiltflowAPI {
     get: (annotationId: string, documentId: string) => Promise<string | null>;
     listByDocument: (documentId: string) => Promise<{ annotationId: string; data: string }[]>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    save: (annotationId: string, documentId: string, data: any) => Promise<any>;
+    save: (annotationId: string, documentId: string, data: any, version?: number) => Promise<any>;
     delete: (annotationId: string, documentId: string) => Promise<void>;
   };
   fsrsCards: {

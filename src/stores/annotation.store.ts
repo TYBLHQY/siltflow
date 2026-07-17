@@ -64,7 +64,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
     persistAnnotation(item);
     if (item.aiResult) {
       window.siltflow.aiResults
-        .save(item.id, item.documentId, item.aiResult)
+        .save(item.id, item.documentId, item.aiResult, item.aiVersion ?? 1)
         .catch(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (err: any) => {
@@ -122,8 +122,9 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       persistAnnotation(merged);
       // Persist side tables if changed
       if (patch.aiResult !== undefined) {
+        const saveVersion = patch.aiVersion ?? 1;
         window.siltflow.aiResults
-          .save(id, current.documentId, patch.aiResult)
+          .save(id, current.documentId, patch.aiResult, saveVersion)
           .catch(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (err: any) => {
