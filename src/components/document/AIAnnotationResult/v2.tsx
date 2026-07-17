@@ -72,14 +72,19 @@ function SelectionTTSButton({
 
   // ── Detect text selection inside container ──
 
-  const showButtonFromSelection = useCallback(() => {
+  const handleMouseUp = useCallback(() => {
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) {
       setBtn(null);
       return;
     }
     const range = sel.getRangeAt(0);
-    if (!containerRef.current?.contains(range.commonAncestorContainer)) {
+    const container = containerRef.current;
+    if (!container) { setBtn(null); return; }
+    // Check selection starts inside this container. Use startContainer
+    // (not commonAncestorContainer) so "select all" within a block works
+    // even when the common ancestor resolves to the outer layout wrapper.
+    if (!container.contains(range.startContainer)) {
       setBtn(null);
       return;
     }
@@ -95,17 +100,6 @@ function SelectionTTSButton({
       left: rect.left + rect.width / 2,
     });
   }, [language]);
-
-  const handleMouseUp = useCallback(() => {
-    // Single-click release: only show if text is already selected
-    // (e.g. after a prior double/triple-click or keyboard selection).
-    showButtonFromSelection();
-  }, [showButtonFromSelection]);
-
-  const handleDoubleClick = useCallback(() => {
-    // Double-click selects word; triple-click selects paragraph.
-    showButtonFromSelection();
-  }, [showButtonFromSelection]);
 
   // ── Hide on outside click / scroll / Escape ──
 
@@ -139,7 +133,7 @@ function SelectionTTSButton({
   }, [btn, tts, annId]);
 
   return (
-    <div ref={containerRef} onMouseUp={handleMouseUp} onDoubleClick={handleDoubleClick}>
+    <div ref={containerRef} onMouseUp={handleMouseUp}>
       {children}
 
       {/* Floating play button above selection */}
