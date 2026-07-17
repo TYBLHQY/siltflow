@@ -451,7 +451,7 @@ export function AIAnnotationResultV2({
 
           {/* ── Action bar ── */}
           {showActionBar && (
-            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+            <div className="flex flex-wrap items-center gap-1 mt-1">
               {onEditToggle && (
                 <button
                   className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
