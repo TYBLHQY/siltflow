@@ -24,7 +24,7 @@ export function SummaryTab() {
   const style = useStyleStore((s) => s.style);
   const showToast = useToastStore((s) => s.show);
   const activeProfile = useAIStore(
-    (s) => s.profiles.find((p) => p.active) ?? s.profiles[0] ?? null,
+    (s) => s.getProfileForTask("summarize"),
   );
 
   const currentDocument = useDocumentStore((s) => s.currentDocument);

@@ -1,7 +1,12 @@
 import { useState } from "react";
-import { Bot } from "lucide-react";
+import { Bot, ListTodo } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAIStore, BUILTIN_PROVIDERS } from "@/stores/ai.store";
+import {
+  useAIStore,
+  BUILTIN_PROVIDERS,
+  TASK_LABELS,
+  type AITask,
+} from "@/stores/ai.store";
 import { LANGUAGES } from "@/lib/languages";
 
 export function AIConfigContent() {
@@ -9,17 +14,14 @@ export function AIConfigContent() {
   const addProfile = useAIStore((s) => s.addProfile);
   const removeProfile = useAIStore((s) => s.removeProfile);
   const updateProfile = useAIStore((s) => s.updateProfile);
-  const setActiveProfile = useAIStore((s) => s.setActiveProfile);
+  const setTaskProfile = useAIStore((s) => s.setTaskProfile);
+  const taskProfiles = useAIStore((s) => s.taskProfiles);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
-  // All built-in providers not yet configured
-  const usedKeys = new Set(profiles.map((p) => p.providerKey));
-  const availableProviders = BUILTIN_PROVIDERS.filter(
-    (p: { key: string; editable?: boolean }) =>
-      !usedKeys.has(p.key) || p.editable,
-  );
+  // All tasks for the assignment section
+  const tasks: AITask[] = ["summarize", "translate-input", "translate-output"];
 
   return (
     <>
@@ -34,9 +36,7 @@ export function AIConfigContent() {
         {profiles.map((profile) => (
           <div
             key={profile.id}
-            className={`rounded-md border p-3 transition-colors ${
-              profile.active ? "border-ctp-mauve" : ""
-            }`}
+            className="rounded-md border p-3 transition-colors"
           >
             {/* Header row */}
             <div className="flex items-center justify-between gap-2 mb-2">
@@ -75,15 +75,6 @@ export function AIConfigContent() {
                 </span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {!profile.active && (
-                  <Button
-                  variant="link"
-                  className="text-xs"
-                  onClick={() => setActiveProfile(profile.id)}
-                >
-                  Activate
-                </Button>
-                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -230,7 +221,7 @@ export function AIConfigContent() {
           + Add provider
         </summary>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {availableProviders.map(
+          {BUILTIN_PROVIDERS.map(
             (provider: { key: string; label: string }) => (
               <Button
                 key={provider.key}
@@ -246,6 +237,45 @@ export function AIConfigContent() {
           )}
         </div>
       </details>
+
+      {/* Task assignment */}
+      <div className="mt-4 pt-4 border-t">
+        <div className="mb-3 flex items-center gap-2">
+          <ListTodo className="h-5 w-5" />
+          <h2 className="text-base font-semibold">Task Assignment</h2>
+        </div>
+        <p className="text-xs text-ctp-overlay0 mb-3">
+          Select which provider handles each AI task. Unassigned tasks use the
+          first provider in the list.
+        </p>
+        <div className="space-y-2">
+          {tasks.map((task) => {
+            const assignedId = taskProfiles[task] ?? "";
+            return (
+              <div
+                key={task}
+                className="flex items-center justify-between px-3 py-1.5"
+              >
+                <span className="text-sm font-medium">{TASK_LABELS[task]}</span>
+                <select
+                  className="w-56 rounded border bg-ctp-base px-2 py-1 text-xs outline-none"
+                  value={assignedId}
+                  onChange={(e) =>
+                    setTaskProfile(task, e.target.value || null)
+                  }
+                >
+                  <option value="">Auto (first provider)</option>
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.providerKey})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Default target language */}
       <div className="mt-4 pt-4 border-t">

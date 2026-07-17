@@ -4,6 +4,9 @@ import { create } from "zustand";
 // Types
 // ---------------------------------------------------------------------------
 
+/** The AI task types. */
+export type AITask = "summarize" | "translate-input" | "translate-output";
+
 /** A provider profile — an instance of a provider with user-specified config. */
 export interface AIProfile {
   id: string;
@@ -20,8 +23,6 @@ export interface AIProfile {
   temperature: number;
   maxTokens: number;
   topP: number;
-  /** Whether this profile is the active one */
-  active: boolean;
 }
 
 /** Built-in provider preset. */
@@ -170,9 +171,18 @@ function createProfile(preset: ProviderPreset, idx: number): AIProfile {
     temperature: 0.3,
     maxTokens: 393_216,
     topP: 1,
-    active: false,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Task labels (for UI)
+// ---------------------------------------------------------------------------
+
+export const TASK_LABELS: Record<AITask, string> = {
+  summarize: "Summarize",
+  "translate-input": "Translate (Input)",
+  "translate-output": "Translate (Output)",
+};
 
 // ---------------------------------------------------------------------------
 // Store
@@ -182,19 +192,23 @@ interface AIStoreState {
   /** Whether the initial load from vault has completed */
   loaded: boolean;
   profiles: AIProfile[];
+  /** Maps each AI task to a profile id (null = unassigned → fallback to first profile). */
+  taskProfiles: Partial<Record<AITask, string | null>>;
   defaultTargetLang: string;
   addProfile: (providerKey: string) => void;
   removeProfile: (id: string) => void;
   updateProfile: (id: string, patch: Partial<AIProfile>) => void;
-  setActiveProfile: (id: string) => void;
+  /** Assign a profile to a task (null to unassign). */
+  setTaskProfile: (task: AITask, profileId: string | null) => void;
+  /** Get the profile assigned to a given task, or the first profile as fallback. */
+  getProfileForTask: (task: AITask) => AIProfile | null;
   setDefaultTargetLang: (lang: string) => void;
-  /** Get the currently-active profile, or null if none */
-  activeProfile: () => AIProfile | null;
 }
 
 export const useAIStore = create<AIStoreState>()((set, get) => ({
   loaded: false,
   profiles: [],
+  taskProfiles: {},
   defaultTargetLang: "zh-CN",
 
   addProfile: (providerKey: string) => {
@@ -206,7 +220,7 @@ export const useAIStore = create<AIStoreState>()((set, get) => ({
     const profile = createProfile(preset, existing.length);
     set((s) => {
       const next = [...s.profiles, profile];
-      persistToVault(next);
+      persistToVault(next, s.taskProfiles);
       return { profiles: next };
     });
   },
@@ -214,8 +228,13 @@ export const useAIStore = create<AIStoreState>()((set, get) => ({
   removeProfile: (id: string) =>
     set((s) => {
       const next = s.profiles.filter((p) => p.id !== id);
-      persistToVault(next);
-      return { profiles: next };
+      // Clean up any task assignments pointing to the removed profile
+      const taskProfiles = { ...s.taskProfiles };
+      for (const [task, pid] of Object.entries(taskProfiles)) {
+        if (pid === id) taskProfiles[task as AITask] = null;
+      }
+      persistToVault(next, taskProfiles);
+      return { profiles: next, taskProfiles };
     }),
 
   updateProfile: (id: string, patch: Partial<AIProfile>) =>
@@ -223,20 +242,26 @@ export const useAIStore = create<AIStoreState>()((set, get) => ({
       const next = s.profiles.map((p) =>
         p.id === id ? { ...p, ...patch } : p,
       );
-      persistToVault(next);
+      persistToVault(next, s.taskProfiles);
       return { profiles: next };
     }),
 
-  setActiveProfile: (id: string) =>
+  setTaskProfile: (task: AITask, profileId: string | null) =>
     set((s) => {
-      const next = s.profiles.map((p) => ({ ...p, active: p.id === id }));
-      persistToVault(next);
-      return { profiles: next };
+      const next = { ...s.taskProfiles, [task]: profileId };
+      persistToVault(s.profiles, next);
+      return { taskProfiles: next };
     }),
 
-  activeProfile: () => {
-    const profiles = get().profiles;
-    return profiles.find((p) => p.active) ?? profiles[0] ?? null;
+  getProfileForTask: (task: AITask) => {
+    const { profiles, taskProfiles } = get();
+    const profileId = taskProfiles[task];
+    if (profileId) {
+      const found = profiles.find((p) => p.id === profileId);
+      if (found) return found;
+    }
+    // Fallback: first profile
+    return profiles[0] ?? null;
   },
 
   setDefaultTargetLang: (lang) => {
@@ -250,9 +275,16 @@ export const useAIStore = create<AIStoreState>()((set, get) => ({
 // ---------------------------------------------------------------------------
 
 const AI_VAULT_KEY = "aiStore";
+const TASK_PROFILES_KEY = "taskProfiles";
 
-function persistToVault(profiles: AIProfile[]) {
-  window.siltflow.vaultConfigSet({ [AI_VAULT_KEY]: profiles });
+function persistToVault(
+  profiles: AIProfile[],
+  taskProfiles: Partial<Record<AITask, string | null>>,
+) {
+  window.siltflow.vaultConfigSet({
+    [AI_VAULT_KEY]: profiles,
+    [TASK_PROFILES_KEY]: taskProfiles,
+  });
 }
 
 /** Call once on app boot to restore profiles and settings from vault. */
@@ -265,7 +297,17 @@ export function loadFromVault(cfg?: Record<string, unknown>) {
 function applyAIConfig(cfg: Record<string, unknown>) {
   const saved = (cfg as Record<string, unknown>)[AI_VAULT_KEY];
   if (Array.isArray(saved)) {
-    useAIStore.setState({ profiles: saved as AIProfile[], loaded: true });
+    // Migrate legacy profiles: strip active/task fields
+    const migrated = (saved as Array<Record<string, unknown>>).map(
+      ({ active: _active, task: _task, ...rest }) => rest as unknown as AIProfile,
+    );
+    useAIStore.setState({ profiles: migrated, loaded: true });
+  }
+  const taskProfiles = (cfg as Record<string, unknown>)[
+    TASK_PROFILES_KEY
+  ] as Partial<Record<AITask, string | null>> | undefined;
+  if (taskProfiles) {
+    useAIStore.setState({ taskProfiles });
   }
   const defaultTargetLang = (cfg as Record<string, unknown>)[
     "defaultTargetLang"

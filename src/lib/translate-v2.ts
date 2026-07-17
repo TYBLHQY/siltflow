@@ -248,6 +248,10 @@ async function callOutputAI(
 // ===========================================================================
 
 export interface TranslateV2Options {
+  /** Profile for the input AI stage (normalization, language detection). */
+  inputProfile: AIProfile;
+  /** Profile for the output AI stage (semantic analysis, translations). */
+  outputProfile: AIProfile;
   /** The selected text to translate / analyse. */
   text: string;
   /** Source language hint from user config (BCP 47). */
@@ -270,7 +274,6 @@ export interface TranslateV2Options {
  * Returns the full AIAnnotationDataV2 result.
  */
 export async function translateAnnotationV2(
-  profile: AIProfile,
   options: TranslateV2Options,
 ): Promise<AIAnnotationDataV2> {
   const sourceLangHint = options.sourceLang ?? "und";
@@ -284,9 +287,9 @@ export async function translateAnnotationV2(
     options.text,
   );
 
-  // Step 2: Input AI
+  // Step 2: Input AI (using inputProfile)
   const input = await callInputAI(
-    profile,
+    options.inputProfile,
     options.text,
     sourceLangHint,
     targetLang,
@@ -294,9 +297,9 @@ export async function translateAnnotationV2(
     options.signal,
   );
 
-  // Step 3: Output AI
+  // Step 3: Output AI (using outputProfile)
   const output = await callOutputAI(
-    profile,
+    options.outputProfile,
     input,
     targetLang,
     options.context,

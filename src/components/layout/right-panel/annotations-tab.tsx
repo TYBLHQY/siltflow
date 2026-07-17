@@ -15,7 +15,6 @@ import { useShortcut } from "@/hooks/useShortcut";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import type { Grade } from "ts-fsrs";
 import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
-import type { AIProfile } from "@/stores/ai.store";
 import type { AnnotationItem } from "@/stores/annotation.store";
 
 interface AnnotationsTabProps {
@@ -29,7 +28,6 @@ interface AnnotationsTabProps {
 
 async function translateItemV2(
   item: { id: string; text: string },
-  profile: AIProfile,
   sourceLang: string,
   targetLang: string,
   summary: string | undefined,
@@ -37,12 +35,24 @@ async function translateItemV2(
   updateItem: (id: string, patch: Partial<AnnotationItem>) => void,
   showToast: (message: string, type: "info" | "success" | "error") => void,
 ): Promise<boolean> {
+  const inputProfile = useAIStore.getState().getProfileForTask("translate-input");
+  const outputProfile = useAIStore.getState().getProfileForTask("translate-output");
+  if (!inputProfile || !outputProfile) {
+    showToast(
+      "Please configure AI providers in Settings > AI Config",
+      "info",
+    );
+    return false;
+  }
+
   updateItem(item.id, { aiResult: null });
   try {
     const { translateAnnotationV2 } = await import("@/lib/translate-v2");
     const { extractArticleContext } = await import("@/lib/translate");
     const context = summary ?? extractArticleContext((texts ?? []).join(" "));
-    const result = await translateAnnotationV2(profile, {
+    const result = await translateAnnotationV2({
+      inputProfile,
+      outputProfile,
       text: item.text,
       sourceLang,
       targetLang,
@@ -71,7 +81,6 @@ export function AnnotationsTab({
   const updateItem = useAnnotationStore((s) => s.updateItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
   const showToast = useToastStore((s) => s.show);
-  const profiles = useAIStore((s) => s.profiles);
   const defaultTargetLang = useAIStore((s) => s.defaultTargetLang);
   const summaries = useSummaryStore((s) => s.summaries);
   const pageTexts = useSummaryStore((s) => s.pageTexts);
@@ -84,7 +93,6 @@ export function AnnotationsTab({
   const docId = currentDocument?.id;
   const summary = docId ? summaries[docId] : undefined;
   const texts = docId ? pageTexts[docId] : undefined;
-  const activeProfile = profiles.find((p) => p.active) ?? profiles[0] ?? null;
   const sourceLang = summary?.sourceLang ?? "en-US";
   const effectiveTargetLang =
     (docId && targetLangs[docId]) || defaultTargetLang || "zh-CN";
@@ -137,13 +145,6 @@ export function AnnotationsTab({
       showToast("All annotations already translated", "info");
       return;
     }
-    if (!activeProfile) {
-      showToast(
-        "Please configure an AI provider in Settings > AI Config",
-        "info",
-      );
-      return;
-    }
     if (!summary || !summary.text?.trim()) {
       showToast("Please generate a summary first", "info");
       onTabChange?.("summary");
@@ -155,7 +156,6 @@ export function AnnotationsTab({
       untranslated.map((item) =>
         translateItemV2(
           item,
-          activeProfile,
           sourceLang,
           effectiveTargetLang,
           summary?.text || undefined,
@@ -174,7 +174,6 @@ export function AnnotationsTab({
       );
   }, [
     items,
-    activeProfile,
     summary,
     texts,
     updateItem,
@@ -294,15 +293,6 @@ export function AnnotationsTab({
                       const item = items.find((i) => i.id === id);
                       if (!item || item.aiResult === null) return;
 
-                      const profile = activeProfile;
-                      if (!profile) {
-                        showToast(
-                          "Please configure an AI provider in Settings > AI Config",
-                          "info",
-                        );
-                        return;
-                      }
-
                       if (!summary || !summary.text?.trim()) {
                         showToast("Please generate a summary first", "info");
                         onTabChange?.("summary");
@@ -311,7 +301,6 @@ export function AnnotationsTab({
 
                       await translateItemV2(
                         item,
-                        profile,
                         sourceLang,
                         effectiveTargetLang,
                         summary.text,
