@@ -3,13 +3,6 @@ import { useStyleStore } from "@/stores/style.store";
 import {
   PdfLoader,
   PdfHighlighter,
-  TextHighlight,
-  AreaHighlight,
-  FreetextHighlight,
-  DrawingHighlight,
-  ImageHighlight,
-  ShapeHighlight,
-  useHighlightContainerContext,
 } from "react-pdf-highlighter-plus";
 import type {
   Highlight as RPHLHighlight,
@@ -24,19 +17,14 @@ import {
 } from "@/stores/annotation.store";
 import { usePdfViewerStore, registerGoToPage, registerScrollToHighlight, registerSetViewerScale } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
-import { useTTS } from "@/hooks/useTts";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
-import { useSummaryStore } from "@/stores/summary.store";
 import type { PDFDocumentProxy } from "pdfjs-dist";
-// Import PDF worker URL explicitly instead of relying on the library's
-// DEFAULT_WORKER_SRC (which resolves to a wrong path in pnpm layouts).
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Plus, Volume2 } from "lucide-react";
-// PDF-related CSS loaded only when this component is mounted (lazy import)
-// These were moved from main.tsx to avoid blocking initial render.
 import "pdfjs-dist/web/pdf_viewer.css";
 import "react-pdf-highlighter-plus/style/style.css";
 import "react-pdf-highlighter-plus/style/pdf_viewer.css";
+import { SiltflowHighlightContainer } from "./SiltflowHighlightContainer";
+import { SelectionTip } from "./SelectionTip";
 
 // ---------------------------------------------------------------------------
 // SiltflowHighlight — our application-specific highlight extension
@@ -112,131 +100,6 @@ function selectionToAnnotation(
 }
 
 // ---------------------------------------------------------------------------
-// SiltflowHighlightContainer
-// ---------------------------------------------------------------------------
-
-interface SiltflowHighlightContainerProps {
-  deleteHighlight(id: string): void;
-  /** Called when user clicks a highlight in the PDF */
-  onHighlightClick?(highlightId: string): void;
-}
-
-/**
- * Renders whichever highlight component matches `highlight.type`.
- * This is what gets passed as a child to `<PdfHighlighter>`.
- */
-function SiltflowHighlightContainer({
-  deleteHighlight,
-  onHighlightClick,
-}: SiltflowHighlightContainerProps) {
-  const { highlight, isScrolledTo, highlightBindings } =
-    useHighlightContainerContext<SiltflowHighlight>();
-
-  const handleDelete = useCallback(
-    () => deleteHighlight(highlight.id),
-    [deleteHighlight, highlight.id],
-  );
-
-  const handleClick = useCallback(() => {
-    onHighlightClick?.(highlight.id);
-  }, [onHighlightClick, highlight.id]);
-
-  // TTS button for the highlight toolbar — source language comes from
-  // the annotation's AI result (same as card TTS), not from the doc summary.
-  const tts = useTTS();
-
-  const highlightTTSButton = highlight.content?.text ? (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        tts.speak(highlight.content!.text!, undefined, highlight.sourceLang, undefined);
-      }}
-      title="Read aloud"
-      className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
-      style={{ color: "var(--selection-tip-fg)" }}
-    >
-      <Volume2 className="h-3.5 w-3.5" />
-    </button>
-  ) : null;
-
-  switch (highlight.type) {
-    case "text":
-      return (
-        <TextHighlight
-          key={highlight.id}
-          isScrolledTo={isScrolledTo}
-          highlight={highlight}
-          highlightColor={highlight.highlightColor}
-          onDelete={handleDelete}
-          copyText={highlight.content?.text}
-          onClick={handleClick}
-          extraButtons={highlightTTSButton}
-        />
-      );
-
-    case "freetext":
-      return (
-        <FreetextHighlight
-          key={highlight.id}
-          isScrolledTo={isScrolledTo}
-          highlight={highlight}
-          bounds={highlightBindings.textLayer}
-          onDelete={handleDelete}
-        />
-      );
-
-    case "image":
-      return (
-        <ImageHighlight
-          key={highlight.id}
-          isScrolledTo={isScrolledTo}
-          highlight={highlight}
-          bounds={highlightBindings.textLayer}
-          onDelete={handleDelete}
-        />
-      );
-
-    case "drawing":
-      return (
-        <DrawingHighlight
-          key={highlight.id}
-          isScrolledTo={isScrolledTo}
-          highlight={highlight}
-          bounds={highlightBindings.textLayer}
-          onDelete={handleDelete}
-        />
-      );
-
-    case "shape":
-      return (
-        <ShapeHighlight
-          key={highlight.id}
-          isScrolledTo={isScrolledTo}
-          highlight={highlight}
-          bounds={highlightBindings.textLayer}
-          onDelete={handleDelete}
-        />
-      );
-
-    default:
-      // Area highlight — default fallback
-      return (
-        <AreaHighlight
-          key={highlight.id}
-          isScrolledTo={isScrolledTo}
-          highlight={highlight}
-          highlightColor={highlight.highlightColor}
-          onChange={() => {
-            /* update position on resize — optional */
-          }}
-          bounds={highlightBindings.textLayer}
-          onDelete={handleDelete}
-        />
-      );
-  }
-}
-
-// ---------------------------------------------------------------------------
 // PdfViewer component
 // ---------------------------------------------------------------------------
 
@@ -244,93 +107,6 @@ interface PdfViewerProps {
   src: string;
   documentId: string;
   className?: string;
-}
-
-/**
- * Floating "Add annotation" + "Read aloud" bar that appears after text selection
- * in manual mode. Rendered via the library's selectionTip prop.
- */
-function SelectionTip() {
-  const setPendingAnnotation = usePdfViewerStore((s) => s.setPendingAnnotation);
-  const pendingAnnotation = usePdfViewerStore((s) => s.pendingAnnotation);
-  const addItem = useAnnotationStore((s) => s.addItem);
-  const tts = useTTS();
-  const documentId = useDocumentStore((s) => s.currentDocument?.id);
-  const sourceLang = useSummaryStore(
-    (s) => (documentId ? s.summaries[documentId]?.sourceLang : undefined),
-  );
-
-  const handleAdd = useCallback(() => {
-    if (!pendingAnnotation) return;
-    const docId = useDocumentStore.getState().currentDocument?.id;
-    if (!docId) return;
-    const id = crypto.randomUUID();
-    const item: AnnotationItem = {
-      id,
-      documentId: docId,
-      type: "text",
-      text: pendingAnnotation.text,
-      pageNumber: pendingAnnotation.pageNumber,
-      embedData: {
-        position: pendingAnnotation.position,
-        content: { text: pendingAnnotation.text },
-      },
-    };
-    addItem(item);
-    setPendingAnnotation(null);
-    // Clear text selection so the blue highlight disappears
-    window.getSelection()?.removeAllRanges();
-  }, [pendingAnnotation, addItem, setPendingAnnotation]);
-
-  const handlePlay = useCallback(() => {
-    if (!pendingAnnotation) return;
-    tts.speak(pendingAnnotation.text, undefined, sourceLang);
-  }, [pendingAnnotation, tts, sourceLang]);
-
-  if (!pendingAnnotation) return null;
-
-  return (
-    <div
-      className="flex items-center shadow-lg"
-      style={{
-        padding: "3px",
-        borderRadius: 10,
-        backgroundColor: "var(--selection-tip-bg)",
-        color: "var(--selection-tip-fg)",
-      }}
-    >
-      <button
-        className="flex items-center justify-center transition-colors"
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          color: "var(--selection-tip-fg)",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.10)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-        onClick={handlePlay}
-        title="Read aloud"
-      >
-        <Volume2 className="h-3.5 w-3.5" />
-      </button>
-      <button
-        className="flex items-center justify-center transition-colors"
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          color: "var(--selection-tip-fg)",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.10)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-        onClick={handleAdd}
-        title="Add annotation"
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
 }
 
 export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
