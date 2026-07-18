@@ -8,10 +8,10 @@ import { useChartData } from "@/hooks/useChartData";
 import { computeKnowledgeGrowth } from "@/lib/stats-computation";
 
 const GRADIENTS = [
-  { id: "gradLearning", color: "var(--catppuccin-color-rosewater)" },
+  { id: "gradLearning", color: "var(--catppuccin-color-mauve)" },
   { id: "gradYoung", color: "var(--catppuccin-color-peach)" },
   { id: "gradMature", color: "var(--catppuccin-color-green)" },
-  { id: "gradLongTerm", color: "var(--catppuccin-color-sapphire)" },
+  { id: "gradLongTerm", color: "var(--catppuccin-color-sky)" },
 ];
 
 export function KnowledgeGrowthChart() {
@@ -44,8 +44,8 @@ export function KnowledgeGrowthChart() {
           <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
               const colors: Record<string, string> = {
-                "Long-term": "var(--catppuccin-color-sapphire)", "Mature": "var(--catppuccin-color-green)",
-                "Young": "var(--catppuccin-color-peach)", "Learning": "var(--catppuccin-color-rosewater)",
+                "Long-term": "var(--catppuccin-color-sky)", "Mature": "var(--catppuccin-color-green)",
+                "Young": "var(--catppuccin-color-peach)", "Learning": "var(--catppuccin-color-mauve)",
               };
               return (
                 <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
@@ -60,13 +60,13 @@ export function KnowledgeGrowthChart() {
               );
             }} />
           <Area type="monotone" dataKey="longTerm" name="Long-term" stackId="1"
-            stroke="var(--catppuccin-color-sapphire)" fill="url(#gradLongTerm)" fillOpacity={1} />
+            stroke="var(--catppuccin-color-sky)" fill="url(#gradLongTerm)" fillOpacity={1} />
           <Area type="monotone" dataKey="mature" name="Mature" stackId="1"
             stroke="var(--catppuccin-color-green)" fill="url(#gradMature)" fillOpacity={1} />
           <Area type="monotone" dataKey="young" name="Young" stackId="1"
             stroke="var(--catppuccin-color-peach)" fill="url(#gradYoung)" fillOpacity={1} />
           <Area type="monotone" dataKey="learning" name="Learning" stackId="1"
-            stroke="var(--catppuccin-color-rosewater)" fill="url(#gradLearning)" fillOpacity={1} />
+            stroke="var(--catppuccin-color-mauve)" fill="url(#gradLearning)" fillOpacity={1} />
         </AreaChart>
       </ResponsiveContainer>
     </ChartCard>
