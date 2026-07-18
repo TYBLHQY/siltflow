@@ -272,7 +272,7 @@ function WordView({
           <SectionHeader>Collocations</SectionHeader>
           <div className="space-y-1">
             {output.collocations.map((c, i) => (
-              <div key={i} className="leading-relaxed">
+              <div key={i} className="leading-relaxed flex flex-wrap gap-1">
                 <SelectionTTSButton language={sourceLang} annId={annId}>
                   <span className="text-ctp-text">{c.phrase}</span>
                 </SelectionTTSButton>
@@ -289,10 +289,10 @@ function WordView({
       {output.synonyms.length > 0 && (
         <div>
           <SectionHeader>Synonyms</SectionHeader>
-          <div className="space-y-1">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
             {output.synonyms.map((s, i) => (
               <SelectionTTSButton key={i} language={sourceLang} annId={annId}>
-                <div className="text-ctp-text leading-relaxed">{s}</div>
+                <span className="text-ctp-text underline underline-offset-2 leading-relaxed">{s}</span>
               </SelectionTTSButton>
             ))}
           </div>
