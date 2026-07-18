@@ -9,13 +9,13 @@
 export interface DocumentIPCItem {
   id: string;
   title: string;
-  total_pages?: number | null;
-  original_name?: string | null;
-  folder_id?: string | null;
-  sort_order?: number;
+  totalPages?: number | null;
+  originalName?: string | null;
+  folderId?: string | null;
+  sortOrder?: number;
   metadata?: string | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DocumentSaveRequest {
@@ -118,10 +118,10 @@ export interface ReviewLogSaveResult {
 export interface FolderRowIPC {
   id: string;
   name: string;
-  parent_id: string | null;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
+  parentId: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FolderCreateParams {
