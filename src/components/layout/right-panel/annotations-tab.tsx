@@ -9,7 +9,7 @@ import { useAnnotationStore } from "@/stores/annotation.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useAIStore } from "@/stores/ai.store";
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import { pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
 import { useToastStore } from "@/stores/toast.store";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useNow } from "@/hooks/useNow";
@@ -88,8 +88,6 @@ export function AnnotationsTab({
   const targetLangs = useSummaryStore((s) => s.targetLangs);
   const setTargetLang = useSummaryStore((s) => s.setTargetLang);
   const currentDocument = useDocumentStore((s) => s.currentDocument);
-  const scrollToHighlight =
-    usePdfViewerStore((s) => s.scrollToHighlight) ?? undefined;
 
   const docId = currentDocument?.id;
   const summary = docId ? summaries[docId] : undefined;
@@ -287,7 +285,7 @@ export function AnnotationsTab({
                     onToggleExpand={(id) =>
                       setExpandedCardId((prev) => (prev === id ? null : id))
                     }
-                    onClick={() => scrollToHighlight?.(ann.id)}
+                    onClick={() => pdfScrollToHighlight(ann.id)}
                     onDelete={(id) => {
                       removeItem(id);
                     }}

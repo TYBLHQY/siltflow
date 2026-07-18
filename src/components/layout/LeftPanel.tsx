@@ -19,27 +19,26 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
-import {
-  useDocumentOutline,
-  DocumentOutline,
-} from "react-pdf-highlighter-plus";
+import { usePdfViewerStore, pdfGoToPage } from "@/stores/pdf-viewer.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore } from "@/stores/style.store";
 import { computeDocMetrics, type DocReviewMetrics } from "@/lib/doc-review";
 import { useNow } from "@/hooks/useNow";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ReviewTab } from "@/components/layout/left-panel/review-tab";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  useDocumentOutline,
+  DocumentOutline,
+} from "react-pdf-highlighter-plus";
 
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
-  const goToPage = usePdfViewerStore((s) => s.goToPage);
   const fontSize = useStyleStore((s) => s.style.fontSize);
 
   const { outline, isLoading: outlineLoading, hasOutline } = useDocumentOutline({
     pdfDocument: pdfDocument!,
-    goToPage: goToPage ?? undefined,
+    goToPage: pdfGoToPage,
   });
 
   if (!pdfDocument || outlineLoading) {
@@ -68,7 +67,7 @@ function DocumentOutlinePanel() {
         outline={outline}
         isLoading={false}
         currentPage={0}
-        onNavigate={(item) => goToPage?.(item.pageNumber)}
+        onNavigate={(item) => pdfGoToPage(item.pageNumber)}
         classNames={{ container: "py-2" }}
         itemClassNames={{
           container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",

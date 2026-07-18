@@ -2,10 +2,9 @@ import { useCallback } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { Button } from "@/components/ui/button";
 import { IconText } from "@/components/ui/icon-text";
-
 import { ArrowLeft, CheckSquare, ExternalLink } from "lucide-react";
 import { useShortcut } from "@/hooks/useShortcut";
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import { pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
 import { FSRSStats } from "@/components/document/FSRSStats";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,7 +50,6 @@ export function StudyPanel({
   onBack,
 }: StudyPanelProps) {
   const item = items[studyingIndex];
-  const scrollToHighlight = usePdfViewerStore((s) => s.scrollToHighlight);
 
   const handleReveal = useCallback(() => {
     if (!answerRevealed) setAnswerRevealed(true);
@@ -66,7 +64,7 @@ export function StudyPanel({
     if (!item) return;
     onBack();
     requestAnimationFrame(() => {
-      scrollToHighlight?.(item.id);
+      pdfScrollToHighlight(item.id);
       requestAnimationFrame(() => {
         window.dispatchEvent(
           new CustomEvent("siltflow:annotation-click", {
@@ -75,7 +73,7 @@ export function StudyPanel({
         );
       });
     });
-  }, [item, onBack, scrollToHighlight]);
+  }, [item, onBack]);
 
   // Learning mode shortcuts
   useShortcut("revealCard", handleReveal, {

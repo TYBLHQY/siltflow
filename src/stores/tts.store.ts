@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { TTSProvider, TTSConfig } from "@/types/tts";
+import type { TTSConfig } from "@/types/tts";
 export type { TTSProvider, TTSConfig } from "@/types/tts";
 
 interface TTSStoreState {

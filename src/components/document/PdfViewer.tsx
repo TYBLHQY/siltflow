@@ -22,7 +22,7 @@ import {
   useAnnotationStore,
   type AnnotationItem,
 } from "@/stores/annotation.store";
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import { usePdfViewerStore, registerGoToPage, registerScrollToHighlight, registerSetViewerScale } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useTTS } from "@/hooks/useTts";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
@@ -418,14 +418,11 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   // cleaning it in StrictMode's unmount/remount cycle would leave it null forever.
   // Also skip pdfDocument cleanup — React.lazy + strict effects can cause a
   // double-load cycle (setPdfDocument(null) → new mount triggers another load).
-  const setScrollToHighlightCleanup = usePdfViewerStore(
-    (s) => s.setScrollToHighlight,
-  );
   useEffect(() => {
     return () => {
-      setScrollToHighlightCleanup(null);
+      registerScrollToHighlight(null);
     };
-  }, [documentId, setScrollToHighlightCleanup]);
+  }, [documentId]);
 
   return (
     <div className={className}>
@@ -487,15 +484,10 @@ function PdfHighlighterWrapper({
   onHighlightClick?: (id: string) => void;
 }) {
   const setPdfDocument = usePdfViewerStore((s) => s.setPdfDocument);
-  const setGoToPage = usePdfViewerStore((s) => s.setGoToPage);
   const setCurrentPage = usePdfViewerStore((s) => s.setCurrentPage);
   const setPdfScale = usePdfViewerStore((s) => s.setPdfScale);
-  const setSetViewerScale = usePdfViewerStore((s) => s.setSetViewerScale);
   const pdfScale = usePdfViewerStore((s) => s.pdfScale);
   const fitWidth = usePdfViewerStore((s) => s.fitWidth);
-  const setScrollToHighlightStore = usePdfViewerStore(
-    (s) => s.setScrollToHighlight,
-  );
   const lastPage = usePdfViewerStore((s) => s.lastPageByDocId[documentId]);
   const pdfScrollbar = useStyleStore((s) => s.style.pdfScrollbar);
   const setLastPage = usePdfViewerStore((s) => s.setLastPage);
@@ -616,7 +608,7 @@ function PdfHighlighterWrapper({
         onSelection={onSelection}
         selectionTip={selectionTipContent}
         utilsRef={(utils: PdfHighlighterUtils) => {
-          setGoToPage((pageNumber: number) => utils.goToPage(pageNumber));
+          registerGoToPage((pageNumber: number) => utils.goToPage(pageNumber));
 
           // Unlock canvas resolution cap so page-width and zoomed views
           // render at full device resolution instead of CSS-only zoom.
@@ -625,13 +617,13 @@ function PdfHighlighterWrapper({
 
           // Capture a raw scale setter so FitWidthButton/Settings can call
           // viewer.currentScaleValue = "page-width" directly.
-          setSetViewerScale((value: string) => {
+          registerSetViewerScale((value: string) => {
             if (viewer) viewer.currentScaleValue = value;
           });
 
           // Expose scrollToHighlight so RightPanel can call it
           // Use a ref so the closure always sees the latest highlights array.
-          setScrollToHighlightStore((id: string) => {
+          registerScrollToHighlight((id: string) => {
             // Build a minimal Highlight object from the id since scrollToHighlight
             // needs the full position data. Find in the ref that stays current.
             const h = highlightsRef.current.find((h) => h.id === id);

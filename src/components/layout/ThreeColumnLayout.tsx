@@ -5,7 +5,7 @@ import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
 import { useDocumentStore } from "@/stores/document.store";
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import { usePdfViewerStore, pdfSetViewerScale } from "@/stores/pdf-viewer.store";
 import { usePanelLayout } from "@/hooks/usePanelLayout";
 import { useShortcut } from "@/hooks/useShortcut";
 
@@ -45,13 +45,12 @@ export function ThreeColumnLayout() {
 
   const handleToggleFitWidth = useCallback(() => {
     const pf = usePdfViewerStore.getState();
-    if (!pf.setViewerScale) return;
     if (pf.fitWidth) {
-      pf.setViewerScale("auto");
+      pdfSetViewerScale("auto");
       pf.setFitWidth(false);
       pf.setPdfScale(0);
     } else {
-      pf.setViewerScale("page-width");
+      pdfSetViewerScale("page-width");
       pf.setFitWidth(true);
     }
   }, []);

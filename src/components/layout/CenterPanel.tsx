@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
+import { usePdfViewerStore, pdfGoToPage, pdfSetViewerScale } from "@/stores/pdf-viewer.store";
 import {
   useAnnotationStore,
   type AnnotationEmbedData,
@@ -42,7 +42,6 @@ const StatsDashboard = React.lazy(() =>
 // Page navigation — jump to page (only shown when a PDF is open)
 // ---------------------------------------------------------------------------
 function PageNav() {
-  const goToPage = usePdfViewerStore((s) => s.goToPage);
   const currentPage = usePdfViewerStore((s) => s.currentPage);
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
   const [input, setInput] = useState("");
@@ -52,13 +51,13 @@ function PageNav() {
 
   const handleJump = useCallback(() => {
     const n = parseInt(input, 10);
-    if (isNaN(n) || n < 1 || n > totalPages || !goToPage) {
+    if (isNaN(n) || n < 1 || n > totalPages) {
       setInput("");
       return;
     }
-    goToPage(n);
+    pdfGoToPage(n);
     setInput("");
-  }, [input, totalPages, goToPage]);
+  }, [input, totalPages]);
 
   if (!pdfDocument || totalPages === 0) return null;
 
@@ -135,20 +134,18 @@ function QuickAddToggle() {
 function FitWidthButton() {
   const fitWidth = usePdfViewerStore((s) => s.fitWidth);
   const setFitWidth = usePdfViewerStore((s) => s.setFitWidth);
-  const setViewerScale = usePdfViewerStore((s) => s.setViewerScale);
   const setPdfScale = usePdfViewerStore((s) => s.setPdfScale);
 
   const toggle = useCallback(() => {
-    if (!setViewerScale) return;
     if (fitWidth) {
-      setViewerScale("auto");
+      pdfSetViewerScale("auto");
       setPdfScale(undefined as unknown as number);
     } else {
-      setViewerScale("page-width");
+      pdfSetViewerScale("page-width");
       setPdfScale(undefined as unknown as number);
     }
     setFitWidth(!fitWidth);
-  }, [fitWidth, setFitWidth, setViewerScale, setPdfScale]);
+  }, [fitWidth, setFitWidth, setPdfScale]);
 
   return (
     <Button

@@ -2,14 +2,61 @@ import { create } from "zustand";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { debounce } from "@/lib/utils";
 
+/**
+ * Module-level refs for PDF viewer callbacks (goToPage, scrollToHighlight,
+ * setViewerScale). These are not Zustand state — they're impure functions
+ * registered by the PdfViewer component on mount and consumed by layout/
+ * document panels. Using refs avoids serialization issues, devtools noise,
+ * and the anti-pattern of storing functions in Zustand state.
+ */
+const _goToPage: { current: ((pageNumber: number) => void) | null } = {
+  current: null,
+};
+const _scrollToHighlight: { current: ((id: string) => void) | null } = {
+  current: null,
+};
+const _setViewerScale: { current: ((value: string) => void) | null } = {
+  current: null,
+};
+
+/** Register a goToPage callback. Called once from PdfViewer on mount. */
+export function registerGoToPage(fn: typeof _goToPage.current) {
+  _goToPage.current = fn;
+}
+
+/** Register a scrollToHighlight callback. Called once from PdfViewer on mount. */
+export function registerScrollToHighlight(
+  fn: typeof _scrollToHighlight.current,
+) {
+  _scrollToHighlight.current = fn;
+}
+
+/** Register a setViewerScale callback. Called once from PdfViewer on mount. */
+export function registerSetViewerScale(
+  fn: typeof _setViewerScale.current,
+) {
+  _setViewerScale.current = fn;
+}
+
+/** Go to a specific PDF page (may be no-op if viewer not yet mounted). */
+export function pdfGoToPage(pageNumber: number) {
+  _goToPage.current?.(pageNumber);
+}
+
+/** Scroll to a highlight by annotation id (may be no-op if viewer not yet mounted). */
+export function pdfScrollToHighlight(id: string) {
+  _scrollToHighlight.current?.(id);
+}
+
+/** Set viewer scale (e.g. "auto", "page-width"). */
+export function pdfSetViewerScale(value: string) {
+  _setViewerScale.current?.(value);
+}
+
 interface PdfViewerState {
   /** The current PDF document proxy (null when none loaded) */
   pdfDocument: PDFDocumentProxy | null;
   setPdfDocument: (doc: PDFDocumentProxy | null) => void;
-
-  /** Navigate to a specific page */
-  goToPage: ((pageNumber: number) => void) | null;
-  setGoToPage: (fn: ((pageNumber: number) => void) | null) => void;
 
   /** Current visible page (1-indexed) */
   currentPage: number;
@@ -26,18 +73,6 @@ interface PdfViewerState {
   /** Whether fit-to-width mode is active */
   fitWidth: boolean;
   setFitWidth: (v: boolean) => void;
-
-  /**
-   * Direct setter for the PDF viewer's currentScaleValue.
-   * Captured once from utilsRef so FitWidthButton / Settings can bypass
-   * the prop-based pdfScaleValue (which is always numeric).
-   */
-  setViewerScale: ((value: string) => void) | null;
-  setSetViewerScale: (fn: ((value: string) => void) | null) => void;
-
-  /** Scroll to a highlight by id — set from RightPanel */
-  scrollToHighlight: ((id: string) => void) | null;
-  setScrollToHighlight: (fn: ((id: string) => void) | null) => void;
 
   /** Last-read page per document ID (persisted to vault config) */
   lastPageByDocId: Record<string, number>;
@@ -65,9 +100,6 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
   pdfDocument: null,
   setPdfDocument: (doc) => set({ pdfDocument: doc }),
 
-  goToPage: null,
-  setGoToPage: (fn) => set({ goToPage: fn }),
-
   currentPage: 1,
   setCurrentPage: (page) => set({ currentPage: page }),
 
@@ -76,12 +108,6 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 
   fitWidth: true,
   setFitWidth: (v) => set({ fitWidth: v }),
-
-  setViewerScale: null,
-  setSetViewerScale: (fn) => set({ setViewerScale: fn }),
-
-  scrollToHighlight: null,
-  setScrollToHighlight: (fn) => set({ scrollToHighlight: fn }),
 
   lastPageByDocId: {},
   setLastPage: (docId, page) =>
