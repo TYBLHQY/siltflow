@@ -48,7 +48,7 @@ export function initDatabase(vaultPath: string) {
 function createTables() {
   if (!sqlite) return
 
-  // Create documents table
+  // Create documents table — mirroring drizzle schema.ts
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS documents (
       id TEXT PRIMARY KEY,
@@ -56,12 +56,11 @@ function createTables() {
       original_name TEXT,
       total_pages INTEGER,
       metadata TEXT,
+      folder_id TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
-
-    CREATE TABLE IF NOT EXISTS _check (id TEXT PRIMARY KEY);
-    DROP TABLE _check;
   `)
 
   // Drop old-style annotations table if it exists with wrong PK
@@ -162,7 +161,7 @@ function createTables() {
     );
   `)
 
-  // Add folder_id column to documents if missing
+  // Add new columns to documents if missing (for DBs created before v2 schema)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const docCols = sqlite.prepare("PRAGMA table_info('documents')").all() as any[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

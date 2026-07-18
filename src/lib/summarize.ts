@@ -4,7 +4,7 @@
  * ====================================================================
  */
 
-import type { AIProfile } from "@/stores/ai.store";
+import type { AIProfile } from "@/types/ai";
 import { chatCompletion } from "@/lib/ai";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 

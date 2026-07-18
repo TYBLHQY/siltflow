@@ -7,7 +7,7 @@
  * (Migaku, Readlang, LingQ, DeepL, Wiktextract).
  */
 
-import type { AIProfile } from "@/stores/ai.store";
+import type { AIProfile } from "@/types/ai";
 import { chatCompletion } from "@/lib/ai";
 import type { AIAnnotationDataV1 } from "@/types/annotation";
 

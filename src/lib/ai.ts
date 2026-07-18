@@ -1,4 +1,4 @@
-import { type AIProfile } from "@/stores/ai.store";
+import { type AIProfile } from "@/types/ai";
 
 /** Standard Chat Completion request message. */
 export interface ChatMessage {
