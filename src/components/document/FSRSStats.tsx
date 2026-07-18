@@ -78,7 +78,7 @@ export function FSRSStats({ card, annotationId, documentId }: FSRSStatsProps) {
   return (
     <>
       <div
-        className="flex flex-col gap-1 text-xs text-ctp-overlay0 mt-1 border-t border-ctp-overlay0/20 pt-1"
+        className="flex flex-col gap-1 text-xs text-ctp-overlay0/80 mt-1.5 border-t border-ctp-overlay0/15 pt-1.5"
         onClick={handleToggle}
       >
         {/* Row 1: state / reps / lapses */}
