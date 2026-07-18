@@ -48,7 +48,7 @@ export function DailyReviewsChart() {
           <Legend
             verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
-              const swatchColors = ["var(--catppuccin-color-green)", "var(--catppuccin-color-peach)"];
+              const swatchColors = ["var(--catppuccin-color-blue)", "var(--catppuccin-color-peach)"];
               const labels = ["Learning", "Review"];
               return (
                 <div className="mt-2 flex justify-center gap-4 text-xs">
@@ -64,7 +64,7 @@ export function DailyReviewsChart() {
             }}
           />
           <Bar dataKey="learnCount" name="learnCount" stackId="a"
-            fill="var(--catppuccin-color-green)" radius={[0, 0, 0, 0]} />
+            fill="var(--catppuccin-color-blue)" radius={[0, 0, 0, 0]} />
           <Bar dataKey="reviewCount" name="reviewCount" stackId="a"
             fill="var(--catppuccin-color-peach)" radius={[3, 3, 0, 0]} />
         </BarChart>
