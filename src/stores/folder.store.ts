@@ -43,8 +43,8 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       const mapped: FolderItem[] = (folders || []).map((f) => ({
         id: f.id,
         name: f.name,
-        parentId: f.parent_id,
-        sortOrder: f.sort_order,
+        parentId: f.parentId ?? null,
+        sortOrder: f.sortOrder ?? 0,
       }));
       set({ folders: mapped, loaded: true });
     } catch (err) {
@@ -61,8 +61,8 @@ export const useFolderStore = create<FolderState>((set, get) => ({
         const item: FolderItem = {
           id: folder.id,
           name: folder.name,
-          parentId: folder.parent_id,
-          sortOrder: folder.sort_order,
+          parentId: folder.parentId ?? null,
+          sortOrder: folder.sortOrder ?? 0,
         };
         set((s) => ({ folders: [...s.folders, item] }));
         return item;
