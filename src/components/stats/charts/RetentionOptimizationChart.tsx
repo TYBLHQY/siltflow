@@ -1,92 +1,42 @@
 import { useMemo } from "react";
 import {
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { ChartCard } from "../ChartCard";
+import { ChartGrid, CHART_TOOLTIP_STYLE } from "../ChartPresets";
+import { useChartData } from "@/hooks/useChartData";
 import { computeRetentionTradeoff } from "@/lib/stats-computation";
-import { useStatsStore } from "@/stores/stats.store";
 
 export function RetentionOptimizationChart() {
-  const parsedCards = useStatsStore((s) => s.parsedCards);
-  const dataVersion = useStatsStore((s) => s.dataVersion);
-  const loading = useStatsStore((s) => s.loading);
+  const { cards, loading } = useChartData();
 
   const data = useMemo(
-    () => computeRetentionTradeoff(Array.from(parsedCards.values()), 0.85),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [parsedCards, dataVersion],
+    () => computeRetentionTradeoff(cards, 0.85),
+    [cards],
   );
 
   const isEmpty = data.length === 0 || data.every((d) => d.workload === 0);
 
   return (
-    <ChartCard
-      title="Retention Optimization"
-      loading={loading}
-      isEmpty={isEmpty}
-      emptyMessage="Not enough reviewed cards yet"
-    >
+    <ChartCard title="Retention Optimization" loading={loading} isEmpty={isEmpty} emptyMessage="Not enough reviewed cards yet">
       <ResponsiveContainer width="100%" height={260}>
         <ComposedChart data={data} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-ctp-overlay0/50" />
-          <XAxis
-            dataKey="targetRetention"
-            tick={{ fontSize: 10 }}
-            tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            stroke="var(--catppuccin-color-text)"
-          />
-          <YAxis
-            yAxisId="left"
-            tick={{ fontSize: 10 }}
-            stroke="var(--catppuccin-color-text)"
-            label={{
-              value: "Reviews/day",
-              angle: -90,
-              position: "insideLeft",
-              offset: 0,
-              fontSize: 10,
-              fill: "var(--catppuccin-color-text)",
-            }}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fontSize: 10 }}
-            stroke="var(--catppuccin-color-text)"
-            label={{
-              value: "Avg stability (d)",
-              angle: 90,
-              position: "insideRight",
-              offset: 0,
-              fontSize: 10,
-              fill: "var(--catppuccin-color-text)",
-            }}
-          />
+          <ChartGrid />
+          <XAxis dataKey="targetRetention" tick={{ fontSize: 10 }}
+            tickFormatter={(v: number) => `${Math.round(v * 100)}%`} stroke="var(--catppuccin-color-text)" />
+          <YAxis yAxisId="left" tick={{ fontSize: 10 }} stroke="var(--catppuccin-color-text)"
+            label={{ value: "Reviews/day", angle: -90, position: "insideLeft", offset: 0, fontSize: 10, fill: "var(--catppuccin-color-text)" }} />
+          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="var(--catppuccin-color-text)"
+            label={{ value: "Avg stability (d)", angle: 90, position: "insideRight", offset: 0, fontSize: 10, fill: "var(--catppuccin-color-text)" }} />
           <Tooltip
-            contentStyle={{
-              fontSize: 12,
-              borderRadius: 6,
-              border: "1px solid var(--catppuccin-color-overlay0)",
-              background: "var(--tooltip-bg)",
-            }}
+            contentStyle={CHART_TOOLTIP_STYLE}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any, name: any) => {
               if (name === "Reviews/day") return [(Number(value) as number).toFixed(1), name as string];
-              if (name === "Avg stability (d)")
-                return [`${Number(value).toFixed(1)}d`, name as string];
+              if (name === "Avg stability (d)") return [`${Number(value).toFixed(1)}d`, name as string];
               return [value, name as string];
-            }}
-          />
-          <Legend verticalAlign="bottom"
-            wrapperStyle={{ fontSize: 11 }}
+            }} />
+          <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
               const colors: Record<string, string> = {
                 "Reviews/day": "var(--catppuccin-color-peach)",
@@ -97,40 +47,20 @@ export function RetentionOptimizationChart() {
                   {payload?.map((entry) => (
                     <div key={entry.value} className="flex items-center gap-1">
                       {(entry.value as string) === "Avg stability (d)" ? (
-                        <span
-                          className="inline-block h-0.5 w-3 rounded-full"
-                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }}
-                        />
+                        <span className="inline-block h-0.5 w-3 rounded-full"
+                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }} />
                       ) : (
-                        <span
-                          className="inline-block h-2 w-2 rounded-sm"
-                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }}
-                        />
+                        <span className="inline-block h-2 w-2 rounded-sm"
+                          style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }} />
                       )}
                       <span className="text-ctp-text">{entry.value}</span>
                     </div>
                   ))}
                 </div>
               );
-            }}
-          />
-          <Bar
-            yAxisId="left"
-            dataKey="workload"
-            name="Reviews/day"
-            fill="var(--catppuccin-color-peach)"
-            radius={[3, 3, 0, 0]}
-            opacity={0.8}
-          />
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="avgStability"
-            name="Avg stability (d)"
-            stroke="var(--catppuccin-color-mauve)"
-            strokeWidth={2}
-            dot={{ r: 4 }}
-          />
+            }} />
+          <Bar yAxisId="left" dataKey="workload" name="Reviews/day" fill="var(--catppuccin-color-peach)" radius={[3, 3, 0, 0]} opacity={0.8} />
+          <Line yAxisId="right" type="monotone" dataKey="avgStability" name="Avg stability (d)" stroke="var(--catppuccin-color-mauve)" strokeWidth={2} dot={{ r: 4 }} />
         </ComposedChart>
       </ResponsiveContainer>
     </ChartCard>
