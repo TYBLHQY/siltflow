@@ -119,7 +119,7 @@ export async function loadSummariesFromVault() {
     const all = await window.siltflow.summaries.listAll();
     const summaries: Record<string, DocSummary> = {};
     for (const s of all || []) {
-      summaries[s.documentId] = {
+      summaries[s.document_id] = {
         text: s.text,
         isAiGenerated: !!s.is_ai_generated,
         sourceLang: s.source_lang || undefined,

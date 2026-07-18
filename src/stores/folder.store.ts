@@ -40,7 +40,13 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     set({ loading: true });
     try {
       const folders = await window.siltflow.folders.list();
-      set({ folders: folders || [], loaded: true });
+      const mapped: FolderItem[] = (folders || []).map((f) => ({
+        id: f.id,
+        name: f.name,
+        parentId: f.parent_id,
+        sortOrder: f.sort_order,
+      }));
+      set({ folders: mapped, loaded: true });
     } catch (err) {
       console.error("Failed to load folders:", err);
     } finally {
@@ -52,9 +58,16 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     try {
       const folder = await window.siltflow.folders.create({ name, parentId });
       if (folder) {
-        set((s) => ({ folders: [...s.folders, folder] }));
+        const item: FolderItem = {
+          id: folder.id,
+          name: folder.name,
+          parentId: folder.parent_id,
+          sortOrder: folder.sort_order,
+        };
+        set((s) => ({ folders: [...s.folders, item] }));
+        return item;
       }
-      return folder;
+      return null;
     } catch (err) {
       console.error("Failed to create folder:", err);
       return null;

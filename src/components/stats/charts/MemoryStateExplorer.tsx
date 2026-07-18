@@ -13,13 +13,6 @@ import { Search, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useStatsStore } from "@/stores/stats.store";
-import type { ReviewLogEntry } from "@/stores/review-log.store";
-
-interface AnnotationRow {
-  id: string;
-  documentId: string;
-  text: string | null;
-}
 
 interface ParsedReviewLog {
   timestamp: number;
@@ -55,7 +48,7 @@ export function MemoryStateExplorer() {
 
   // Load all annotations for text lookup
   useEffect(() => {
-    window.siltflow.annotations.listAll().then((rows: AnnotationRow[]) => {
+    window.siltflow.annotations.listAll().then((rows) => {
       const map = new Map<string, string>();
       for (const row of rows) {
         if (row.text) map.set(row.id, row.text);
@@ -115,7 +108,7 @@ export function MemoryStateExplorer() {
     let cancelled = false;
     window.siltflow.reviewLogs
       .listByAnnotation(selectedAnnotation.id, selectedAnnotation.documentId)
-      .then((entries: ReviewLogEntry[]) => {
+      .then((entries) => {
         if (cancelled) return;
         const parsed = entries
           .map((e) => {
@@ -123,8 +116,8 @@ export function MemoryStateExplorer() {
               const data = JSON.parse(e.data);
               const log = data.log;
               return {
-                timestamp: new Date(log.review || e.createdAt).getTime(),
-                date: new Date(log.review || e.createdAt).toLocaleDateString("en-US", {
+                timestamp: new Date(log.review || e.created_at).getTime(),
+                date: new Date(log.review || e.created_at).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 }),
