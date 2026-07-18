@@ -137,6 +137,7 @@
 
 .PdfHighlighter {
   background: var(--catppuccin-color-base) !important;
+  overflow-x: hidden !important;
 }
 
 /* PDF dark mode scheme: off — no transform */
