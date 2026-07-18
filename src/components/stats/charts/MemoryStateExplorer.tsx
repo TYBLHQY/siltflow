@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import {
   LineChart,
   Line,
@@ -42,6 +42,7 @@ export function MemoryStateExplorer() {
   const rawCards = useStatsStore((s) => s.rawCards);
   const dataVersion = useStatsStore((s) => s.dataVersion);
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [logs, setLogs] = useState<ParsedReviewLog[]>([]);
   const [annotationsMap, setAnnotationsMap] = useState<Map<string, string>>(new Map());
@@ -89,9 +90,9 @@ export function MemoryStateExplorer() {
   const filtered = useMemo(
     () =>
       annotations.filter((a) =>
-        a.text.toLowerCase().includes(search.toLowerCase()),
+        a.text.toLowerCase().includes(deferredSearch.toLowerCase()),
       ),
-    [annotations, search],
+    [annotations, deferredSearch],
   );
 
   const selectedAnnotation = useMemo(

@@ -5,6 +5,8 @@ import type { Card } from "ts-fsrs";
 interface UseChartDataResult {
   logs: ReturnType<typeof useStatsStore.getState>["rawReviewLogs"];
   cards: Card[];
+  /** Parsed cards as a Map (needed by computeKnowledgeGrowth) */
+  parsedCards: Map<string, Card>;
   loading: boolean;
   isEmpty: boolean;
 }
@@ -33,5 +35,5 @@ export function useChartData(): UseChartDataResult {
     [logs.length, cards.length],
   );
 
-  return { logs, cards, loading, isEmpty };
+  return { logs, cards, parsedCards, loading, isEmpty };
 }
