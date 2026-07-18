@@ -102,6 +102,10 @@ export function AnnotationsTab({
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [batchTranslating, setBatchTranslating] = useState(false);
+  // Snapshot of dueItems taken when the learning session starts.
+  // This is stable throughout the session so rating items (which
+  // changes their due dates) doesn't shift indices and skip cards.
+  const [sessionItems, setSessionItems] = useState<AnnotationItem[]>([]);
 
   // ── Start Learning shortcut ────────────────────────────────────────
   const hasPdf = !!currentDocument?.id;
@@ -129,6 +133,10 @@ export function AnnotationsTab({
       showToast("No due annotations", "info");
       return;
     }
+    // Snapshot the due items so the session queue is stable —
+    // rating a card changes its due date, which would otherwise
+    // remove it from the live useMemo and shift indices.
+    setSessionItems([...dueItems]);
     setStudyingIndex(0);
     setAnswerRevealed(false);
     setStudyPanelOpen(true);
@@ -317,24 +325,28 @@ export function AnnotationsTab({
       )}
 
       <LearningModal
-        items={studyPanelOpen ? dueItems : []}
+        items={sessionItems}
         studyingIndex={studyingIndex}
         answerRevealed={answerRevealed}
         setAnswerRevealed={setAnswerRevealed}
         onRate={(grade) => {
-          const item = dueItems[studyingIndex];
+          const item = sessionItems[studyingIndex];
           if (item) {
             reviewAnnotation(item.id, grade as Grade);
           }
-          if (studyingIndex + 1 < dueItems.length) {
+          if (studyingIndex + 1 < sessionItems.length) {
             setStudyingIndex((i: number) => i + 1);
             setAnswerRevealed(false);
           } else {
             showToast("All cards reviewed! Good job!", "success");
             setStudyPanelOpen(false);
+            setSessionItems([]);
           }
         }}
-        onClose={() => setStudyPanelOpen(false)}
+        onClose={() => {
+          setStudyPanelOpen(false);
+          setSessionItems([]);
+        }}
       />
     </>
   );
