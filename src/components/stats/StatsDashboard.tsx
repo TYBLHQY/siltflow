@@ -15,13 +15,15 @@ import { KnowledgeGrowthChart } from "./charts/KnowledgeGrowthChart";
 import { ReviewForecastChart } from "./charts/ReviewForecastChart";
 import { ForgettingCurveChart } from "./charts/ForgettingCurveChart";
 import { RetentionOptimizationChart } from "./charts/RetentionOptimizationChart";
+import { MemoryStateExplorer } from "./charts/MemoryStateExplorer";
 
-type Panel = "learning" | "memory" | "growth";
+type Panel = "learning" | "memory" | "growth" | "explorer";
 
 const PANELS: { id: Panel; label: string }[] = [
   { id: "learning", label: "Learning" },
   { id: "memory", label: "Memory (FSRS)" },
   { id: "growth", label: "Growth" },
+  { id: "explorer", label: "Memory State Explorer" },
 ];
 
 interface StatsDashboardProps {
@@ -33,6 +35,7 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
   const loaded = useStatsStore((s) => s.loaded);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activePanel, setActivePanel] = useState<Panel>("learning");
+  const isExplorer = activePanel === "explorer";
 
   useEffect(() => {
     if (!loaded) loadAllData();
@@ -89,7 +92,12 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
           ))}
         </div>
 
-        <ScrollArea className="flex-1">
+        {isExplorer ? (
+          <div className="flex-1 min-h-0">
+            <MemoryStateExplorer />
+          </div>
+        ) : (
+          <ScrollArea className="flex-1">
             {activePanel === "learning" && (
               <div className="space-y-4">
                 <DailyReviewsChart />
@@ -118,6 +126,7 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
               </div>
             )}
           </ScrollArea>
+        )}
       </div>
     </div>
   );
