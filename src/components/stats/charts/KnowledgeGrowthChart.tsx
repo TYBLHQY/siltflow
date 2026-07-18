@@ -25,7 +25,7 @@ export function KnowledgeGrowthChart() {
   const isEmpty = data.length === 0;
 
   return (
-    <ChartCard title="Knowledge Growth" loading={loading} isEmpty={isEmpty} emptyMessage="No review activity yet">
+    <ChartCard title="Memory Growth" loading={loading} isEmpty={isEmpty} emptyMessage="No review activity yet">
       <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
           <defs>
