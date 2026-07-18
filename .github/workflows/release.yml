@@ -73,6 +73,7 @@ jobs:
             tsc-cache-${{ matrix.target }}-
 
       - name: Build (type-check + vite in parallel)
+        shell: bash
         run: |
           set -e
           pnpm exec tsc &
