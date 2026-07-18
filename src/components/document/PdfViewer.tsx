@@ -348,7 +348,7 @@ function PdfHighlighterWrapper({
       const onMove = (ev: MouseEvent) => {
         const p = panRef.current;
         if (!p) return;
-        p.scrollEl.scrollLeft = p.scrollLeft - (ev.clientX - p.startX);
+        // horizontal scroll disabled — pan is vertical-only
         p.scrollEl.scrollTop = p.scrollTop - (ev.clientY - p.startY);
         ev.preventDefault();
       };
