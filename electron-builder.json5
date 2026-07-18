@@ -18,8 +18,9 @@
     "dist",
     "dist-electron"
   ],
-  // pnpm install 已经编译了原生模块，不需在打包时重复编译
-  "npmRebuild": false,
+  // 为 Electron 的 Node ABI 重新编译原生模块（better-sqlite3 等）
+  // pnpm install 针对系统 Node 编译，与 Electron 内嵌的 Node ABI 不兼容
+  "npmRebuild": true,
   // 使用 normal 压缩级别，比 maximum 快 3-5 倍，产物体积差异不到 10%
   "compression": "normal",
   "mac": {
