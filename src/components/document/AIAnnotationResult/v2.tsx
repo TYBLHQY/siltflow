@@ -444,14 +444,14 @@ export function AIAnnotationResultV2({
 
           {/* Source text — with TTS selection */}
           <SelectionTTSButton language={ai?.input?.source_lang} annId={item.id}>
-            <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed font-semibold">
+            <p className="mb-0.5 whitespace-pre-wrap wrap-break-word leading-relaxed font-semibold">
               {ai?.input?.normalized ?? item.text}
             </p>
           </SelectionTTSButton>
 
           {/* ── Action bar ── */}
           {showActionBar && (
-            <div className="flex flex-wrap items-center gap-1 mt-1">
+            <div className="flex flex-wrap items-center gap-1 mt-0.5">
               {onEditToggle && (
                 <button
                   className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
