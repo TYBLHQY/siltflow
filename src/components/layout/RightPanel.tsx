@@ -21,7 +21,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const setPageTexts = useSummaryStore((s) => s.setPageTexts);
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages);
 
-  const annotationsScrollRef = useRef<HTMLDivElement>(null);
+  const annotationsScrollRef = useRef<HTMLDivElement | null>(null);
 
   // When a highlight is clicked in the PDF, scroll the matching annotation card
   useEffect(() => {

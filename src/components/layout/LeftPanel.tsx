@@ -221,7 +221,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     loadMetricsFull();
   }, [documents.length, loadMetricsFull]);
 
-  const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current);
     metricsDebounceRef.current = setTimeout(() => { computeMetricsFromItems(); }, 150);

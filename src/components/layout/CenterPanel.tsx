@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { usePdfViewerStore, pdfGoToPage, pdfSetViewerScale } from "@/stores/pdf-viewer.store";
 import {
   useAnnotationStore,
@@ -319,11 +320,13 @@ export function CenterPanel({
               </div>
             }
           >
-            <PdfViewer
-              className="h-full w-full"
-              src={documentPath!}
-              documentId={documentId!}
-            />
+            <ErrorBoundary>
+              <PdfViewer
+                className="h-full w-full"
+                src={documentPath!}
+                documentId={documentId!}
+              />
+            </ErrorBoundary>
           </React.Suspense>
         </div>
       ) : (
@@ -348,7 +351,9 @@ export function CenterPanel({
               </div>
             }
           >
-            <StatsDashboard onClose={() => setShowStats(false)} />
+            <ErrorBoundary>
+              <StatsDashboard onClose={() => setShowStats(false)} />
+            </ErrorBoundary>
           </React.Suspense>
         </DialogContent>
       </Dialog>

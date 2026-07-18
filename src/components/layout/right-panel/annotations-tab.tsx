@@ -20,7 +20,7 @@ import type { AnnotationItem } from "@/stores/annotation.store";
 
 interface AnnotationsTabProps {
   onTabChange?: (tab: string) => void;
-  annotationsScrollRef: React.RefObject<HTMLDivElement>;
+  annotationsScrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // ── V2 shared translation helper ──────────────────────────────────────
