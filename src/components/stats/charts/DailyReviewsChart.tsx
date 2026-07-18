@@ -74,8 +74,8 @@ export function DailyReviewsChart() {
             key={r.label}
             className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
               range.days === r.days
-                ? "bg-ctp-mauve text-ctp-crust"
-                : "bg-ctp-surface0 text-ctp-text hover:bg-ctp-surface0"
+                ? "bg-ctp-maroon text-ctp-base"
+                : "bg-ctp-surface0 text-ctp-subtext hover:bg-ctp-surface1 hover:text-ctp-text"
             }`}
             onClick={() => setRange(r)}
           >
