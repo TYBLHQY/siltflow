@@ -13,6 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-24.04
@@ -43,17 +44,50 @@ jobs:
       - name: Install system deps (Linux)
         if: matrix.target == 'linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libnotify-dev libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-dev libfuse2
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev libnotify-dev libnss3 libxss1 libxtst6 \
+            xdg-utils libatspi2.0-0 libuuid1 libsecret-1-dev libfuse2
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build + Package
+      - name: Cache Electron binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-cache-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            electron-cache-${{ matrix.target }}-
+
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache
+          key: tsc-cache-${{ matrix.target }}-${{ hashFiles('tsconfig.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            tsc-cache-${{ matrix.target }}-
+
+      - name: Build (type-check + vite in parallel)
+        run: |
+          set -e
+          pnpm exec tsc &
+          TSC_PID=$!
+          pnpm exec vite build &
+          VITE_PID=$!
+          FAIL=0
+          wait $TSC_PID || FAIL=1
+          wait $VITE_PID || FAIL=1
+          exit $FAIL
+
+      - name: Package with electron-builder
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # --publish=never prevents duplicate release creation by electron-builder
-        run: pnpm exec tsc && pnpm exec vite build && pnpm exec electron-builder --publish=never
+        run: pnpm exec electron-builder --publish=never
 
       - name: Upload artifacts to release
         shell: bash

@@ -19,6 +19,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+
+    /* 增量编译：配合 CI 缓存可减少 50-70% 类型检查时间 */
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
+
     "paths": {
       "@/*": ["./src/*"]
     }

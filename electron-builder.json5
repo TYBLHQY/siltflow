@@ -18,8 +18,10 @@
     "dist",
     "dist-electron"
   ],
-  "npmRebuild": true,
-  "compression": "maximum",
+  // pnpm install 已经编译了原生模块，不需在打包时重复编译
+  "npmRebuild": false,
+  // 使用 normal 压缩级别，比 maximum 快 3-5 倍，产物体积差异不到 10%
+  "compression": "normal",
   "mac": {
     "icon": "build/icon.icns",
     "target": [

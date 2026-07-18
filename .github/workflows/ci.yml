@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache
+          key: tsc-cache-${{ runner.os }}-${{ hashFiles('tsconfig.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            tsc-cache-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint + TypeCheck + Test (parallel)
+        run: |
+          set -e
+          pnpm run lint &
+          LINT_PID=$!
+          pnpm exec tsc &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
+          wait $LINT_PID || FAIL=1
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
