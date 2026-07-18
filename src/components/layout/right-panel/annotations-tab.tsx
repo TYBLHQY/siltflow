@@ -12,6 +12,7 @@ import { useAIStore } from "@/stores/ai.store";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useToastStore } from "@/stores/toast.store";
 import { useShortcut } from "@/hooks/useShortcut";
+import { useNow } from "@/hooks/useNow";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import type { Grade } from "ts-fsrs";
 import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
@@ -106,21 +107,22 @@ export function AnnotationsTab({
 
   // ── Start Learning shortcut ────────────────────────────────────────
   const hasPdf = !!currentDocument?.id;
+  const now = useNow(15_000);
   const dueItems = useMemo(
     () =>
       items.filter((item) => {
         if (!item.fsrsCard) return true;
         try {
-          const d =
+          const dueMs =
             item.fsrsCard.due instanceof Date
-              ? item.fsrsCard.due
-              : new Date(item.fsrsCard.due);
-          return d <= new Date();
+              ? item.fsrsCard.due.getTime()
+              : new Date(item.fsrsCard.due).getTime();
+          return dueMs <= now;
         } catch {
           return true;
         }
       }),
-    [items],
+    [items, now],
   );
   const dueCount = dueItems.length;
 

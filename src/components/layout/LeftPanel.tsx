@@ -26,10 +26,8 @@ import {
 } from "react-pdf-highlighter-plus";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore } from "@/stores/style.store";
-import {
-  computeDocMetrics,
-  type DocReviewMetrics,
-} from "@/lib/doc-review";
+import { computeDocMetrics, type DocReviewMetrics } from "@/lib/doc-review";
+import { useNow } from "@/hooks/useNow";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ReviewTab } from "@/components/layout/left-panel/review-tab";
@@ -269,6 +267,15 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     }
     prevTabRef.current = activeTab;
   }, [activeTab]);
+
+  // ── Periodic time-based refresh: card due status changes as time passes ──
+  const now = useNow(30_000);
+  useEffect(() => {
+    if (documents.length === 0) return;
+    computeMetricsFromItems();
+    // computeMetricsFromItems reads fresh state via getState(), so adding it
+    // as a dep is safe (it's a stable useCallback with no deps).
+  }, [now, documents.length, computeMetricsFromItems]);
 
   return (
     <div className="flex h-full flex-col">

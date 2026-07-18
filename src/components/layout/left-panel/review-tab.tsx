@@ -21,9 +21,9 @@ interface ReviewTabProps {
 }
 
 function urgencyLabel(avgRetrievability: number): string {
-  if (avgRetrievability >= 0.9) return "fresh";
-  if (avgRetrievability >= 0.8) return "ok";
-  if (avgRetrievability >= 0.7) return "due";
+  if (avgRetrievability >= 90) return "fresh";
+  if (avgRetrievability >= 75) return "ok";
+  if (avgRetrievability >= 50) return "due";
   return "overdue";
 }
 
