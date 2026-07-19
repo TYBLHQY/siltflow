@@ -157,16 +157,15 @@ function App() {
     const resolved = resolveTheme();
     const html = document.documentElement;
 
-    // Remove all flavor classes
-    html.classList.remove(
-      "latte",
-      "frappe",
-      "macchiato",
-      "mocha",
-    );
-
-    // Add the resolved flavor class
+    // Add the new flavor first, then remove old ones.
+    // Order matters: removing all then adding would leave a paint frame
+    // with NO Catppuccin class, causing a visible flash as CSS variables
+    // fall back to their defaults.
+    const flavors: string[] = ["latte", "frappe", "macchiato", "mocha"];
     html.classList.add(resolved.flavor);
+    for (const f of flavors) {
+      if (f !== resolved.flavor) html.classList.remove(f);
+    }
 
     // Sync .dark class for shadcn compatibility
     html.classList.toggle("dark", resolved.isDark);
