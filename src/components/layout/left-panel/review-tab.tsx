@@ -1,24 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, BrainCircuit, FileText } from "lucide-react";
+import { Loader2, BrainCircuit, FileText } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, memo, useEffect } from "react";
-import type { DocReviewMetrics } from "@/lib/doc-review";
+import type { DocReviewMetrics, SortField } from "@/lib/doc-review";
 import { retrievabilityLabel } from "@/lib/fsrs-utils";
 import { useDocumentStore } from "@/stores/document.store";
 
 interface ReviewTabProps {
   docMetrics: DocReviewMetrics[];
   metricsLoading: boolean;
-  reviewSearch: string;
-  setReviewSearch: (v: string) => void;
-  filteredMetrics: DocReviewMetrics[];
-  reviewSearchRef: React.Ref<HTMLInputElement>;
-  /** @deprecated no longer needed with virtual scrolling; kept for parent compatibility */
-  reviewScrollRef?: React.Ref<HTMLDivElement>;
+  sortedMetrics: DocReviewMetrics[];
   /** When non-empty, scroll to this doc (used when switching to review tab) */
   scrollToDocId?: string;
   /** Called after scroll-to completes */
   onScrolledToDoc?: () => void;
+  sortField: SortField;
+  onSortChange: (f: SortField) => void;
 }
 
 // ── Row component ──────────────────────────────────────────────────────
@@ -76,12 +73,11 @@ const ReviewTabRow = memo(function ReviewTabRow({
 export const ReviewTab = memo(function ReviewTab({
   docMetrics,
   metricsLoading,
-  reviewSearch,
-  setReviewSearch,
-  filteredMetrics,
-  reviewSearchRef,
+  sortedMetrics,
   scrollToDocId,
   onScrolledToDoc,
+  sortField,
+  onSortChange,
 }: ReviewTabProps) {
   // Virtual scrolling
   const parentRef = useRef<HTMLDivElement>(null);
@@ -89,7 +85,7 @@ export const ReviewTab = memo(function ReviewTab({
   const currentDocument = useDocumentStore((s) => s.currentDocument);
 
   const virtualizer = useVirtualizer({
-    count: filteredMetrics.length,
+    count: sortedMetrics.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 56, // fallback; measureElement overrides after first render
     measureElement: (el) => el.getBoundingClientRect().height,
@@ -98,63 +94,56 @@ export const ReviewTab = memo(function ReviewTab({
 
   // Auto-scroll to the current document when switching to review tab
   useEffect(() => {
-    if (!scrollToDocId || filteredMetrics.length === 0) return;
-    const idx = filteredMetrics.findIndex(
+    if (!scrollToDocId || sortedMetrics.length === 0) return;
+    const idx = sortedMetrics.findIndex(
       (m) => m.documentId === scrollToDocId,
     );
     if (idx >= 0) {
       virtualizer.scrollToIndex(idx, { align: "center" });
     }
     onScrolledToDoc?.();
-  }, [scrollToDocId, filteredMetrics, virtualizer, onScrolledToDoc]);
+  }, [scrollToDocId, sortedMetrics, virtualizer, onScrolledToDoc]);
 
   const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <>
-      {/* Search filter bar */}
+      {/* Sort selector */}
       <div className="shrink-0 border-b">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ctp-overlay0" />
-          <input
-            ref={reviewSearchRef}
-            type="text"
-            placeholder="Search documents..."
-            value={reviewSearch}
-            onChange={(e) => setReviewSearch(e.target.value)}
-            className="w-full border-0 bg-transparent py-1.5 pl-8 pr-2 text-xs outline-none placeholder:text-ctp-overlay0/50"
-          />
-        </div>
+        {docMetrics.length > 0 && (
+          <div className="flex items-center gap-0.5 px-2 py-1.5">
+            {(["new", "due", "soon", "urgency"] as SortField[]).map((f) => (
+              <Button
+                key={f}
+                variant={sortField === f ? "default" : "ghost"}
+                size="xs"
+                className="flex-1 h-6 px-1 text-[11px]"
+                onClick={() => onSortChange(f)}
+              >
+                {f === "new"
+                  ? "New"
+                  : f === "due"
+                    ? "Due"
+                    : f === "soon"
+                      ? "Soon"
+                      : "Urgency"}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       {metricsLoading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-ctp-overlay0" />
         </div>
-      ) : filteredMetrics.length === 0 ? (
+      ) : sortedMetrics.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center text-ctp-overlay0 px-4">
           <BrainCircuit className="h-8 w-8 mb-2" />
-          {reviewSearch && docMetrics.length > 0 ? (
-            <>
-              <p className="text-xs text-center">
-                No documents match your search
-              </p>
-              <Button
-                variant="link"
-                className="mt-1 text-xs"
-                onClick={() => setReviewSearch("")}
-              >
-                Clear filter
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-center">No review data yet</p>
-              <p className="text-xs text-center">
-                Annotate and review cards to see per-document metrics
-              </p>
-            </>
-          )}
+          <p className="text-xs text-center">No review data yet</p>
+          <p className="text-xs text-center">
+            Annotate and review cards to see per-document metrics
+          </p>
         </div>
       ) : (
         <div
@@ -170,7 +159,7 @@ export const ReviewTab = memo(function ReviewTab({
             }}
           >
             {virtualItems.map((virtualRow) => {
-              const metric = filteredMetrics[virtualRow.index];
+              const metric = sortedMetrics[virtualRow.index];
               if (!metric) return null;
               return (
                 <div

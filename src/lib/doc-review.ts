@@ -141,3 +141,71 @@ export function computeDocMetrics(
 
   return results;
 }
+
+// ── Sort ─────────────────────────────────────────────────────────────────
+
+export type SortField = "new" | "due" | "soon" | "urgency";
+
+/**
+ * Sort doc metrics by a user-selected field with multi-level tiebreakers.
+ *
+ * Each sort dimension chains into the next most relevant signal so that
+ * documents with equal primary values still have a meaningful order.
+ * `avgRetrievability` is always the last metric tiebreaker (narrow range,
+ * already reflected in compositeScore), and `documentTitle` is the final
+ * stable sort to avoid platform- or V8-dependent ordering.
+ *
+ * All sorts are descending except `avgRetrievability` (ascending — lower
+ * retrievability = more urgent).
+ */
+export function sortDocMetrics(
+  metrics: DocReviewMetrics[],
+  field: SortField,
+): DocReviewMetrics[] {
+  const sorted = [...metrics];
+
+  const chain = {
+    new: [
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - a.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+    ],
+    due: [
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
+      (_a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - b.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.avgOverdueRatio - a.avgOverdueRatio,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+    ],
+    soon: [
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
+      (_a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - b.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.avgOverdueRatio - a.avgOverdueRatio,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+    ],
+    urgency: [
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.compositeScore - a.compositeScore,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
+      (_a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - b.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => b.avgOverdueRatio - a.avgOverdueRatio,
+      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+    ],
+  } as const;
+
+  const comparators = chain[field] ?? chain.urgency;
+  const titleCmp = (a: DocReviewMetrics, b: DocReviewMetrics) =>
+    a.documentTitle.localeCompare(b.documentTitle);
+
+  sorted.sort((a, b) => {
+    for (const cmp of comparators) {
+      const d = cmp(a, b);
+      if (d !== 0) return d;
+    }
+    return titleCmp(a, b);
+  });
+
+  return sorted;
+}

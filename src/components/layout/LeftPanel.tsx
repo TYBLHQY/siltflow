@@ -1,4 +1,4 @@
-import { useLayoutEffect, useEffect, useState, useRef, useCallback, useMemo, useDeferredValue } from "react";
+import { useLayoutEffect, useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
 import {
@@ -22,7 +22,7 @@ import {
 import { usePdfViewerStore, pdfGoToPage } from "@/stores/pdf-viewer.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore } from "@/stores/style.store";
-import { computeDocMetrics, type DocReviewMetrics } from "@/lib/doc-review";
+import { computeDocMetrics, sortDocMetrics, type DocReviewMetrics, type SortField } from "@/lib/doc-review";
 import { createNewCardStub } from "@/lib/fsrs-utils";
 import { useNow } from "@/hooks/useNow";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
@@ -98,9 +98,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const annotationItems = useAnnotationStore((s) => s.items);
   const [docMetrics, setDocMetrics] = useState<DocReviewMetrics[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
-  const [reviewSearch, setReviewSearch] = useState("");
-  const deferredReviewSearch = useDeferredValue(reviewSearch);
-  const reviewSearchRef = useRef<HTMLInputElement>(null);
+  const [sortField, setSortField] = useState<SortField>("urgency");
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
 
@@ -116,25 +114,10 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   }, [activeTab, currentDocument]);
   const handleScrolledToDoc = useCallback(() => setScrollToDocId(null), []);
 
-  // Ctrl+F in review tab → focus search input
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (activeTabRef.current === "review" && (e.ctrlKey || e.metaKey) && e.key === "f") {
-        e.preventDefault();
-        reviewSearchRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
-
-  // ── Deferred filter: typing doesn't block rendering ─────────────────
-  const filteredMetrics = useMemo(
-    () =>
-      docMetrics.filter((m) =>
-        m.documentTitle.toLowerCase().includes(deferredReviewSearch.toLowerCase()),
-      ),
-    [docMetrics, deferredReviewSearch],
+  // ── Sorted metrics ────────────────────────────────────────────────
+  const sortedMetrics = useMemo(
+    () => sortDocMetrics(docMetrics, sortField),
+    [docMetrics, sortField],
   );
 
   // ── Quick incremental metric update from in-memory items ────────────
@@ -367,12 +350,11 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           <ReviewTab
             docMetrics={docMetrics}
             metricsLoading={metricsLoading}
-            reviewSearch={reviewSearch}
-            setReviewSearch={setReviewSearch}
-            filteredMetrics={filteredMetrics}
-            reviewSearchRef={reviewSearchRef}
+            sortedMetrics={sortedMetrics}
             scrollToDocId={scrollToDocId ?? undefined}
             onScrolledToDoc={handleScrolledToDoc}
+            sortField={sortField}
+            onSortChange={setSortField}
           />
         </TabsContent>
       </Tabs>
