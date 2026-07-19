@@ -32,6 +32,9 @@ interface StatsStoreState {
   rawReviewLogs: ReviewLogRow[];
   parsedCards: Map<string, Card>;
 
+  /** Total annotation count (kind = 'annotation') — used to derive newCards. */
+  annotationCount: number;
+
   /** Incremented after each successful data load, so memoized components re-compute. */
   dataVersion: number;
 
@@ -45,14 +48,16 @@ export const useStatsStore = create<StatsStoreState>((set) => ({
   rawCards: [],
   rawReviewLogs: [],
   parsedCards: new Map(),
+  annotationCount: 0,
   dataVersion: 0,
 
   loadAllData: async () => {
     set({ loading: true, error: null });
     try {
-      const [cards, logs] = await Promise.all([
+      const [cards, logs, allAnnotations] = await Promise.all([
         window.siltflow.fsrsCards.listAll(),
         window.siltflow.reviewLogs.listAll(),
+        window.siltflow.annotations.listAll(),
       ]);
 
       // Parse cards into a Map keyed by annotationId for efficient lookups
@@ -65,10 +70,17 @@ export const useStatsStore = create<StatsStoreState>((set) => ({
         }
       }
 
+      // Count real annotations (not highlights) to derive newCards:
+      //   newCards = annotationCount - cardsWithFSRS
+      const annotationCount = allAnnotations.filter(
+        (a) => a.kind !== "highlight",
+      ).length;
+
       set({
         rawCards: cards,
         rawReviewLogs: logs,
         parsedCards: parsed,
+        annotationCount,
         loaded: true,
         loading: false,
         error: null,

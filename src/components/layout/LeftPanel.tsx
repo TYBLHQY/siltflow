@@ -155,7 +155,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           try { cards.push(JSON.parse(row.data)); } catch { /* skip */ }
         }
         window.siltflow.annotations.list(currentDoc.id).then((annotations) => {
-          for (const ann of annotations) {
+          const realAnnotations = annotations.filter((a) => a.kind !== "highlight");
+          for (const ann of realAnnotations) {
             if (!cardAnnIds.has(ann.id)) {
               cards.push({ state: 0, due: new Date(), stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0 } as import("ts-fsrs").Card);
             }
@@ -173,6 +174,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     if (items.length === 0) return;
 
     const itemDocIds = new Set(items.map((i) => i.documentId));
+    // Only count annotation-kind items; highlights never have FSRS cards
+    const annotationItems = items.filter((i) => i.kind !== "highlight");
     setDocMetrics((prev) => {
       const otherDocs = prev.filter((p) => !itemDocIds.has(p.documentId));
       const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {};
@@ -180,14 +183,14 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         if (itemDocIds.has(doc.id)) byDoc[doc.id] = { title: doc.title, cards: [] };
       }
       const cardDocMap = new Map<string, Set<string>>();
-      for (const item of items) {
+      for (const item of annotationItems) {
         if (item.fsrsCard && byDoc[item.documentId]) {
           byDoc[item.documentId]!.cards.push(item.fsrsCard);
           if (!cardDocMap.has(item.documentId)) cardDocMap.set(item.documentId, new Set());
           cardDocMap.get(item.documentId)!.add(item.id);
         }
       }
-      for (const item of items) {
+      for (const item of annotationItems) {
         if (!item.fsrsCard && byDoc[item.documentId]) {
           const cardIds = cardDocMap.get(item.documentId);
           if (!cardIds?.has(item.id)) {

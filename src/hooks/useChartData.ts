@@ -7,6 +7,8 @@ interface UseChartDataResult {
   cards: Card[];
   /** Parsed cards as a Map (needed by computeKnowledgeGrowth) */
   parsedCards: Map<string, Card>;
+  /** Total annotation count (not highlights) — used to derive newCards. */
+  annotationCount: number;
   loading: boolean;
   isEmpty: boolean;
 }
@@ -21,6 +23,7 @@ interface UseChartDataResult {
 export function useChartData(): UseChartDataResult {
   const logs = useStatsStore((s) => s.rawReviewLogs);
   const parsedCards = useStatsStore((s) => s.parsedCards);
+  const annotationCount = useStatsStore((s) => s.annotationCount);
   const dataVersion = useStatsStore((s) => s.dataVersion);
   const loading = useStatsStore((s) => s.loading);
 
@@ -35,5 +38,5 @@ export function useChartData(): UseChartDataResult {
     [logs.length, cards.length],
   );
 
-  return { logs, cards, parsedCards, loading, isEmpty };
+  return { logs, cards, parsedCards, annotationCount, loading, isEmpty };
 }

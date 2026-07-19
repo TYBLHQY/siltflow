@@ -51,8 +51,9 @@ export function MemoryStateExplorer() {
   useEffect(() => {
     window.siltflow.annotations.listAll().then((rows) => {
       const map = new Map<string, string>();
+      // Only index annotation-kind rows; highlights have no FSRS cards to display
       for (const row of rows) {
-        if (row.text) map.set(row.id, row.text);
+        if (row.text && row.kind !== "highlight") map.set(row.id, row.text);
       }
       setAnnotationsMap(map);
     });

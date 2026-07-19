@@ -50,6 +50,7 @@ function formatFloat(n: number): string {
 export function OverviewCards() {
   const rawCards = useStatsStore((s) => s.rawCards);
   const parsedCards = useStatsStore((s) => s.parsedCards);
+  const annotationCount = useStatsStore((s) => s.annotationCount);
   const loading = useStatsStore((s) => s.loading);
 
   // Still loading: show skeleton
@@ -88,11 +89,19 @@ export function OverviewCards() {
   const cards = Array.from(parsedCards.values());
   const stats = computeOverviewStats(cards);
 
+  // newCards = annotations that haven't been reviewed yet (no FSRS card row).
+  // fsrs_cards only contains reviewed cards, so computeOverviewStats always
+  // returns newCards=0.  Derive it from the gap between annotationCount and
+  // cards that already have reviews.
+  const newCards = Math.max(0, annotationCount - cards.length);
+  // Total should include unreviewed annotations too, not just fsrs_cards rows.
+  const total = Math.max(annotationCount, cards.length);
+
   const items: StatCardData[] = [
     {
       icon: BrainCircuit,
       label: "Total cards",
-      value: formatNum(stats.total),
+      value: formatNum(total),
       color: "var(--catppuccin-color-mauve)",
     },
     {
@@ -104,7 +113,7 @@ export function OverviewCards() {
     {
       icon: Sparkles,
       label: "New cards",
-      value: formatNum(stats.newCards),
+      value: formatNum(newCards),
       color: "var(--catppuccin-color-blue)",
     },
     {

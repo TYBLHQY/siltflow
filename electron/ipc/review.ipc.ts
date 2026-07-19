@@ -78,7 +78,7 @@ export function registerReviewHandlers() {
     // Count annotations per document (to catch annotations with no card row)
     const annCountByDoc = new Map<string, number>()
     const annRows = sql
-      .prepare("SELECT document_id, COUNT(*) as cnt FROM annotations GROUP BY document_id")
+      .prepare("SELECT document_id, COUNT(*) as cnt FROM annotations WHERE kind = 'annotation' GROUP BY document_id")
       .all() as { document_id: string; cnt: number }[]
 
     for (const row of annRows) {
