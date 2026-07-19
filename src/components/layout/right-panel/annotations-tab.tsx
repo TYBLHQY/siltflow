@@ -14,6 +14,7 @@ import { useToastStore } from "@/stores/toast.store";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useNow } from "@/hooks/useNow";
 import { reviewAnnotation } from "@/stores/fsrs.store";
+import { cardDueDate } from "@/lib/fsrs-utils";
 import type { Grade } from "ts-fsrs";
 import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
 import type { AnnotationItem } from "@/stores/annotation.store";
@@ -117,11 +118,7 @@ export function AnnotationsTab({
       items.filter((item) => {
         if (!item.fsrsCard) return true;
         try {
-          const dueMs =
-            item.fsrsCard.due instanceof Date
-              ? item.fsrsCard.due.getTime()
-              : new Date(item.fsrsCard.due).getTime();
-          return dueMs <= now;
+          return cardDueDate(item.fsrsCard).getTime() <= now;
         } catch {
           return true;
         }
