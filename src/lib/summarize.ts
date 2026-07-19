@@ -15,8 +15,6 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 export interface SummaryResult {
   summary: string;
   sourceLang: string;
-  keyVocabulary: { term: string; cefr?: string }[];
-  gist: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,18 +49,12 @@ Output valid JSON only — no markdown fences, no commentary.
 Schema:
 {
   "summary": "<concise summary from a learner's perspective, highlighting core arguments and key information>",
-  "source_lang": "<BCP 47 language code of the document e.g. en-US, zh-CN>",
-  "key_vocabulary": [
-    { "term": "<important vocabulary item>", "cefr": "<A1|A2|B1|B2|C1|C2>" }
-  ],
-  "gist": "<one-sentence core idea>"
+  "source_lang": "<BCP 47 language code of the document e.g. en-US, zh-CN>"
 }
 
 CONSTRAINTS:
 - summary: 3-5 sentences, focus on main arguments.
 - source_lang: detect the document's primary language (BCP 47).
-- key_vocabulary: extract 3-8 important or challenging words from the document that a learner should look up.
-- gist: one sentence capturing the single most important idea.
 
 EXCERPTS:`;
 
@@ -111,12 +103,8 @@ export async function summarizeSelectedPages(
     return {
       summary: parsed.summary ?? cleaned,
       sourceLang: parsed.source_lang ?? "en-US",
-      keyVocabulary: Array.isArray(parsed.key_vocabulary)
-        ? parsed.key_vocabulary
-        : [],
-      gist: parsed.gist ?? "",
     };
   } catch {
-    return { summary: cleaned, sourceLang: "en-US", keyVocabulary: [], gist: "" };
+    return { summary: cleaned, sourceLang: "en-US" };
   }
 }

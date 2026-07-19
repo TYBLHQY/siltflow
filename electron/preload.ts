@@ -53,7 +53,7 @@ export interface SiltflowAPI {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: (documentId: string) => Promise<any | null>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    save: (summary: { documentId: string; text: string; isAiGenerated: boolean }) => Promise<any>
+    save: (summary: { documentId: string; text: string; isAiGenerated: boolean; sourceLang?: string }) => Promise<{ documentId: string }>
     delete: (documentId: string) => Promise<void>
   }
   aiResults: {

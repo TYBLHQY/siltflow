@@ -67,14 +67,12 @@ export interface AnnotationEnrichedIPC {
 // ── Summaries ──────────────────────────────────────────────────────────
 
 export interface SummaryRowIPC {
-  document_id: string;
+  documentId: string;
   text: string;
-  is_ai_generated: number; // SQLite boolean as int
-  source_lang: string | null;
-  key_vocabulary?: string | null; // JSON string
-  gist?: string | null;
-  created_at: string;
-  updated_at: string;
+  isAiGenerated: number; // SQLite boolean as int
+  sourceLang: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SummarySaveRequest {
@@ -105,15 +103,15 @@ export interface FSRSCardSaveResult {
 
 export interface ReviewLogEntryIPC {
   id: string;
-  annotation_id: string;
-  document_id: string;
+  annotationId: string;
+  documentId: string;
   data: string;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface ReviewLogSaveResult {
   id: string;
-  created_at: string;
+  createdAt: string;
 }
 
 // ── Folders ────────────────────────────────────────────────────────────

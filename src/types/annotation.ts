@@ -121,8 +121,6 @@ export interface AIAnnotationDataV1 {
   /** @deprecated Not used in new schema. */
   grammar_notes?: string;
   /** @deprecated Not used in new schema. */
-  gist?: string;
-  /** @deprecated Not used in new schema. */
   key_terms?: Array<{ term: string; explanation: string }>;
   /** @deprecated Not used in new schema. */
   related_terms?: Array<{

@@ -34,10 +34,10 @@ export const useReviewLogStore = create<ReviewLogStoreState>((set) => ({
     );
     const mapped: ReviewLogEntry[] = entries.map((e) => ({
       id: e.id,
-      annotationId: e.annotation_id,
-      documentId: e.document_id,
+      annotationId: e.annotationId,
+      documentId: e.documentId,
       data: e.data,
-      createdAt: e.created_at,
+      createdAt: e.createdAt,
     }));
     set((s) => ({
       logs: { ...s.logs, [annotationId]: mapped },
@@ -56,7 +56,7 @@ export const useReviewLogStore = create<ReviewLogStoreState>((set) => ({
       annotationId,
       documentId,
       data: JSON.stringify(data),
-      createdAt: result.created_at,
+      createdAt: result.createdAt,
     };
     set((s) => ({
       logs: {

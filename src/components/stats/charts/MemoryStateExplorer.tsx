@@ -117,8 +117,8 @@ export function MemoryStateExplorer() {
               const data = JSON.parse(e.data);
               const log = data.log;
               return {
-                timestamp: new Date(log.review || e.created_at).getTime(),
-                date: new Date(log.review || e.created_at).toLocaleDateString("en-US", {
+                timestamp: new Date(log.review || e.createdAt).getTime(),
+                date: new Date(log.review || e.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 }),

@@ -105,8 +105,6 @@ export function SummaryTab() {
         result.summary,
         true,
         result.sourceLang,
-        result.keyVocabulary,
-        result.gist,
       );
       showToast("Summary generated", "info");
     } catch (err) {
