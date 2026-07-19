@@ -4,7 +4,7 @@
  */
 import { State } from "ts-fsrs";
 import type { Card } from "ts-fsrs";
-import { retrievability } from "@/lib/doc-review";
+import { retrievability, GRADE_COLOR, GRADE_LABEL, parseReviewLogData } from "@/lib/fsrs-utils";
 
 export interface DailyReviewCount {
   date: string;
@@ -62,29 +62,6 @@ export interface OverviewStats {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const GRADE_COLORS: Record<string, string> = {
-  Again: "var(--catppuccin-color-red)",
-  Hard: "var(--catppuccin-color-peach)",
-  Good: "var(--catppuccin-color-green)",
-  Easy: "var(--catppuccin-color-blue)",
-};
-
-const GRADE_NAMES: Record<number, "Again" | "Hard" | "Good" | "Easy"> = {
-  1: "Again",
-  2: "Hard",
-  3: "Good",
-  4: "Easy",
-};
-
-/** Parse the data field of a review_log IPC row. */
-function parseLogData(raw: string): { grade: number; log: { state: number; stability: number; difficulty: number; scheduled_days: number }; card: { due: string; stability: number; difficulty: number; scheduled_days: number; reps: number; lapses: number; state: number } } {
-  return JSON.parse(raw);
-}
-
-// ---------------------------------------------------------------------------
 // Chart 1 & 2: Daily Reviews / New vs Review
 // ---------------------------------------------------------------------------
 
@@ -99,7 +76,8 @@ export function computeDailyReviews(
   for (const entry of logs) {
     const date = entry.createdAt.slice(0, 10);
     if (cutoff && date < cutoff) continue;
-    const parsed = parseLogData(entry.data);
+    const parsed = parseReviewLogData(entry.data);
+    if (!parsed) continue;
     const state = parsed.log.state;
     const row = map.get(date) ?? { count: 0, learnCount: 0, reviewCount: 0 };
     row.count++;
@@ -138,13 +116,15 @@ export function computeCalendarHeatmap(
 export function computeGradeDistribution(logs: { data: string }[]): GradeDistItem[] {
   const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
   for (const entry of logs) {
-    const grade = parseLogData(entry.data).grade;
+    const parsed = parseReviewLogData(entry.data);
+    if (!parsed) continue;
+    const grade = parsed.grade;
     if (grade >= 1 && grade <= 4) counts[grade]++;
   }
   return ([1, 2, 3, 4] as const).map((g) => ({
-    name: GRADE_NAMES[g],
+    name: GRADE_LABEL[g] as "Again" | "Hard" | "Good" | "Easy",
     value: counts[g],
-    color: GRADE_COLORS[GRADE_NAMES[g]],
+    color: GRADE_COLOR[g],
   }));
 }
 
@@ -262,7 +242,8 @@ export function computeKnowledgeGrowth(
   let learning = 0, young = 0, mature = 0, longTerm = 0;
 
   for (const entry of sorted) {
-    const parsed = parseLogData(entry.data);
+    const parsed = parseReviewLogData(entry.data);
+    if (!parsed) continue;
     const cardSnap = parsed.card;
     const aid = entry.annotationId;
 

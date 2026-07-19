@@ -3,6 +3,7 @@ import { Search, Loader2, BrainCircuit, FileText } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, memo, useEffect } from "react";
 import type { DocReviewMetrics } from "@/lib/doc-review";
+import { retrievabilityLabel } from "@/lib/fsrs-utils";
 import { useDocumentStore } from "@/stores/document.store";
 
 interface ReviewTabProps {
@@ -18,13 +19,6 @@ interface ReviewTabProps {
   scrollToDocId?: string;
   /** Called after scroll-to completes */
   onScrolledToDoc?: () => void;
-}
-
-function urgencyLabel(avgRetrievability: number): string {
-  if (avgRetrievability >= 90) return "fresh";
-  if (avgRetrievability >= 75) return "ok";
-  if (avgRetrievability >= 50) return "due";
-  return "overdue";
 }
 
 // ── Row component ──────────────────────────────────────────────────────
@@ -69,7 +63,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
             {metric.dueSoonCount} soon
           </span>
           <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
-            {urgencyLabel(metric.avgRetrievability)}
+            {retrievabilityLabel(metric.avgRetrievability)}
           </span>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { retrievability } from "@/lib/doc-review";
+import { retrievability } from "@/lib/fsrs-utils";
 
 describe("retrievability", () => {
   it("should return 0 for zero stability", () => {

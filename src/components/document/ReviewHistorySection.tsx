@@ -1,60 +1,15 @@
 import { useEffect, useState } from "react";
-import { useReviewLogStore, type ReviewLogEntry } from "@/stores/review-log.store";
-
-// ── Grade labels & colors ────────────────────────────────────────────────
-
-const GRADE_INFO: Record<number, { label: string; color: string }> = {
-  1: { label: "Again", color: "text-ctp-red" },
-  2: { label: "Hard", color: "text-ctp-peach" },
-  3: { label: "Good", color: "text-ctp-green" },
-  4: { label: "Easy", color: "text-ctp-blue" },
-};
-
-const STATE_LABELS: Record<number, string> = {
-  0: "New",
-  1: "Learning",
-  2: "Review",
-  3: "Relearning",
-};
-
-const STATE_BG: Record<number, string> = {
-  0: "bg-ctp-sky/15 text-ctp-sky",
-  1: "bg-ctp-yellow/15 text-ctp-yellow",
-  2: "bg-ctp-green/15 text-ctp-green",
-  3: "bg-ctp-red/15 text-ctp-red",
-};
+import { useReviewLogStore } from "@/stores/review-log.store";
+import {
+  STATE_LABEL,
+  STATE_BG,
+  GRADE_TEXT_COLOR,
+  GRADE_LABEL,
+  formatInterval,
+  parseReviewLogData,
+} from "@/lib/fsrs-utils";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
-
-function parseEntryData(entry: ReviewLogEntry) {
-  try {
-    return JSON.parse(entry.data) as {
-      grade: number;
-      log: {
-        rating: number;
-        state: number;
-        due: string;
-        stability: number;
-        difficulty: number;
-        scheduled_days: number;
-        learning_steps: number;
-        review: string;
-      };
-      card: {
-        due: string;
-        stability: number;
-        difficulty: number;
-        scheduled_days: number;
-        learning_steps: number;
-        reps: number;
-        lapses: number;
-        state: number;
-      };
-    };
-  } catch {
-    return null;
-  }
-}
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
@@ -65,13 +20,6 @@ function formatTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatInterval(days: number): string {
-  if (days < 1) return `${Math.round(days * 1440)}m`;
-  if (days < 30) return `${Math.round(days)}d`;
-  if (days < 365) return `${(days / 30).toFixed(1)}mo`;
-  return `${(days / 365).toFixed(1)}y`;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -111,10 +59,11 @@ export function ReviewHistorySection({
   return (
     <div className="text-xs leading-snug space-y-0.5 mt-1">
       {logs.map((entry) => {
-        const parsed = parseEntryData(entry);
+        const parsed = parseReviewLogData(entry.data);
         if (!parsed) return null;
         const { grade, log, card } = parsed;
-        const gInfo = GRADE_INFO[grade] ?? { label: "?", color: "text-ctp-overlay0" };
+        const gLabel = GRADE_LABEL[grade] ?? "?";
+        const gColor = GRADE_TEXT_COLOR[grade] ?? "text-ctp-overlay0";
 
         return (
           <div
@@ -127,8 +76,8 @@ export function ReviewHistorySection({
             </span>
 
             {/* Grade badge */}
-            <span className={`shrink-0 font-semibold ${gInfo.color}`}>
-              {gInfo.label}
+            <span className={`shrink-0 font-semibold ${gColor}`}>
+              {gLabel}
             </span>
 
             {/* State transition */}
@@ -137,7 +86,7 @@ export function ReviewHistorySection({
                 STATE_BG[log.state] ?? "text-ctp-overlay0"
               }`}
             >
-              {STATE_LABELS[log.state] ?? "?"}
+              {STATE_LABEL[log.state] ?? "?"}
             </span>
 
             {/* Arrow */}
@@ -149,7 +98,7 @@ export function ReviewHistorySection({
                 STATE_BG[card.state] ?? "text-ctp-overlay0"
               }`}
             >
-              {STATE_LABELS[card.state] ?? "?"}
+              {STATE_LABEL[card.state] ?? "?"}
             </span>
 
             {/* Stability */}

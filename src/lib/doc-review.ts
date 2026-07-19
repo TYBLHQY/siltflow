@@ -14,6 +14,7 @@
  */
 import type { Card } from "ts-fsrs";
 import { State } from "ts-fsrs";
+import { retrievability } from "@/lib/fsrs-utils";
 
 export interface CardWithDoc {
   card: Card;
@@ -30,17 +31,6 @@ export interface DocReviewMetrics {
   avgRetrievability: number;
   avgOverdueRatio: number;
   compositeScore: number;
-}
-
-/**
- * Compute retrievability from FSRS card state.
- * Default w[20] = 0.1542 (FSRS-5) — a reasonable approximation.
- */
-export function retrievability(stability: number, elapsedDays: number): number {
-  if (stability <= 0 || elapsedDays < 0) return 0;
-  const w20 = 0.1542;
-  const factor = Math.pow(0.9, -1 / w20) - 1;
-  return Math.pow(1 + (factor * elapsedDays) / stability, -w20);
 }
 
 /**
@@ -150,14 +140,4 @@ export function computeDocMetrics(
   );
 
   return results;
-}
-
-/**
- * Label for retrieval urgency.
- */
-export function urgencyLabel(avgRetrievability: number): string {
-  if (avgRetrievability >= 90) return "Fresh";
-  if (avgRetrievability >= 75) return "Good";
-  if (avgRetrievability >= 50) return "Aging";
-  return "Stale";
 }

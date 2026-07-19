@@ -13,6 +13,7 @@ import { Search, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useStatsStore } from "@/stores/stats.store";
+import { GRADE_COLOR, GRADE_LABEL } from "@/lib/fsrs-utils";
 
 interface ParsedReviewLog {
   timestamp: number;
@@ -23,20 +24,6 @@ interface ParsedReviewLog {
   scheduledDays: number;
   state: number;
 }
-
-const GRADE_COLORS: Record<number, string> = {
-  1: "var(--catppuccin-color-red)",
-  2: "var(--catppuccin-color-peach)",
-  3: "var(--catppuccin-color-green)",
-  4: "var(--catppuccin-color-blue)",
-};
-
-const GRADE_LABELS: Record<number, string> = {
-  1: "Again",
-  2: "Hard",
-  3: "Good",
-  4: "Easy",
-};
 
 export function MemoryStateExplorer() {
   const rawCards = useStatsStore((s) => s.rawCards);
@@ -345,9 +332,9 @@ export function MemoryStateExplorer() {
                         <div className="flex-1 px-3 py-1.5">
                           <span
                             className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-ctp-base"
-                            style={{ backgroundColor: GRADE_COLORS[log.grade] ?? "var(--catppuccin-color-lavender)" }}
+                            style={{ backgroundColor: GRADE_COLOR[log.grade] ?? "var(--catppuccin-color-lavender)" }}
                           >
-                            {GRADE_LABELS[log.grade] ?? log.grade}
+                            {GRADE_LABEL[log.grade] ?? log.grade}
                           </span>
                         </div>
                         <div className="w-20 px-3 py-1.5 text-right text-ctp-text">{log.stability.toFixed(1)}d</div>

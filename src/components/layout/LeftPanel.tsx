@@ -23,6 +23,7 @@ import { usePdfViewerStore, pdfGoToPage } from "@/stores/pdf-viewer.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useStyleStore } from "@/stores/style.store";
 import { computeDocMetrics, type DocReviewMetrics } from "@/lib/doc-review";
+import { createNewCardStub } from "@/lib/fsrs-utils";
 import { useNow } from "@/hooks/useNow";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
 import { ReviewTab } from "@/components/layout/left-panel/review-tab";
@@ -158,7 +159,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           const realAnnotations = annotations.filter((a) => a.kind !== "highlight");
           for (const ann of realAnnotations) {
             if (!cardAnnIds.has(ann.id)) {
-              cards.push({ state: 0, due: new Date(), stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0 } as import("ts-fsrs").Card);
+              cards.push(createNewCardStub());
             }
           }
           const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {
