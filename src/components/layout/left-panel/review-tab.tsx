@@ -58,7 +58,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
         </span>
       </div>
       {hasTags && (
-        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+        <div className="flex flex-wrap items-center gap-1 mt-0.5">
           <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
             {metric.newCardsCount} new
           </span>
