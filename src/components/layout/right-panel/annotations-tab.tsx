@@ -197,13 +197,14 @@ export function AnnotationsTab({
     <>
       {items.length > 0 && (
         <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
-          <Button className="w-full" onClick={handleStartLearning}>
+          <Button size="xs" className="w-full" onClick={handleStartLearning}>
             <IconText icon={CheckSquare} size="xs" className="gap-0">
               Start Learning ({dueCount})
             </IconText>
           </Button>
           <Button
             variant="outline"
+            size="xs"
             className="w-full"
             onClick={handleBatchTranslate}
             disabled={batchTranslating}

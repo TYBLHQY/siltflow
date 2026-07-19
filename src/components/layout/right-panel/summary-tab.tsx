@@ -181,6 +181,7 @@ export function SummaryTab() {
         </ScrollArea>
 
         <Button
+          size="xs"
           className="w-full justify-center"
           onClick={handleSummarize}
           disabled={summarizing}
