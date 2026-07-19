@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Highlighter, CheckSquare, Sparkles } from "lucide-react";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
@@ -147,6 +147,17 @@ export function AnnotationsTab({
   useShortcut("startLearning", handleStartLearning, {
     enabled: hasPdf && !studyPanelOpen,
   });
+
+  // ── Expand V2 card when PDF highlight is clicked ──────────────────────
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id } = (e as CustomEvent<{ id: string }>).detail;
+      if (id) setExpandedCardId(id);
+    };
+    window.addEventListener("siltflow:annotation-click", handler);
+    return () =>
+      window.removeEventListener("siltflow:annotation-click", handler);
+  }, []);
 
   // ── Batch translate ────────────────────────────────────────────────
   const handleBatchTranslate = useCallback(async () => {
