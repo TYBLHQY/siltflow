@@ -185,12 +185,10 @@ function createTables() {
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (docCols.some((c: any) => c.name === 'file_name')) {
-    // eslint-disable-next-line no-empty
     try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_name") } catch {}
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (docCols.some((c: any) => c.name === 'file_path')) {
-    // eslint-disable-next-line no-empty
     try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_path") } catch {}
   }
 }
