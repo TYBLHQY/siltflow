@@ -16,19 +16,19 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: 'pnpm'
 
       - name: Cache TypeScript build info
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.cache
           key: tsc-cache-${{ runner.os }}-${{ hashFiles('tsconfig.json', 'pnpm-lock.yaml') }}
@@ -75,15 +75,15 @@ jobs:
             target: win
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: 'pnpm'
 
       - name: Bump package.json version to match tag
@@ -104,7 +104,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Cache Electron binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/electron
@@ -116,7 +116,7 @@ jobs:
             electron-cache-${{ matrix.target }}-
 
       - name: Cache TypeScript build info
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.cache
           key: tsc-cache-${{ matrix.target }}-${{ hashFiles('tsconfig.json', 'pnpm-lock.yaml') }}
