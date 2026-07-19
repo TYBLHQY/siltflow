@@ -166,7 +166,7 @@ export function SummaryTab() {
                   key={p}
                   variant="ghost"
                   size="sm"
-                  className={`h-6 min-w-[24px] px-1 text-xs font-medium ${
+                  className={`h-6 min-w-6 px-1 text-xs font-medium ${
                     selected
                       ? "bg-ctp-mauve/10 text-ctp-mauve"
                       : "text-ctp-overlay0"
