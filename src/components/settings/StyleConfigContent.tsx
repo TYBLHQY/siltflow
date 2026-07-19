@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useStyleStore } from "@/stores/style.store";
 import { useThemeStore } from "@/stores/theme.store";
 import { useSystemFonts } from "@/hooks/useSystemFonts";
+import { AVAILABLE_COLORS, getHighlightCSSVar } from "@/lib/colors";
 
 export function StyleConfigContent() {
   const style = useStyleStore((s) => s.style);
@@ -14,6 +15,8 @@ export function StyleConfigContent() {
   const setGlobalFontSize = useStyleStore((s) => s.setGlobalFontSize);
   const setPdfScrollbar = useStyleStore((s) => s.setPdfScrollbar);
   const setLearnPanelHeight = useStyleStore((s) => s.setLearnPanelHeight);
+  const setAnnotationHighlightColor = useStyleStore((s) => s.setAnnotationHighlightColor);
+  const setPlainHighlightColor = useStyleStore((s) => s.setPlainHighlightColor);
   const setSystemFontFamilies = useStyleStore((s) => s.setSystemFontFamilies);
   const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily);
   const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily);
@@ -366,6 +369,61 @@ export function StyleConfigContent() {
           value={style.learnPanelHeight}
           onChange={(e) => setLearnPanelHeight(parseInt(e.target.value, 10))}
         />
+      </div>
+
+      {/* ── Highlight colors ── */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-xs font-semibold mb-3">Highlight Colors</h3>
+
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1.5">
+            Annotation highlight color
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {AVAILABLE_COLORS.map((color) => {
+              const cssVar = getHighlightCSSVar(color);
+              const isSelected = style.annotationHighlightColor === color;
+              return (
+                <button
+                  key={color}
+                  className={`h-6 w-6 rounded-full border-2 transition-all ${
+                    isSelected
+                      ? "border-ctp-text ring-2 ring-ctp-mauve"
+                      : "border-transparent hover:border-ctp-overlay0"
+                  }`}
+                  style={{ backgroundColor: cssVar }}
+                  onClick={() => setAnnotationHighlightColor(color)}
+                  title={color}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label className="block text-xs font-medium mb-1.5">
+            Plain highlight color
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {AVAILABLE_COLORS.map((color) => {
+              const cssVar = getHighlightCSSVar(color);
+              const isSelected = style.plainHighlightColor === color;
+              return (
+                <button
+                  key={color}
+                  className={`h-6 w-6 rounded-full border-2 transition-all ${
+                    isSelected
+                      ? "border-ctp-text ring-2 ring-ctp-mauve"
+                      : "border-transparent hover:border-ctp-overlay0"
+                  }`}
+                  style={{ backgroundColor: cssVar }}
+                  onClick={() => setPlainHighlightColor(color)}
+                  title={color}
+                />
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* ── Theme settings ── */}

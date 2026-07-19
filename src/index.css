@@ -165,57 +165,46 @@ html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .page {
   background-color: transparent !important;
 }
 
-/* ── Peach highlight (invert + themed) ──────────────────────────────
-   Both modes replace the library's default yellow highlight with a
-   semi-transparent peach colour. In invert mode this means we also
-   strip the invert filter from the highlight layer so the peach shows
-   in its original hue.                                        */
+/* ── Dark-mode highlight layer ─────────────────────────────────────
+   In invert / themed mode the PDF canvas gets `invert(1) hue-rotate(180deg)`,
+   which would also invert the highlight colours — turning yellow into blue,
+   green into magenta, etc.  We undo the filter on the highlight layer so
+   colours show in their original hue, and switch from multiply (light mode)
+   to normal blend + alpha transparency (dark mode).
 
-html[data-pdf-dark-invert="invert"].dark .PdfHighlighter,
-html[data-pdf-dark-invert="themed"].dark .PdfHighlighter {
-  --highlight-peach: rgb(250 180 120 / 0.3);
-  --highlight-selected-peach: rgb(250 180 120 / 0.55);
-}
+   The library renders highlights via color-mix():
+     backgroundColor: `color-mix(in srgb, ${highlightColor} var(--hl-fill-alpha, 100%), transparent)`
 
-html[data-pdf-dark-invert="invert"].dark
-  .PdfHighlighter
-  .PdfHighlighter__highlight-layer,
+   In light mode, multiply blend naturally makes highlights translucent (like a
+   real highlighter pen), so the default --hl-fill-alpha: 100% is fine.
+
+   In dark mode we use normal blend, so we must set --hl-fill-alpha explicitly
+   — otherwise color-mix produces 100% opaque colour and the highlight becomes
+   a solid block that covers the text underneath.  The library's own dark-mode
+   class (PdfHighlighter--dark) sets this to 42%, but we don't use that class
+   (we use CSS invert instead of OkLab pixel recolor), so we set it here.
+
+   The actual highlight colour comes from the `highlightColor` prop (inline
+   style), which uses CSS `var(--catppuccin-color-xxx)` references that
+   auto-resolve to the current theme's colour.                       */
+
+html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .PdfHighlighter__highlight-layer,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .TextHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .AreaHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .DrawingHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .ShapeHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .FreetextHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .ImageHighlight,
-html[data-pdf-dark-invert="themed"].dark
-  .PdfHighlighter
-  .PdfHighlighter__highlight-layer,
+html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .PdfHighlighter__highlight-layer,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .TextHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .AreaHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .DrawingHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .ShapeHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .FreetextHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .ImageHighlight {
+  --hl-fill-alpha: 42%;
   filter: none;
   mix-blend-mode: normal;
-}
-
-html[data-pdf-dark-invert="invert"].dark
-  .PdfHighlighter
-  .PdfHighlighter__highlight-layer
-  .TextHighlight__part,
-html[data-pdf-dark-invert="invert"].dark
-  .PdfHighlighter
-  .PdfHighlighter__highlight-layer
-  .AreaHighlight__part,
-html[data-pdf-dark-invert="themed"].dark
-  .PdfHighlighter
-  .PdfHighlighter__highlight-layer
-  .TextHighlight__part,
-html[data-pdf-dark-invert="themed"].dark
-  .PdfHighlighter
-  .PdfHighlighter__highlight-layer
-  .AreaHighlight__part {
-  background: var(--highlight-peach) !important;
 }
 
 /* PdfHighlighter: scrollbar controlled by data-pdf-scrollbar attribute */

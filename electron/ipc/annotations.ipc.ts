@@ -20,6 +20,7 @@ export function registerAnnotationHandlers() {
     const rows = sql.prepare(`
       SELECT
         a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
+        a.kind,
         a.created_at, a.updated_at,
         ar.data AS ai_data,
         ar.version AS ai_version,
@@ -41,6 +42,7 @@ export function registerAnnotationHandlers() {
       text: r.text,
       page_number: r.page_number,
       embed_data: tryParseJson(r.embed_data, {}),
+      kind: r.kind || "annotation",
       created_at: r.created_at,
       updated_at: r.updated_at,
       ai_data: r.ai_data ? tryParseJson(r.ai_data, null) : null,
@@ -61,8 +63,8 @@ export function registerAnnotationHandlers() {
     if (!sql) return null
     const now = new Date().toISOString()
     sql.prepare(
-      `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       annotation.id,
       annotation.documentId,
@@ -70,6 +72,7 @@ export function registerAnnotationHandlers() {
       annotation.text || "",
       annotation.pageNumber ?? 0,
       annotation.embedData || "",
+      annotation.kind || "annotation",
       now,
       now,
     )

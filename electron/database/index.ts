@@ -9,7 +9,7 @@ import path from "node:path"
 // Bump this when making backward-incompatible migrations.  The value is
 // stored as PRAGMA user_version so we can detect and migrate existing
 // databases on upgrade.
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 /** Current AI data version written to ai_results.version on save. */
 export const AI_DATA_VERSION = 1
@@ -81,6 +81,7 @@ function createTables() {
       text TEXT,
       page_number INTEGER,
       embed_data TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'annotation',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (id, document_id)
@@ -97,6 +98,10 @@ function createTables() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (annoCols.some((c: any) => c.name === 'fsrs_card')) {
     sqlite.exec("ALTER TABLE annotations DROP COLUMN fsrs_card")
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!annoCols.some((c: any) => c.name === 'kind')) {
+    sqlite.exec("ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'")
   }
 
   // Create ai_results table

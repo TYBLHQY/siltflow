@@ -22,6 +22,8 @@ interface StyleState {
   setGlobalFontSize: (size: number) => void;
   setPdfScrollbar: (show: boolean) => void;
   setLearnPanelHeight: (height: number) => void;
+  setAnnotationHighlightColor: (color: string) => void;
+  setPlainHighlightColor: (color: string) => void;
   reset: () => void;
 }
 
@@ -41,6 +43,8 @@ const DEFAULT_STYLE: ParagraphStyle = {
     "sans-serif",
   ],
   learnPanelHeight: 700,
+  annotationHighlightColor: "yellow",
+  plainHighlightColor: "green",
 };
 
 function persist(style: ParagraphStyle) {
@@ -158,6 +162,20 @@ export const useStyleStore = create<StyleState>((set) => ({
       return { style: next };
     }),
 
+  setAnnotationHighlightColor: (color) =>
+    set((s) => {
+      const next = { ...s.style, annotationHighlightColor: color };
+      persist(next);
+      return { style: next };
+    }),
+
+  setPlainHighlightColor: (color) =>
+    set((s) => {
+      const next = { ...s.style, plainHighlightColor: color };
+      persist(next);
+      return { style: next };
+    }),
+
   reset: () => {
     persist(DEFAULT_STYLE);
     set({ style: { ...DEFAULT_STYLE } });
@@ -185,6 +203,10 @@ export async function loadStyleFromVault(cfg?: Record<string, unknown>) {
             DEFAULT_STYLE.systemFontFamilies,
           learnPanelHeight:
             (s.learnPanelHeight as number) ?? DEFAULT_STYLE.learnPanelHeight,
+          annotationHighlightColor:
+            (s.annotationHighlightColor as string) ?? DEFAULT_STYLE.annotationHighlightColor,
+          plainHighlightColor:
+            (s.plainHighlightColor as string) ?? DEFAULT_STYLE.plainHighlightColor,
         },
       });
     }

@@ -11,4 +11,8 @@ export interface ParagraphStyle {
   systemFontFamilies: string[];
   /** Max height (px) for the Learn panel (study dialog). */
   learnPanelHeight: number;
+  /** Catppuccin color name for annotation highlights. */
+  annotationHighlightColor: string;
+  /** Catppuccin color name for plain (non-annotation) highlights. */
+  plainHighlightColor: string;
 }

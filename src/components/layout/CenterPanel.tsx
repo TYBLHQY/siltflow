@@ -10,13 +10,14 @@ import {
   Settings,
   PenLine,
   MousePointer2,
+  Highlighter,
   BarChart3,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { usePdfViewerStore, pdfGoToPage, pdfSetViewerScale } from "@/stores/pdf-viewer.store";
+import { usePdfViewerStore, pdfGoToPage, pdfSetViewerScale, type SelectionMode } from "@/stores/pdf-viewer.store";
 import {
   useAnnotationStore,
   type AnnotationEmbedData,
@@ -100,29 +101,53 @@ function PageNav() {
 }
 
 // ---------------------------------------------------------------------------
-// Quick-add toggle button — placed left of fit-width in the toolbar.
+// Selection-mode toggle — 3-way cycling button.
+// Cycles: manual → auto-annotate → auto-highlight → manual …
 // ---------------------------------------------------------------------------
 function QuickAddToggle() {
-  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled);
-  const setQuickAddEnabled = usePdfViewerStore((s) => s.setQuickAddEnabled);
+  const selectionMode = usePdfViewerStore((s) => s.selectionMode);
+  const setSelectionMode = usePdfViewerStore((s) => s.setSelectionMode);
+
+  const MODES: Array<{
+    mode: SelectionMode;
+    icon: typeof PenLine;
+    title: string;
+  }> = [
+    {
+      mode: "manual",
+      icon: MousePointer2,
+      title: "Manual mode: select text then choose annotation or highlight",
+    },
+    {
+      mode: "auto-annotate",
+      icon: PenLine,
+      title: "Auto-annotate: selection immediately creates an annotation",
+    },
+    {
+      mode: "auto-highlight",
+      icon: Highlighter,
+      title: "Auto-highlight: selection creates a plain colored highlight only",
+    },
+  ];
+
+  const currentIndex = MODES.findIndex((m) => m.mode === selectionMode);
+  const current = MODES[currentIndex] ?? MODES[1];
+  const Icon = current.icon;
+
+  const cycle = useCallback(() => {
+    const nextIndex = (currentIndex + 1) % MODES.length;
+    setSelectionMode(MODES[nextIndex].mode);
+  }, [currentIndex, setSelectionMode]);
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      className={`h-6 w-6 ${quickAddEnabled ? "bg-ctp-surface0" : ""}`}
-      onClick={() => setQuickAddEnabled(!quickAddEnabled)}
-      title={
-        quickAddEnabled
-          ? "Quick-add mode (selection auto-annotates)"
-          : "Manual mode (selection shows add button)"
-      }
+      className={`h-6 w-6 ${selectionMode !== "manual" ? "bg-ctp-surface0" : ""}`}
+      onClick={cycle}
+      title={current.title}
     >
-      {quickAddEnabled ? (
-        <PenLine className="h-4 w-4" />
-      ) : (
-        <MousePointer2 className="h-4 w-4" />
-      )}
+      <Icon className="h-4 w-4" />
     </Button>
   );
 }
@@ -234,6 +259,7 @@ export function CenterPanel({
           id: a.id,
           documentId: a.document_id,
           type: a.type,
+          kind: a.kind || "annotation",
           text: a.text || "",
           pageNumber: a.page_number ?? 1,
           embedData: a.embed_data as AnnotationEmbedData,

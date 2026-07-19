@@ -78,7 +78,9 @@ export function AnnotationsTab({
   annotationsScrollRef,
 }: AnnotationsTabProps) {
   // ── Store reads ────────────────────────────────────────────────────
-  const items = useAnnotationStore((s) => s.items);
+  const allItems = useAnnotationStore((s) => s.items);
+  // Only show annotation-kind items in this panel; plain highlights are visual only.
+  const items = useMemo(() => allItems.filter((i) => i.kind !== "highlight"), [allItems]);
   const updateItem = useAnnotationStore((s) => s.updateItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
   const showToast = useToastStore((s) => s.show);

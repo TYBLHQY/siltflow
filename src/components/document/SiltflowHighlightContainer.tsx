@@ -9,7 +9,8 @@ import {
   useHighlightContainerContext,
 } from "react-pdf-highlighter-plus";
 import { useTTS } from "@/hooks/useTts";
-import { Volume2 } from "lucide-react";
+import { useAnnotationStore } from "@/stores/annotation.store";
+import { Volume2, BookmarkPlus, Highlighter } from "lucide-react";
 import type { SiltflowHighlight } from "./PdfViewer";
 
 interface SiltflowHighlightContainerProps {
@@ -21,6 +22,10 @@ interface SiltflowHighlightContainerProps {
 /**
  * Renders whichever highlight component matches `highlight.type`.
  * This is what gets passed as a child to `<PdfHighlighter>`.
+ *
+ * For plain highlights (`kind === "highlight"`), adds a "convert to annotation"
+ * extra button. For annotation highlights (`kind === "annotation"`), adds a
+ * "convert to plain highlight" button.
  */
 export function SiltflowHighlightContainer({
   deleteHighlight,
@@ -28,6 +33,8 @@ export function SiltflowHighlightContainer({
 }: SiltflowHighlightContainerProps) {
   const { highlight, isScrolledTo, highlightBindings } =
     useHighlightContainerContext<SiltflowHighlight>();
+
+  const updateItem = useAnnotationStore((s) => s.updateItem);
 
   const handleDelete = useCallback(
     () => deleteHighlight(highlight.id),
@@ -56,6 +63,48 @@ export function SiltflowHighlightContainer({
     </button>
   ) : null;
 
+  // Convert-to-annotation button (only for plain highlights)
+  const convertToAnnotationButton = highlight.kind === "highlight" ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        updateItem(highlight.id, { kind: "annotation" });
+      }}
+      title="Convert to annotation"
+      className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
+      style={{ color: "var(--selection-tip-fg)" }}
+    >
+      <BookmarkPlus className="h-3.5 w-3.5" />
+    </button>
+  ) : null;
+
+  // Convert-to-highlight button (only for annotation highlights)
+  const convertToHighlightButton = highlight.kind === "annotation" ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        updateItem(highlight.id, { kind: "highlight" });
+      }}
+      title="Convert to plain highlight"
+      className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
+      style={{ color: "var(--selection-tip-fg)" }}
+    >
+      <Highlighter className="h-3.5 w-3.5" />
+    </button>
+  ) : null;
+
+  // Build the extraButtons array for TextHighlight / AreaHighlight
+  const kindButton = highlight.kind === "highlight"
+    ? convertToAnnotationButton
+    : convertToHighlightButton;
+
+  const extraButtons = (
+    <>
+      {kindButton}
+      {highlightTTSButton}
+    </>
+  );
+
   switch (highlight.type) {
     case "text":
       return (
@@ -67,7 +116,7 @@ export function SiltflowHighlightContainer({
           onDelete={handleDelete}
           copyText={highlight.content?.text}
           onClick={handleClick}
-          extraButtons={highlightTTSButton}
+          extraButtons={extraButtons}
         />
       );
 

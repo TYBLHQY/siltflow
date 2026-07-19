@@ -25,14 +25,17 @@ import "react-pdf-highlighter-plus/style/style.css";
 import "react-pdf-highlighter-plus/style/pdf_viewer.css";
 import { SiltflowHighlightContainer } from "./SiltflowHighlightContainer";
 import { SelectionTip } from "./SelectionTip";
+import { resolveHighlightCSSVar } from "@/lib/colors";
 
 // ---------------------------------------------------------------------------
 // SiltflowHighlight — our application-specific highlight extension
 // ---------------------------------------------------------------------------
 export interface SiltflowHighlight extends RPHLHighlight {
+  /** Whether this is an annotation or a plain visual highlight. */
+  kind: "annotation" | "highlight";
   /** User-facing comment string. */
   comment?: string;
-  /** Text-highlight background color. */
+  /** Text-highlight background color (CSS var() reference). */
   highlightColor?: string;
   /** Source language from the annotation's AI result (BCP 47). */
   sourceLang?: string;
@@ -50,13 +53,19 @@ export interface SiltflowHighlight extends RPHLHighlight {
  * pageNumber in ScaledPosition is 1-indexed. We keep it as-is — always 1-indexed
  * everywhere except in display rendering (LeftPanel/RightPanel).
  */
-function annotationToHighlight(item: AnnotationItem): SiltflowHighlight {
+function annotationToHighlight(
+  item: AnnotationItem,
+  annotationColor: string,
+  plainColor: string,
+): SiltflowHighlight {
   const embed = item.embedData as AnnotationItem["embedData"];
   // Source language: prefer the annotation's own AI result (same as card TTS),
   // fall back to the item's text language if available.
   const ai = item.aiResult as AIAnnotationDataV2 | undefined;
+  const colorName = item.kind === "highlight" ? plainColor : annotationColor;
   return {
     id: item.id,
+    kind: item.kind || "annotation",
     type: (item.type as SiltflowHighlight["type"]) || "text",
     content: embed?.content ?? { text: item.text },
     position: embed?.position ?? {
@@ -72,6 +81,7 @@ function annotationToHighlight(item: AnnotationItem): SiltflowHighlight {
       rects: [],
     },
     comment: "",
+    highlightColor: resolveHighlightCSSVar(colorName),
     sourceLang: ai?.input?.source_lang,
   };
 }
@@ -84,12 +94,14 @@ function selectionToAnnotation(
   id: string,
   documentId: string,
   ghost: GhostHighlight,
+  kind: "annotation" | "highlight" = "annotation",
 ): AnnotationItem {
   const pageNumber = ghost.position.boundingRect.pageNumber ?? 1;
   return {
     id,
     documentId,
     type: ghost.type || "highlight",
+    kind,
     text: ghost.content?.text ?? "",
     pageNumber,
     embedData: {
@@ -113,11 +125,23 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   const storeItems = useAnnotationStore((s) => s.items);
   const addItem = useAnnotationStore((s) => s.addItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
-  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled);
   const setPendingAnnotation = usePdfViewerStore((s) => s.setPendingAnnotation);
-  const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() =>
-    storeItems.map(annotationToHighlight),
-  );
+
+  // Read highlight color config from style store.
+  // We read from getState() inside callbacks so we always get the latest value
+  // without adding a subscription that re-renders on every color change.
+  const getColors = useCallback(() => {
+    const st = useStyleStore.getState().style;
+    return {
+      annotationColor: st.annotationHighlightColor || "yellow",
+      plainColor: st.plainHighlightColor || "green",
+    };
+  }, []);
+
+  const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() => {
+    const { annotationColor, plainColor } = getColors();
+    return storeItems.map((item) => annotationToHighlight(item, annotationColor, plainColor));
+  });
   // Ref always pointing to the current highlights array, so callbacks captured
   // in utilsRef can find the latest highlights even after new ones are added.
   const highlightsRef = useRef(highlights);
@@ -126,14 +150,16 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   // Sync from store -> component state whenever store items change.
   // Also triggers when store items identity changes (after delete/add).
   useEffect(() => {
-    setHighlights(storeItems.map(annotationToHighlight));
-  }, [storeItems]);
+    const { annotationColor, plainColor } = getColors();
+    setHighlights(storeItems.map((item) => annotationToHighlight(item, annotationColor, plainColor)));
+  }, [storeItems, getColors]);
 
   /**
    * When user finishes a text/area selection, create a new highlight:
    * 1. Convert the selection to an AnnotationItem
-   * 2. If quick-add: persist + add immediately
-   * 3. If not quick-add: store as pending, show selection tip
+   * 2. Manual mode: store as pending, show selection tip
+   * 3. Auto-annotate: persist + add as annotation immediately
+   * 4. Auto-highlight: persist + add as plain highlight immediately
    *
    * We do NOT call selection.makeGhostHighlight() because that creates a
    * temporary ghost overlay that blocks interaction with the permanent
@@ -152,28 +178,39 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
       };
       const cleanedText = (ghost.content?.text ?? "").replace(/\n/g, " ");
       const pageNumber = ghost.position.boundingRect.pageNumber ?? 1;
+
+      const mode = usePdfViewerStore.getState().selectionMode;
+
+      if (mode === "manual") {
+        // Manual mode: store pending, show tip
+        setPendingAnnotation({
+          text: cleanedText,
+          pageNumber,
+          position: selection.position,
+        });
+        return;
+      }
+
+      // Auto modes: determine kind and persist
+      const kind = mode === "auto-annotate" ? "annotation" : "highlight";
+
       const item = selectionToAnnotation(id, documentId, {
         ...ghost,
         content: ghost.content
           ? { ...ghost.content, text: cleanedText }
           : undefined,
-      } as GhostHighlight);
+      } as GhostHighlight, kind);
 
-      if (quickAddEnabled) {
-        // Quick-add: persist immediately (addItem persists via annotation.store)
-        setHighlights((prev) => [...prev, annotationToHighlight(item)]);
-        addItem(item);
-        window.getSelection()?.removeAllRanges();
-      } else {
-        // Manual mode: store pending, show tip
-        setPendingAnnotation({
-          text: cleanedText,
-          pageNumber,
-          position: item.embedData.position,
-        });
-      }
+      // Persist immediately (addItem persists via annotation.store)
+      const { annotationColor, plainColor } = getColors();
+      setHighlights((prev) => [
+        ...prev,
+        annotationToHighlight(item, annotationColor, plainColor),
+      ]);
+      addItem(item);
+      window.getSelection()?.removeAllRanges();
     },
-    [documentId, quickAddEnabled, addItem, setPendingAnnotation],
+    [documentId, addItem, setPendingAnnotation, getColors],
   );
 
   /**
@@ -230,10 +267,19 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
             onSelection={handleSelection}
             deleteHighlight={deleteHighlight}
             onHighlightClick={(id: string) => {
-              window.dispatchEvent(
-                new CustomEvent("siltflow:annotation-click", { detail: { id } }),
-              );
-            }}
+                const h = highlightsRef.current.find((hl) => hl.id === id);
+                if (h?.kind === "highlight") {
+                  // Plain highlight click — show conversion tip
+                  window.dispatchEvent(
+                    new CustomEvent("siltflow:highlight-click", { detail: { id } }),
+                  );
+                } else {
+                  // Annotation highlight click — scroll right panel
+                  window.dispatchEvent(
+                    new CustomEvent("siltflow:annotation-click", { detail: { id } }),
+                  );
+                }
+              }}
           />
         )}
       </PdfLoader>
@@ -267,7 +313,7 @@ function PdfHighlighterWrapper({
   const lastPage = usePdfViewerStore((s) => s.lastPageByDocId[documentId]);
   const pdfScrollbar = useStyleStore((s) => s.style.pdfScrollbar);
   const setLastPage = usePdfViewerStore((s) => s.setLastPage);
-  const quickAddEnabled = usePdfViewerStore((s) => s.quickAddEnabled);
+  const selectionMode = usePdfViewerStore((s) => s.selectionMode);
   const updateDoc = useDocumentStore((s) => s.updateDocument);
 
   // Sync pdfDocument to store via effect
@@ -310,8 +356,8 @@ function PdfHighlighterWrapper({
     [fitWidth, setPdfScale],
   );
 
-  /** Render a floating "Add annotation" tip after selection in non-quick-add mode. */
-  const selectionTipContent = !quickAddEnabled ? <SelectionTip /> : undefined;
+  /** Render a floating "Add annotation" tip after selection in manual mode. */
+  const selectionTipContent = selectionMode === "manual" ? <SelectionTip /> : undefined;
 
   // ── Middle-click pan (non-auto zoom mode) ──
   const wrapperRef = useRef<HTMLDivElement>(null);

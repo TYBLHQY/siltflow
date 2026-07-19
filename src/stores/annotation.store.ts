@@ -16,6 +16,8 @@ export interface AnnotationItem {
   id: string;
   documentId: string;
   type: string;
+  /** Whether this is a full annotation ("annotation") or a visual-only highlight ("highlight"). */
+  kind: "annotation" | "highlight";
   text: string;
   /** 1-indexed page number, consistent with react-pdf-highlighter-plus */
   pageNumber: number;
@@ -47,6 +49,7 @@ function persistAnnotation(item: AnnotationItem) {
       text: item.text,
       pageNumber: item.pageNumber,
       embedData: JSON.stringify(item.embedData),
+      kind: item.kind || "annotation",
     })
     .catch(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

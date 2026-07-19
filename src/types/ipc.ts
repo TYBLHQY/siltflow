@@ -32,6 +32,7 @@ export interface AnnotationSaveRequest {
   text: string;
   pageNumber: number;
   embedData: string;
+  kind?: string;
 }
 
 /** Raw annotation row returned by annotations:listAll */
@@ -42,6 +43,7 @@ export interface AnnotationRowIPC {
   text: string | null;
   page_number: number | null;
   embed_data: string;
+  kind: string;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +56,7 @@ export interface AnnotationEnrichedIPC {
   text: string | null;
   page_number: number | null;
   embed_data: string;
+  kind: string;
   created_at: string;
   updated_at: string;
   ai_data: string | null;

@@ -53,6 +53,15 @@ export function pdfSetViewerScale(value: string) {
   _setViewerScale.current?.(value);
 }
 
+// ── SelectionMode ─────────────────────────────────────────────────────────
+
+/** Three-way selection mode for PDF text selection. */
+export type SelectionMode = "manual" | "auto-annotate" | "auto-highlight";
+
+const ALL_MODES: SelectionMode[] = ["manual", "auto-annotate", "auto-highlight"];
+
+// ── Store ──────────────────────────────────────────────────────────────────
+
 interface PdfViewerState {
   /** The current PDF document proxy (null when none loaded) */
   pdfDocument: PDFDocumentProxy | null;
@@ -78,9 +87,12 @@ interface PdfViewerState {
   lastPageByDocId: Record<string, number>;
   setLastPage: (docId: string, page: number) => void;
 
-  /** Quick-add mode: selection immediately creates an annotation */
-  quickAddEnabled: boolean;
-  setQuickAddEnabled: (v: boolean) => void;
+  /**
+   * Selection mode: manual (shows SelectionTip), auto-annotate (immediate
+   * annotation), or auto-highlight (immediate plain highlight).
+   */
+  selectionMode: SelectionMode;
+  setSelectionMode: (v: SelectionMode) => void;
 
   /** Pending ghost annotation info (null = nothing pending) */
   pendingAnnotation: {
@@ -117,11 +129,11 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
       return { lastPageByDocId: next };
     }),
 
-  quickAddEnabled: true,
-  setQuickAddEnabled: (v) =>
+  selectionMode: "auto-annotate",
+  setSelectionMode: (v) =>
     set(() => {
-      debouncedSetQuickAdd(v);
-      return { quickAddEnabled: v };
+      debouncedSetSelectionMode(v);
+      return { selectionMode: v };
     }),
 
   pendingAnnotation: null,
@@ -132,22 +144,36 @@ const debouncedSetLastPages = debounce((lastPages: Record<string, number>) => {
   window.siltflow.vaultConfigSet({ lastPages });
 }, 500);
 
-const debouncedSetQuickAdd = debounce((v: boolean) => {
-  window.siltflow.vaultConfigSet({ quickAddEnabled: v });
+const debouncedSetSelectionMode = debounce((v: SelectionMode) => {
+  window.siltflow.vaultConfigSet({ selectionMode: v });
 }, 500);
 
-/** Load persisted last-page map from vault (call once on app boot). */
+/** Load persisted last-page map and selection mode from vault (call once on app boot). */
 export async function loadLastPages(cfg?: Record<string, unknown>) {
   try {
     if (!cfg) cfg = await window.siltflow.vaultConfigGet();
+
     const lastPages = (cfg as Record<string, unknown>).lastPages as
       Record<string, number> | undefined;
     if (lastPages && typeof lastPages === "object") {
       usePdfViewerStore.setState({ lastPageByDocId: lastPages });
     }
-    const quickAdd = (cfg as Record<string, unknown>).quickAddEnabled;
-    if (typeof quickAdd === "boolean") {
-      usePdfViewerStore.setState({ quickAddEnabled: quickAdd });
+
+    // Migrate from old quickAddEnabled (boolean) or use new selectionMode (string)
+    const selMode = (cfg as Record<string, unknown>).selectionMode;
+    if (
+      typeof selMode === "string" &&
+      ALL_MODES.includes(selMode as SelectionMode)
+    ) {
+      usePdfViewerStore.setState({ selectionMode: selMode as SelectionMode });
+    } else {
+      // Fallback: migrate old quickAddEnabled boolean
+      const quickAdd = (cfg as Record<string, unknown>).quickAddEnabled;
+      if (typeof quickAdd === "boolean") {
+        usePdfViewerStore.setState({
+          selectionMode: quickAdd ? "auto-annotate" : "manual",
+        });
+      }
     }
   } catch {
     /* ignore */
