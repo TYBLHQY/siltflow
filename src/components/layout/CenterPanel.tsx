@@ -104,31 +104,32 @@ function PageNav() {
 // Selection-mode toggle — 3-way cycling button.
 // Cycles: manual → auto-annotate → auto-highlight → manual …
 // ---------------------------------------------------------------------------
+
+const MODES: Array<{
+  mode: SelectionMode;
+  icon: typeof PenLine;
+  title: string;
+}> = [
+  {
+    mode: "manual",
+    icon: MousePointer2,
+    title: "Manual mode: select text then choose annotation or highlight",
+  },
+  {
+    mode: "auto-annotate",
+    icon: PenLine,
+    title: "Auto-annotate: selection immediately creates an annotation",
+  },
+  {
+    mode: "auto-highlight",
+    icon: Highlighter,
+    title: "Auto-highlight: selection creates a plain colored highlight only",
+  },
+];
+
 function QuickAddToggle() {
   const selectionMode = usePdfViewerStore((s) => s.selectionMode);
   const setSelectionMode = usePdfViewerStore((s) => s.setSelectionMode);
-
-  const MODES: Array<{
-    mode: SelectionMode;
-    icon: typeof PenLine;
-    title: string;
-  }> = [
-    {
-      mode: "manual",
-      icon: MousePointer2,
-      title: "Manual mode: select text then choose annotation or highlight",
-    },
-    {
-      mode: "auto-annotate",
-      icon: PenLine,
-      title: "Auto-annotate: selection immediately creates an annotation",
-    },
-    {
-      mode: "auto-highlight",
-      icon: Highlighter,
-      title: "Auto-highlight: selection creates a plain colored highlight only",
-    },
-  ];
 
   const currentIndex = MODES.findIndex((m) => m.mode === selectionMode);
   const current = MODES[currentIndex] ?? MODES[1];
