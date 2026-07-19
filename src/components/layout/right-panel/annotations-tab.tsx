@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Highlighter, CheckSquare, Sparkles } from "lucide-react";
+import { Highlighter, CheckSquare, Sparkles, ArrowUpCircle } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
@@ -105,6 +105,7 @@ export function AnnotationsTab({
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [batchTranslating, setBatchTranslating] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   // Snapshot of dueItems taken when the learning session starts.
   // This is stable throughout the session so rating items (which
   // changes their due dates) doesn't shift indices and skip cards.
@@ -126,6 +127,18 @@ export function AnnotationsTab({
     [items, now],
   );
   const dueCount = dueItems.length;
+
+  const untranslatedCount = useMemo(
+    () => items.filter((i) => i.aiResult === undefined).length,
+    [items],
+  );
+
+  const v1Count = useMemo(
+    () =>
+      items.filter((i) => i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2)
+        .length,
+    [items],
+  );
 
   const handleStartLearning = useCallback(() => {
     if (dueItems.length === 0) {
@@ -201,6 +214,53 @@ export function AnnotationsTab({
     sourceLang,
   ]);
 
+  // ── Upgrade V1 → V2 ──────────────────────────────────────────────────
+  const handleUpgradeV1ToV2 = useCallback(async () => {
+    const v1Items = items.filter(
+      (i) => i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2,
+    );
+    if (v1Items.length === 0) {
+      showToast("All annotations are already V2", "info");
+      return;
+    }
+    if (!summary || !summary.text?.trim()) {
+      showToast("Please generate a summary first", "info");
+      onTabChange?.("summary");
+      return;
+    }
+
+    setUpgrading(true);
+    const results = await Promise.all(
+      v1Items.map((item) =>
+        translateItemV2(
+          item,
+          sourceLang,
+          effectiveTargetLang,
+          summary?.text || undefined,
+          texts,
+          updateItem,
+          showToast,
+        ),
+      ),
+    );
+    setUpgrading(false);
+    const completed = results.filter(Boolean).length;
+    if (completed > 0)
+      showToast(
+        `Upgraded ${completed} annotation${completed > 1 ? "s" : ""} to V2`,
+        "info",
+      );
+  }, [
+    items,
+    summary,
+    texts,
+    updateItem,
+    showToast,
+    onTabChange,
+    effectiveTargetLang,
+    sourceLang,
+  ]);
+
   return (
     <>
       {items.length > 0 && (
@@ -210,18 +270,34 @@ export function AnnotationsTab({
               Start Learning ({dueCount})
             </IconText>
           </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            className="w-full"
-            onClick={handleBatchTranslate}
-            disabled={batchTranslating}
-            title="Translate all untranslated annotations"
-          >
-            <IconText icon={Sparkles} size="xs" className="gap-0">
-              {batchTranslating ? "Translating..." : "Batch Translate"}
-            </IconText>
-          </Button>
+          {untranslatedCount > 0 && (
+            <Button
+              variant="outline"
+              size="xs"
+              className="w-full"
+              onClick={handleBatchTranslate}
+              disabled={batchTranslating}
+              title="Translate all untranslated annotations"
+            >
+              <IconText icon={Sparkles} size="xs" className="gap-0">
+                {batchTranslating ? "Translating..." : `Batch Translate (${untranslatedCount})`}
+              </IconText>
+            </Button>
+          )}
+          {v1Count > 0 && (
+            <Button
+              variant="outline"
+              size="xs"
+              className="w-full"
+              onClick={handleUpgradeV1ToV2}
+              disabled={upgrading}
+              title="Re-translate V1 annotations with the V2 two-stage pipeline"
+            >
+              <IconText icon={ArrowUpCircle} size="xs" className="gap-0">
+                {upgrading ? "Upgrading…" : `Upgrade to V2 (${v1Count})`}
+              </IconText>
+            </Button>
+          )}
         </div>
       )}
       {items.length > 0 && docId && (
