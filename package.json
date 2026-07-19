@@ -1,7 +1,7 @@
 {
   "name": "siltflow",
   "private": true,
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "Language-learning desktop app — read PDFs, look up words, build vocabulary with spaced repetition",
   "desktopName": "siltflow",
   "type": "module",
