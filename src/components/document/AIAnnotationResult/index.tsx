@@ -12,6 +12,7 @@ export interface AIAnnotationResultProps {
   editing?: boolean;
   onTranslate?: () => void | Promise<void>;
   onDelete?: () => void;
+  onGoToHighlight?: () => void;
 }
 
 /**

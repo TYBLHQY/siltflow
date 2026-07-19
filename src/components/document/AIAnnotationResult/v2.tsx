@@ -4,7 +4,7 @@ import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useSummaryStore } from "@/stores/summary.store";
-import { Pencil, Volume2, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Pencil, Volume2, Loader2, Sparkles, Trash2, ExternalLink } from "lucide-react";
 import type {
   AIAnnotationDataV2,
   WordOutputV2,
@@ -22,6 +22,8 @@ interface AIAnnotationResultV2Props {
   editing?: boolean;
   onTranslate?: () => void | Promise<void>;
   onDelete?: () => void;
+  /** Goto highlight button — scrolls PDF to this annotation's highlight. */
+  onGoToHighlight?: () => void;
 }
 
 // ── Render helpers ─────────────────────────────────────────────────────────
@@ -376,12 +378,14 @@ function SentenceView({
 export function AIAnnotationResultV2({
   item,
   showCore = false,
+  showDetails = false,
   enableShortcut = false,
   showActionBar = false,
   editing,
   onEditToggle,
   onTranslate,
   onDelete,
+  onGoToHighlight,
 }: AIAnnotationResultV2Props) {
   const style = useStyleStore((s) => s.style);
   const ai = item.aiResult as AIAnnotationDataV2 | undefined;
@@ -452,6 +456,19 @@ export function AIAnnotationResultV2({
           {/* ── Action bar ── */}
           {showActionBar && (
             <div className="flex flex-wrap items-center gap-1 mt-0.5">
+              {onGoToHighlight && (
+                <button
+                  className="inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGoToHighlight();
+                  }}
+                  title="Go to highlight in PDF"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
+              )}
+
               {onEditToggle && (
                 <button
                   className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
@@ -536,8 +553,13 @@ export function AIAnnotationResultV2({
               )}
             </div>
           )}
+          {/* ── End of action bar ── */}
+        </>
+      )}
 
-          {/* ── Output section — mixed source/target lang TTS selection ── */}
+      {/* ── Details: AI output (Word / Phrase / Sentence) ── */}
+      {showDetails && (
+        <div className="space-y-1">
           {output && isWordOutput(output) && (
             <WordView
               output={output}
@@ -561,7 +583,7 @@ export function AIAnnotationResultV2({
               annId={item.id}
             />
           )}
-        </>
+        </div>
       )}
     </div>
   );

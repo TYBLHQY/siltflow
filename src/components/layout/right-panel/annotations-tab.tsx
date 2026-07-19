@@ -293,10 +293,12 @@ export function AnnotationsTab({
                     item={ann}
                     scrolled={false}
                     expanded={expandedCardId === ann.id}
+                    collapsible
+                    showFSRS={false}
+                    onGoToHighlight={() => pdfScrollToHighlight(ann.id)}
                     onToggleExpand={(id) =>
                       setExpandedCardId((prev) => (prev === id ? null : id))
                     }
-                    onClick={() => pdfScrollToHighlight(ann.id)}
                     onDelete={(id) => {
                       removeItem(id);
                     }}
