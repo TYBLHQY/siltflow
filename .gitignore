@@ -24,6 +24,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Claude Code
+.claude/worktrees/
+
 # Build outputs
 release/
 main.js
+*.tsbuildinfo
