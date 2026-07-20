@@ -256,7 +256,7 @@ export function CenterPanel({
 
       setItems(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (saved || []).map((a: any) => ({
+        (saved || []).reverse().map((a: any) => ({
           id: a.id,
           documentId: a.document_id,
           type: a.type,

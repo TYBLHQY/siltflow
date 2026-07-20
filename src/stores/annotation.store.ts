@@ -85,7 +85,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
           },
         );
     }
-    set((s) => ({ items: [...s.items, item] }));
+    set((s) => ({ items: [item, ...s.items] }));
   },
 
   removeItem: (id) => {

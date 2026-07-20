@@ -204,8 +204,8 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
       // Persist immediately (addItem persists via annotation.store)
       const { annotationColor, plainColor } = getColors();
       setHighlights((prev) => [
-        ...prev,
         annotationToHighlight(item, annotationColor, plainColor),
+        ...prev,
       ]);
       addItem(item);
       window.getSelection()?.removeAllRanges();
