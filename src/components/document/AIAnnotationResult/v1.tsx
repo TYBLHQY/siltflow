@@ -89,20 +89,19 @@ export function AIAnnotationResultV1({
     { enabled: enableShortcut && !!item },
   );
 
-  // When showCore is true we always render header + source text + action bar,
-  // even without AI data. Only skip if there's nothing to show at all.
-  // Keep mounted during translate so the spinner doesn't disappear.
-  if (!ai && !showCore && !translating) return null;
+  // V1 is only reached when aiVersion === 1 — so ai should always be present.
+  // Still guard defensively against malformed data.
+  if (!ai) return null;
 
-  const translation = ai ? getTranslation(ai) : undefined;
-  const defs = ai ? getDefinitions(ai) : [];
-  const colls = ai ? getCollocations(ai) : [];
-  const ipa = ai ? getIpa(ai) : undefined;
-  const difficulty = ai ? getDifficulty(ai) : undefined;
-  const register = ai ? getRegister(ai) : undefined;
-  const alts = ai ? getAlternatives(ai) : [];
-  const examples = ai?.examples ?? [];
-  const granularity = ai ? inferGranularity(ai, item.text) : "highlight";
+  const translation = getTranslation(ai);
+  const defs = getDefinitions(ai);
+  const colls = getCollocations(ai);
+  const ipa = getIpa(ai);
+  const difficulty = getDifficulty(ai);
+  const register = getRegister(ai);
+  const alts = getAlternatives(ai);
+  const examples = ai.examples ?? [];
+  const granularity = inferGranularity(ai, item.text);
   const isWord = granularity === "word" || granularity === "phrase";
 
   return (
