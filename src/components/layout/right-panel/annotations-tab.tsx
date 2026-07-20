@@ -515,7 +515,7 @@ export function AnnotationsTab({
           </DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <textarea
-              className="w-full rounded border border-ctp-overlay0/50 bg-ctp-base px-3 py-2 text-sm resize-none min-h-[80px] focus:border-ctp-mauve focus:ring-1 focus:ring-ctp-mauve outline-none"
+              className="w-full rounded border border-ctp-overlay0/50 bg-ctp-base px-3 py-2 text-sm resize-none min-h-20 focus:border-ctp-mauve focus:ring-1 focus:ring-ctp-mauve outline-none"
               placeholder="Enter a word, phrase, or sentence..."
               value={manualText}
               onChange={(e) => setManualText(e.target.value)}
