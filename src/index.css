@@ -188,6 +188,14 @@ html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .page {
    style), which uses CSS `var(--catppuccin-color-xxx)` references that
    auto-resolve to the current theme's colour.                       */
 
+/* Light mode: a modest alpha gives highlights the translucent look of a
+   real highlighter pen while keeping text fully readable. Multiply blend is
+   already active on the highlight layer, so the colour tints the text
+   naturally — the alpha just softens it further. */
+.PdfHighlighter .PdfHighlighter__highlight-layer {
+  --hl-fill-alpha: 42%;
+}
+
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .PdfHighlighter__highlight-layer,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .TextHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .AreaHighlight,
