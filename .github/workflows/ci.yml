@@ -17,8 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v6
         with:
@@ -78,8 +76,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v6
         with:
@@ -151,7 +147,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          gh release create "$TAG" --generate-notes --title "${TAG#v}" || true
+          gh release create "$TAG" --generate-notes --title "${TAG#v}" --target "${{ github.sha }}" || true
           for f in release/*/*; do
             if [ -f "$f" ]; then
               echo "Uploading: $f"
