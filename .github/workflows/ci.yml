@@ -147,17 +147,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          # Retry release creation on transient API errors
-          for i in 1 2 3; do
-            gh release create "$TAG" --generate-notes --title "${TAG#v}" --target "${{ github.sha }}" && break
-            echo "Release creation attempt $i failed, retrying in 5s..."
-            sleep 5
-          done
-          # Verify release exists before uploading
-          if ! gh release view "$TAG" &>/dev/null; then
-            echo "::error::Release $TAG could not be created after retries"
-            exit 1
-          fi
+          # Clean up leftover release from prior failed runs, then create
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --generate-notes --title "${TAG#v}" --target "${{ github.sha }}"
           for f in release/*/*; do
             if [ -f "$f" ]; then
               echo "Uploading: $f"
