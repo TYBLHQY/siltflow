@@ -306,9 +306,14 @@ export function AnnotationsTab({
 
   return (
     <>
-      {items.length > 0 && (
+      {docId && (
         <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
-          <Button size="xs" className="w-full" onClick={handleStartLearning}>
+          <Button
+            size="xs"
+            className="w-full"
+            onClick={handleStartLearning}
+            disabled={dueCount === 0}
+          >
             <IconText icon={CheckSquare} size="xs" className="gap-0">
               Start Learning ({dueCount})
             </IconText>
