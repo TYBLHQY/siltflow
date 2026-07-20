@@ -1,8 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Highlighter, CheckSquare, Sparkles, ArrowUpCircle } from "lucide-react";
+import { Highlighter, CheckSquare, Sparkles, ArrowUpCircle, Plus } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { LearningModal } from "@/components/document/LearningModal";
 import { useAnnotationStore } from "@/stores/annotation.store";
@@ -84,6 +91,7 @@ export function AnnotationsTab({
   const items = useMemo(() => allItems.filter((i) => i.kind !== "highlight"), [allItems]);
   const updateItem = useAnnotationStore((s) => s.updateItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
+  const addItem = useAnnotationStore((s) => s.addItem);
   const showToast = useToastStore((s) => s.show);
   const defaultTargetLang = useAIStore((s) => s.defaultTargetLang);
   const summaries = useSummaryStore((s) => s.summaries);
@@ -106,6 +114,9 @@ export function AnnotationsTab({
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [batchTranslating, setBatchTranslating] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  // Manual annotation dialog
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [manualText, setManualText] = useState("");
   // Snapshot of dueItems taken when the learning session starts.
   // This is stable throughout the session so rating items (which
   // changes their due dates) doesn't shift indices and skip cards.
@@ -261,6 +272,38 @@ export function AnnotationsTab({
     sourceLang,
   ]);
 
+  // ── Manual annotation creation ────────────────────────────────────
+  const handleCreateManual = useCallback(() => {
+    const trimmed = manualText.trim();
+    if (!trimmed || !docId) return;
+    const item: AnnotationItem = {
+      id: crypto.randomUUID(),
+      documentId: docId,
+      type: "text",
+      kind: "manual",
+      text: trimmed,
+      pageNumber: 0,
+      embedData: {
+        position: {
+          boundingRect: {
+            x1: 0,
+            y1: 0,
+            x2: 0,
+            y2: 0,
+            width: 0,
+            height: 0,
+            pageNumber: 0,
+          },
+          rects: [],
+        },
+        content: { text: trimmed },
+      },
+    };
+    addItem(item);
+    setManualText("");
+    setManualDialogOpen(false);
+  }, [manualText, docId, addItem]);
+
   return (
     <>
       {items.length > 0 && (
@@ -298,6 +341,20 @@ export function AnnotationsTab({
               </IconText>
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="xs"
+            className="w-full"
+            onClick={() => {
+              setManualText("");
+              setManualDialogOpen(true);
+            }}
+            title="Add manual annotation"
+          >
+            <IconText icon={Plus} size="xs" className="gap-0">
+              Add Manual Annotation
+            </IconText>
+          </Button>
         </div>
       )}
       {items.length > 0 && docId && (
@@ -364,6 +421,9 @@ export function AnnotationsTab({
           >
             {[...items]
               .sort((a, b) => {
+                // Manual annotations always sort to the top
+                if (a.kind === "manual" && b.kind !== "manual") return -1;
+                if (a.kind !== "manual" && b.kind === "manual") return 1;
                 if (a.pageNumber !== b.pageNumber)
                   return a.pageNumber - b.pageNumber;
                 const topA = a.embedData?.position?.boundingRect?.y1 ?? 0;
@@ -379,7 +439,11 @@ export function AnnotationsTab({
                     expanded={expandedCardId === ann.id}
                     collapsible
                     showFSRS={false}
-                    onGoToHighlight={() => pdfScrollToHighlight(ann.id)}
+                    onGoToHighlight={
+                      ann.kind !== "manual"
+                        ? () => pdfScrollToHighlight(ann.id)
+                        : undefined
+                    }
                     onToggleExpand={(id) =>
                       setExpandedCardId((prev) => (prev === id ? null : id))
                     }
@@ -437,6 +501,46 @@ export function AnnotationsTab({
           setSessionItems([]);
         }}
       />
+
+      {/* Manual annotation creation dialog */}
+      <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Manual Annotation</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <textarea
+              className="w-full rounded border border-ctp-overlay0/50 bg-ctp-base px-3 py-2 text-sm resize-none min-h-[80px] focus:border-ctp-mauve focus:ring-1 focus:ring-ctp-mauve outline-none"
+              placeholder="Enter a word, phrase, or sentence..."
+              value={manualText}
+              onChange={(e) => setManualText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleCreateManual();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setManualDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateManual}
+              disabled={!manualText.trim()}
+            >
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

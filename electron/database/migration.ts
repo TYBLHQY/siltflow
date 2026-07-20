@@ -15,6 +15,9 @@ export function runMigrations(sqlite: Database.Database, currentVersion: number)
   if (currentVersion < 3) {
     migrateV2toV3(sqlite)
   }
+  if (currentVersion < 4) {
+    migrateV3toV4(sqlite)
+  }
 }
 
 // ── Migration 1→2: add version column to ai_results ────────────────
@@ -35,6 +38,18 @@ function migrateV2toV3(sqlite: Database.Database) {
   const annoCols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!annoCols.some((c: any) => c.name === "kind")) {
+    sqlite.exec("ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'")
+  }
+}
+
+// ── Migration 3→4: verify kind column exists (no DDL needed — "manual" fits TEXT) ──
+
+function migrateV3toV4(sqlite: Database.Database) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const annoCols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!annoCols.some((c: any) => c.name === "kind")) {
+    // Safety net: kind column should already exist from v2→v3
     sqlite.exec("ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'")
   }
 }

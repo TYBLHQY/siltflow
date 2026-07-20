@@ -16,8 +16,8 @@ export interface AnnotationItem {
   id: string;
   documentId: string;
   type: string;
-  /** Whether this is a full annotation ("annotation") or a visual-only highlight ("highlight"). */
-  kind: "annotation" | "highlight";
+  /** Whether this is a full annotation ("annotation"), a visual-only highlight ("highlight"), or a user-added manual card ("manual"). */
+  kind: "annotation" | "highlight" | "manual";
   text: string;
   /** 1-indexed page number, consistent with react-pdf-highlighter-plus */
   pageNumber: number;

@@ -121,7 +121,13 @@ export function AIAnnotationResultV1({
               <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
                 {granularity}
               </span>
-              <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
+              {item.kind === "manual" ? (
+                <span className="inline-flex items-center rounded bg-ctp-green/15 px-1.5 py-0.5 text-ctp-green text-xs font-medium">
+                  manual
+                </span>
+              ) : (
+                <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
+              )}
             </div>
             {item.aiVersion && (
               <span className="shrink-0 inline-flex items-center rounded bg-ctp-subtext/15 px-1.5 py-0.5 text-ctp-subtext text-xs">

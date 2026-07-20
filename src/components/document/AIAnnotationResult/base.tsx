@@ -74,7 +74,13 @@ export function AIAnnotationResultBase({
           <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
             UNTRANSLATED
           </span>
-          <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
+          {item.kind === "manual" ? (
+            <span className="inline-flex items-center rounded bg-ctp-green/15 px-1.5 py-0.5 text-ctp-green text-xs font-medium">
+              manual
+            </span>
+          ) : (
+            <span className="text-ctp-overlay0">p.{item.pageNumber}</span>
+          )}
         </div>
       </div>
 

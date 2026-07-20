@@ -31,8 +31,8 @@ import { resolveHighlightCSSVar } from "@/lib/colors";
 // SiltflowHighlight — our application-specific highlight extension
 // ---------------------------------------------------------------------------
 export interface SiltflowHighlight extends RPHLHighlight {
-  /** Whether this is an annotation or a plain visual highlight. */
-  kind: "annotation" | "highlight";
+  /** Whether this is an annotation, a plain visual highlight, or a manual card. */
+  kind: "annotation" | "highlight" | "manual";
   /** User-facing comment string. */
   comment?: string;
   /** Text-highlight background color (CSS var() reference). */
@@ -140,7 +140,9 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
 
   const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() => {
     const { annotationColor, plainColor } = getColors();
-    return storeItems.map((item) => annotationToHighlight(item, annotationColor, plainColor));
+    return storeItems
+      .filter((item) => item.kind !== "manual")
+      .map((item) => annotationToHighlight(item, annotationColor, plainColor));
   });
   // Ref always pointing to the current highlights array, so callbacks captured
   // in utilsRef can find the latest highlights even after new ones are added.
@@ -151,7 +153,9 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   // Also triggers when store items identity changes (after delete/add).
   useEffect(() => {
     const { annotationColor, plainColor } = getColors();
-    setHighlights(storeItems.map((item) => annotationToHighlight(item, annotationColor, plainColor)));
+    setHighlights(storeItems
+      .filter((item) => item.kind !== "manual")
+      .map((item) => annotationToHighlight(item, annotationColor, plainColor)));
   }, [storeItems, getColors]);
 
   /**
