@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Plus, Volume2, Highlighter } from "lucide-react";
+import { PenLine, Volume2, Highlighter } from "lucide-react";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
@@ -115,7 +115,7 @@ export function SelectionTip() {
         onClick={handleAddAsAnnotation}
         title="Add as annotation"
       >
-        <Plus className="h-3.5 w-3.5" />
+        <PenLine className="h-3.5 w-3.5" />
       </button>
       <button
         className="flex items-center justify-center transition-colors"

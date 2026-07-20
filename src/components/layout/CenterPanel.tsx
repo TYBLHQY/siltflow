@@ -23,6 +23,8 @@ import {
   type AnnotationEmbedData,
 } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
+import { useStyleStore } from "@/stores/style.store";
+import { resolveHighlightCSSVar } from "@/lib/colors";
 import { useShortcut } from "@/hooks/useShortcut";
 import { UnifiedSettingsModal } from "@/components/settings/UnifiedSettingsModal";
 
@@ -130,6 +132,8 @@ const MODES: Array<{
 function QuickAddToggle() {
   const selectionMode = usePdfViewerStore((s) => s.selectionMode);
   const setSelectionMode = usePdfViewerStore((s) => s.setSelectionMode);
+  const annotationColor = useStyleStore((s) => s.style.annotationHighlightColor);
+  const plainColor = useStyleStore((s) => s.style.plainHighlightColor);
 
   const currentIndex = MODES.findIndex((m) => m.mode === selectionMode);
   const current = MODES[currentIndex] ?? MODES[1];
@@ -140,11 +144,27 @@ function QuickAddToggle() {
     setSelectionMode(MODES[nextIndex].mode);
   }, [currentIndex, setSelectionMode]);
 
+  // Compute colored background for annotation / highlight modes.
+  const annoCSSVar = resolveHighlightCSSVar(annotationColor);
+  const plainCSSVar = resolveHighlightCSSVar(plainColor);
+
+  let toggleStyle: React.CSSProperties | undefined;
+  if (selectionMode === "auto-annotate" && annoCSSVar) {
+    toggleStyle = {
+      backgroundColor: `color-mix(in srgb, ${annoCSSVar} 42%, transparent)`,
+    };
+  } else if (selectionMode === "auto-highlight" && plainCSSVar) {
+    toggleStyle = {
+      backgroundColor: `color-mix(in srgb, ${plainCSSVar} 42%, transparent)`,
+    };
+  }
+
   return (
     <Button
       variant="ghost"
       size="icon"
-      className={`h-6 w-6 ${selectionMode !== "manual" ? "bg-ctp-surface0" : ""}`}
+      className="h-6 w-6"
+      style={toggleStyle}
       onClick={cycle}
       title={current.title}
     >
