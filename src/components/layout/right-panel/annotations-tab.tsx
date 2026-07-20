@@ -362,7 +362,7 @@ export function AnnotationsTab({
           </Button>
         </div>
       )}
-      {items.length > 0 && docId && (
+      {docId && (
         <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-xs">
           <span className="flex items-center gap-1 text-ctp-overlay0">
             <span className="font-medium">Source:</span>
