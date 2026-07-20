@@ -144,6 +144,7 @@ export function SummaryTab() {
       <div className="border-b px-3 py-2 space-y-1">
         <Button
           variant="ghost"
+          size="xs"
           className="w-full justify-start gap-1.5 text-xs font-medium px-0"
           onClick={toggleAll}
         >
@@ -203,12 +204,12 @@ export function SummaryTab() {
             <>
               <Button
                 variant="ghost"
-                size="sm"
+                size="xs"
                 onClick={() => setEditingSummary(false)}
               >
                 Cancel
               </Button>
-              <Button size="sm" onClick={() => setEditingSummary(false)}>
+              <Button size="xs" onClick={() => setEditingSummary(false)}>
                 Save
               </Button>
             </>
@@ -216,7 +217,7 @@ export function SummaryTab() {
             <>
               <Button
                 variant="ghost"
-                size="sm"
+                size="xs"
                 onClick={() => setEditingSummary(true)}
               >
                 <Pencil className="h-3 w-3" />
@@ -230,7 +231,7 @@ export function SummaryTab() {
               )}
               <Button
                 variant="ghost"
-                size="sm"
+                size="xs"
                 className="ml-auto hover:text-ctp-red"
                 onClick={handleClearSummary}
               >
@@ -258,7 +259,7 @@ export function SummaryTab() {
             />
           ) : (
             <div className="h-full overflow-y-auto px-3 py-3">
-              <p className="text-xs text-ctp-text whitespace-pre-wrap wrap-break-word leading-relaxed rounded-md border border-ctp-overlay0/20 px-2 py-1.5">
+              <p className="text-ctp-text whitespace-pre-wrap wrap-break-word leading-relaxed rounded-md border border-ctp-overlay0/20 px-2 py-1.5">
                 {summary.text}
               </p>
             </div>
