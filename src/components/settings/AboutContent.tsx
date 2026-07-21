@@ -210,6 +210,22 @@ export function AboutContent() {
         )}
       </div>
 
+      {/* Dev: mock update dialog trigger */}
+      {import.meta.env.DEV && (
+        <div className="space-y-2">
+          <label className="block text-xs font-medium">Dev Tools</label>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("siltflow:check-updates"))
+            }
+          >
+            Show Update Dialog
+          </Button>
+        </div>
+      )}
+
       {/* View on GitHub */}
       <div className="pt-2">
         <a
