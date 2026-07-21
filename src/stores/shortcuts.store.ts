@@ -95,6 +95,13 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   },
   // Annotations tab
   {
+    actionId: "searchAnnotations",
+    label: "Search annotations",
+    context: "global",
+    defaultKeys: "ctrl+f",
+    keys: "ctrl+f",
+  },
+  {
     actionId: "startLearning",
     label: "Start Learning",
     context: "pdf-open",

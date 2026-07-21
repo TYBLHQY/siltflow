@@ -14,11 +14,14 @@ import { useToastStore } from "@/stores/toast.store";
 import { loadShortcutsFromVault } from "@/stores/shortcuts.store";
 import { loadLastPages } from "@/stores/pdf-viewer.store";
 import { loadThemeFromVault, useThemeStore } from "@/stores/theme.store";
+import { useSearchStore } from "@/stores/search.store";
+import { useShortcut } from "@/hooks/useShortcut";
 import {
   loadAppSettingsFromVault,
   useAppSettingsStore,
 } from "@/stores/app.store";
 import { Toast } from "@/components/ui/toast";
+import { SearchAnnotations } from "@/components/search";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import {
@@ -34,7 +37,9 @@ function App() {
   const [vaultReady, setVaultReady] = useState(false);
   const aiLoaded = useAIStore((s) => s.loaded);
   const showToast = useToastStore((s) => s.show);
+  const toggleSearch = useSearchStore((s) => s.toggle);
   const appSettingsLoaded = useAppSettingsStore((s) => s.loaded);
+  useShortcut("searchAnnotations", toggleSearch);
   const checkUpdateOnStartup = useAppSettingsStore(
     (s) => s.checkUpdateOnStartup,
   );
@@ -204,6 +209,7 @@ function App() {
   return (
     <>
       <Toast />
+      <SearchAnnotations />
       <ThreeColumnLayout />
 
       {/* ── Update dialog (startup check) ── */}

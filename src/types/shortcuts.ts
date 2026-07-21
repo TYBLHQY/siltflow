@@ -19,6 +19,7 @@ export type ShortcutActionId =
   // PDF open
   | "toggleFitWidth"
   // Annotations tab
+  | "searchAnnotations"
   | "startLearning"
   // Learning mode
   | "revealCard"

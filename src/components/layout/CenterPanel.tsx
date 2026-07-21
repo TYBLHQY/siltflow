@@ -8,6 +8,7 @@ import {
   Maximize,
   Minimize,
   Settings,
+  Search,
   PenLine,
   MousePointer2,
   Highlighter,
@@ -319,6 +320,21 @@ export function CenterPanel({
         >
           <BarChart3 className="h-4 w-4" />
         </Button>
+        {docTitle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent("siltflow:search-annotations"),
+              )
+            }
+            title="Search annotations (Ctrl+F)"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        )}
 
         <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
           {docTitle || "Siltflow"}
