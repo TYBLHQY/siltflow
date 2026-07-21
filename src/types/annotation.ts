@@ -145,6 +145,8 @@ export interface AIAnnotationInputV2 {
   source_lang: string;
   /** Content type, validated by input AI. */
   type: "word" | "phrase" | "sentence";
+  /** Base/dictionary form. For "ran" → "run"; for "better" → "good". null for phrases/sentences. */
+  lemma?: string | null;
 }
 
 // ── V2 Output: word ────────────────────────────────────────────────────────

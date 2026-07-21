@@ -27,11 +27,11 @@ export interface DocumentSaveRequest {
 
 export interface AnnotationSaveRequest {
   id: string;
-  documentId: string;
+  document_id: string;
   type: string;
   text: string;
-  pageNumber: number;
-  embedData: string;
+  page_number: number;
+  embed_data: string;
   kind?: string;
 }
 

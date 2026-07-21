@@ -38,7 +38,8 @@ Schema:
   "text": "<original text>",
   "normalized": "<normalized version — trim whitespace, normalize to NFC unicode>",
   "source_lang": "<BCP 47 language code — use the provided hint; only override with extreme caution (see CONSTRAINTS); if truly unsure output 'und'>",
-  "type": "<word|phrase|sentence — use the provided hint but verify>"
+  "type": "<word|phrase|sentence — use the provided hint but verify>",
+  "lemma": "<base/dictionary form — for word type only; null for phrase/sentence>"
 }
 
 CONSTRAINTS:
@@ -53,6 +54,11 @@ CONSTRAINTS:
   * "word" = single word (including contractions like "don't", "it's")
   * "phrase" = multi-word expression that does NOT contain a subject-predicate pair
   * "sentence" = expression with a subject and predicate, typically ending with punctuation (.!?)
+- lemma: provide only when type is "word":
+  * Strip inflections to the canonical dictionary form.
+  * Examples: "ran" → "run", "better" → "good", "mice" → "mouse", "was" → "be".
+  * For multi-word phrases/sentences, set lemma to null.
+  * When the word is already in its base form, repeat it.
 - normalized: remove extra whitespace, normalize NFC unicode, preserve case`;
 
 function buildInputUserMessage(

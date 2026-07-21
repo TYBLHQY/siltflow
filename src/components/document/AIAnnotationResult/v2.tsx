@@ -183,22 +183,33 @@ function WordView({
   output,
   sourceLang,
   targetLang,
+  lemma,
   annId,
 }: {
   output: WordOutputV2;
   sourceLang?: string;
   targetLang?: string;
+  lemma?: string | null;
   annId?: string | null;
 }) {
   return (
     <div className="space-y-2 leading-relaxed">
-      {/* CEFR */}
-      {output.cefr && (
+      {/* CEFR & Lemma */}
+      {(output.cefr || lemma) && (
         <div>
-          <SectionHeader>CEFR</SectionHeader>
-          <span className="inline-flex items-center rounded bg-ctp-rosewater/15 px-1.5 py-0.5 text-ctp-rosewater text-xs font-medium">
-            {output.cefr}
-          </span>
+          <SectionHeader>CEFR & Lemma</SectionHeader>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {output.cefr && (
+              <span className="inline-flex items-center rounded bg-ctp-rosewater/15 px-1.5 py-0.5 text-ctp-rosewater text-xs font-medium">
+                {output.cefr}
+              </span>
+            )}
+            {lemma && (
+              <span className="inline-flex items-center rounded bg-ctp-yellow/15 px-1.5 py-0.5 text-ctp-yellow text-xs font-medium">
+                {lemma}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -571,6 +582,7 @@ export function AIAnnotationResultV2({
               output={output}
               sourceLang={ai?.input?.source_lang}
               targetLang={targetLang}
+              lemma={ai?.input?.lemma}
               annId={item.id}
             />
           )}
