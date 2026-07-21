@@ -205,15 +205,17 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
 
-// Watch for annotation changes and invalidate the search index.
+// Watch for annotation / document changes and invalidate the search index.
 // Debounced — we only care that it's dirty, not rebuilding immediately.
+// Keep old entries visible while the index is being rebuilt in the background
+// (avoids a flash of "No annotations yet" on each invalidation).
 let invalidateTimer: ReturnType<typeof setTimeout> | null = null;
 const invalidateSearchIndex = () => {
   if (invalidateTimer) clearTimeout(invalidateTimer);
   invalidateTimer = setTimeout(() => {
     const st = useSearchStore.getState();
     if (st.indexBuilt) {
-      useSearchStore.setState({ indexBuilt: false, entries: [], fuseInstance: null });
+      useSearchStore.setState({ indexBuilt: false, fuseInstance: null });
     }
   }, 1000);
 };

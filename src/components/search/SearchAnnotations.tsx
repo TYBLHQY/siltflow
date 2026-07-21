@@ -94,7 +94,8 @@ export function SearchAnnotations() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Build index on first open
+  // Build index on first open, or when stale while dialog is open
+  // (annotation/document changes invalidate indexBuilt but keep old entries).
   useEffect(() => {
     if (isOpen && !indexBuilt && !isBuilding) {
       buildIndex();
@@ -199,16 +200,18 @@ export function SearchAnnotations() {
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
-            {/* loading */}
-            {isBuilding && (
+            {/* loading — show whenever index hasn't been built yet or is building.
+                Uses !indexBuilt (not isBuilding alone) to avoid a flash of "No annotations"
+                on the first frame before buildIndex() kicks in. */}
+            {(!indexBuilt || isBuilding) && (
               <div className="flex-1 flex items-center justify-center gap-2 text-sm text-ctp-overlay0">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Indexing annotations…
               </div>
             )}
 
-            {/* empty annotations */}
-            {!isBuilding && !hasAnnotations && (
+            {/* empty annotations — only after index is confirmed built and empty */}
+            {indexBuilt && !hasAnnotations && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
                 <Highlighter className="h-8 w-8" />
                 <p className="text-sm text-center">
@@ -221,7 +224,7 @@ export function SearchAnnotations() {
             )}
 
             {/* initial state */}
-            {!isBuilding && hasAnnotations && !hasQuery && (
+            {indexBuilt && hasAnnotations && !hasQuery && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
                 <Search className="h-8 w-8" />
                 <p className="text-sm text-ctp-text text-center">
@@ -234,7 +237,7 @@ export function SearchAnnotations() {
             )}
 
             {/* no results */}
-            {!isBuilding && hasAnnotations && hasQuery && results.length === 0 && (
+            {indexBuilt && hasAnnotations && hasQuery && results.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
                 <SearchX className="h-8 w-8" />
                 <p className="text-sm text-center">
@@ -247,7 +250,7 @@ export function SearchAnnotations() {
             )}
 
             {/* results list */}
-            {!isBuilding && results.length > 0 && (
+            {indexBuilt && results.length > 0 && (
               <ScrollArea className="flex-1">
                 <div ref={listRef} className="divide-y divide-ctp-overlay0/10">
                   {results.map((r, idx) => (
