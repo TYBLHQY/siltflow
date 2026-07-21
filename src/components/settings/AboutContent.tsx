@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Loader2, Download, ExternalLink } from "lucide-react";
 import { useAppSettingsStore } from "@/stores/app.store";
 import { Button } from "@/components/ui/button";
+import { ReleaseNotesView } from "@/components/update/ReleaseNotesView";
 
 export function AboutContent() {
   const [updateState, setUpdateState] = useState<
@@ -150,30 +151,7 @@ export function AboutContent() {
               v{latestVersion} is available
             </p>
             {releaseNotes != null && (
-              <div className="max-h-60 overflow-y-auto rounded bg-ctp-base/50 p-2 text-xs text-ctp-text space-y-2">
-                {typeof releaseNotes === "string" ? (
-                  <div
-                    className="max-h-60 overflow-y-auto [&_a]:text-ctp-mauve [&_a]:underline [&_code]:bg-ctp-surface0 [&_code]:px-1 [&_code]:rounded [&_img]:max-w-full [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_h1]:font-bold [&_h1]:text-base [&_h2]:font-bold [&_h3]:font-bold"
-                    dangerouslySetInnerHTML={{ __html: releaseNotes }}
-                  />
-                ) : (
-                  <div className="max-h-60 overflow-y-auto space-y-4">
-                    {releaseNotes.map((rn, i) => (
-                      <div key={i}>
-                        <strong className="text-ctp-green">
-                          v{rn.version}
-                        </strong>
-                        {rn.note && (
-                          <div
-                            className="mt-0.5 [&_a]:text-ctp-mauve [&_a]:underline [&_code]:bg-ctp-surface0 [&_code]:px-1 [&_code]:rounded [&_img]:max-w-full [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_h1]:font-bold [&_h1]:text-base [&_h2]:font-bold [&_h3]:font-bold"
-                            dangerouslySetInnerHTML={{ __html: rn.note }}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ReleaseNotesView releaseNotes={releaseNotes} />
             )}
             <Button size="sm" onClick={handleDownload}>
               <Download className="h-3 w-3" />

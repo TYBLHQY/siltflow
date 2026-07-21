@@ -23,6 +23,7 @@ import {
 import { Toast } from "@/components/ui/toast";
 import { SearchAnnotations } from "@/components/search";
 import { Button } from "@/components/ui/button";
+import { ReleaseNotesView } from "@/components/update/ReleaseNotesView";
 import { Download } from "lucide-react";
 import {
   Dialog,
@@ -272,20 +273,18 @@ function App() {
                 v{(updateDialog as any)?.latestVersion}
               </span>
             </div>
-            <button
-              onClick={
-                () =>
-                  /* eslint-disable @typescript-eslint/no-explicit-any */
-                  window.siltflow.openExternal(
-                    `https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`,
-                  )
-                /* eslint-enable @typescript-eslint/no-explicit-any */
-              }
-              className="block text-xs text-ctp-mauve hover:underline mt-1"
-            >
-              View release notes →
-            </button>
           </div>
+
+          {/* Dev: dialog also shows mock release notes */}
+          {import.meta.env.DEV &&
+            (updateDialog as { latestVersion: string })?.latestVersion ===
+              "99.99.99-dev" && (
+              <div className="px-2">
+                <ReleaseNotesView
+                  releaseNotes={`<p><strong>Full Changelog</strong>: <a href="https://github.com/TYBLHQY/siltflow/releases">View on GitHub</a></p>`}
+                />
+              </div>
+            )}
 
           {/* Auto-check toggle */}
           <div className="flex items-center gap-2 px-2 pb-1">
