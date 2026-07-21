@@ -178,7 +178,7 @@ export function SearchAnnotations() {
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) close(); }}>
       <DialogContent
         hideClose
-        className="flex flex-col w-full max-w-3xl h-150 max-h-[85vh] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0 overflow-hidden"
+        className="flex flex-col w-full max-w-5xl h-200 max-h-[90vh] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0 overflow-hidden"
         onKeyDown={handleKeyDown}
       >
         {/* ── Body: results + detail card ── */}
@@ -186,7 +186,7 @@ export function SearchAnnotations() {
           {/* ── Results panel ── */}
           <div
             className={`flex-1 min-w-0 flex flex-col
-              ${isWide ? "md:w-1/2 md:flex-initial" : ""}
+              ${isWide ? "md:w-2/5 md:flex-initial" : ""}
             `}
           >
             {/* ── Search input ── */}
