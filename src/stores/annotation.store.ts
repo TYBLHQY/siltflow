@@ -44,11 +44,11 @@ function persistAnnotation(item: AnnotationItem) {
   window.siltflow.annotations
     .save({
       id: item.id,
-      documentId: item.documentId,
+      document_id: item.documentId,
       type: item.type,
       text: item.text,
-      pageNumber: item.pageNumber,
-      embedData: JSON.stringify(item.embedData),
+      page_number: item.pageNumber,
+      embed_data: JSON.stringify(item.embedData),
       kind: item.kind || "annotation",
     })
     .catch(
