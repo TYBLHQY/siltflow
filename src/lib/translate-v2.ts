@@ -37,12 +37,18 @@ Schema:
 {
   "text": "<original text>",
   "normalized": "<normalized version — trim whitespace, normalize to NFC unicode>",
-  "source_lang": "<BCP 47 language code — use the provided hint but verify it; if unsure output 'und'>",
+  "source_lang": "<BCP 47 language code — use the provided hint; only override with extreme caution (see CONSTRAINTS); if truly unsure output 'und'>",
   "type": "<word|phrase|sentence — use the provided hint but verify>"
 }
 
 CONSTRAINTS:
-- source_lang: verify the provided hint; if the text is clearly in a different language, correct it
+- source_lang: use the provided hint. Only override it when there is overwhelming
+  multi-word evidence the hint is wrong (e.g. a full sentence clearly in a different
+  language), never from etymology alone.
+  Individual words and short phrases frequently appear across languages
+  (e.g. English has ~30% French-origin vocabulary like "haute", "rendezvous").
+  When the hint says "en-US" and the text is a single word or short phrase,
+  trust the hint — borrowed words are the norm, not an exception.
 - type: verify the provided hint:
   * "word" = single word (including contractions like "don't", "it's")
   * "phrase" = multi-word expression that does NOT contain a subject-predicate pair
