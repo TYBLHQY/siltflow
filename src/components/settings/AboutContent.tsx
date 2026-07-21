@@ -157,16 +157,21 @@ export function AboutContent() {
                     dangerouslySetInnerHTML={{ __html: releaseNotes }}
                   />
                 ) : (
-                  releaseNotes.map((rn, i) => (
-                    <div key={i}>
-                      <strong className="text-ctp-green">v{rn.version}</strong>
-                      {rn.note && (
-                        <p className="mt-0.5 whitespace-pre-wrap text-ctp-overlay0">
-                          {rn.note}
-                        </p>
-                      )}
-                    </div>
-                  ))
+                  <div className="max-h-60 overflow-y-auto space-y-4">
+                    {releaseNotes.map((rn, i) => (
+                      <div key={i}>
+                        <strong className="text-ctp-green">
+                          v{rn.version}
+                        </strong>
+                        {rn.note && (
+                          <div
+                            className="mt-0.5 [&_a]:text-ctp-mauve [&_a]:underline [&_code]:bg-ctp-surface0 [&_code]:px-1 [&_code]:rounded [&_img]:max-w-full [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_h1]:font-bold [&_h1]:text-base [&_h2]:font-bold [&_h3]:font-bold"
+                            dangerouslySetInnerHTML={{ __html: rn.note }}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
