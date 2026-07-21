@@ -35,7 +35,9 @@ export function MemoryStateExplorer() {
   const deferredSearch = useDeferredValue(search);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [logs, setLogs] = useState<ParsedReviewLog[]>([]);
-  const [annotationsMap, setAnnotationsMap] = useState<Map<string, string>>(new Map());
+  const [annotationsMap, setAnnotationsMap] = useState<Map<string, string>>(
+    new Map(),
+  );
 
   // Load all annotations for text lookup
   useEffect(() => {
@@ -52,7 +54,8 @@ export function MemoryStateExplorer() {
   // Build annotation list from raw card data
   const annotations = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const list: { id: string; documentId: string; text: string; card: any }[] = [];
+    const list: { id: string; documentId: string; text: string; card: any }[] =
+      [];
     for (const row of rawCards) {
       try {
         const card = JSON.parse(row.data);
@@ -67,7 +70,9 @@ export function MemoryStateExplorer() {
         // skip
       }
     }
-    return list.sort((a, b) => (b.card.stability ?? 0) - (a.card.stability ?? 0));
+    return list.sort(
+      (a, b) => (b.card.stability ?? 0) - (a.card.stability ?? 0),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawCards, dataVersion, annotationsMap]);
 
@@ -118,10 +123,13 @@ export function MemoryStateExplorer() {
               const log = data.log;
               return {
                 timestamp: new Date(log.review || e.createdAt).getTime(),
-                date: new Date(log.review || e.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                }),
+                date: new Date(log.review || e.createdAt).toLocaleDateString(
+                  "en-US",
+                  {
+                    month: "short",
+                    day: "numeric",
+                  },
+                ),
                 grade: data.grade,
                 stability: log.stability,
                 difficulty: log.difficulty,
@@ -182,7 +190,10 @@ export function MemoryStateExplorer() {
                           ? "bg-ctp-surface0 text-ctp-text"
                           : "hover:bg-ctp-surface0/50 text-ctp-text",
                       )}
-                      style={{ height: `${vi.size}px`, transform: `translateY(${vi.start}px)` }}
+                      style={{
+                        height: `${vi.size}px`,
+                        transform: `translateY(${vi.start}px)`,
+                      }}
                       onClick={() => setSelectedId(a.id)}
                     >
                       <span className="flex-1 truncate" title={a.text}>
@@ -212,10 +223,24 @@ export function MemoryStateExplorer() {
                 </span>
               </div>
               <div className="mt-1 flex flex-wrap gap-3 text-xs text-ctp-overlay0">
-                <span>Stability: <strong>{selectedAnnotation.card.stability?.toFixed(1)}d</strong></span>
-                <span>Difficulty: <strong>{selectedAnnotation.card.difficulty?.toFixed(2)}</strong></span>
-                <span>Reps: <strong>{selectedAnnotation.card.reps ?? 0}</strong></span>
-                <span>Lapses: <strong>{selectedAnnotation.card.lapses ?? 0}</strong></span>
+                <span>
+                  Stability:{" "}
+                  <strong>
+                    {selectedAnnotation.card.stability?.toFixed(1)}d
+                  </strong>
+                </span>
+                <span>
+                  Difficulty:{" "}
+                  <strong>
+                    {selectedAnnotation.card.difficulty?.toFixed(2)}
+                  </strong>
+                </span>
+                <span>
+                  Reps: <strong>{selectedAnnotation.card.reps ?? 0}</strong>
+                </span>
+                <span>
+                  Lapses: <strong>{selectedAnnotation.card.lapses ?? 0}</strong>
+                </span>
               </div>
             </div>
 
@@ -226,8 +251,14 @@ export function MemoryStateExplorer() {
                   Stability & Difficulty Over Time
                 </h4>
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={logs} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-ctp-overlay0/50" />
+                  <LineChart
+                    data={logs}
+                    margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-ctp-overlay0/50"
+                    />
                     <XAxis
                       dataKey="date"
                       tick={{ fontSize: 9 }}
@@ -267,22 +298,32 @@ export function MemoryStateExplorer() {
                         background: "var(--tooltip-bg)",
                       }}
                     />
-                    <Legend verticalAlign="top"
+                    <Legend
+                      verticalAlign="top"
                       wrapperStyle={{ fontSize: 10 }}
                       content={({ payload }) => {
                         const colors: Record<string, string> = {
-                          "Stability": "var(--catppuccin-color-mauve)",
-                          "Difficulty": "var(--catppuccin-color-pink)",
+                          Stability: "var(--catppuccin-color-mauve)",
+                          Difficulty: "var(--catppuccin-color-pink)",
                         };
                         return (
                           <div className="flex justify-center gap-4 text-xs">
                             {payload?.map((entry) => (
-                              <div key={entry.value} className="flex items-center gap-1">
+                              <div
+                                key={entry.value}
+                                className="flex items-center gap-1"
+                              >
                                 <span
                                   className="inline-block h-0.5 w-3 rounded-full"
-                                  style={{ backgroundColor: colors[entry.value as string] ?? "var(--catppuccin-color-text)" }}
+                                  style={{
+                                    backgroundColor:
+                                      colors[entry.value as string] ??
+                                      "var(--catppuccin-color-text)",
+                                  }}
                                 />
-                                <span className="text-ctp-text">{entry.value}</span>
+                                <span className="text-ctp-text">
+                                  {entry.value}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -326,11 +367,21 @@ export function MemoryStateExplorer() {
                 {/* Fixed table header */}
                 <div className="shrink-0 bg-ctp-surface0/50 border-b border-ctp-overlay0/50">
                   <div className="flex w-full text-xs">
-                    <div className="flex-1 px-3 py-1.5 font-medium text-ctp-text">Date</div>
-                    <div className="flex-1 px-3 py-1.5 font-medium text-ctp-text">Grade</div>
-                    <div className="w-20 px-3 py-1.5 text-right font-medium text-ctp-text">Stability</div>
-                    <div className="w-20 px-3 py-1.5 text-right font-medium text-ctp-text">Difficulty</div>
-                    <div className="w-16 px-3 py-1.5 text-right font-medium text-ctp-text">Interval</div>
+                    <div className="flex-1 px-3 py-1.5 font-medium text-ctp-text">
+                      Date
+                    </div>
+                    <div className="flex-1 px-3 py-1.5 font-medium text-ctp-text">
+                      Grade
+                    </div>
+                    <div className="w-20 px-3 py-1.5 text-right font-medium text-ctp-text">
+                      Stability
+                    </div>
+                    <div className="w-20 px-3 py-1.5 text-right font-medium text-ctp-text">
+                      Difficulty
+                    </div>
+                    <div className="w-16 px-3 py-1.5 text-right font-medium text-ctp-text">
+                      Interval
+                    </div>
                   </div>
                 </div>
                 {/* Scrollable table body */}
@@ -341,18 +392,30 @@ export function MemoryStateExplorer() {
                         key={i}
                         className="flex w-full text-xs border-b border-ctp-overlay0/50 last:border-0"
                       >
-                        <div className="flex-1 px-3 py-1.5 text-ctp-text">{log.date}</div>
+                        <div className="flex-1 px-3 py-1.5 text-ctp-text">
+                          {log.date}
+                        </div>
                         <div className="flex-1 px-3 py-1.5">
                           <span
                             className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-ctp-base"
-                            style={{ backgroundColor: GRADE_COLOR[log.grade] ?? "var(--catppuccin-color-lavender)" }}
+                            style={{
+                              backgroundColor:
+                                GRADE_COLOR[log.grade] ??
+                                "var(--catppuccin-color-lavender)",
+                            }}
                           >
                             {GRADE_LABEL[log.grade] ?? log.grade}
                           </span>
                         </div>
-                        <div className="w-20 px-3 py-1.5 text-right text-ctp-text">{log.stability.toFixed(1)}d</div>
-                        <div className="w-20 px-3 py-1.5 text-right text-ctp-text">{log.difficulty.toFixed(2)}</div>
-                        <div className="w-16 px-3 py-1.5 text-right text-ctp-text">{log.scheduledDays}d</div>
+                        <div className="w-20 px-3 py-1.5 text-right text-ctp-text">
+                          {log.stability.toFixed(1)}d
+                        </div>
+                        <div className="w-20 px-3 py-1.5 text-right text-ctp-text">
+                          {log.difficulty.toFixed(2)}
+                        </div>
+                        <div className="w-16 px-3 py-1.5 text-right text-ctp-text">
+                          {log.scheduledDays}d
+                        </div>
                       </div>
                     ))}
                   </ScrollArea>

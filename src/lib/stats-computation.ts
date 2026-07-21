@@ -4,7 +4,12 @@
  */
 import { State } from "ts-fsrs";
 import type { Card } from "ts-fsrs";
-import { retrievability, GRADE_COLOR, GRADE_LABEL, parseReviewLogData } from "@/lib/fsrs-utils";
+import {
+  retrievability,
+  GRADE_COLOR,
+  GRADE_LABEL,
+  parseReviewLogData,
+} from "@/lib/fsrs-utils";
 
 export interface DailyReviewCount {
   date: string;
@@ -37,7 +42,13 @@ export interface ForecastDay {
   dueCount: number;
 }
 
-export const FORGETTING_LABELS = ["365 days", "90 days", "30 days", "7 days", "1 day"] as const;
+export const FORGETTING_LABELS = [
+  "365 days",
+  "90 days",
+  "30 days",
+  "7 days",
+  "1 day",
+] as const;
 
 export type ForgettingCurvePoint = {
   day: number;
@@ -69,9 +80,14 @@ export function computeDailyReviews(
   logs: { createdAt: string; data: string }[],
   days?: number,
 ): DailyReviewCount[] {
-  const map = new Map<string, { count: number; learnCount: number; reviewCount: number }>();
+  const map = new Map<
+    string,
+    { count: number; learnCount: number; reviewCount: number }
+  >();
   const now = Date.now();
-  const cutoff = days ? new Date(now - days * 86400000).toISOString().slice(0, 10) : undefined;
+  const cutoff = days
+    ? new Date(now - days * 86400000).toISOString().slice(0, 10)
+    : undefined;
 
   for (const entry of logs) {
     const date = entry.createdAt.slice(0, 10);
@@ -113,7 +129,9 @@ export function computeCalendarHeatmap(
 // Chart 4: Recall Rate (Grade Distribution)
 // ---------------------------------------------------------------------------
 
-export function computeGradeDistribution(logs: { data: string }[]): GradeDistItem[] {
+export function computeGradeDistribution(
+  logs: { data: string }[],
+): GradeDistItem[] {
   const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
   for (const entry of logs) {
     const parsed = parseReviewLogData(entry.data);
@@ -233,10 +251,18 @@ export function computeKnowledgeGrowth(
   logs: { createdAt: string; data: string; annotationId: string }[],
   cardsMap: Map<string, Card>,
 ): KnowledgePoint[] {
-  const sorted = [...logs].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const sorted = [...logs].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt),
+  );
 
-  const cardStates = new Map<string, "learning" | "young" | "mature" | "longTerm">();
-  let learning = 0, young = 0, mature = 0, longTerm = 0;
+  const cardStates = new Map<
+    string,
+    "learning" | "young" | "mature" | "longTerm"
+  >();
+  let learning = 0,
+    young = 0,
+    mature = 0,
+    longTerm = 0;
 
   // Count cards that exist but have no review logs (New cards → learning)
   for (const [aid] of cardsMap) {
@@ -257,13 +283,15 @@ export function computeKnowledgeGrowth(
 
   // No review activity — push today as a single snapshot
   if (dates.length === 0 && learning > 0) {
-    return [{
-      date: new Date().toISOString().slice(0, 10),
-      learning,
-      young,
-      mature,
-      longTerm,
-    }];
+    return [
+      {
+        date: new Date().toISOString().slice(0, 10),
+        learning,
+        young,
+        mature,
+        longTerm,
+      },
+    ];
   }
 
   if (dates.length === 0) return [];
@@ -354,8 +382,15 @@ export function computeReviewForecast(cards: Card[], days = 14): ForecastDay[] {
 
   const result: ForecastDay[] = [];
   for (let i = 0; i < days; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1 + i);
-    result.push({ date: fmtLocalDate(d), dueCount: map.get(fmtLocalDate(d)) ?? 0 });
+    const d = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1 + i,
+    );
+    result.push({
+      date: fmtLocalDate(d),
+      dueCount: map.get(fmtLocalDate(d)) ?? 0,
+    });
   }
   return result;
 }
@@ -388,7 +423,7 @@ export function computeRetentionTradeoff(
   w?: number[],
 ): RetentionTradeoffPoint[] {
   const w20 = w?.[19] ?? 0.1542;
-  const targets = [0.80, 0.85, 0.87, 0.90, 0.92, 0.95];
+  const targets = [0.8, 0.85, 0.87, 0.9, 0.92, 0.95];
 
   // Current average stability
   const nonNew = cards.filter((c) => c.state !== State.New);
@@ -399,10 +434,12 @@ export function computeRetentionTradeoff(
 
   return targets.map((target) => {
     // FSRS interval formula relative to current retention
-    const factor = (Math.pow(0.9, -1 / w20) - 1) / (Math.pow(target, -1 / w20) - 1);
+    const factor =
+      (Math.pow(0.9, -1 / w20) - 1) / (Math.pow(target, -1 / w20) - 1);
     // Average workload: how many cards would be due per day
     const avgInterval = avgStab * factor;
-    const workload = nonNew.length > 0 ? nonNew.length / Math.max(avgInterval, 1) : 0;
+    const workload =
+      nonNew.length > 0 ? nonNew.length / Math.max(avgInterval, 1) : 0;
 
     return {
       targetRetention: target,
@@ -438,7 +475,8 @@ export function computeOverviewStats(cards: Card[]): OverviewStats {
       stabSum += card.stability;
       diffSum += card.difficulty;
       const due = card.due instanceof Date ? card.due : new Date(card.due);
-      const elapsedDays = now > due.getTime() ? (now - due.getTime()) / dayMs : 0;
+      const elapsedDays =
+        now > due.getTime() ? (now - due.getTime()) / dayMs : 0;
       retSum += retrievability(card.stability, elapsedDays);
 
       if (due.getTime() <= now) {

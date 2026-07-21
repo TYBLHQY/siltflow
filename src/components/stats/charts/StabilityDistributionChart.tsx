@@ -1,11 +1,5 @@
 import { useMemo } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import { StatChartCard, ChartGrid, CHART_TOOLTIP_STYLE } from "../ChartPresets";
 import { useChartData } from "@/hooks/useChartData";
 import { computeStabilityHistogram } from "@/lib/stats-computation";
@@ -13,10 +7,7 @@ import { computeStabilityHistogram } from "@/lib/stats-computation";
 export function StabilityDistributionChart() {
   const { cards, loading } = useChartData();
 
-  const data = useMemo(
-    () => computeStabilityHistogram(cards),
-    [cards],
-  );
+  const data = useMemo(() => computeStabilityHistogram(cards), [cards]);
 
   const isEmpty = data.every((d) => d.count === 0);
 
@@ -32,7 +23,12 @@ export function StabilityDistributionChart() {
         <XAxis dataKey="label" tick={{ fontSize: 10 }} />
         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
         <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
-        <Bar dataKey="count" name="Cards" fill="var(--catppuccin-color-peach)" radius={[3, 3, 0, 0]} />
+        <Bar
+          dataKey="count"
+          name="Cards"
+          fill="var(--catppuccin-color-peach)"
+          radius={[3, 3, 0, 0]}
+        />
       </BarChart>
     </StatChartCard>
   );

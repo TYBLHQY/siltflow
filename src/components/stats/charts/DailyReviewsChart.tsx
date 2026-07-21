@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from "recharts";
 import { ChartCard } from "../ChartCard";
 import { ChartGrid, CHART_TOOLTIP_STYLE } from "../ChartPresets";
@@ -15,7 +21,9 @@ const TIME_RANGES = [
 
 export function DailyReviewsChart() {
   const { logs, loading } = useChartData();
-  const [range, setRange] = useState<(typeof TIME_RANGES)[number]>(TIME_RANGES[1]);
+  const [range, setRange] = useState<(typeof TIME_RANGES)[number]>(
+    TIME_RANGES[1],
+  );
 
   const data = useMemo(
     () => computeDailyReviews(logs, range.days || undefined),
@@ -30,25 +38,35 @@ export function DailyReviewsChart() {
       emptyMessage="No reviews yet"
     >
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart data={data} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
+        <BarChart
+          data={data}
+          margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
+        >
           <ChartGrid />
           <XAxis
-            dataKey="date" tick={{ fontSize: 10 }}
+            dataKey="date"
+            tick={{ fontSize: 10 }}
             tickFormatter={(d: string) => d.slice(5)}
           />
           <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
           <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
           <Legend
-            verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
+            verticalAlign="bottom"
+            wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
-              const swatchColors = ["var(--catppuccin-color-sky)", "var(--catppuccin-color-mauve)"];
+              const swatchColors = [
+                "var(--catppuccin-color-sky)",
+                "var(--catppuccin-color-mauve)",
+              ];
               const labels = ["Learning", "Review"];
               return (
                 <div className="mt-2 flex justify-center gap-4 text-xs">
                   {payload?.map((entry, idx) => (
                     <div key={entry.value} className="flex items-center gap-1">
-                      <span className="inline-block h-2 w-2 rounded-full"
-                        style={{ backgroundColor: swatchColors[idx] }} />
+                      <span
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ backgroundColor: swatchColors[idx] }}
+                      />
                       <span className="text-ctp-text">{labels[idx]}</span>
                     </div>
                   ))}
@@ -56,10 +74,20 @@ export function DailyReviewsChart() {
               );
             }}
           />
-          <Bar dataKey="learnCount" name="Learning" stackId="a"
-            fill="var(--catppuccin-color-sky)" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="reviewCount" name="Review" stackId="a"
-            fill="var(--catppuccin-color-mauve)" radius={[3, 3, 0, 0]} />
+          <Bar
+            dataKey="learnCount"
+            name="Learning"
+            stackId="a"
+            fill="var(--catppuccin-color-sky)"
+            radius={[0, 0, 0, 0]}
+          />
+          <Bar
+            dataKey="reviewCount"
+            name="Review"
+            stackId="a"
+            fill="var(--catppuccin-color-mauve)"
+            radius={[3, 3, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-2 flex justify-center gap-1">

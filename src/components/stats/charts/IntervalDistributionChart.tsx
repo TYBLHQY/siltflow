@@ -7,10 +7,7 @@ import { computeIntervalHistogram } from "@/lib/stats-computation";
 export function IntervalDistributionChart() {
   const { cards, loading } = useChartData();
 
-  const data = useMemo(
-    () => computeIntervalHistogram(cards),
-    [cards],
-  );
+  const data = useMemo(() => computeIntervalHistogram(cards), [cards]);
 
   const isEmpty = data.every((d) => d.count === 0);
 
@@ -26,7 +23,12 @@ export function IntervalDistributionChart() {
         <XAxis dataKey="label" tick={{ fontSize: 10 }} />
         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
         <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
-        <Bar dataKey="count" name="Cards" fill="var(--catppuccin-color-sapphire)" radius={[3, 3, 0, 0]} />
+        <Bar
+          dataKey="count"
+          name="Cards"
+          fill="var(--catppuccin-color-sapphire)"
+          radius={[3, 3, 0, 0]}
+        />
       </BarChart>
     </StatChartCard>
   );
