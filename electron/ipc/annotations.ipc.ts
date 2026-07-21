@@ -10,82 +10,88 @@ function tryParseJson(data: string, fallback: unknown): unknown {
   }
 }
 
+// ── Row shapes returned by better-sqlite3 .all() for annotation queries ──
+
+interface AnnotationJoinedRow {
+  id: string
+  document_id: string
+  type: string
+  text: string | null
+  page_number: number | null
+  embed_data: string
+  kind: string
+  created_at: string
+  updated_at: string
+  ai_data: string | null
+  ai_version: number | null
+  fsrs_data: string | null
+}
+
+interface AnnotationEnrichedValue {
+  id: string
+  document_id: string
+  type: string
+  text: string | null
+  page_number: number | null
+  embed_data: unknown
+  kind: string
+  created_at: string
+  updated_at: string
+  ai_data: unknown
+  ai_version: number | null
+  fsrs_data: unknown
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+/** Map a raw joined row to the enriched shape the renderer expects. */
+function mapEnriched(row: AnnotationJoinedRow): AnnotationEnrichedValue {
+  return {
+    id: row.id,
+    document_id: row.document_id,
+    type: row.type,
+    text: row.text,
+    page_number: row.page_number,
+    embed_data: tryParseJson(row.embed_data, {}),
+    kind: row.kind || "annotation",
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    ai_data: row.ai_data ? tryParseJson(row.ai_data, null) : null,
+    ai_version: row.ai_version ?? null,
+    fsrs_data: row.fsrs_data ? tryParseJson(row.fsrs_data, null) : null,
+  }
+}
+
+const LIST_ALL_SQL = `
+  SELECT
+    a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
+    a.kind, a.created_at, a.updated_at,
+    ar.data AS ai_data, ar.version AS ai_version,
+    fc.data AS fsrs_data
+  FROM annotations a
+  LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
+  LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
+`
+
+// ── Handlers ─────────────────────────────────────────────────────────────
+
 export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:list", (_event, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return []
-    // Single query with LEFT JOINs — includes ai_result + fsrs_card data
-    // so the renderer doesn't need N×2 separate IPC calls.
-    const rows = sql.prepare(`
-      SELECT
-        a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
-        a.kind,
-        a.created_at, a.updated_at,
-        ar.data AS ai_data,
-        ar.version AS ai_version,
-        fc.data AS fsrs_data
-      FROM annotations a
-      LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
-      LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
-      WHERE a.document_id = ?
-    `)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .all(documentId) as any[]
-    // Pre-parse JSON fields in the main process so the renderer
-    // doesn't block the UI thread on N×sync JSON.parse calls.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return rows.map((r: any) => ({
-      id: r.id,
-      document_id: r.document_id,
-      type: r.type,
-      text: r.text,
-      page_number: r.page_number,
-      embed_data: tryParseJson(r.embed_data, {}),
-      kind: r.kind || "annotation",
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-      ai_data: r.ai_data ? tryParseJson(r.ai_data, null) : null,
-      ai_version: r.ai_version ?? null,
-      fsrs_data: r.fsrs_data ? tryParseJson(r.fsrs_data, null) : null,
-    }))
+    const rows = sql.prepare(`${LIST_ALL_SQL} WHERE a.document_id = ?`)
+      .all(documentId) as AnnotationJoinedRow[]
+    return rows.map(mapEnriched)
   })
 
   ipcMain.handle("annotations:listAll", () => {
     const sql = getSqlite()
     if (!sql) return []
-    // Same enriched query as per-document list handler, but across ALL documents.
-    // Single IPC call replaces 1+D sequential calls.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows = sql.prepare(`
-      SELECT
-        a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
-        a.kind, a.created_at, a.updated_at,
-        ar.data AS ai_data, ar.version AS ai_version,
-        fc.data AS fsrs_data
-      FROM annotations a
-      LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
-      LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
-    `).all() as any[]
-    // Pre-parse JSON fields so the renderer doesn't block on N×sync JSON.parse.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return rows.map((r: any) => ({
-      id: r.id,
-      document_id: r.document_id,
-      type: r.type,
-      text: r.text,
-      page_number: r.page_number,
-      embed_data: tryParseJson(r.embed_data, {}),
-      kind: r.kind || "annotation",
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-      ai_data: r.ai_data ? tryParseJson(r.ai_data, null) : null,
-      ai_version: r.ai_version ?? null,
-      fsrs_data: r.fsrs_data ? tryParseJson(r.fsrs_data, null) : null,
-    }))
+    const rows = sql.prepare(LIST_ALL_SQL).all() as AnnotationJoinedRow[]
+    return rows.map(mapEnriched)
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ipcMain.handle("annotations:save", (_event, annotation: any) => {
+  ipcMain.handle("annotations:save", (_event, annotation: AnnotationEnrichedValue) => {
     const sql = getSqlite()
     if (!sql) return null
     const now = new Date().toISOString()
@@ -94,11 +100,11 @@ export function registerAnnotationHandlers() {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       annotation.id,
-      annotation.documentId,
+      annotation.document_id,
       annotation.type || "highlight",
       annotation.text || "",
-      annotation.pageNumber ?? 0,
-      annotation.embedData || "",
+      annotation.page_number ?? 0,
+      annotation.embed_data || "",
       annotation.kind || "annotation",
       now,
       now,
