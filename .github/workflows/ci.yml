@@ -149,7 +149,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          # Only create the release on the first matrix job (linux)
+
+          # ── Create the release (linux only) ──────────────────────────
           if [ "${{ matrix.target }}" = "linux" ]; then
             PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName' 2>/dev/null || echo "")
             if [ -n "$PREV_TAG" ]; then
@@ -164,8 +165,25 @@ jobs:
               echo ""
               echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG:-$(git tag --sort=-creatordate | head -1)}...${TAG}"
             } > /tmp/release-notes.md
-            gh release create "$TAG" --title "${TAG#v}" --target "${{ github.sha }}" --notes-file /tmp/release-notes.md || true
+            gh release create "$TAG" --title "${TAG#v}" --target "${{ github.sha }}" --notes-file /tmp/release-notes.md
+          else
+            # ── Wait for linux job to create the release ──────────────
+            echo "Waiting for release $TAG to be created by the linux job…"
+            for i in $(seq 1 30); do
+              if gh release view "$TAG" --json tagName &>/dev/null; then
+                echo "Release $TAG found."
+                break
+              fi
+              echo "  attempt $i/30 — not ready yet, sleeping 10s…"
+              sleep 10
+            done
+            if ! gh release view "$TAG" --json tagName &>/dev/null; then
+              echo "ERROR: Release $TAG was not created after 5 minutes."
+              exit 1
+            fi
           fi
+
+          # ── Upload artifacts ────────────────────────────────────────
           for f in release/*/*; do
             if [ -f "$f" ]; then
               echo "Uploading: $f"
