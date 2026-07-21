@@ -147,7 +147,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          gh release create "$TAG" --generate-notes --title "${TAG#v}" --target "${{ github.sha }}" || true
+          # Build changelog: changes from previous tag to this tag
+          PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName' 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG_FILE=$(mktemp)
+            echo "## What's Changed" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            git log --oneline --no-merges "${PREV_TAG}..HEAD" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+            echo "**Full Changelog**: https://github.com/$GITHUB_REPOSITORY/compare/${PREV_TAG}...${TAG}" >> "$CHANGELOG_FILE"
+            gh release create "$TAG" --title "${TAG#v}" --target "${{ github.sha }}" --notes-file "$CHANGELOG_FILE" || true
+          else
+            gh release create "$TAG" --generate-notes --title "${TAG#v}" --target "${{ github.sha }}" || true
+          fi
           for f in release/*/*; do
             if [ -f "$f" ]; then
               echo "Uploading: $f"
