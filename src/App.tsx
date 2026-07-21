@@ -54,6 +54,9 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [updateReleaseNotes, setUpdateReleaseNotes] = useState<
+    string | Array<{ version: string; note: string | null }> | null
+  >(null);
 
   useEffect(() => {
     if (vaultReady && !aiLoaded) {
@@ -105,6 +108,7 @@ function App() {
         setUpdateDialog({
           latestVersion: tag.startsWith("v") ? tag.slice(1) : tag,
         });
+        setUpdateReleaseNotes(info.releaseNotes ?? null);
       });
       const unsubNotAvail = window.siltflow.update.onNotAvailable(() => {
         setUpdateDialog("latest");
@@ -149,6 +153,9 @@ function App() {
         setDownloading(false);
         setProgress(0);
         setUpdateDialog({ latestVersion: "99.99.99-dev" });
+        setUpdateReleaseNotes(
+          "<p><strong>Full Changelog</strong>: <a href='https://github.com/TYBLHQY/siltflow/releases'>View on GitHub</a></p>",
+        );
       } else {
         updateCheckRef.current?.();
       }
@@ -275,16 +282,11 @@ function App() {
             </div>
           </div>
 
-          {/* Dev: dialog also shows mock release notes */}
-          {import.meta.env.DEV &&
-            (updateDialog as { latestVersion: string })?.latestVersion ===
-              "99.99.99-dev" && (
-              <div className="px-2">
-                <ReleaseNotesView
-                  releaseNotes={`<p><strong>Full Changelog</strong>: <a href="https://github.com/TYBLHQY/siltflow/releases">View on GitHub</a></p>`}
-                />
-              </div>
-            )}
+          {updateReleaseNotes != null && (
+            <div className="px-2">
+              <ReleaseNotesView releaseNotes={updateReleaseNotes} />
+            </div>
+          )}
 
           {/* Auto-check toggle */}
           <div className="flex items-center gap-2 px-2 pb-1">

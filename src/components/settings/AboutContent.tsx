@@ -19,6 +19,7 @@ export function AboutContent() {
   const [releaseNotes, setReleaseNotes] = useState<
     string | Array<{ version: string; note: string | null }> | null
   >(null);
+  const [releaseTimestamp, setReleaseTimestamp] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [dbVersion, setDbVersion] = useState<number | null>(null);
 
@@ -45,6 +46,7 @@ export function AboutContent() {
         const tag = info.version || "";
         setLatestVersion(tag.startsWith("v") ? tag.slice(1) : tag);
         setReleaseNotes(info.releaseNotes ?? null);
+        setReleaseTimestamp(info.releaseDate ?? null);
         setUpdateState("available");
       }),
     );
@@ -147,9 +149,16 @@ export function AboutContent() {
 
         {updateState === "available" && (
           <div className="rounded-md border border-ctp-green/30 bg-ctp-green/10 px-3 py-2 space-y-2">
-            <p className="text-xs font-medium text-ctp-green mb-1.5">
-              v{latestVersion} is available
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-ctp-green">
+                v{latestVersion} is available
+              </p>
+              {releaseTimestamp && (
+                <span className="text-xs text-ctp-overlay0">
+                  {new Date(releaseTimestamp).toLocaleDateString()}
+                </span>
+              )}
+            </div>
             {releaseNotes != null && (
               <ReleaseNotesView releaseNotes={releaseNotes} />
             )}
