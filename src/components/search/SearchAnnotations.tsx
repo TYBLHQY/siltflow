@@ -124,7 +124,11 @@ export function SearchAnnotations() {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (selectedEntry) {
-        // Card is open — card handles its own Esc
+        // Card is open — Esc closes card
+        if (e.key === "Escape") {
+          e.preventDefault();
+          selectEntry(null);
+        }
         return;
       }
 
@@ -175,10 +179,6 @@ export function SearchAnnotations() {
     },
     [selectEntry],
   );
-
-  const handleCloseCard = useCallback(() => {
-    selectEntry(null);
-  }, [selectEntry]);
 
   // ── Filter results with highlights ──
   const hasQuery = query.trim().length > 0;
@@ -245,7 +245,7 @@ export function SearchAnnotations() {
                   Search across {entries.length} annotations in {totalDocuments} document{totalDocuments !== 1 ? "s" : ""}
                 </p>
                 <p className="text-xs text-center text-ctp-text">
-                  Type to search by annotation text, translation, or document name
+                  Type to search by annotation text or translation
                 </p>
               </div>
             )}
@@ -295,8 +295,6 @@ export function SearchAnnotations() {
             <AnnotationSearchCard
               entry={selectedEntry}
               isWide={isWide}
-              onClose={handleCloseCard}
-              onJumpTo={() => handleJumpTo(selectedEntry)}
             />
           )}
         </div>

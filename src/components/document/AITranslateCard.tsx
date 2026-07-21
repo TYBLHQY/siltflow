@@ -24,6 +24,8 @@ interface AITranslateCardProps {
   collapsible?: boolean;
   /** Show FSRS stats at the bottom of the card. Defaults to true. */
   showFSRS?: boolean;
+  /** Show action bar (edit / translate / delete / go to highlight). Defaults to true. */
+  showActionBar?: boolean;
 }
 
 export function AITranslateCard({
@@ -39,6 +41,7 @@ export function AITranslateCard({
   onGoToHighlight,
   collapsible = false,
   showFSRS = true,
+  showActionBar = true,
 }: AITranslateCardProps) {
   const ai = item.aiResult;
   const [editing, setEditing] = useState(false);
@@ -113,7 +116,7 @@ export function AITranslateCard({
             <AIAnnotationResult
               item={item}
               showCore
-              showActionBar
+              showActionBar={showActionBar}
               {...actionBarProps}
             />
           </div>
@@ -195,7 +198,7 @@ export function AITranslateCard({
         <AIAnnotationResult
           item={item}
           showCore
-          showActionBar
+          showActionBar={showActionBar}
           {...actionBarProps}
         />
       )}

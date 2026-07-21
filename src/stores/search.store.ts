@@ -91,7 +91,6 @@ function extractSearchableTextFromAI(
 const FUSE_OPTIONS: IFuseOptions<SearchEntry> = {
   keys: [
     { name: "searchText", weight: 1 },
-    { name: "documentTitle", weight: 0.6 },
   ],
   // ── Fuzzy matching ──
   threshold: 0.4,
