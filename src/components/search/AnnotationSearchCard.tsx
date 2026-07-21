@@ -1,49 +1,72 @@
 import { AITranslateCard } from "@/components/document/AITranslateCard";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
 import type { SearchEntry } from "@/stores/search.store";
 
 interface AnnotationSearchCardProps {
-  entry: SearchEntry;
+  entry: SearchEntry | null;
   isWide: boolean;
 }
 
 /**
  * Detail card panel for viewing a full annotation in the search dialog.
  *
- * - Wide (>= 768px): rendered as a side panel with slide-in animation
- * - Narrow (< 768px): rendered as a full overlay
+ * - Wide (&gt;= 768px): rendered as a side panel (always visible, fixed split)
+ * - Narrow (&lt; 768px): rendered as a full overlay
  */
 export function AnnotationSearchCard({
   entry,
   isWide,
 }: AnnotationSearchCardProps) {
+  // ── Empty state ──
+  if (!entry) {
+    const empty = (
+      <div className="flex-1 flex items-center justify-center text-ctp-overlay0 text-sm">
+        Select an annotation to view details
+      </div>
+    );
+
+    if (isWide) {
+      return (
+        <div className="flex-1 min-w-0 h-full border-l border-ctp-overlay0/20 bg-ctp-base overflow-hidden flex flex-col">
+          {empty}
+        </div>
+      );
+    }
+    return null;
+  }
+
   const { annotation } = entry;
 
   const cardContent = (
-    <div className="flex-1 overflow-y-auto px-4 py-3">
-      <AITranslateCard
-        id={annotation.id}
-        item={annotation}
-        expanded
-        collapsible={false}
-        showFSRS
-        showActionBar={false}
-        onToggleExpand={() => {}}
-        onDelete={() => {}}
-        onTranslate={async () => {}}
-        onGoToHighlight={
-          annotation.kind !== "manual"
-            ? () => pdfScrollToHighlight(annotation.id)
-            : undefined
-        }
-      />
+    <div className="flex-1 min-h-0">
+      <ScrollArea className="h-full">
+        <div className="p-3">
+          <AITranslateCard
+            id={annotation.id}
+            item={annotation}
+            expanded
+            collapsible={false}
+            showFSRS
+            showActionBar={false}
+            onToggleExpand={() => {}}
+            onDelete={() => {}}
+            onTranslate={async () => {}}
+            onGoToHighlight={
+              annotation.kind !== "manual"
+                ? () => pdfScrollToHighlight(annotation.id)
+                : undefined
+            }
+          />
+        </div>
+      </ScrollArea>
     </div>
   );
 
-  // ── Wide: side panel ──
+  // ── Wide: side panel (always visible, no animation) ──
   if (isWide) {
     return (
-      <div className="w-100 min-w-75 h-full border-l border-ctp-overlay0/20 bg-ctp-base animate-in slide-in-from-right duration-300 overflow-hidden flex flex-col">
+      <div className="flex-1 min-w-0 h-full border-l border-ctp-overlay0/20 bg-ctp-base overflow-hidden flex flex-col">
         {cardContent}
       </div>
     );
@@ -51,7 +74,7 @@ export function AnnotationSearchCard({
 
   // ── Narrow: overlay ──
   return (
-    <div className="fixed inset-0 z-60 bg-ctp-base flex flex-col animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-60 bg-ctp-base flex flex-col">
       {cardContent}
     </div>
   );

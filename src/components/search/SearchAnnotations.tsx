@@ -123,15 +123,6 @@ export function SearchAnnotations() {
   // ── Keyboard navigation ──
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (selectedEntry) {
-        // Card is open — Esc closes card
-        if (e.key === "Escape") {
-          e.preventDefault();
-          selectEntry(null);
-        }
-        return;
-      }
-
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
@@ -162,22 +153,15 @@ export function SearchAnnotations() {
           break;
       }
     },
-    [results, selectedIndex, setSelectedIndex, selectedEntry, close],
+    [results, selectedIndex, setSelectedIndex, close],
   );
 
-  // ── Jump to / View card handlers ──
+  // ── Handlers ──
   const handleJumpTo = useCallback(
     (entry: SearchEntry) => {
       navigateToAnnotation(entry);
     },
     [],
-  );
-
-  const handleViewCard = useCallback(
-    (entry: SearchEntry) => {
-      selectEntry(entry);
-    },
-    [selectEntry],
   );
 
   // ── Filter results with highlights ──
@@ -193,29 +177,28 @@ export function SearchAnnotations() {
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) close(); }}>
       <DialogContent
         hideClose
-        className="flex flex-col w-full max-w-3xl h-137.5 max-h-[80vh] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0 overflow-hidden"
+        className="flex flex-col w-full max-w-3xl h-150 max-h-[85vh] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0 overflow-hidden"
         onKeyDown={handleKeyDown}
       >
-        {/* ── Search input ── */}
-        <div className="relative shrink-0 border-b border-ctp-overlay0/20">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ctp-overlay0 shrink-0" />
-          <input
-            ref={inputRef}
-            className="w-full bg-transparent pl-9 pr-4 py-3 text-sm outline-none placeholder:text-ctp-overlay0"
-            placeholder="Search annotations…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-
         {/* ── Body: results + detail card ── */}
         <div className="flex-1 min-h-0 flex">
           {/* ── Results panel ── */}
           <div
-            className={`flex-1 min-w-0 flex flex-col transition-all duration-300
-              ${isWide && selectedEntry ? "md:w-1/2 md:flex-initial" : ""}
+            className={`flex-1 min-w-0 flex flex-col
+              ${isWide ? "md:w-1/2 md:flex-initial" : ""}
             `}
           >
+            {/* ── Search input ── */}
+            <div className="relative shrink-0 border-b border-ctp-overlay0/20">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ctp-overlay0 shrink-0" />
+              <input
+                ref={inputRef}
+                className="w-full bg-transparent pl-9 pr-4 py-3 text-sm outline-none placeholder:text-ctp-overlay0"
+                placeholder="Search annotations…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
             {/* loading */}
             {isBuilding && (
               <div className="flex-1 flex items-center justify-center gap-2 text-sm text-ctp-overlay0">
@@ -275,9 +258,12 @@ export function SearchAnnotations() {
                       <SearchResultItem
                         entry={r.item}
                         matches={r.matches}
-                        isSelected={idx === selectedIndex}
+                        isSelected={idx === selectedIndex || r.item.id === selectedEntry?.id}
+                        onSelect={() => {
+                          selectEntry(r.item);
+                          setSelectedIndex(idx);
+                        }}
                         onJumpTo={() => handleJumpTo(r.item)}
-                        onViewCard={() => handleViewCard(r.item)}
                       />
                     </div>
                   ))}
@@ -291,19 +277,10 @@ export function SearchAnnotations() {
           </div>
 
           {/* ── Detail card ── */}
-          {selectedEntry && (
-            <AnnotationSearchCard
-              entry={selectedEntry}
-              isWide={isWide}
-            />
-          )}
-        </div>
-
-        {/* ── Keyboard hints ── */}
-        <div className="shrink-0 flex items-center gap-4 px-4 py-1.5 border-t border-ctp-overlay0/20 text-[10px] text-ctp-text">
-          <span><kbd className="px-1 py-0.5 rounded bg-ctp-surface0 text-ctp-text border border-ctp-overlay0/30">↑↓</kbd> Navigate</span>
-          <span><kbd className="px-1 py-0.5 rounded bg-ctp-surface0 text-ctp-text border border-ctp-overlay0/30">Enter</kbd> Jump to</span>
-          <span><kbd className="px-1 py-0.5 rounded bg-ctp-surface0 text-ctp-text border border-ctp-overlay0/30">Esc</kbd> Close</span>
+          <AnnotationSearchCard
+            entry={selectedEntry}
+            isWide={isWide}
+          />
         </div>
       </DialogContent>
     </Dialog>
