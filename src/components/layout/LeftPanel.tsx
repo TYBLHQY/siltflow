@@ -36,6 +36,7 @@ import {
 
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
+  const currentPage = usePdfViewerStore((s) => s.currentPage);
 
   const { outline, isLoading: outlineLoading, hasOutline } = useDocumentOutline({
     pdfDocument: pdfDocument!,
@@ -43,10 +44,18 @@ function DocumentOutlinePanel() {
   });
 
   // ── expand / collapse all ───────────────────────────────────────────
-  // DocumentOutline manages per-item expand/collapse internally.
-  // We force remount via key to set todos items to the same initial state.
   const [allExpanded, setAllExpanded] = useState(false);
   const toggleAll = useCallback(() => setAllExpanded((v) => !v), []);
+
+  // ── auto-scroll to current page's outline item ──────────────────────
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current.querySelector(".outline-active");
+    if (el) {
+      el.scrollIntoView({ block: "nearest" });
+    }
+  }, [currentPage, allExpanded]);
 
   if (!pdfDocument || outlineLoading) {
     return (
@@ -96,22 +105,26 @@ function DocumentOutlinePanel() {
         </div>
       </div>
       <ScrollArea className="flex-1 px-1">
-        <DocumentOutline
-          key={allExpanded ? "expanded" : "collapsed"}
-          outline={outline}
-          isLoading={false}
-          currentPage={0}
-          defaultExpanded={allExpanded}
-          onNavigate={(item) => pdfGoToPage(item.pageNumber)}
-          classNames={{ container: "py-2" }}
-          itemClassNames={{
-            container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
-            title: "hover:text-ctp-crust",
-            expandButton: "text-ctp-overlay0",
-            expandIcon: "h-3 w-3",
-          }}
-          itemStyles={{ title: { fontSize: "0.875rem" } }}
-        />
+        <div ref={containerRef}>
+          <DocumentOutline
+            key={allExpanded ? "expanded" : "collapsed"}
+            outline={outline}
+            isLoading={false}
+            currentPage={currentPage}
+            defaultExpanded={allExpanded}
+            onNavigate={(item) => pdfGoToPage(item.pageNumber)}
+            classNames={{ container: "py-2" }}
+            itemClassNames={{
+              container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
+              containerActive: "outline-active bg-ctp-surface0",
+              title: "hover:text-ctp-crust",
+              titleActive: "text-ctp-mauve font-medium",
+              expandButton: "text-ctp-overlay0",
+              expandIcon: "h-3 w-3",
+            }}
+            itemStyles={{ title: { fontSize: "0.875rem" } }}
+          />
+        </div>
       </ScrollArea>
     </>
   );
