@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
@@ -14,7 +15,7 @@ interface AnnotationSearchCardProps {
  * - Wide (&gt;= 768px): rendered as a side panel (always visible, fixed split)
  * - Narrow (&lt; 768px): rendered as a full overlay
  */
-export function AnnotationSearchCard({
+export const AnnotationSearchCard = memo(function AnnotationSearchCard({
   entry,
   isWide,
 }: AnnotationSearchCardProps) {
@@ -78,4 +79,4 @@ export function AnnotationSearchCard({
       {cardContent}
     </div>
   );
-}
+});

@@ -35,7 +35,6 @@ export interface AnnotationSaveRequest {
   kind?: string;
 }
 
-/** Raw annotation row returned by annotations:listAll */
 export interface AnnotationRowIPC {
   id: string;
   document_id: string;

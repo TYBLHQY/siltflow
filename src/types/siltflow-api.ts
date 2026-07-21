@@ -2,7 +2,6 @@ import type {
   DocumentIPCItem,
   DocumentSaveRequest,
   AnnotationSaveRequest,
-  AnnotationRowIPC,
   AnnotationEnrichedIPC,
   SummaryRowIPC,
   SummarySaveRequest,
@@ -56,7 +55,7 @@ export interface SiltflowAPI {
   };
   annotations: {
     list: (documentId: string) => Promise<AnnotationEnrichedIPC[]>;
-    listAll: () => Promise<AnnotationRowIPC[]>;
+    listAll: () => Promise<AnnotationEnrichedIPC[]>;
     save: (annotation: AnnotationSaveRequest) => Promise<{ id: string }>;
     delete: (id: string, documentId: string) => Promise<void>;
   };

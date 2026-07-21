@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { FileText } from "lucide-react";
 import type { FuseResultMatch } from "fuse.js";
 import type { SearchEntry } from "@/stores/search.store";
@@ -42,7 +43,7 @@ interface SearchResultItemProps {
   onJumpTo: () => void;
 }
 
-export function SearchResultItem({
+export const SearchResultItem = memo(function SearchResultItem({
   entry,
   matches,
   isSelected,
@@ -128,4 +129,4 @@ export function SearchResultItem({
       </div>
     </div>
   );
-}
+});

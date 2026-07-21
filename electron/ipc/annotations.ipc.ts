@@ -1,6 +1,5 @@
 import { ipcMain } from "electron"
-import { getDb, getSqlite } from "../database"
-import { schema } from "../database"
+import { getSqlite } from "../database"
 import { invalidateReviewMetricsCache } from "./review.ipc"
 
 function tryParseJson(data: string, fallback: unknown): unknown {
@@ -52,9 +51,37 @@ export function registerAnnotationHandlers() {
   })
 
   ipcMain.handle("annotations:listAll", () => {
-    const db = getDb()
-    if (!db) return []
-    return db.select().from(schema.annotations).all()
+    const sql = getSqlite()
+    if (!sql) return []
+    // Same enriched query as per-document list handler, but across ALL documents.
+    // Single IPC call replaces 1+D sequential calls.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = sql.prepare(`
+      SELECT
+        a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
+        a.kind, a.created_at, a.updated_at,
+        ar.data AS ai_data, ar.version AS ai_version,
+        fc.data AS fsrs_data
+      FROM annotations a
+      LEFT JOIN ai_results ar ON ar.annotation_id = a.id AND ar.document_id = a.document_id
+      LEFT JOIN fsrs_cards fc ON fc.annotation_id = a.id AND fc.document_id = a.document_id
+    `).all() as any[]
+    // Pre-parse JSON fields so the renderer doesn't block on N×sync JSON.parse.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return rows.map((r: any) => ({
+      id: r.id,
+      document_id: r.document_id,
+      type: r.type,
+      text: r.text,
+      page_number: r.page_number,
+      embed_data: tryParseJson(r.embed_data, {}),
+      kind: r.kind || "annotation",
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+      ai_data: r.ai_data ? tryParseJson(r.ai_data, null) : null,
+      ai_version: r.ai_version ?? null,
+      fsrs_data: r.fsrs_data ? tryParseJson(r.fsrs_data, null) : null,
+    }))
   })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
