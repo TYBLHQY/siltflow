@@ -25,6 +25,7 @@ import {
 } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useStyleStore } from "@/stores/style.store";
+import { useSearchStore } from "@/stores/search.store";
 import { resolveHighlightCSSVar } from "@/lib/colors";
 import { useShortcut } from "@/hooks/useShortcut";
 import { UnifiedSettingsModal } from "@/components/settings/UnifiedSettingsModal";
@@ -320,21 +321,15 @@ export function CenterPanel({
         >
           <BarChart3 className="h-4 w-4" />
         </Button>
-        {docTitle && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0"
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent("siltflow:search-annotations"),
-              )
-            }
-            title="Search annotations (Ctrl+F)"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0"
+          onClick={() => useSearchStore.getState().open()}
+          title="Search annotations (Ctrl+F)"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
 
         <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
           {docTitle || "Siltflow"}
