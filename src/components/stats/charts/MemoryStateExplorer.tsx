@@ -9,7 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Search, ChevronRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -177,7 +177,7 @@ export function MemoryStateExplorer() {
                     <button
                       key={a.id}
                       className={cn(
-                        "absolute left-0 top-0 flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
+                        "absolute left-0 top-0 flex w-full items-center px-3 py-2 text-left text-xs transition-colors",
                         selectedId === a.id
                           ? "bg-ctp-surface0 text-ctp-text"
                           : "hover:bg-ctp-surface0/50 text-ctp-text",
@@ -185,12 +185,6 @@ export function MemoryStateExplorer() {
                       style={{ height: `${vi.size}px`, transform: `translateY(${vi.start}px)` }}
                       onClick={() => setSelectedId(a.id)}
                     >
-                      <ChevronRight
-                        className={cn(
-                          "h-3 w-3 shrink-0 transition-transform",
-                          selectedId === a.id && "rotate-90",
-                        )}
-                      />
                       <span className="flex-1 truncate" title={a.text}>
                         {a.text}
                       </span>
