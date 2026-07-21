@@ -186,9 +186,10 @@ export function SummaryTab() {
           disabled={summarizing}
         >
           {summarizing ? (
-            <IconText icon={Loader2} size="xs" className="gap-0">
-              Summarizing…
-            </IconText>
+            <span className="inline-flex items-center gap-0">
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+              <span>Summarizing…</span>
+            </span>
           ) : (
             <IconText icon={Sparkles} size="xs" className="gap-0">
               {summary ? "Regenerate" : "AI Summarize"}
