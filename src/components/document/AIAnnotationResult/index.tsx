@@ -14,6 +14,8 @@ export interface AIAnnotationResultProps {
   onTranslate?: () => void | Promise<void>;
   onDelete?: () => void;
   onGoToHighlight?: () => void;
+  /** Source language for TTS voice selection. */
+  sourceLang?: string;
 }
 
 /**

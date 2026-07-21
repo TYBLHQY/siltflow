@@ -26,6 +26,8 @@ interface AITranslateCardProps {
   showFSRS?: boolean;
   /** Show action bar (edit / translate / delete / go to highlight). Defaults to true. */
   showActionBar?: boolean;
+  /** Source language for TTS voice selection and listenCardAudio shortcut. */
+  sourceLang?: string;
 }
 
 export function AITranslateCard({
@@ -42,6 +44,7 @@ export function AITranslateCard({
   collapsible = false,
   showFSRS = true,
   showActionBar = true,
+  sourceLang,
 }: AITranslateCardProps) {
   const ai = item.aiResult;
   const [editing, setEditing] = useState(false);
@@ -110,13 +113,16 @@ export function AITranslateCard({
         ) : (
           /* ── Upper area: clickable to toggle expand ── */
           <div
-            onClick={() => { if (ai) onToggleExpand(id); }}
+            onClick={() => {
+              if (ai) onToggleExpand(id);
+            }}
             className="cursor-pointer"
           >
             <AIAnnotationResult
               item={item}
               showCore
               showActionBar={showActionBar}
+              sourceLang={sourceLang}
               {...actionBarProps}
             />
           </div>
@@ -134,7 +140,11 @@ export function AITranslateCard({
                 }}
               >
                 <div className="overflow-hidden">
-                  <AIAnnotationResult item={item} showDetails />
+                  <AIAnnotationResult
+                    item={item}
+                    showDetails
+                    sourceLang={sourceLang}
+                  />
                 </div>
               </div>
             )}
@@ -148,7 +158,11 @@ export function AITranslateCard({
                 }}
               >
                 <div className="overflow-hidden">
-                  <AIAnnotationResult item={item} showDetails />
+                  <AIAnnotationResult
+                    item={item}
+                    showDetails
+                    sourceLang={sourceLang}
+                  />
                 </div>
               </div>
             )}
@@ -199,6 +213,7 @@ export function AITranslateCard({
           item={item}
           showCore
           showActionBar={showActionBar}
+          sourceLang={sourceLang}
           {...actionBarProps}
         />
       )}
@@ -214,13 +229,23 @@ export function AITranslateCard({
           >
             <div className="overflow-hidden">
               {detailAvailable && (
-                <AIAnnotationResult item={item} showDetails />
+                <AIAnnotationResult
+                  item={item}
+                  showDetails
+                  sourceLang={sourceLang}
+                />
               )}
             </div>
           </div>
 
           {/* V2 details — always shown in non-collapsible mode */}
-          {isV2 && <AIAnnotationResult item={item} showDetails />}
+          {isV2 && (
+            <AIAnnotationResult
+              item={item}
+              showDetails
+              sourceLang={sourceLang}
+            />
+          )}
 
           {showFSRS && item.fsrsCard && (
             <FSRSStats

@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Highlighter, CheckSquare, Sparkles, ArrowUpCircle, Plus, ArrowRight } from "lucide-react";
+import {
+  Highlighter,
+  CheckSquare,
+  Sparkles,
+  ArrowUpCircle,
+  Plus,
+  ArrowRight,
+} from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
@@ -44,13 +51,14 @@ async function translateItemV2(
   updateItem: (id: string, patch: Partial<AnnotationItem>) => void,
   showToast: (message: string, type: "info" | "success" | "error") => void,
 ): Promise<boolean> {
-  const inputProfile = useAIStore.getState().getProfileForTask("translate-input");
-  const outputProfile = useAIStore.getState().getProfileForTask("translate-output");
+  const inputProfile = useAIStore
+    .getState()
+    .getProfileForTask("translate-input");
+  const outputProfile = useAIStore
+    .getState()
+    .getProfileForTask("translate-output");
   if (!inputProfile || !outputProfile) {
-    showToast(
-      "Please configure AI providers in Settings > AI Config",
-      "info",
-    );
+    showToast("Please configure AI providers in Settings > AI Config", "info");
     return false;
   }
 
@@ -88,7 +96,10 @@ export function AnnotationsTab({
   // ── Store reads ────────────────────────────────────────────────────
   const allItems = useAnnotationStore((s) => s.items);
   // Only show annotation-kind items in this panel; plain highlights are visual only.
-  const items = useMemo(() => allItems.filter((i) => i.kind !== "highlight"), [allItems]);
+  const items = useMemo(
+    () => allItems.filter((i) => i.kind !== "highlight"),
+    [allItems],
+  );
   const updateItem = useAnnotationStore((s) => s.updateItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
   const addItem = useAnnotationStore((s) => s.addItem);
@@ -146,8 +157,10 @@ export function AnnotationsTab({
 
   const v1Count = useMemo(
     () =>
-      items.filter((i) => i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2)
-        .length,
+      items.filter(
+        (i) =>
+          i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2,
+      ).length,
     [items],
   );
 
@@ -228,7 +241,8 @@ export function AnnotationsTab({
   // ── Upgrade V1 → V2 ──────────────────────────────────────────────────
   const handleUpgradeV1ToV2 = useCallback(async () => {
     const v1Items = items.filter(
-      (i) => i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2,
+      (i) =>
+        i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2,
     );
     if (v1Items.length === 0) {
       showToast("All annotations are already V2", "info");
@@ -328,7 +342,9 @@ export function AnnotationsTab({
               title="Translate all untranslated annotations"
             >
               <IconText icon={Sparkles} size="xs" className="gap-0">
-                {batchTranslating ? "Translating..." : `Batch Translate (${untranslatedCount})`}
+                {batchTranslating
+                  ? "Translating..."
+                  : `Batch Translate (${untranslatedCount})`}
               </IconText>
             </Button>
           )}
@@ -439,6 +455,7 @@ export function AnnotationsTab({
                     expanded={expandedCardId === ann.id}
                     collapsible
                     showFSRS={false}
+                    sourceLang={sourceLang}
                     onGoToHighlight={
                       ann.kind !== "manual"
                         ? () => pdfScrollToHighlight(ann.id)

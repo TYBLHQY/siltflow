@@ -2,7 +2,15 @@ import { useState } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
-import { Pencil, Volume2, Loader2, Sparkles, Trash2, ExternalLink } from "lucide-react";
+import { useShortcut } from "@/hooks/useShortcut";
+import {
+  Pencil,
+  Volume2,
+  Loader2,
+  Sparkles,
+  Trash2,
+  ExternalLink,
+} from "lucide-react";
 
 interface AIAnnotationResultBaseProps {
   item: AnnotationItem;
@@ -18,6 +26,8 @@ interface AIAnnotationResultBaseProps {
   onTranslate?: () => void | Promise<void>;
   onDelete?: () => void;
   onGoToHighlight?: () => void;
+  /** Source language for TTS voice selection. */
+  sourceLang?: string;
 }
 
 /**
@@ -36,6 +46,7 @@ export function AIAnnotationResultBase({
   onTranslate,
   onDelete,
   onGoToHighlight,
+  sourceLang,
 }: AIAnnotationResultBaseProps) {
   const style = useStyleStore((s) => s.style);
   const tts = useTTS();
@@ -53,10 +64,15 @@ export function AIAnnotationResultBase({
     }
   }
 
-  // ── listenCardAudio shortcut ───────────────────────────────────────
-  // The base component does not register a global TTS shortcut because
-  // there's no source-language info yet. V1/V2 pick this up once AI data
-  // is available.
+  // ── listenCardAudio shortcut ──
+  useShortcut(
+    "listenCardAudio",
+    () => {
+      if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
+      else tts.speak(item.text, undefined, sourceLang, item.id);
+    },
+    { enabled: !!item },
+  );
 
   if (!showCore) return null;
 
@@ -133,7 +149,7 @@ export function AIAnnotationResultBase({
               e.stopPropagation();
               if (tts.speakingId === item.id && tts.state === "playing")
                 tts.stop();
-              else tts.speak(item.text, undefined, undefined, item.id);
+              else tts.speak(item.text, undefined, sourceLang, item.id);
             }}
             title={
               tts.speakingId === item.id && tts.state === "playing"

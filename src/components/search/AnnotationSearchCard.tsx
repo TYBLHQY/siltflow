@@ -50,6 +50,8 @@ export const AnnotationSearchCard = memo(function AnnotationSearchCard({
             collapsible={false}
             showFSRS
             showActionBar={false}
+            // The search index doesn't carry sourceLang; for translated
+            // items V1/V2 already expose it from AI data internally.
             onToggleExpand={() => {}}
             onDelete={() => {}}
             onTranslate={async () => {}}
