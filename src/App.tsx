@@ -141,7 +141,17 @@ function App() {
 
   // Listen for manual update check trigger (About → Check Updates button, dev mode)
   useEffect(() => {
-    const handler = () => updateCheckRef.current?.();
+    const handler = () => {
+      if (import.meta.env.DEV) {
+        // Mock: skip real IPC and show the dialog directly
+        setDownloaded(false);
+        setDownloading(false);
+        setProgress(0);
+        setUpdateDialog({ latestVersion: "99.99.99-dev" });
+      } else {
+        updateCheckRef.current?.();
+      }
+    };
     window.addEventListener("siltflow:check-updates", handler);
     return () => window.removeEventListener("siltflow:check-updates", handler);
   }, []);
