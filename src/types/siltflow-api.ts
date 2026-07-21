@@ -35,7 +35,15 @@ export interface SiltflowAPI {
     check: () => Promise<void>;
     download: () => Promise<void>;
     install: () => Promise<void>;
-    onAvailable: (fn: (info: unknown) => void) => () => void;
+    onAvailable: (
+      fn: (info: {
+        version: string;
+        releaseDate: string;
+        releaseName?: string | null;
+        releaseNotes?:
+          string | Array<{ version: string; note: string | null }> | null;
+      }) => void,
+    ) => () => void;
     onNotAvailable: (fn: () => void) => () => void;
     onDownloadProgress: (fn: (progress: UpdateProgress) => void) => () => void;
     onDownloaded: (fn: () => void) => () => void;

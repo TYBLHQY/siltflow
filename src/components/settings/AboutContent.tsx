@@ -15,6 +15,9 @@ export function AboutContent() {
   >("idle");
   const [progress, setProgress] = useState(0);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [releaseNotes, setReleaseNotes] = useState<
+    string | Array<{ version: string; note: string | null }> | null
+  >(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [dbVersion, setDbVersion] = useState<number | null>(null);
 
@@ -37,10 +40,10 @@ export function AboutContent() {
     const unsubs: (() => void)[] = [];
 
     unsubs.push(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      window.siltflow.update.onAvailable((info: any) => {
-        const tag = info?.version || info?.tag_name || "";
+      window.siltflow.update.onAvailable((info) => {
+        const tag = info.version || "";
         setLatestVersion(tag.startsWith("v") ? tag.slice(1) : tag);
+        setReleaseNotes(info.releaseNotes ?? null);
         setUpdateState("available");
       }),
     );
@@ -142,10 +145,28 @@ export function AboutContent() {
         )}
 
         {updateState === "available" && (
-          <div className="rounded-md border border-ctp-green/30 bg-ctp-green/10 px-3 py-2">
+          <div className="rounded-md border border-ctp-green/30 bg-ctp-green/10 px-3 py-2 space-y-2">
             <p className="text-xs font-medium text-ctp-green mb-1.5">
               v{latestVersion} is available
             </p>
+            {releaseNotes != null && (
+              <div className="max-h-60 overflow-y-auto rounded bg-ctp-base/50 p-2 text-xs text-ctp-text space-y-2">
+                {typeof releaseNotes === "string" ? (
+                  <p className="whitespace-pre-wrap">{releaseNotes}</p>
+                ) : (
+                  releaseNotes.map((rn, i) => (
+                    <div key={i}>
+                      <strong className="text-ctp-green">v{rn.version}</strong>
+                      {rn.note && (
+                        <p className="mt-0.5 whitespace-pre-wrap text-ctp-overlay0">
+                          {rn.note}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
             <Button size="sm" onClick={handleDownload}>
               <Download className="h-3 w-3" />
               Download Update
