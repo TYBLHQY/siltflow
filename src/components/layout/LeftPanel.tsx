@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/tooltip";
 import { usePdfViewerStore, pdfGoToPage } from "@/stores/pdf-viewer.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
-import { useStyleStore } from "@/stores/style.store";
 import { computeDocMetrics, sortDocMetrics, type DocReviewMetrics, type SortField } from "@/lib/doc-review";
 import { createNewCardStub } from "@/lib/fsrs-utils";
 import { useNow } from "@/hooks/useNow";
@@ -37,7 +36,6 @@ import {
 
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
-  const fontSize = useStyleStore((s) => s.style.fontSize);
 
   const { outline, isLoading: outlineLoading, hasOutline } = useDocumentOutline({
     pdfDocument: pdfDocument!,
@@ -112,7 +110,7 @@ function DocumentOutlinePanel() {
             expandButton: "text-ctp-overlay0",
             expandIcon: "h-3 w-3",
           }}
-          itemStyles={{ title: { fontSize } }}
+          itemStyles={{ title: { fontSize: "0.875rem" } }}
         />
       </ScrollArea>
     </>
