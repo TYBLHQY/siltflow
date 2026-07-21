@@ -37,13 +37,7 @@ export function DailyReviewsChart() {
             tickFormatter={(d: string) => d.slice(5)}
           />
           <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-          <Tooltip
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            formatter={(value: any) => [
-              `${value} reviews`, "",
-            ]}
-            contentStyle={CHART_TOOLTIP_STYLE}
-          />
+          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
           <Legend
             verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
@@ -62,9 +56,9 @@ export function DailyReviewsChart() {
               );
             }}
           />
-          <Bar dataKey="learnCount" name="learnCount" stackId="a"
+          <Bar dataKey="learnCount" name="Learning" stackId="a"
             fill="var(--catppuccin-color-sky)" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="reviewCount" name="reviewCount" stackId="a"
+          <Bar dataKey="reviewCount" name="Review" stackId="a"
             fill="var(--catppuccin-color-mauve)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>

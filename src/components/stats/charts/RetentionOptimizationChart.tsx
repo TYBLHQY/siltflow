@@ -28,14 +28,7 @@ export function RetentionOptimizationChart() {
             label={{ value: "Reviews/day", angle: -90, position: "insideLeft", offset: 0, fontSize: 10, fill: "var(--catppuccin-color-text)" }} />
           <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="var(--catppuccin-color-text)"
             label={{ value: "Avg stability (d)", angle: 90, position: "insideRight", offset: 0, fontSize: 10, fill: "var(--catppuccin-color-text)" }} />
-          <Tooltip
-            contentStyle={CHART_TOOLTIP_STYLE}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            formatter={(value: any, name: any) => {
-              if (name === "Reviews/day") return [(Number(value) as number).toFixed(1), name as string];
-              if (name === "Avg stability (d)") return [`${Number(value).toFixed(1)}d`, name as string];
-              return [value, name as string];
-            }} />
+          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
           <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
             content={({ payload }) => {
               const colors: Record<string, string> = {

@@ -25,12 +25,8 @@ export function IntervalDistributionChart() {
         <ChartGrid />
         <XAxis dataKey="label" tick={{ fontSize: 10 }} />
         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-        <Tooltip
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          formatter={(value: any) => [`${value} cards`, ""]}
-          contentStyle={CHART_TOOLTIP_STYLE}
-        />
-        <Bar dataKey="count" fill="var(--catppuccin-color-sapphire)" radius={[3, 3, 0, 0]} />
+        <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+        <Bar dataKey="count" name="Cards" fill="var(--catppuccin-color-sapphire)" radius={[3, 3, 0, 0]} />
       </BarChart>
     </StatChartCard>
   );

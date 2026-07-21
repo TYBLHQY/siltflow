@@ -233,68 +233,83 @@ export function computeKnowledgeGrowth(
   logs: { createdAt: string; data: string; annotationId: string }[],
   cardsMap: Map<string, Card>,
 ): KnowledgePoint[] {
-  // Sort logs chronologically
   const sorted = [...logs].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
-  // Track per-card states by annotationId
   const cardStates = new Map<string, "learning" | "young" | "mature" | "longTerm">();
-  const daily: KnowledgePoint[] = [];
   let learning = 0, young = 0, mature = 0, longTerm = 0;
 
+  // Count cards that exist but have no review logs (New cards → learning)
+  for (const [aid] of cardsMap) {
+    cardStates.set(aid, "learning");
+    learning++;
+  }
+
+  // Group logs by date
+  const byDate = new Map<string, typeof sorted>();
   for (const entry of sorted) {
-    const parsed = parseReviewLogData(entry.data);
-    if (!parsed) continue;
-    const cardSnap = parsed.card;
-    const aid = entry.annotationId;
+    const date = entry.createdAt.slice(0, 10);
+    const group = byDate.get(date);
+    if (group) group.push(entry);
+    else byDate.set(date, [entry]);
+  }
 
-    // Determine bucket from the card snapshot after this review
-    let bucket: "learning" | "young" | "mature" | "longTerm";
-    if (cardSnap.state === 1 || cardSnap.state === 3) {
-      bucket = "learning";
-    } else if (cardSnap.state === 2) {
-      if (cardSnap.stability < 21) bucket = "young";
-      else if (cardSnap.stability < 365) bucket = "mature";
-      else bucket = "longTerm";
-    } else {
-      continue;
-    }
+  const dates = Array.from(byDate.keys()).sort();
 
-    const prev = cardStates.get(aid);
-    if (prev === bucket) continue; // no change
-    cardStates.set(aid, bucket);
-
-    // Adjust counters
-    if (prev) {
-      if (prev === "learning") learning--;
-      else if (prev === "young") young--;
-      else if (prev === "mature") mature--;
-      else if (prev === "longTerm") longTerm--;
-    }
-    if (bucket === "learning") learning++;
-    else if (bucket === "young") young++;
-    else if (bucket === "mature") mature++;
-    else if (bucket === "longTerm") longTerm++;
-
-    daily.push({
-      date: entry.createdAt.slice(0, 10),
+  // No review activity — push today as a single snapshot
+  if (dates.length === 0 && learning > 0) {
+    return [{
+      date: new Date().toISOString().slice(0, 10),
       learning,
       young,
       mature,
       longTerm,
-    });
+    }];
   }
 
-  // Also count cards that have cards but no review logs (New cards → learning)
-  for (const [aid] of cardsMap) {
-    if (!cardStates.has(aid)) {
-      cardStates.set(aid, "learning");
-      learning++;
+  if (dates.length === 0) return [];
+
+  const daily: KnowledgePoint[] = [];
+
+  for (const date of dates) {
+    const entries = byDate.get(date)!;
+
+    for (const entry of entries) {
+      const parsed = parseReviewLogData(entry.data);
+      if (!parsed) continue;
+      const cardSnap = parsed.card;
+      const aid = entry.annotationId;
+
+      // Determine bucket from the card snapshot after this review
+      let bucket: "learning" | "young" | "mature" | "longTerm";
+      if (cardSnap.state === 1 || cardSnap.state === 3) {
+        bucket = "learning";
+      } else if (cardSnap.state === 2) {
+        if (cardSnap.stability < 21) bucket = "young";
+        else if (cardSnap.stability < 365) bucket = "mature";
+        else bucket = "longTerm";
+      } else {
+        continue;
+      }
+
+      const prev = cardStates.get(aid);
+      if (prev === bucket) continue; // no change
+      cardStates.set(aid, bucket);
+
+      // Adjust counters
+      if (prev) {
+        if (prev === "learning") learning--;
+        else if (prev === "young") young--;
+        else if (prev === "mature") mature--;
+        else if (prev === "longTerm") longTerm--;
+      }
+      if (bucket === "learning") learning++;
+      else if (bucket === "young") young++;
+      else if (bucket === "mature") mature++;
+      else if (bucket === "longTerm") longTerm++;
     }
-  }
 
-  if (daily.length === 0 && learning > 0) {
     daily.push({
-      date: new Date().toISOString().slice(0, 10),
+      date,
       learning,
       young,
       mature,

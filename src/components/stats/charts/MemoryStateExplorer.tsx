@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useDeferredValue } from "react";
+import { useState, useEffect, useMemo, useDeferredValue, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -10,10 +10,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Search, ChevronRight } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useStatsStore } from "@/stores/stats.store";
 import { GRADE_COLOR, GRADE_LABEL } from "@/lib/fsrs-utils";
+
+const ROW_HEIGHT = 32;
 
 interface ParsedReviewLog {
   timestamp: number;
@@ -88,6 +91,15 @@ export function MemoryStateExplorer() {
     [annotations, selectedId],
   );
 
+  // Virtual scroll for the card list
+  const listRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 5,
+  });
+
   // Load review logs when selection changes
   useEffect(() => {
     if (!selectedAnnotation) {
@@ -146,41 +158,48 @@ export function MemoryStateExplorer() {
           />
         </div>
         <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full rounded-md border">
-            <div className="space-y-0.5">
-              {filtered.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-center text-ctp-overlay0">
-                  {search ? "No matching cards" : "No cards reviewed yet"}
-                </p>
-              ) : (
-                filtered.map((a) => (
-                  <button
-                    key={a.id}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
-                      selectedId === a.id
-                        ? "bg-ctp-surface0 text-ctp-text"
-                        : "hover:bg-ctp-surface0/50 text-ctp-text",
-                    )}
-                    onClick={() => setSelectedId(a.id)}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "h-3 w-3 shrink-0 transition-transform",
-                        selectedId === a.id && "rotate-90",
-                      )}
-                    />
-                    <span className="flex-1 truncate" title={a.text}>
-                      {a.text}
-                    </span>
-                    <span className="shrink-0 text-xs text-ctp-overlay0">
-                      S={typeof a.card.stability === "number" ? a.card.stability.toFixed(1) : "?"}
-                    </span>
-                  </button>
-                ))
-              )}
+          {filtered.length === 0 ? (
+            <div className="rounded-md border px-3 py-4 text-xs text-center text-ctp-overlay0">
+              {search ? "No matching cards" : "No cards reviewed yet"}
             </div>
-          </ScrollArea>
+          ) : (
+            <div
+              ref={listRef}
+              className="h-full overflow-auto rounded-md border"
+            >
+              <div
+                className="relative w-full"
+                style={{ height: `${virtualizer.getTotalSize()}px` }}
+              >
+                {virtualizer.getVirtualItems().map((vi) => {
+                  const a = filtered[vi.index];
+                  return (
+                    <button
+                      key={a.id}
+                      className={cn(
+                        "absolute left-0 top-0 flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
+                        selectedId === a.id
+                          ? "bg-ctp-surface0 text-ctp-text"
+                          : "hover:bg-ctp-surface0/50 text-ctp-text",
+                      )}
+                      style={{ height: `${vi.size}px`, transform: `translateY(${vi.start}px)` }}
+                      onClick={() => setSelectedId(a.id)}
+                    >
+                      <ChevronRight
+                        className={cn(
+                          "h-3 w-3 shrink-0 transition-transform",
+                          selectedId === a.id && "rotate-90",
+                        )}
+                      />
+                      <span className="flex-1 truncate" title={a.text}>
+                        {a.text}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

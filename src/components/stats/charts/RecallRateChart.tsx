@@ -15,8 +15,7 @@ export function RecallRateChart() {
     [logs],
   );
 
-  const total = data.reduce((s, d) => s + d.value, 0);
-  const isEmpty = total === 0;
+  const isEmpty = data.every((d) => d.value === 0);
 
   return (
     <ChartCard
@@ -32,15 +31,7 @@ export function RecallRateChart() {
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            formatter={(_value: any, _name: any) => {
-              const item = data.find((d) => d.name === _name);
-              const pct = total > 0 ? ((item?.value ?? 0) / total * 100).toFixed(1) : "0.0";
-              return [`${item?.value} (${pct}%)`, _name as string];
-            }}
-            contentStyle={CHART_TOOLTIP_STYLE}
-          />
+          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
         </PieChart>
       </ResponsiveContainer>
     </ChartCard>

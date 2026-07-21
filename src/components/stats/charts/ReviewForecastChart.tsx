@@ -25,8 +25,6 @@ export function ReviewForecastChart() {
           }} stroke="var(--catppuccin-color-text)" />
         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} stroke="var(--catppuccin-color-text)" />
         <Tooltip
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          formatter={(value: any) => [`${value} due`, ""]}
           contentStyle={CHART_TOOLTIP_STYLE}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           labelFormatter={(label: any) => {
@@ -34,7 +32,7 @@ export function ReviewForecastChart() {
             return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
           }} />
         <ReferenceLine y={0} stroke="var(--catppuccin-color-text)" strokeDasharray="3 3" />
-        <Bar dataKey="dueCount" fill="var(--catppuccin-color-green)" radius={[3, 3, 0, 0]} />
+        <Bar dataKey="dueCount" name="Due" fill="var(--catppuccin-color-green)" radius={[3, 3, 0, 0]} />
       </BarChart>
     </StatChartCard>
   );

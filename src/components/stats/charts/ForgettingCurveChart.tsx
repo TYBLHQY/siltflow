@@ -44,26 +44,8 @@ export function ForgettingCurveChart() {
             tickFormatter={(v: number) => `${Math.round(v * 100)}%`} stroke="var(--catppuccin-color-text)" />
           <Tooltip
             contentStyle={CHART_TOOLTIP_STYLE}
-            content={({ active, payload: tpPayload, label }) => {
-              if (!active || !tpPayload?.length) return null;
-              return (
-                <div className="rounded-md border border-ctp-overlay0 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-sm">
-                  <div className="mb-1 font-medium text-ctp-text">{label}d</div>
-                  {FORGETTING_LABELS.map((lbl) => {
-                    const entry = tpPayload.find((p) => p.name === lbl);
-                    if (!entry) return null;
-                    const idx = FORGETTING_LABELS.indexOf(lbl);
-                    return (
-                      <div key={lbl} className="flex items-center gap-2">
-                        <span className="inline-block h-1 w-2 rounded-full" style={{ backgroundColor: LINE_COLORS[idx] }} />
-                        <span style={{ color: LINE_COLORS[idx] }}>{lbl}</span>
-                        <span className="text-ctp-text">{(Number(entry.value) * 100).toFixed(1)}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            formatter={(value: any) => `${(Number(value) * 100).toFixed(2)}%`}
           />
           <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }}
             content={() => (
