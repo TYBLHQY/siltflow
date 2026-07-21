@@ -49,27 +49,25 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const docId = currentDocument?.id;
   const texts = docId ? pageTexts[docId] : undefined;
 
-  // Lazy page-text extraction: only run when Summary tab is active and texts aren't cached.
-  // This avoids blocking the main thread on every PDF open when the user
-  // may never open the Summary tab.
+  // Lazy page-text extraction: only run when Summary tab is active.
+  // Never cache — always re-extract when pdfDocument / docId / tab changes,
+  // because docId and pdfDocument updates are not synchronised (PdfLoader is
+  // async), so a stale pdfDocument could otherwise write the wrong document's
+  // text into pageTexts before the cache guard blocks the correct extraction.
   const extractionGen = useRef(0);
   useEffect(() => {
     if (!pdfDocument || !docId) return;
-    if (pageTexts[docId]) return; // already cached
-    if (activeTab !== "summary") return; // don't extract eagerly
+    if (activeTab !== "summary") return;
 
     const gen = ++extractionGen.current;
-    // Capture docId at extraction time so we don't accidentally store
-    // results under a different document if user switches mid-extraction.
-    const capturedDocId = docId;
     extractPageTexts(pdfDocument).then((texts) => {
       if (gen !== extractionGen.current) return;
-      setPageTexts(capturedDocId, texts);
+      setPageTexts(docId, texts);
     }).catch((err) => {
       if (gen !== extractionGen.current) return;
       console.error("Failed to extract page texts:", err);
     });
-  }, [pdfDocument, docId, pageTexts, activeTab, setPageTexts]);
+  }, [pdfDocument, docId, activeTab, setPageTexts]);
 
   // When page texts are first loaded, select only the first page by default
   useEffect(() => {
