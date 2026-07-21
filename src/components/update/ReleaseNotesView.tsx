@@ -1,4 +1,7 @@
-import type { ReleaseNoteInfo } from "builder-util-runtime";
+interface ReleaseNoteInfo {
+  readonly version: string;
+  readonly note: string | null;
+}
 
 interface ReleaseNotesViewProps {
   releaseNotes: string | Array<ReleaseNoteInfo> | null;
