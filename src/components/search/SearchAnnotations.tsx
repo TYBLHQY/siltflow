@@ -245,7 +245,7 @@ export function SearchAnnotations() {
                   Search across {entries.length} annotations in {totalDocuments} document{totalDocuments !== 1 ? "s" : ""}
                 </p>
                 <p className="text-xs text-center text-ctp-text">
-                  Type to search by annotation text or translation
+                  Type to search by annotation text
                 </p>
               </div>
             )}

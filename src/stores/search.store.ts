@@ -3,7 +3,6 @@ import Fuse from "fuse.js";
 import type { IFuseOptions, FuseResult } from "fuse.js";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import type { DocumentItem } from "@/stores/document.store";
-import type { AIAnnotationDataV1, AIAnnotationDataV2 } from "@/types/annotation";
 
 // ── Search entry (flattened index item for Fuse) ────────────────────
 
@@ -12,78 +11,8 @@ export interface SearchEntry {
   annotation: AnnotationItem;
   documentId: string;
   documentTitle: string;
-  /** Concatenated searchable text: annotation text + AI result text */
+  /** Annotation text used as the searchable field */
   searchText: string;
-}
-
-// ── Build AI result text for search indexing ────────────────────────
-
-function extractSearchableTextFromAI(
-  aiResult: unknown,
-): string {
-  if (!aiResult || typeof aiResult !== "object") return "";
-
-  const parts: string[] = [];
-
-  // V1 fields
-  const v1 = aiResult as Partial<AIAnnotationDataV1>;
-  if (v1.translation) parts.push(v1.translation);
-  if (v1.lemma) parts.push(v1.lemma);
-  if (v1.definitions) {
-    for (const d of v1.definitions) {
-      if (d.definition) parts.push(d.definition);
-      if (d.gloss) parts.push(d.gloss);
-    }
-  }
-  if (v1.collocations) {
-    for (const c of v1.collocations) {
-      if (c.phrase) parts.push(c.phrase);
-      if (c.translation) parts.push(c.translation);
-    }
-  }
-
-  // V2 fields
-  const v2 = aiResult as Partial<AIAnnotationDataV2>;
-  if (v2.input) {
-    if (v2.input.text) parts.push(v2.input.text);
-    if (v2.input.normalized) parts.push(v2.input.normalized);
-  }
-  if (v2.output) {
-    const out = v2.output as unknown as Record<string, unknown> | undefined;
-    if (out) {
-      // Word output
-      if (Array.isArray(out.meanings)) {
-        for (const m of out.meanings as Array<{ translation?: string }>) {
-          if (m.translation) parts.push(m.translation);
-        }
-      }
-      if (Array.isArray(out.definitions)) {
-        for (const d of out.definitions as Array<{ definition?: { source?: string; target?: string } }>) {
-          if (d.definition?.source) parts.push(d.definition.source);
-          if (d.definition?.target) parts.push(d.definition.target);
-        }
-      }
-      if (Array.isArray(out.examples)) {
-        for (const e of out.examples as Array<{ sentence?: string; translation?: string }>) {
-          if (e.sentence) parts.push(e.sentence);
-          if (e.translation) parts.push(e.translation);
-        }
-      }
-      if (Array.isArray(out.collocations)) {
-        for (const c of out.collocations as Array<{ phrase?: string; translation?: string }>) {
-          if (c.phrase) parts.push(c.phrase);
-          if (c.translation) parts.push(c.translation);
-        }
-      }
-      if (Array.isArray(out.synonyms)) {
-        parts.push(...(out.synonyms as string[]));
-      }
-      // Phrase / Sentence output
-      if (typeof out.translation === "string") parts.push(out.translation);
-    }
-  }
-
-  return parts.join(" ");
 }
 
 // ── Fuse configuration ──────────────────────────────────────────────
@@ -231,8 +160,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
               fsrsCard,
             };
 
-            const aiText = extractSearchableTextFromAI(aiResult);
-            const searchText = [item.text, aiText].filter(Boolean).join(" ");
+            const searchText = item.text;
 
             entries.push({
               id: ann.id,
