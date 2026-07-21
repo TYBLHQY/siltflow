@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Highlighter, CheckSquare, Sparkles, ArrowUpCircle, Plus } from "lucide-react";
+import { Highlighter, CheckSquare, Sparkles, ArrowUpCircle, Plus, ArrowRight } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
@@ -363,51 +363,46 @@ export function AnnotationsTab({
         </div>
       )}
       {docId && (
-        <div className="shrink-0 flex items-center gap-2 border-b px-3 py-1.5 text-xs">
-          <span className="flex items-center gap-1 text-ctp-overlay0">
-            <span className="font-medium">Source:</span>
-            <select
-              className="bg-transparent text-ctp-text border-b border-dotted border-ctp-overlay0/50 outline-none text-xs"
-              value={sourceLang}
-              onChange={(e) => {
-                if (docId && summary) {
-                  useSummaryStore
-                    .getState()
-                    .setSummary(
-                      docId,
-                      summary.text,
-                      summary.isAiGenerated,
-                      e.target.value,
-                    );
-                }
-              }}
-            >
-              {LANGUAGES_WITH_AUTO.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-          </span>
-          <span className="flex items-center gap-1 text-ctp-overlay0">
-            <span className="font-medium">Target:</span>
-            <select
-              className="bg-transparent text-ctp-text border-b border-dotted border-ctp-overlay0/50 outline-none text-xs"
-              value={effectiveTargetLang}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === "__default__") return;
-                if (docId) setTargetLang(docId, val);
-              }}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-              <option value="__default__">Default (zh)</option>
-            </select>
-          </span>
+        <div className="shrink-0 flex items-center justify-center gap-1 border-b px-3 py-1.5 text-xs">
+          <select
+            className="bg-transparent text-ctp-text border-b border-dotted border-ctp-overlay0/50 outline-none text-xs"
+            value={sourceLang}
+            onChange={(e) => {
+              if (docId && summary) {
+                useSummaryStore
+                  .getState()
+                  .setSummary(
+                    docId,
+                    summary.text,
+                    summary.isAiGenerated,
+                    e.target.value,
+                  );
+              }
+            }}
+          >
+            {LANGUAGES_WITH_AUTO.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+          <ArrowRight className="h-3 w-3 shrink-0 text-ctp-text" />
+          <select
+            className="bg-transparent text-ctp-text border-b border-dotted border-ctp-overlay0/50 outline-none text-xs"
+            value={effectiveTargetLang}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "__default__") return;
+              if (docId) setTargetLang(docId, val);
+            }}
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+            <option value="__default__">Default (zh)</option>
+          </select>
         </div>
       )}
       {items.length === 0 ? (
