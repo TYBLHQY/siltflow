@@ -78,6 +78,8 @@ export function AboutContent() {
   const handleCheck = () => {
     setUpdateState("checking");
     setErrorMsg(null);
+    // Dispatch event so App.tsx also opens the update dialog
+    window.dispatchEvent(new CustomEvent("siltflow:check-updates"));
     window.siltflow.update.check();
   };
 
@@ -146,10 +148,7 @@ export function AboutContent() {
             <p className="text-xs font-medium text-ctp-green mb-1.5">
               v{latestVersion} is available
             </p>
-            <Button
-              size="sm"
-              onClick={handleDownload}
-            >
+            <Button size="sm" onClick={handleDownload}>
               <Download className="h-3 w-3" />
               Download Update
             </Button>
@@ -165,9 +164,7 @@ export function AboutContent() {
         {updateState === "downloading" && (
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-ctp-overlay0">
-                Downloading…
-              </span>
+              <span className="text-xs text-ctp-overlay0">Downloading…</span>
               <span className="text-xs text-ctp-overlay0">
                 {Math.round(progress)}%
               </span>
@@ -186,10 +183,7 @@ export function AboutContent() {
             <p className="text-xs font-medium text-ctp-blue mb-1.5">
               Update ready to install
             </p>
-            <Button
-              size="sm"
-              onClick={handleInstall}
-            >
+            <Button size="sm" onClick={handleInstall}>
               <Download className="h-3 w-3" />
               Restart &amp; Install
             </Button>
@@ -202,20 +196,14 @@ export function AboutContent() {
               Update check failed
             </p>
             <p className="text-xs text-ctp-red mb-1.5">{errorMsg}</p>
-            <Button
-              size="sm"
-              onClick={handleCheck}
-            >
+            <Button size="sm" onClick={handleCheck}>
               Retry
             </Button>
           </div>
         )}
 
         {updateState === "idle" && (
-          <Button
-            size="sm"
-            onClick={handleCheck}
-          >
+          <Button size="sm" onClick={handleCheck}>
             <Download className="h-3 w-3" />
             Check for Updates
           </Button>

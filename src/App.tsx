@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { VaultSetup } from "@/components/layout/VaultSetup";
 import { ThreeColumnLayout } from "@/components/layout/ThreeColumnLayout";
 import { loadFromVault, useAIStore } from "@/stores/ai.store";
@@ -90,12 +90,12 @@ function App() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  // Check for updates on startup if enabled (skip in dev mode)
+  // Check for updates on startup if enabled (dev: triggered from About)
+  const updateCheckRef = useRef<() => void>();
   useEffect(() => {
-    if (!vaultReady || !appSettingsLoaded || !checkUpdateOnStartup) return;
-    if (import.meta.env.DEV) return;
+    const check = () => {
+      if (!vaultReady || !appSettingsLoaded) return;
 
-    const timer = setTimeout(() => {
       setUpdateDialog("checking");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,6 +110,7 @@ function App() {
       });
       const unsubProgress = window.siltflow.update.onDownloadProgress((p) => {
         setProgress(p.percent);
+        setDownloading(true);
       });
       const unsubDownloaded = window.siltflow.update.onDownloaded(() => {
         setDownloaded(true);
@@ -128,10 +129,22 @@ function App() {
         unsubDownloaded();
         unsubError();
       };
-    }, 1500);
+    };
+    updateCheckRef.current = check;
 
+    if (!vaultReady || !appSettingsLoaded || !checkUpdateOnStartup) return;
+    if (import.meta.env.DEV) return;
+
+    const timer = setTimeout(check, 1500);
     return () => clearTimeout(timer);
   }, [vaultReady, appSettingsLoaded, checkUpdateOnStartup]);
+
+  // Listen for manual update check trigger (About → Check Updates button, dev mode)
+  useEffect(() => {
+    const handler = () => updateCheckRef.current?.();
+    window.addEventListener("siltflow:check-updates", handler);
+    return () => window.removeEventListener("siltflow:check-updates", handler);
+  }, []);
 
   // Show toast on mount if no profiles
   useEffect(() => {
@@ -246,15 +259,16 @@ function App() {
               <span className="text-ctp-overlay0">New version</span>
               <span className="font-medium text-ctp-green">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              v{(updateDialog as any)?.latestVersion}
+                v{(updateDialog as any)?.latestVersion}
               </span>
             </div>
             <button
-              onClick={() =>
-                /* eslint-disable @typescript-eslint/no-explicit-any */
-                window.siltflow.openExternal(
-                  `https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`,
-                )
+              onClick={
+                () =>
+                  /* eslint-disable @typescript-eslint/no-explicit-any */
+                  window.siltflow.openExternal(
+                    `https://github.com/TYBLHQY/siltflow/releases/tag/v${(updateDialog as any)?.latestVersion}`,
+                  )
                 /* eslint-enable @typescript-eslint/no-explicit-any */
               }
               className="block text-xs text-ctp-mauve hover:underline mt-1"
@@ -283,9 +297,7 @@ function App() {
           {downloading && (
             <div className="space-y-1 px-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-ctp-overlay0">
-                  Downloading…
-                </span>
+                <span className="text-xs text-ctp-overlay0">Downloading…</span>
                 <span className="text-xs text-ctp-overlay0">
                   {Math.round(progress)}%
                 </span>
@@ -308,9 +320,7 @@ function App() {
                 Restart &amp; Install
               </Button>
             ) : downloading ? (
-              <span className="text-xs text-ctp-overlay0">
-                Downloading…
-              </span>
+              <span className="text-xs text-ctp-overlay0">Downloading…</span>
             ) : (
               <div className="flex gap-2 w-full">
                 <Button
