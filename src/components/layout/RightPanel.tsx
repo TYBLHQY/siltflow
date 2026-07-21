@@ -59,9 +59,12 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     if (activeTab !== "summary") return; // don't extract eagerly
 
     const gen = ++extractionGen.current;
+    // Capture docId at extraction time so we don't accidentally store
+    // results under a different document if user switches mid-extraction.
+    const capturedDocId = docId;
     extractPageTexts(pdfDocument).then((texts) => {
       if (gen !== extractionGen.current) return;
-      setPageTexts(docId, texts);
+      setPageTexts(capturedDocId, texts);
     }).catch((err) => {
       if (gen !== extractionGen.current) return;
       console.error("Failed to extract page texts:", err);

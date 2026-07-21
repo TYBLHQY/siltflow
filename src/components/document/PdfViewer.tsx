@@ -229,12 +229,12 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
     [removeItem],
   );
 
-  // Clean up store state when documentId changes
-  // NOTE: only clean pdfDocument and scroll helpers, NOT goToPage — the
-  // library's utilsRef only fires ONCE (guarded by an internal ref), so
-  // cleaning it in StrictMode's unmount/remount cycle would leave it null forever.
-  // Also skip pdfDocument cleanup — React.lazy + strict effects can cause a
-  // double-load cycle (setPdfDocument(null) → new mount triggers another load).
+  // Clean up store state when documentId changes.
+  // Only clean scroll helpers, NOT goToPage — the library's utilsRef only
+  // fires ONCE (guarded by an internal ref), so cleaning it in StrictMode's
+  // unmount/remount cycle would leave it null forever.
+  // pdfDocument is cleaned up by PdfHighlighterWrapper's own cleanup
+  // (see the setPdfDocument(null) return in its useEffect).
   useEffect(() => {
     return () => {
       registerScrollToHighlight(null);
@@ -320,9 +320,15 @@ function PdfHighlighterWrapper({
   const selectionMode = usePdfViewerStore((s) => s.selectionMode);
   const updateDoc = useDocumentStore((s) => s.updateDocument);
 
-  // Sync pdfDocument to store via effect
+  // Sync pdfDocument to store via effect.
+  // Clean up on unmount so that between document switches the store doesn't
+  // carry a stale proxy — RightPanel's lazy text-extraction would otherwise
+  // extract pages from the old document and store them under the new docId.
   useEffect(() => {
     setPdfDocument(pdfDocument);
+    return () => {
+      setPdfDocument(null);
+    };
   }, [pdfDocument, setPdfDocument]);
 
   // Save totalPages + metadata to DB and store when the PDF finishes loading
