@@ -78,8 +78,6 @@ export function AboutContent() {
   const handleCheck = () => {
     setUpdateState("checking");
     setErrorMsg(null);
-    // Dispatch event so App.tsx also opens the update dialog
-    window.dispatchEvent(new CustomEvent("siltflow:check-updates"));
     window.siltflow.update.check();
   };
 
