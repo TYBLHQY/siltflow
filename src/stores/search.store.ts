@@ -118,7 +118,6 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
         docMap.set(d.id, d.title);
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const entries: SearchEntry[] = [];
       for (const ann of allAnnotations) {
         const docTitle = docMap.get(ann.document_id) ?? "(unknown)";
