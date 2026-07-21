@@ -95,7 +95,7 @@ function App() {
   }, []);
 
   // Check for updates on startup if enabled (dev: triggered from About)
-  const updateCheckRef = useRef<() => void>();
+  const updateCheckRef = useRef<(() => void) | undefined>(undefined);
   useEffect(() => {
     const check = () => {
       if (!vaultReady || !appSettingsLoaded) return;

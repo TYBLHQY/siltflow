@@ -98,6 +98,7 @@ export function MemoryStateExplorer() {
 
   // Virtual scroll for the card list
   const listRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => listRef.current,
