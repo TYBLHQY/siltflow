@@ -144,7 +144,7 @@ export function ThreeColumnLayout() {
           </div>
         </Allotment.Pane>
 
-        <Allotment.Pane minSize={400}>
+        <Allotment.Pane minSize={0}>
           <CenterPanel
             documentPath={
               currentDocument?.id
