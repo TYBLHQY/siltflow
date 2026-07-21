@@ -10,6 +10,8 @@ import {
   FolderPlus,
   FileUp,
   FolderUp,
+  ChevronsDownUp,
+  ChevronsUpDown,
 } from "lucide-react";
 import { useDocumentStore } from "@/stores/document.store";
 import { useFolderStore } from "@/stores/folder.store";
@@ -42,6 +44,12 @@ function DocumentOutlinePanel() {
     goToPage: pdfGoToPage,
   });
 
+  // ── expand / collapse all ───────────────────────────────────────────
+  // DocumentOutline manages per-item expand/collapse internally.
+  // We force remount via key to set todos items to the same initial state.
+  const [allExpanded, setAllExpanded] = useState(false);
+  const toggleAll = useCallback(() => setAllExpanded((v) => !v), []);
+
   if (!pdfDocument || outlineLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -63,22 +71,51 @@ function DocumentOutlinePanel() {
   }
 
   return (
-    <ScrollArea className="flex-1 px-1">
-      <DocumentOutline
-        outline={outline}
-        isLoading={false}
-        currentPage={0}
-        onNavigate={(item) => pdfGoToPage(item.pageNumber)}
-        classNames={{ container: "py-2" }}
-        itemClassNames={{
-          container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
-          title: "hover:text-ctp-crust",
-          expandButton: "text-ctp-overlay0",
-          expandIcon: "h-3 w-3",
-        }}
-        itemStyles={{ title: { fontSize } }}
-      />
-    </ScrollArea>
+    <>
+      <div className="shrink-0 border-b px-3 py-0.5">
+        <div className="flex items-center justify-end">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+                  onClick={toggleAll}
+                >
+                  {allExpanded ? (
+                    <ChevronsUpDown className="size-4" />
+                  ) : (
+                    <ChevronsDownUp className="size-4" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={6}>
+                <p className="text-xs">
+                  {allExpanded ? "Collapse all" : "Expand all"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+      <ScrollArea className="flex-1 px-1">
+        <DocumentOutline
+          key={allExpanded ? "expanded" : "collapsed"}
+          outline={outline}
+          isLoading={false}
+          currentPage={0}
+          defaultExpanded={allExpanded}
+          onNavigate={(item) => pdfGoToPage(item.pageNumber)}
+          classNames={{ container: "py-2" }}
+          itemClassNames={{
+            container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
+            title: "hover:text-ctp-crust",
+            expandButton: "text-ctp-overlay0",
+            expandIcon: "h-3 w-3",
+          }}
+          itemStyles={{ title: { fontSize } }}
+        />
+      </ScrollArea>
+    </>
   );
 }
 
