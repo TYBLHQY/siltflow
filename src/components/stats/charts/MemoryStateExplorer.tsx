@@ -280,7 +280,6 @@ export function MemoryStateExplorer() {
                     <YAxis
                       yAxisId="difficulty"
                       orientation="right"
-                      domain={[0, 1]}
                       tick={{ fontSize: 9 }}
                       stroke="var(--catppuccin-color-text)"
                       label={{

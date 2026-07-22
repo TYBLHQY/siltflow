@@ -186,8 +186,14 @@ export function computeRetrievabilityHistogram(cards: Card[]): HistogramBin[] {
 
   for (const card of cards) {
     if (card.state === State.New) continue;
-    const due = card.due instanceof Date ? card.due : new Date(card.due);
-    const elapsedDays = now > due.getTime() ? (now - due.getTime()) / dayMs : 0;
+    // Use last_review to compute elapsed days since the last review.
+    // (card.due is the next scheduled review date, not the "time since" source.)
+    const lastReview = card.last_review
+      ? (card.last_review instanceof Date ? card.last_review : new Date(card.last_review))
+      : null;
+    const elapsedDays = lastReview
+      ? Math.max(0, (now - lastReview.getTime()) / dayMs)
+      : 0;
     const r = retrievability(card.stability, elapsedDays);
     const idx = Math.min(Math.floor(r * 10), 9);
     bins[idx].count++;
@@ -202,15 +208,15 @@ export function computeRetrievabilityHistogram(cards: Card[]): HistogramBin[] {
 export function computeDifficultyHistogram(cards: Card[]): HistogramBin[] {
   const bins: HistogramBin[] = [];
   for (let i = 0; i < 10; i++) {
-    const lo = (i / 10).toFixed(1);
-    const hi = ((i + 1) / 10).toFixed(1);
+    const lo = (1 + i * 0.9).toFixed(1);
+    const hi = (1 + (i + 1) * 0.9).toFixed(1);
     bins.push({ label: `${lo}–${hi}`, count: 0 });
   }
 
   for (const card of cards) {
     if (card.state === State.New) continue;
     const d = card.difficulty;
-    const idx = Math.min(Math.floor(d * 10), 9);
+    const idx = Math.min(Math.floor((d - 1) / 9 * 10), 9);
     bins[idx].count++;
   }
   return bins;
@@ -474,10 +480,16 @@ export function computeOverviewStats(cards: Card[]): OverviewStats {
       nonNewCount++;
       stabSum += card.stability;
       diffSum += card.difficulty;
-      const due = card.due instanceof Date ? card.due : new Date(card.due);
-      const elapsedDays =
-        now > due.getTime() ? (now - due.getTime()) / dayMs : 0;
+      // Use last_review to compute elapsed days since the last review.
+      // (card.due is the next scheduled review date, not the "time since" source.)
+      const lastReview = card.last_review
+        ? (card.last_review instanceof Date ? card.last_review : new Date(card.last_review))
+        : null;
+      const elapsedDays = lastReview
+        ? Math.max(0, (now - lastReview.getTime()) / dayMs)
+        : 0;
       retSum += retrievability(card.stability, elapsedDays);
+      const due = card.due instanceof Date ? card.due : new Date(card.due);
 
       if (due.getTime() <= now) {
         dueToday++;
