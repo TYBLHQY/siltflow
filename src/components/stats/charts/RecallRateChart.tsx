@@ -34,7 +34,15 @@ export function RecallRateChart() {
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+          <Tooltip
+            contentStyle={CHART_TOOLTIP_STYLE}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            formatter={(value: any, _name: any, _props: any) => {
+              const total = data.reduce((s, d) => s + d.value, 0);
+              const pct = total > 0 ? ((Number(value) / total) * 100).toFixed(1) : "0.0";
+              return [`${value} (${pct}%)`, undefined];
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </ChartCard>
