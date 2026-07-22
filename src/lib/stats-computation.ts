@@ -255,7 +255,6 @@ export function computeIntervalHistogram(cards: Card[]): HistogramBin[] {
 
 export function computeKnowledgeGrowth(
   logs: { createdAt: string; data: string; annotationId: string }[],
-  cardsMap: Map<string, Card>,
 ): KnowledgePoint[] {
   const sorted = [...logs].sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt),
@@ -270,12 +269,6 @@ export function computeKnowledgeGrowth(
     mature = 0,
     longTerm = 0;
 
-  // Count cards that exist but have no review logs (New cards → learning)
-  for (const [aid] of cardsMap) {
-    cardStates.set(aid, "learning");
-    learning++;
-  }
-
   // Group logs by date
   const byDate = new Map<string, typeof sorted>();
   for (const entry of sorted) {
@@ -286,19 +279,6 @@ export function computeKnowledgeGrowth(
   }
 
   const dates = Array.from(byDate.keys()).sort();
-
-  // No review activity — push today as a single snapshot
-  if (dates.length === 0 && learning > 0) {
-    return [
-      {
-        date: new Date().toISOString().slice(0, 10),
-        learning,
-        young,
-        mature,
-        longTerm,
-      },
-    ];
-  }
 
   if (dates.length === 0) return [];
 
@@ -326,6 +306,15 @@ export function computeKnowledgeGrowth(
       }
 
       const prev = cardStates.get(aid);
+      if (!prev) {
+        // First time this card appears in review logs — it just entered the system.
+        cardStates.set(aid, bucket);
+        if (bucket === "learning") learning++;
+        else if (bucket === "young") young++;
+        else if (bucket === "mature") mature++;
+        else if (bucket === "longTerm") longTerm++;
+        continue;
+      }
       if (prev === bucket) continue; // no change
       cardStates.set(aid, bucket);
 

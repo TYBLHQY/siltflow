@@ -5,7 +5,7 @@ import type { Card } from "ts-fsrs";
 interface UseChartDataResult {
   logs: ReturnType<typeof useStatsStore.getState>["rawReviewLogs"];
   cards: Card[];
-  /** Parsed cards as a Map (needed by computeKnowledgeGrowth) */
+  /** Parsed cards as a Map (needed by computeKnowledgeGrowth / OverviewCards) */
   parsedCards: Map<string, Card>;
   /** Total annotation count (not highlights) — used to derive newCards. */
   annotationCount: number;

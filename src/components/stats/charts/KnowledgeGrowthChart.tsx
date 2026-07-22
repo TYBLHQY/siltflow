@@ -15,11 +15,11 @@ const GRADIENTS = [
 ];
 
 export function KnowledgeGrowthChart() {
-  const { logs, parsedCards, loading } = useChartData();
+  const { logs, loading } = useChartData();
 
   const data = useMemo(
-    () => computeKnowledgeGrowth(logs, parsedCards),
-    [logs, parsedCards],
+    () => computeKnowledgeGrowth(logs),
+    [logs],
   );
 
   const isEmpty = data.length === 0;
