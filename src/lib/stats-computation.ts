@@ -428,9 +428,10 @@ export function computeRetentionTradeoff(
       : 1;
 
   return targets.map((target) => {
-    // FSRS interval formula relative to current retention
+    // FSRS interval formula: I ∝ (r^{-1/w} - 1).
+    // Higher retention → smaller factor → shorter interval → higher workload.
     const factor =
-      (Math.pow(0.9, -1 / w20) - 1) / (Math.pow(target, -1 / w20) - 1);
+      (Math.pow(target, -1 / w20) - 1) / (Math.pow(0.9, -1 / w20) - 1);
     // Average workload: how many cards would be due per day
     const avgInterval = avgStab * factor;
     const workload =
