@@ -297,6 +297,10 @@ export function MemoryStateExplorer() {
                         border: "1px solid var(--catppuccin-color-overlay0)",
                         background: "var(--tooltip-bg)",
                       }}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={(value: any) =>
+                        typeof value === "number" ? value.toFixed(2) : value
+                      }
                     />
                     <Legend
                       verticalAlign="top"
