@@ -121,10 +121,10 @@ export function MemoryStateExplorer() {
           .map((e) => {
             try {
               const data = JSON.parse(e.data);
-              const log = data.log;
+              const card = data.card;
               return {
-                timestamp: new Date(log.review || e.createdAt).getTime(),
-                date: new Date(log.review || e.createdAt).toLocaleDateString(
+                timestamp: new Date(data.log.review || e.createdAt).getTime(),
+                date: new Date(data.log.review || e.createdAt).toLocaleDateString(
                   "en-US",
                   {
                     month: "short",
@@ -132,10 +132,10 @@ export function MemoryStateExplorer() {
                   },
                 ),
                 grade: data.grade,
-                stability: log.stability,
-                difficulty: log.difficulty,
-                scheduledDays: log.scheduled_days,
-                state: log.state,
+                stability: card.stability,
+                difficulty: card.difficulty,
+                scheduledDays: card.scheduled_days,
+                state: card.state,
               } as ParsedReviewLog;
             } catch {
               return null;
