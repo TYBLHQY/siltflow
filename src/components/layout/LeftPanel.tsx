@@ -44,7 +44,7 @@ function DocumentOutlinePanel() {
   });
 
   // ── expand / collapse all ───────────────────────────────────────────
-  const [allExpanded, setAllExpanded] = useState(false);
+  const [allExpanded, setAllExpanded] = useState(true);
   const toggleAll = useCallback(() => setAllExpanded((v) => !v), []);
 
   // ── auto-scroll to current page's outline item ──────────────────────
@@ -118,11 +118,11 @@ function DocumentOutlinePanel() {
               container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
               containerActive: "outline-active bg-ctp-surface0",
               title: "hover:text-ctp-crust",
-              titleActive: "text-ctp-mauve font-medium",
+              titleActive: "text-ctp-mauve",
               expandButton: "text-ctp-overlay0",
               expandIcon: "h-3 w-3",
             }}
-            itemStyles={{ title: { fontSize: "0.875rem" } }}
+            itemStyles={{ title: { fontSize: "0.875rem", whiteSpace: "normal", overflow: "visible", textOverflow: "clip" }, titleActive: { fontWeight: 400 }, activeIndicator: { display: "none" } }}
           />
         </div>
       </ScrollArea>
