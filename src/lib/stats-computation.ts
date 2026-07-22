@@ -57,7 +57,6 @@ export type ForgettingCurvePoint = {
 export interface RetentionTradeoffPoint {
   targetRetention: number;
   workload: number;
-  avgStability: number;
 }
 
 export interface OverviewStats {
@@ -440,7 +439,6 @@ export function computeRetentionTradeoff(
     return {
       targetRetention: target,
       workload: Math.round(workload * 10) / 10,
-      avgStability: Math.round(avgStab * 10) / 10,
     };
   });
 }
