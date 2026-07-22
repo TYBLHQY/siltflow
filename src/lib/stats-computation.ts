@@ -93,7 +93,7 @@ export function computeDailyReviews(
     if (cutoff && date < cutoff) continue;
     const parsed = parseReviewLogData(entry.data);
     if (!parsed) continue;
-    const state = parsed.log.state;
+    const state = parsed.card.state;
     const row = map.get(date) ?? { count: 0, learnCount: 0, reviewCount: 0 };
     row.count++;
     if (state === 2) {
