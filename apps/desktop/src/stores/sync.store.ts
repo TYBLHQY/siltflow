@@ -58,6 +58,26 @@ export const useSyncStore = create<SyncStore>((set, get) => {
     });
   }
 
+  // Load persisted config from vault on store creation
+  if (typeof window !== "undefined" && window.siltflow) {
+    window.siltflow.vaultConfigGet().then((vaultCfg) => {
+      if (vaultCfg.syncEnabled) {
+        set({
+          config: {
+            serverUrl: (vaultCfg.syncServerUrl as string) ?? "",
+            serverToken: (vaultCfg.syncServerToken as string) ?? "",
+            deviceToken: (vaultCfg.syncDeviceToken as string) ?? "",
+            deviceId: (vaultCfg.syncDeviceId as string) ?? "",
+            syncEnabled: true,
+            syncIntervalMinutes: (vaultCfg.syncIntervalMinutes as number) ?? 5,
+          },
+        });
+      }
+    }).catch(() => {
+      // Vault not set up yet — use defaults
+    });
+  }
+
   return {
     config: {
       serverUrl: "",
