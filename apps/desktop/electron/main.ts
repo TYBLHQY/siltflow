@@ -270,6 +270,7 @@ function registerAllHandlers(vaultPath: string) {
   if (vaultCfg.syncEnabled) {
     const syncCfg: SyncConfig = {
       serverUrl: (vaultCfg.syncServerUrl as string) ?? "",
+      serverToken: (vaultCfg.syncServerToken as string) ?? "",
       deviceToken: (vaultCfg.syncDeviceToken as string) ?? "",
       deviceId: (vaultCfg.syncDeviceId as string) ?? "",
       syncEnabled: true,

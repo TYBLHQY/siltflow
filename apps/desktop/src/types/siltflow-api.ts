@@ -20,7 +20,6 @@ import type { Card } from "ts-fsrs";
 import type {
   SyncState,
   SyncConfig,
-  AuthBootstrapResponse,
   AuthRegisterResponse,
   AuthVerifyResponse,
 } from "@siltflow/shared-lib";
@@ -169,8 +168,7 @@ export interface SiltflowAPI {
     getState: () => Promise<SyncState | null>;
     syncNow: () => Promise<void>;
     configure: (config: SyncConfig) => Promise<void>;
-    bootstrap: (serverUrl: string, deviceName: string) => Promise<AuthBootstrapResponse>;
-    registerWithToken: (serverUrl: string, adminToken: string, deviceName: string) => Promise<AuthRegisterResponse>;
+    registerDevice: (serverUrl: string, serverToken: string, deviceName: string, deviceId?: string) => Promise<AuthRegisterResponse>;
     verifyToken: (serverUrl: string, token: string) => Promise<AuthVerifyResponse>;
     getConflicts: () => Promise<ConflictRecord[]>;
     resolveConflict: (id: number, resolution: "local" | "remote") => Promise<void>;

@@ -74,20 +74,12 @@ export interface SyncAvailablePayload {
 
 // ── Auth ────────────────────────────────────────────────────────────────
 
-export interface AuthBootstrapBody {
-  deviceName?: string;
-}
-
-export interface AuthBootstrapResponse {
-  deviceId: string;
-  deviceName: string;
-  token: string;
-  serverUrl: string;
-  warning: string;
-}
-
 export interface AuthRegisterBody {
   deviceName: string;
+  /** If the client already has a deviceId from a previous registration,
+   *  the server will re-use the existing device record instead of
+   *  creating a duplicate. */
+  deviceId?: string;
 }
 
 export interface AuthRegisterResponse {
@@ -116,7 +108,11 @@ export interface SyncState {
 
 export interface SyncConfig {
   serverUrl: string;
+  /** Server-side secret — user configures this once per server. */
+  serverToken: string;
+  /** Device token — server returns this after registration. */
   deviceToken: string;
+  /** Device id — server returns this after registration. */
   deviceId: string;
   syncEnabled: boolean;
   syncIntervalMinutes: number;

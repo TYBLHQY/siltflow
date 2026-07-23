@@ -20,8 +20,8 @@ const envConfig = loadConfig();
 initDatabase(envConfig);
 console.log("[sync-server] Database initialised");
 
-// Resolve bootstrap token: env var wins, otherwise persist a generated one
-const config = resolveBootstrapToken(envConfig);
+// Resolve server token: env var > persisted > auto-generate
+const config = resolveServerToken(envConfig);
 
 console.log(`[sync-server] Starting with config:
   PORT=${config.port}
@@ -84,64 +84,61 @@ function startTombstoneCleanup(config: import("./config").ServerConfig) {
     }
   };
 
-  // Run every hour as safety net for devices that pull but don't trigger
-  // cleanup naturally (e.g. single-device scenario where Pull marks ack
-  // but there's no other device to trigger the next Pull)
   setInterval(run, 60 * 60 * 1000);
-  // Also run once on startup
   run();
 }
 
-// ── Bootstrap token persistence ───────────────────────────────────────
+// ── Server token ──────────────────────────────────────────────────────
 
 /**
- * Ensure a bootstrap token exists in server_settings for admin use,
- * but do NOT inject it into runtime config unless BOOTSTRAP_TOKEN
- * was explicitly set via environment variable.
+ * Resolve the server token at startup.
  *
- * Only an explicit BOOTSTRAP_TOKEN env var gatekeeps /api/auth/bootstrap.
- * The persisted token in server_settings is informational — it lets the
- * operator (or dashboard) copy it without digging through env vars.
+ * This token is the **server-level** secret that clients must present
+ * to register a new device. It is NOT a device token — it proves the
+ * client has permission to join this server.
  *
- *   1. BOOTSTRAP_TOKEN env var → inject into config (auth required).
- *   2. Otherwise, ensure a token exists in server_settings (auto-generate
- *      on first start) but leave config.bootstrapToken undefined so
- *      bootstrap remains open.
+ *   1. `SERVER_TOKEN` env var → inject into config (production).
+ *   2. Otherwise load from `server_settings` (persisted across restarts).
+ *   3. If neither exists, auto-generate and persist.
+ *
+ * The token is always injected into config so /api/auth/register
+ * requires it. Log it at startup so the operator can copy it.
  */
-function resolveBootstrapToken(config: ServerConfig): ServerConfig {
+function resolveServerToken(config: ServerConfig): ServerConfig {
   if (config.bootstrapToken) {
-    console.log("[sync-server] Using BOOTSTRAP_TOKEN from environment");
+    // Legacy: BOOTSTRAP_TOKEN env var maps to serverToken
+    console.log("[sync-server] Using server token from SERVER_TOKEN / BOOTSTRAP_TOKEN env");
     return config;
   }
 
   const sql = getSqlite();
   if (!sql) {
-    console.warn("[sync-server] DB not ready, skipping bootstrap token resolution");
+    console.warn("[sync-server] DB not ready, skipping server token resolution");
     return config;
   }
 
-  // Ensure a token exists in server_settings (first-start generation)
   let row = sql
     .prepare("SELECT value FROM server_settings WHERE key = ?")
-    .get("bootstrap_token") as { value: string } | undefined;
+    .get("server_token") as { value: string } | undefined;
 
-  if (!row) {
-    const token = randomBytes(32).toString("hex");
-    const now = new Date().toISOString();
-    sql
-      .prepare("INSERT INTO server_settings (key, value, updated_at) VALUES (?, ?, ?)")
-      .run("bootstrap_token", token, now);
-    row = { value: token };
-    console.log(`[sync-server] Bootstrap token (auto-generated, persisted): ${token}`);
-  } else {
-    console.log("[sync-server] Bootstrap token loaded from settings (persisted)");
+  if (row) {
+    console.log("[sync-server] Server token loaded from settings");
+    return { ...config, bootstrapToken: row.value };
   }
 
-  console.log(
-    "[sync-server] To require auth for bootstrap, set env BOOTSTRAP_TOKEN.\n" +
-      `  Current token: ${row.value}`
-  );
+  // First start — generate and persist
+  const token = randomBytes(32).toString("hex");
+  const now = new Date().toISOString();
+  sql
+    .prepare("INSERT INTO server_settings (key, value, updated_at) VALUES (?, ?, ?)")
+    .run("server_token", token, now);
 
-  // Do NOT inject into config — only an explicit env var gates bootstrap.
-  return config;
+  console.log(`[sync-server] Server token (auto-generated, persisted):
+  ${token}
+
+  Share this token with devices that need to join this server.
+  Set SERVER_TOKEN env var to override (won't be read from settings).
+`);
+
+  return { ...config, bootstrapToken: token };
 }

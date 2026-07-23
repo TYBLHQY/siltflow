@@ -2,11 +2,11 @@
  * Sync IPC handlers — expose sync operations to the renderer process.
  *
  * Channels:
- *   sync:getState      — returns current SyncState
- *   sync:syncNow       — triggers a full push-then-pull cycle
- *   sync:configure     — saves sync config to vault config
- *   sync:bootstrap     — bootstraps a new device on the sync server
- *   sync:getConflicts  — returns unresolved conflicts
+ *   sync:getState        — returns current SyncState
+ *   sync:syncNow         — triggers a full push-then-pull cycle
+ *   sync:configure       — saves sync config to vault config + starts engine
+ *   sync:register        — registers a device with the server (uses server token)
+ *   sync:getConflicts    — returns unresolved conflicts
  *   sync:resolveConflict — resolves a conflict (local|remote)
  *
  * The sync engine is initialized lazily — the main process calls
@@ -15,7 +15,7 @@
 
 import { ipcMain } from "electron";
 import { getSqlite } from "../database";
-import { SyncClient, SyncClientError } from "../sync/sync-client";
+import { SyncClient } from "../sync/sync-client";
 import { SyncWsClient } from "../sync/ws-client";
 import { SyncEngine } from "../sync/sync-engine";
 import type { SyncState, SyncConfig } from "@siltflow/shared-lib";
@@ -25,6 +25,7 @@ let wsClient: SyncWsClient | null = null;
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 let config: SyncConfig = {
   serverUrl: "",
+  serverToken: "",
   deviceToken: "",
   deviceId: "",
   syncEnabled: false,
@@ -57,7 +58,7 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
     return;
   }
 
-  const client = new SyncClient(cfg.serverUrl, cfg.deviceToken);
+  const client = new SyncClient(cfg.serverUrl, cfg.serverToken, cfg.deviceToken);
 
   // WebSocket URL: replace http(s):// with ws(s):// and append /ws
   const wsUrl = cfg.serverUrl
@@ -66,7 +67,6 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
 
   wsClient = new SyncWsClient(wsUrl, cfg.deviceToken);
   wsClient.on("sync:available", () => {
-    // On remote change notification, do a quick pull
     engine?.pull().catch((err) => {
       console.warn("[Sync] Pull after notification failed:", (err as Error).message);
     });
@@ -90,7 +90,6 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
     console.log(`[Sync] ${conflicts.length} conflict(s) detected`);
   });
 
-  // Periodic sync timer
   if (cfg.syncIntervalMinutes > 0) {
     syncTimer = setInterval(() => {
       engine?.sync().catch((err) => {
@@ -131,14 +130,15 @@ export function registerSyncHandlers(): void {
   });
 
   ipcMain.handle("sync:configure", async (_event, cfg: SyncConfig) => {
-    // Persist to vault config so it survives restart
-    // Dynamic require avoids circular dependency since main.ts imports this module
+    config = { ...cfg };
+    // Persist to vault config
     const main = require("../main");
     const vaultPath: string = main.getVaultPath();
     if (vaultPath) {
       main.writeVaultConfig(vaultPath, {
         syncEnabled: cfg.syncEnabled,
         syncServerUrl: cfg.serverUrl,
+        syncServerToken: cfg.serverToken,
         syncDeviceToken: cfg.deviceToken,
         syncDeviceId: cfg.deviceId,
         syncIntervalMinutes: cfg.syncIntervalMinutes,
@@ -146,13 +146,11 @@ export function registerSyncHandlers(): void {
     }
 
     initSyncEngine(cfg, (state) => {
-      // Forward state changes to the renderer
       const { BrowserWindow } = require("electron");
       const win = BrowserWindow.getAllWindows()[0];
       if (win) win.webContents.send("sync:stateChange", state);
     });
 
-    // Run initial sync immediately after connecting
     if (engine) {
       engine.sync().catch((err: Error) => {
         console.warn("[Sync] Initial sync failed:", err.message);
@@ -161,38 +159,20 @@ export function registerSyncHandlers(): void {
   });
 
   ipcMain.handle(
-    "sync:bootstrap",
-    async (_event, serverUrl: string, deviceName: string) => {
-      const client = new SyncClient(serverUrl, "");
-      try {
-        // Try to bootstrap (only works if no devices exist on server)
-        const result = await client.authBootstrap({
-          deviceName: deviceName || "Desktop",
-        });
-        return result;
-      } catch (bootstrapErr) {
-        // If server already has devices (409), return a structured result
-        // so the UI can prompt for an admin token instead of showing an error
-        if (bootstrapErr instanceof SyncClientError && bootstrapErr.status === 409) {
-          return { needsAdminToken: true, error: bootstrapErr.message };
-        }
-        throw bootstrapErr;
-      }
-    },
-  );
-
-  ipcMain.handle(
-    "sync:registerWithToken",
-    async (_event, serverUrl: string, adminToken: string, deviceName: string) => {
-      const client = new SyncClient(serverUrl, adminToken);
-      return client.authRegister({ deviceName });
+    "sync:register",
+    async (_event, serverUrl: string, serverToken: string, deviceName: string, deviceId?: string) => {
+      const client = new SyncClient(serverUrl, serverToken, "");
+      return client.authRegister({
+        deviceName: deviceName || "Desktop",
+        deviceId,
+      });
     },
   );
 
   ipcMain.handle(
     "sync:verifyToken",
     async (_event, serverUrl: string, token: string) => {
-      const client = new SyncClient(serverUrl, token);
+      const client = new SyncClient(serverUrl, "", token);
       return client.authVerify();
     },
   );

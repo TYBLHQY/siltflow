@@ -117,8 +117,6 @@ export {
   type SyncPullResponse,
   type TombstoneItem,
   type SyncAvailablePayload,
-  type AuthBootstrapBody,
-  type AuthBootstrapResponse,
   type AuthRegisterBody,
   type AuthRegisterResponse,
   type AuthVerifyResponse,

@@ -1,11 +1,10 @@
 /**
  * Sync settings panel — configure connection to a SiltFlow sync server.
  *
- * Flow:
- * 1. User enters server URL + device name → clicks Connect
- * 2. If server is fresh (no devices yet), bootstrap succeeds → device becomes admin
- * 3. If server already has devices, bootstrap returns 409 → UI shows admin-token
- *    input so the user can request registration from the admin
+ * Auth model (v2):
+ *   1. User enters server URL + server token (from server startup log) → Connect
+ *   2. Desktop registers as a device → server returns deviceId + deviceToken
+ *   3. Config is persisted to vault (.siltflow/config.json) so restart works
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -17,27 +16,26 @@ export function SyncSettingsContent() {
   const config = useSyncStore((s) => s.config);
   const syncState = useSyncStore((s) => s.syncState);
   const conflicts = useSyncStore((s) => s.conflicts);
-  const isBootstrapping = useSyncStore((s) => s.isBootstrapping);
-  const bootstrapError = useSyncStore((s) => s.bootstrapError);
+  const isRegistering = useSyncStore((s) => s.isRegistering);
+  const registerError = useSyncStore((s) => s.registerError);
   const isLoadingConflicts = useSyncStore((s) => s.isLoadingConflicts);
 
   const syncNow = useSyncStore((s) => s.syncNow);
-  const bootstrap = useSyncStore((s) => s.bootstrap);
-  const registerWithToken = useSyncStore((s) => s.registerWithToken);
+  const registerDevice = useSyncStore((s) => s.registerDevice);
   const loadConflicts = useSyncStore((s) => s.loadConflicts);
   const resolveConflict = useSyncStore((s) => s.resolveConflict);
 
   // Local form state
   const [serverUrl, setServerUrl] = useState(config.serverUrl || "");
+  const [serverToken, setServerToken] = useState(config.serverToken || "");
   const [deviceName, setDeviceName] = useState("Desktop");
-  const [adminToken, setAdminToken] = useState("");
-  const [needsAdminToken, setNeedsAdminToken] = useState(false); // bootstrap returned 409
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Sync state from config on mount
+  // Sync from config on mount
   useEffect(() => {
     if (config.serverUrl) setServerUrl(config.serverUrl);
-  }, [config.serverUrl]);
+    if (config.serverToken) setServerToken(config.serverToken);
+  }, [config.serverUrl, config.serverToken]);
 
   // Load conflicts when tab opens
   useEffect(() => {
@@ -46,38 +44,21 @@ export function SyncSettingsContent() {
 
   const isConfigured = config.syncEnabled && config.deviceToken;
 
-  // Try bootstrap first. If server returns 409 (devices exist), show admin-token input.
   const handleConnect = useCallback(async () => {
-    if (!serverUrl) return;
-    setNeedsAdminToken(false);
+    if (!serverUrl || !serverToken) return;
     setStatusMessage(null);
     try {
-      await bootstrap(serverUrl, deviceName);
-      setStatusMessage("Connected! Initial sync will start shortly.");
+      await registerDevice(serverUrl, serverToken, deviceName);
+      setStatusMessage("Registered! Initial sync will start shortly.");
     } catch (err) {
       const msg = (err as Error).message;
-      // The IPC layer returns a special error when the server already has devices
-      if (msg === "NEEDS_ADMIN_TOKEN" || msg.includes("409") || msg.includes("bootstrap already completed")) {
-        setNeedsAdminToken(true);
-        setStatusMessage("Server already has devices. Enter the admin token to join.");
+      if (msg.includes("401")) {
+        setStatusMessage("Invalid server token. Check the token from server startup log.");
       } else {
         setStatusMessage(`Connection failed: ${msg}`);
       }
     }
-  }, [serverUrl, deviceName, bootstrap]);
-
-  // Register with admin token (shown after bootstrap returns 409)
-  const handleRegister = useCallback(async () => {
-    if (!serverUrl || !adminToken) return;
-    try {
-      setStatusMessage(null);
-      await registerWithToken(serverUrl, adminToken, deviceName);
-      setStatusMessage("Joined server! Initial sync will start shortly.");
-      setNeedsAdminToken(false);
-    } catch (err) {
-      setStatusMessage(`Registration failed: ${(err as Error).message}`);
-    }
-  }, [serverUrl, adminToken, deviceName, registerWithToken]);
+  }, [serverUrl, serverToken, deviceName, registerDevice]);
 
   const handleSyncNow = useCallback(async () => {
     try {
@@ -158,8 +139,24 @@ export function SyncSettingsContent() {
               className="w-full rounded border bg-ctp-base px-3 py-1.5 text-sm placeholder:text-ctp-overlay0"
               placeholder="http://192.168.1.100:3001"
               value={serverUrl}
-              onChange={(e) => { setServerUrl(e.target.value); setNeedsAdminToken(false); }}
+              onChange={(e) => setServerUrl(e.target.value)}
             />
+          </div>
+
+          {/* Server Token */}
+          <div>
+            <label className="text-xs font-medium text-ctp-text block mb-1">
+              Server Token
+            </label>
+            <input
+              className="w-full rounded border bg-ctp-base px-3 py-1.5 text-sm font-mono placeholder:text-ctp-overlay0"
+              placeholder="From server startup log (64 hex chars)"
+              value={serverToken}
+              onChange={(e) => setServerToken(e.target.value)}
+            />
+            <p className="text-[10px] text-ctp-overlay0 mt-0.5">
+              The server prints this token on startup. It proves you have permission to join.
+            </p>
           </div>
 
           {/* Device name */}
@@ -174,53 +171,24 @@ export function SyncSettingsContent() {
             />
           </div>
 
-          {/* Admin token — only shown when bootstrap returns 409 */}
-          {needsAdminToken && (
-            <div className="rounded-md border border-ctp-yellow/30 bg-ctp-yellow/5 p-3 space-y-2">
-              <p className="text-xs text-ctp-yellow">
-                This server already has devices. Ask the admin for a registration token.
-              </p>
-              <div>
-                <label className="text-xs font-medium text-ctp-text block mb-1">
-                  Admin Token
-                </label>
-                <input
-                  className="w-full rounded border bg-ctp-base px-3 py-1.5 text-sm font-mono placeholder:text-ctp-overlay0"
-                  placeholder="64-character hex token"
-                  value={adminToken}
-                  onChange={(e) => setAdminToken(e.target.value)}
-                />
-              </div>
-              <Button
-                className="w-full text-sm"
-                disabled={isBootstrapping || !adminToken}
-                onClick={handleRegister}
-              >
-                Register Device
-              </Button>
-            </div>
-          )}
+          {/* Connect button */}
+          <Button
+            className="w-full text-sm"
+            disabled={isRegistering || !serverUrl || !serverToken}
+            onClick={handleConnect}
+          >
+            {isRegistering ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Connecting…
+              </>
+            ) : (
+              "Connect"
+            )}
+          </Button>
 
-          {/* Connect button (hidden when asking for admin token) */}
-          {!needsAdminToken && (
-            <Button
-              className="w-full text-sm"
-              disabled={isBootstrapping || !serverUrl}
-              onClick={handleConnect}
-            >
-              {isBootstrapping ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Connecting…
-                </>
-              ) : (
-                "Connect"
-              )}
-            </Button>
-          )}
-
-          {bootstrapError && (
-            <p className="text-xs text-ctp-red">{bootstrapError}</p>
+          {registerError && (
+            <p className="text-xs text-ctp-red">{registerError}</p>
           )}
           {statusMessage && (
             <p className="text-xs text-ctp-overlay0">{statusMessage}</p>
