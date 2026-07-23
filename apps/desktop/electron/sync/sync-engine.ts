@@ -115,6 +115,14 @@ export class SyncEngine extends EventEmitter {
 
     try {
       await this.pushIncremental();
+    } catch (err) {
+      this._lastError = (err as Error).message;
+      this._emitState();
+      this.emit("error", err as Error);
+      // Continue to pull — don't let a push failure block incoming data
+    }
+
+    try {
       await this.pull();
     } catch (err) {
       this._lastError = (err as Error).message;

@@ -74,13 +74,9 @@ export function Button({
           }
         />
       )}
-      {typeof children === "string" ? (
-        <Text className={cn(textVariants({ variant, size }), textClassName)}>
-          {children}
-        </Text>
-      ) : (
-        children
-      )}
+      <Text className={cn(textVariants({ variant, size }), textClassName)}>
+        {children}
+      </Text>
     </Pressable>
   );
 }

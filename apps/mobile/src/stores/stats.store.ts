@@ -46,6 +46,7 @@ interface StatsState {
   loading: boolean;
 
   loadFromDb: () => void;
+  refresh: () => void;
   getOverview: () => OverviewStats;
   getDailyReviews: (days?: number) => DailyReviewCount[];
   getGradeDistribution: () => GradeDistItem[];
@@ -107,6 +108,42 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       });
     } catch (err) {
       console.error("[stats.store] loadFromDb failed:", err);
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  /** Reload data from the database unconditionally (for pull-to-refresh). */
+  refresh: () => {
+    set({ loading: true });
+    try {
+      const db = getSQLite();
+      const cardRows = listAllFSRSCards(db);
+      const logRows = listAllReviewLogs(db);
+      const annotations = listAllAnnotations(db);
+
+      const cards: Card[] = [];
+      for (const row of cardRows) {
+        try {
+          cards.push(JSON.parse(row.data) as Card);
+        } catch {
+          /* skip corrupt data */
+        }
+      }
+
+      const reviewLogs = logRows.map((r) => ({
+        createdAt: r.createdAt,
+        data: r.data,
+        annotationId: r.annotationId,
+      }));
+
+      const annotationCount = annotations.filter(
+        (a) => a.kind !== "highlight",
+      ).length;
+
+      set({ cards, reviewLogs, annotationCount });
+    } catch (err) {
+      console.error("[stats.store] refresh failed:", err);
     } finally {
       set({ loading: false });
     }

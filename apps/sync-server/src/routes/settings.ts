@@ -9,6 +9,7 @@
 
 import { Hono } from "hono";
 import { getSqlite } from "../db";
+import { ENTITY_TABLES } from "@siltflow/shared-lib";
 import type { Variables } from "../types";
 
 interface SettingRow {
@@ -16,6 +17,15 @@ interface SettingRow {
   value: string;
   updatedAt: string;
 }
+
+/** All tables owned by the server database (shared entities + server-specific).
+ *  server_settings is deliberately excluded — it holds the bootstrap token. */
+const ALL_TABLES = [
+  ...ENTITY_TABLES,
+  "devices",
+  "sync_tombstones",
+  "sync_tombstone_acks",
+];
 
 export const settingsRoutes = new Hono<{ Variables: Variables }>()
   // ── Read all settings ─────────────────────────────────────────────
@@ -65,4 +75,37 @@ export const settingsRoutes = new Hono<{ Variables: Variables }>()
     ).get(body.key) as { key: string; value: string; updated_at: string };
 
     return c.json({ key: row.key, value: row.value, updatedAt: row.updated_at });
+  })
+  // ── Reset database — admin only, deletes all data ───────────────────
+  .post("/reset-db", (c) => {
+    if (!c.var.isAdmin) {
+      return c.json({ error: "admin token required" }, 403);
+    }
+
+    const sql = getSqlite();
+    if (!sql) return c.json({ error: "database not ready" }, 503);
+
+    const deleted: Record<string, number> = {};
+
+    try {
+      sql.exec("BEGIN TRANSACTION");
+
+      for (const table of ALL_TABLES) {
+        const result = sql.prepare(`DELETE FROM ${table}`).run();
+        deleted[table] = result.changes;
+      }
+
+      // Reset schema version so initSchema re-runs on next startup
+      sql.pragma("user_version = 0");
+
+      sql.exec("COMMIT");
+
+      return c.json({ ok: true, deleted });
+    } catch (err) {
+      sql.exec("ROLLBACK");
+      return c.json(
+        { error: (err as Error).message },
+        500,
+      );
+    }
   });

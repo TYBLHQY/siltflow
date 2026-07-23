@@ -31,13 +31,19 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
 
       // Process deletions first
       if (change.deleted) {
-        for (const id of change.deleted) {
+        for (const rowId of change.deleted) {
           // Record tombstone for pull
           const now = new Date().toISOString();
           sql.prepare(
             "INSERT INTO sync_tombstones (table_name, row_id, deleted_at) VALUES (?, ?, ?)"
-          ).run(table, String(id), now);
-          sql.prepare(`DELETE FROM ${table} WHERE id = ?`).run(id);
+          ).run(table, String(rowId), now);
+
+          // Build a PK-aware WHERE clause for the delete
+          const pk = parseRowId(table, rowId);
+          const where = pkWhere(table, pk);
+          sql.prepare(`DELETE FROM ${table} WHERE ${where.clause}`).run(
+            ...where.values,
+          );
           accepted++;
         }
       }
@@ -140,6 +146,56 @@ function snakeKeys(row: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
+// ── Composite primary key handling ───────────────────────────────────────
+
+/**
+ * Tables with composite primary keys. The server needs to know which
+ * columns form the identity of each row to correctly build WHERE clauses
+ * for DELETE, checkConflict, and applyUpdate.
+ *
+ * Mirrors COMPOSITE_PK_TABLES in both the desktop and mobile sync engines.
+ */
+const COMPOSITE_PK: Record<string, string[]> = {
+  annotations: ["id", "document_id"],
+  ai_results: ["annotation_id", "document_id"],
+  fsrs_cards: ["annotation_id", "document_id"],
+  review_logs: ["id", "annotation_id", "document_id"],
+};
+
+/**
+ * Build a WHERE clause + bound values for a specific table's primary key,
+ * using the row data. For simple-PK tables the clause is "id = ?".
+ */
+function pkWhere(
+  table: string,
+  row: Record<string, unknown>,
+): { clause: string; values: unknown[] } {
+  const cols = COMPOSITE_PK[table];
+  if (cols) {
+    const parts = cols.map((c) => `${c} = ?`);
+    return { clause: parts.join(" AND "), values: cols.map((c) => row[c]) };
+  }
+  return { clause: "id = ?", values: [row.id] };
+}
+
+/**
+ * Parse a pipe-delimited row_id back into per-column values for a composite
+ * primary key table. The client encodes composite keys as "val1|val2|val3".
+ */
+function parseRowId(
+  table: string,
+  rowId: string,
+): Record<string, unknown> {
+  const cols = COMPOSITE_PK[table];
+  if (cols) {
+    const parts = rowId.split("|");
+    const out: Record<string, unknown> = {};
+    cols.forEach((c, i) => { out[c] = parts[i] ?? ""; });
+    return out;
+  }
+  return { id: rowId };
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function applyInsert(
@@ -162,10 +218,17 @@ function applyUpdate(
   row: Record<string, unknown>,
 ) {
   const snaked = snakeKeys(row);
-  const { id, ...fields } = snaked;
+  const pkCols = COMPOSITE_PK[table] ?? ["id"];
+  // Separate PK columns from data columns — don't SET PKs in UPDATE
+  const fields = Object.fromEntries(
+    Object.entries(snaked).filter(([k]) => !pkCols.includes(k)),
+  );
   const sets = Object.keys(fields).map((k) => `${k} = ?`).join(", ");
-  const values = Object.values(fields);
-  sql!.prepare(`UPDATE ${table} SET ${sets} WHERE id = ?`).run(...values, id);
+  const setValues = Object.values(fields);
+  const where = pkWhere(table, snaked);
+  sql!.prepare(
+    `UPDATE ${table} SET ${sets} WHERE ${where.clause}`,
+  ).run(...setValues, ...where.values);
 }
 
 function checkConflict(
@@ -174,8 +237,10 @@ function checkConflict(
   row: Record<string, unknown>,
 ): Record<string, unknown> | null {
   const snaked = snakeKeys(row);
-  const existing = sql!.prepare(`SELECT * FROM ${table} WHERE id = ?`)
-    .get(snaked.id) as Record<string, unknown> | undefined;
+  const where = pkWhere(table, snaked);
+  const existing = sql!.prepare(
+    `SELECT * FROM ${table} WHERE ${where.clause}`,
+  ).get(...where.values) as Record<string, unknown> | undefined;
   if (!existing) return null; // was deleted on server
   if (
     existing.updated_at &&

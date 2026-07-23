@@ -41,11 +41,7 @@ export interface BadgeProps extends VariantProps<typeof badgeVariants> {
 export function Badge({ className, variant, children }: BadgeProps) {
   return (
     <View className={cn(badgeVariants({ variant }), className)}>
-      {typeof children === "string" ? (
-        <Text className={textVariants({ variant })}>{children}</Text>
-      ) : (
-        children
-      )}
+      <Text className={textVariants({ variant })}>{children}</Text>
     </View>
   );
 }

@@ -5,7 +5,8 @@
  * Charts rendered with NativeWind-styled View bars (no SVG dependency).
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { RefreshControl } from "react-native";
 import { View, Text, SafeAreaView, ScrollView } from "@/tw";
 import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@/components/ui";
 import { useStatsStore } from "@/stores/stats.store";
@@ -89,6 +90,7 @@ export function StatsScreen() {
   const loaded = useStatsStore((s) => s.loaded);
   const loading = useStatsStore((s) => s.loading);
   const loadFromDb = useStatsStore((s) => s.loadFromDb);
+  const refresh = useStatsStore((s) => s.refresh);
   const getOverview = useStatsStore((s) => s.getOverview);
   const getDailyReviews = useStatsStore((s) => s.getDailyReviews);
   const getGradeDistribution = useStatsStore((s) => s.getGradeDistribution);
@@ -96,6 +98,16 @@ export function StatsScreen() {
   useEffect(() => {
     loadFromDb();
   }, [loadFromDb]);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh]);
 
   // Derive total and newCards the same way desktop OverviewCards.tsx does:
   //   - cards only contains fsrs_cards rows (reviewed annotations).
@@ -192,6 +204,9 @@ export function StatsScreen() {
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 gap-4"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <Text className="text-2xl font-bold text-ctp-text">Stats</Text>
 

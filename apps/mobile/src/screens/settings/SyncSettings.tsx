@@ -13,6 +13,19 @@ import { useState, useEffect, useCallback } from "react";
 import { View, Text } from "@/tw";
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Spinner, Badge } from "@/components/ui";
 import { useSyncStore } from "@/stores/sync.store";
+import { getSQLite } from "@/stores/db.store";
+import { initSchema } from "@siltflow/shared-db/migrations";
+import { SCHEMA_VERSION } from "@siltflow/shared-db/types";
+import { ENTITY_TABLES } from "@siltflow/shared-lib";
+import { createExpoSqliteExecutor } from "@/lib/expo-sqlite-adapter";
+
+/** All tables managed by the mobile database. */
+const ALL_TABLES = [
+  ...ENTITY_TABLES,
+  "sync_changelog",
+  "sync_conflicts",
+  "app_settings",
+];
 
 export function SyncSettings() {
   const config = useSyncStore((s) => s.config);
@@ -90,6 +103,46 @@ export function SyncSettings() {
       handleDisconnect();
     }
   }, [syncState?.lastError, handleDisconnect]);
+
+  // ── Reset database ─────────────────────────────────────────────────
+
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+
+  const handleResetDb = useCallback(() => {
+    if (!resetConfirm) {
+      setResetConfirm(true);
+      return;
+    }
+    setIsResetting(true);
+    setResetConfirm(false);
+    setStatusMessage("Resetting database…");
+    try {
+      const sql = getSQLite();
+      sql.execSync("BEGIN TRANSACTION");
+      for (const table of ALL_TABLES) {
+        sql.execSync(`DELETE FROM ${table}`);
+      }
+      sql.execSync("PRAGMA user_version = 0");
+      sql.execSync("COMMIT");
+      // Re-run schema init so tables are ready for use
+      const executor = createExpoSqliteExecutor(sql);
+      initSchema(executor, 0);
+      sql.execSync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+      setStatusMessage("Database reset complete. Reconnect to sync server.");
+    } catch (err) {
+      try { getSQLite().execSync("ROLLBACK"); } catch { /* ignore */ }
+      setStatusMessage(`Reset failed: ${(err as Error).message}`);
+    } finally {
+      setIsResetting(false);
+    }
+  }, [resetConfirm, getSQLite, setStatusMessage, setIsResetting, setResetConfirm]);
+
+  const cancelReset = useCallback(() => {
+    setResetConfirm(false);
+  }, []);
+
+  // ── Render ─────────────────────────────────────────────────────────
 
   return (
     <View className="gap-4">
@@ -311,6 +364,53 @@ export function SyncSettings() {
           </CardContent>
         </Card>
       )}
+
+      {/* Reset Database */}
+      <Card className="border-ctp-red/30">
+        <CardHeader>
+          <CardTitle className="text-ctp-red">Danger Zone</CardTitle>
+          <CardDescription>
+            This wipes all local data including synced documents, annotations,
+            FSRS cards, review logs, and sync config. The server is not affected.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <View className="gap-2">
+            {statusMessage && (
+              <Text className="text-sm text-ctp-overlay0">{statusMessage}</Text>
+            )}
+            {resetConfirm ? (
+              <View className="flex-row gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  loading={isResetting}
+                  onPress={handleResetDb}
+                  className="flex-1"
+                >
+                  {isResetting ? "Resetting…" : "Yes, Reset Everything"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={cancelReset}
+                  disabled={isResetting}
+                >
+                  Cancel
+                </Button>
+              </View>
+            ) : (
+              <Button
+                variant="destructive"
+                size="sm"
+                onPress={handleResetDb}
+              >
+                Reset Database
+              </Button>
+            )}
+          </View>
+        </CardContent>
+      </Card>
     </View>
   );
 }

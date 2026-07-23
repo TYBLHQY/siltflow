@@ -106,7 +106,14 @@ export function computeDailyReviews(
 
   return Array.from(map.entries())
     .map(([date, v]) => ({ date, ...v }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => {
+      // Avoid localeCompare — on Android Hermes it allocates ICU
+      // Collator objects per comparison and OOMs with many entries.
+      // ISO date strings are safely comparable with < / >.
+      if (a.date < b.date) return -1;
+      if (a.date > b.date) return 1;
+      return 0;
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -255,9 +262,13 @@ export function computeIntervalHistogram(cards: Card[]): HistogramBin[] {
 export function computeKnowledgeGrowth(
   logs: { createdAt: string; data: string; annotationId: string }[],
 ): KnowledgePoint[] {
-  const sorted = [...logs].sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
-  );
+  const sorted = [...logs].sort((a, b) => {
+    // ISO date strings are safely comparable with < / >.
+    // Avoid localeCompare: on Android Hermes it OOMs with many entries.
+    if (a.createdAt < b.createdAt) return -1;
+    if (a.createdAt > b.createdAt) return 1;
+    return 0;
+  });
 
   const cardStates = new Map<
     string,
@@ -277,7 +288,12 @@ export function computeKnowledgeGrowth(
     else byDate.set(date, [entry]);
   }
 
-  const dates = Array.from(byDate.keys()).sort();
+  const dates = Array.from(byDate.keys()).sort((a, b) => {
+    // ISO date strings sort correctly with < / > — no localeCompare needed.
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  });
 
   if (dates.length === 0) return [];
 

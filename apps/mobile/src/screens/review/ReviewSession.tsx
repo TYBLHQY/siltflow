@@ -7,9 +7,12 @@
  * 3. Show one card at a time with "tap to reveal" → grade buttons
  * 4. After grading, advance to next card
  * 5. Show completion screen when all cards are reviewed
+ *
+ * Data loading uses the useFocusEffect + useState pattern to avoid
+ * blocking the JS thread with synchronous DB access during render.
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { View, Text, Pressable, SafeAreaView, ScrollView } from "@/tw";
 import { Button, Badge, Spinner } from "@/components/ui";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -56,10 +59,12 @@ export function ReviewSession() {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load session items synchronously on mount (local DB, no async)
-  const loadedItems = useMemo(() => {
+  // Load session items when screen mounts (lazy, not during render)
+  useEffect(() => {
     try {
+      setLoading(true);
       const sql = getSQLite();
       const enriched = listAnnotations(sql, documentId);
       const annotationItems = enriched.map((e) => enrichedToItem(e));
@@ -93,21 +98,13 @@ export function ReviewSession() {
         return aDue - bDue;
       });
 
-      return sessionItems;
+      setItems(sessionItems);
     } catch (err) {
       setError((err as Error).message);
-      return [];
+    } finally {
+      setLoading(false);
     }
   }, [documentId]);
-
-  // Sync loaded items to state so callbacks read stable reference.
-  // With local synchronous DB, loadedItems is always immediately available
-  // (no flicker), but we still feed it through state to keep the rest of
-  // the component's update loop identical.  useEffect catches the first
-  // assignment synchronously in the same render cycle for local data.
-  useEffect(() => {
-    setItems(loadedItems);
-  }, [loadedItems]);
 
   // Grade the current card
   const handleGrade = useCallback(
@@ -152,7 +149,17 @@ export function ReviewSession() {
     router.back();
   }, [router]);
 
-  // ── Render: Loading ──────────────────────────────────────────────
+  // ── Render: Loading / Error ────────────────────────────────────────
+
+  if (loading || !items) {
+    return (
+      <SafeAreaView className="flex-1 bg-ctp-base">
+        <View className="flex-1 items-center justify-center gap-4">
+          <Spinner size="lg" label="Loading cards..." />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (error) {
     return (
@@ -160,16 +167,6 @@ export function ReviewSession() {
         <View className="flex-1 items-center justify-center px-8 gap-4">
           <Text className="text-ctp-red text-center">{error}</Text>
           <Button variant="outline" onPress={handleBack}>Back</Button>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!items) {
-    return (
-      <SafeAreaView className="flex-1 bg-ctp-base">
-        <View className="flex-1 items-center justify-center gap-4">
-          <Spinner size="lg" label="Loading cards..." />
         </View>
       </SafeAreaView>
     );

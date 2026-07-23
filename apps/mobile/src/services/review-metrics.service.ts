@@ -200,11 +200,14 @@ export function getDocMetrics(db: DB): MetricsRow[] {
     });
   }
 
-  // Sort: most urgent first, then by title
+  // Sort: most urgent first, then by title.
+  // Avoid localeCompare — on Android Hermes it allocates ICU Collator
+  // objects on the native heap for every comparison, which fragments
+  // memory and causes OOM with many documents.
   results.sort(
     (a, b) =>
       b.compositeScore - a.compositeScore ||
-      a.documentTitle.localeCompare(b.documentTitle),
+      (a.documentTitle < b.documentTitle ? -1 : a.documentTitle > b.documentTitle ? 1 : 0),
   );
 
   return results;

@@ -5,8 +5,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { apiGet, type HealthInfo } from "../lib/api";
-import { Server, Loader2, AlertTriangle } from "lucide-react";
+import { apiGet, apiPost, type HealthInfo } from "../lib/api";
+import { Server, Loader2, AlertTriangle, Trash2, CheckCircle } from "lucide-react";
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -23,6 +23,8 @@ export function SettingsPage() {
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [resetStatus, setResetStatus] = useState<"idle" | "confirming" | "done" | "error">("idle");
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -39,6 +41,35 @@ export function SettingsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const [isResetting, setIsResetting] = useState(false);
+
+  // ── Reset database ──────────────────────────────────────────────────
+
+  const handleResetDb = async () => {
+    if (resetStatus === "confirming") {
+      setIsResetting(true);
+      setResetError(null);
+      try {
+        const result = await apiPost<{ ok: boolean; deleted: Record<string, number> }>("/api/settings/reset-db");
+        if (result.ok) {
+          setResetStatus("done");
+        }
+      } catch (err) {
+        setResetError(err instanceof Error ? err.message : "Reset failed");
+        setResetStatus("error");
+      } finally {
+        setIsResetting(false);
+      }
+    } else {
+      setResetStatus("confirming");
+    }
+  };
+
+  const cancelReset = () => {
+    setResetStatus("idle");
+    setResetError(null);
+  };
 
   if (loading) {
     return (
@@ -108,6 +139,67 @@ export function SettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Reset database */}
+        <div className="rounded-xl border border-ctp-red/20 bg-ctp-mantle p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ctp-red/10">
+              <Trash2 className="h-4 w-4 text-ctp-red" />
+            </div>
+            <h2 className="text-sm font-semibold">Danger Zone</h2>
+          </div>
+          <p className="mb-4 text-xs text-ctp-overlay0">
+            This wipes all synced data, devices, tombstones, and conflict records.
+            The server settings (bootstrap token) are preserved. You will need to
+            re-register all devices after the reset.
+          </p>
+
+          {resetStatus === "done" && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-ctp-green/10 px-3 py-2 text-xs text-ctp-green">
+              <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+              Database has been reset successfully.
+            </div>
+          )}
+          {resetStatus === "error" && resetError && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-ctp-red/10 px-3 py-2 text-xs text-ctp-red">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              {resetError}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {resetStatus === "confirming" ? (
+              <>
+                <button
+                  onClick={handleResetDb}
+                  disabled={isResetting}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-ctp-red px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-ctp-red/80 disabled:opacity-50"
+                >
+                  {isResetting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                  {isResetting ? "Resetting…" : "Yes, Reset Everything"}
+                </button>
+                <button
+                  onClick={cancelReset}
+                  className="rounded-lg bg-ctp-surface0 px-3 py-2 text-xs font-medium text-ctp-text transition-colors hover:bg-ctp-surface1"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleResetDb}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-ctp-red/10 px-3 py-2 text-xs font-medium text-ctp-red transition-colors hover:bg-ctp-red/20"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Reset Database
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

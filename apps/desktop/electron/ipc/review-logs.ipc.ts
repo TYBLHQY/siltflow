@@ -53,7 +53,13 @@ export function registerReviewLogHandlers() {
   ipcMain.handle("reviewLogs:deleteByAnnotation", (_event, annotationId: string, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return
+    // Query log IDs first to build correct 3-segment composite keys
+    const logs = sql
+      .prepare("SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?")
+      .all(annotationId, documentId) as Array<{ id: string }>
+    for (const log of logs) {
+      recordDeletion(sql, "review_logs", `${log.id}|${annotationId}|${documentId}`)
+    }
     sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
-    recordDeletion(sql, "review_logs", `${annotationId}|${documentId}`)
   })
 }

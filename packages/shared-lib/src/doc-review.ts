@@ -132,11 +132,12 @@ export function computeDocMetrics(
     });
   }
 
-  // Sort by composite score descending (most urgent first), then by title for stability
+  // Sort by composite score descending (most urgent first), then by title for stability.
+  // Avoid localeCompare — on Android Hermes it OOMs with many documents.
   results.sort(
     (a, b) =>
       b.compositeScore - a.compositeScore ||
-      a.documentTitle.localeCompare(b.documentTitle),
+      (a.documentTitle < b.documentTitle ? -1 : a.documentTitle > b.documentTitle ? 1 : 0),
   );
 
   return results;
@@ -197,7 +198,7 @@ export function sortDocMetrics(
 
   const comparators = chain[field] ?? chain.urgency;
   const titleCmp = (a: DocReviewMetrics, b: DocReviewMetrics) =>
-    a.documentTitle.localeCompare(b.documentTitle);
+    a.documentTitle < b.documentTitle ? -1 : a.documentTitle > b.documentTitle ? 1 : 0;
 
   sorted.sort((a, b) => {
     for (const cmp of comparators) {
