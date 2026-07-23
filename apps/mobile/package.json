@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.1.1",
     "@siltflow/shared-db": "workspace:*",
     "@siltflow/shared-lib": "workspace:*",
     "@tailwindcss/postcss": "^4.0.0",
@@ -44,6 +45,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.0",
     "typescript": "~6.0.3"
   }
 }

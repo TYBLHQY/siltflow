@@ -1,0 +1,316 @@
+/**
+ * Sync settings panel — configure connection to a SiltFlow sync server.
+ *
+ * Auth model (v2):
+ *   1. User enters server URL + server token (from server startup log) → Connect
+ *   2. Mobile registers as a device → server returns deviceId + deviceToken
+ *   3. Config is persisted to AsyncStorage so restart works
+ *
+ * Adapted from apps/desktop/src/components/settings/SyncSettingsContent.tsx
+ */
+
+import { useState, useEffect, useCallback } from "react";
+import { View, Text } from "@/tw";
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Spinner, Badge } from "@/components/ui";
+import { useSyncStore } from "@/stores/sync.store";
+
+export function SyncSettings() {
+  const config = useSyncStore((s) => s.config);
+  const syncState = useSyncStore((s) => s.syncState);
+  const conflicts = useSyncStore((s) => s.conflicts);
+  const isRegistering = useSyncStore((s) => s.isRegistering);
+  const registerError = useSyncStore((s) => s.registerError);
+  const isLoadingConflicts = useSyncStore((s) => s.isLoadingConflicts);
+
+  const syncNow = useSyncStore((s) => s.syncNow);
+  const registerDevice = useSyncStore((s) => s.registerDevice);
+  const loadConflicts = useSyncStore((s) => s.loadConflicts);
+  const resolveConflict = useSyncStore((s) => s.resolveConflict);
+  const disconnect = useSyncStore((s) => s.disconnect);
+
+  // Local form state
+  const [serverUrl, setServerUrl] = useState(config.serverUrl || "");
+  const [serverToken, setServerToken] = useState(config.serverToken || "");
+  const [deviceName, setDeviceName] = useState("Mobile");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Sync from config on mount
+  useEffect(() => {
+    if (config.serverUrl) setServerUrl(config.serverUrl);
+    if (config.serverToken) setServerToken(config.serverToken);
+  }, [config.serverUrl, config.serverToken]);
+
+  // Load conflicts when connected
+  useEffect(() => {
+    if (config.syncEnabled) loadConflicts();
+  }, [config.syncEnabled, loadConflicts]);
+
+  const isConfigured = config.syncEnabled && config.deviceToken;
+
+  const handleConnect = useCallback(async () => {
+    if (!serverUrl || !serverToken) return;
+    setStatusMessage(null);
+    try {
+      await registerDevice(serverUrl, serverToken, deviceName);
+      setStatusMessage("Registered! Initial sync will start shortly.");
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (msg.includes("401")) {
+        setStatusMessage("Invalid server token. Check the token from server startup log.");
+      } else {
+        setStatusMessage(`Connection failed: ${msg}`);
+      }
+    }
+  }, [serverUrl, serverToken, deviceName, registerDevice]);
+
+  const handleDisconnect = useCallback(async () => {
+    await disconnect();
+    setStatusMessage(null);
+  }, [disconnect]);
+
+  const handleSyncNow = useCallback(async () => {
+    try {
+      setStatusMessage("Syncing…");
+      await syncNow();
+      setStatusMessage("Sync complete.");
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (msg.includes("401") || msg.includes("invalid token")) {
+        await handleDisconnect();
+      } else {
+        setStatusMessage(`Sync failed: ${msg}`);
+      }
+    }
+  }, [syncNow, handleDisconnect]);
+
+  // Auto-disconnect when token is no longer valid (revoked server-side)
+  useEffect(() => {
+    const msg = syncState?.lastError;
+    if (msg && (msg.includes("401") || msg.includes("invalid token"))) {
+      handleDisconnect();
+    }
+  }, [syncState?.lastError, handleDisconnect]);
+
+  return (
+    <View className="gap-4">
+      {/* Header */}
+      <Text className="text-lg font-semibold text-ctp-text">Sync Server</Text>
+
+      {/* Connection status (when configured) */}
+      {isConfigured && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connection</CardTitle>
+            <CardDescription>
+              {syncState?.connected ? "Connected to sync server" : "Disconnected"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              {/* Status badge */}
+              <View className="flex-row items-center gap-2">
+                <Text className="text-sm text-ctp-subtext0">Status</Text>
+                <Badge variant={syncState?.connected ? "success" : "secondary"}>
+                  {syncState?.connected ? "Connected" : "Offline"}
+                </Badge>
+                {syncState?.syncInProgress && (
+                  <View className="flex-row items-center gap-1">
+                    <Spinner size="sm" />
+                    <Text className="text-xs text-ctp-subtext0">Syncing…</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Server info */}
+              <View className="flex-row justify-between">
+                <Text className="text-xs text-ctp-subtext0">Server</Text>
+                <Text className="text-xs text-ctp-overlay0" numberOfLines={1}>
+                  {config.serverUrl}
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between">
+                <Text className="text-xs text-ctp-subtext0">Device ID</Text>
+                <Text className="text-xs text-ctp-overlay0" numberOfLines={1}>
+                  {config.deviceId}
+                </Text>
+              </View>
+
+              {/* Sync Now button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={handleSyncNow}
+                disabled={syncState?.syncInProgress}
+              >
+                Sync Now
+              </Button>
+
+              {/* Timestamps */}
+              {syncState?.lastPushAt && (
+                <Text className="text-xs text-ctp-overlay0">
+                  Last push: {new Date(syncState.lastPushAt).toLocaleString()}
+                </Text>
+              )}
+              {syncState?.lastPullAt && (
+                <Text className="text-xs text-ctp-overlay0">
+                  Last pull: {new Date(syncState.lastPullAt).toLocaleString()}
+                </Text>
+              )}
+              {syncState?.lastError && (
+                <Text className="text-xs text-ctp-red">{syncState.lastError}</Text>
+              )}
+            </View>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Configuration form (when not connected) */}
+      {!isConfigured && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connect to Server</CardTitle>
+            <CardDescription>
+              Enter your sync server details to connect this device.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              <Input
+                label="Server URL"
+                placeholder="http://192.168.1.100:3001"
+                value={serverUrl}
+                onChangeText={setServerUrl}
+                keyboardType="url"
+                autoCapitalize="none"
+              />
+
+              <Input
+                label="Server Token"
+                placeholder="From server startup log"
+                value={serverToken}
+                onChangeText={setServerToken}
+                autoCapitalize="none"
+              />
+              <Text className="text-xs text-ctp-overlay0">
+                The server prints this token on startup. It proves you have permission to join.
+              </Text>
+
+              <Input
+                label="Device Name"
+                placeholder="My Phone"
+                value={deviceName}
+                onChangeText={setDeviceName}
+              />
+
+              <Button
+                onPress={handleConnect}
+                disabled={isRegistering || !serverUrl || !serverToken}
+                loading={isRegistering}
+              >
+                {isRegistering ? "Connecting…" : "Connect"}
+              </Button>
+
+              {registerError && (
+                <Text className="text-sm text-ctp-red">{registerError}</Text>
+              )}
+              {statusMessage && (
+                <Text className="text-sm text-ctp-overlay0">{statusMessage}</Text>
+              )}
+            </View>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Connected: server info */}
+      {isConfigured && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Server Info</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-2">
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-ctp-subtext0">Server URL</Text>
+                <Text className="text-sm text-ctp-text" numberOfLines={1}>{config.serverUrl}</Text>
+              </View>
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-ctp-subtext0">Device ID</Text>
+                <Text className="text-xs text-ctp-overlay0" numberOfLines={1}>{config.deviceId}</Text>
+              </View>
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-ctp-subtext0">Sync Interval</Text>
+                <Text className="text-sm text-ctp-text">{config.syncIntervalMinutes} min</Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Disconnect button (when connected) */}
+      {isConfigured && (
+        <Button
+          variant="destructive"
+          onPress={handleDisconnect}
+        >
+          Disconnect
+        </Button>
+      )}
+
+      {/* Conflicts */}
+      {isConfigured && (
+        <Card>
+          <CardHeader>
+            <View className="flex-row items-center gap-2">
+              <CardTitle>Conflicts</CardTitle>
+              {conflicts.length > 0 && (
+                <Badge variant="warning">{conflicts.length}</Badge>
+              )}
+            </View>
+          </CardHeader>
+          <CardContent>
+            {isLoadingConflicts ? (
+              <Spinner size="sm" label="Loading…" />
+            ) : conflicts.length === 0 ? (
+              <Text className="text-sm text-ctp-subtext0">No unresolved conflicts</Text>
+            ) : (
+              <View className="gap-2">
+                {conflicts.map((c) => (
+                  <View
+                    key={c.id}
+                    className="border border-ctp-surface1 rounded-md p-3 gap-2"
+                  >
+                    <View className="flex-row justify-between">
+                      <Text className="text-xs text-ctp-overlay0">{c.table_name}</Text>
+                      <Text className="text-xs text-ctp-overlay0">
+                        {new Date(c.created_at).toLocaleString()}
+                      </Text>
+                    </View>
+                    <View className="flex-row gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onPress={() => resolveConflict(c.id, "local")}
+                        className="flex-1"
+                      >
+                        Keep Local
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onPress={() => resolveConflict(c.id, "remote")}
+                        className="flex-1"
+                      >
+                        Accept Remote
+                      </Button>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </View>
+  );
+}

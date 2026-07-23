@@ -8,3 +8,4 @@ export { useReviewLogStore } from "./review-log.store";
 export { useStatsStore } from "./stats.store";
 export { useSearchStore } from "./search.store";
 export { useSettingsStore, type AIProfile } from "./settings.store";
+export { useSyncStore, type SyncStore, loadPersistedSyncConfig } from "./sync.store";

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Appearance, type ColorSchemeName } from "react-native";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { DatabaseProvider } from "@/providers/DatabaseProvider";
+import { SyncProvider } from "@/providers/SyncProvider";
 import "@/global.css";
 
 export default function RootLayout() {
@@ -22,7 +23,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <DatabaseProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <SyncProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </SyncProvider>
       </DatabaseProvider>
     </ThemeProvider>
   );

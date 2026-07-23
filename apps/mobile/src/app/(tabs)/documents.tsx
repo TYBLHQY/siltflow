@@ -1,5 +1,5 @@
 import { DocumentsScreen } from "@/screens/documents";
 
-export default function DocumentsRoute() {
+export default function DocumentsTab() {
   return <DocumentsScreen />;
 }
