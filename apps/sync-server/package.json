@@ -8,6 +8,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "prestart": "pnpm rebuild better-sqlite3",
+    "pred": "pnpm rebuild better-sqlite3",
     "build:dashboard": "cd dashboard && pnpm install && pnpm build",
     "dev:dashboard": "cd dashboard && pnpm dev"
   },

@@ -9,6 +9,10 @@ const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    port: 5174,
+    strictPort: true,
+  },
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
