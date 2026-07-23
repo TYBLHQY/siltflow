@@ -103,9 +103,9 @@ export function initSyncEngine(
     }, cfg.syncIntervalMinutes * 60_000);
   }
 
-  // Run an immediate sync on startup
-  engine.sync().catch((err) => {
-    console.warn("[Sync] Initial sync failed:", (err as Error).message);
+  // Run an initial full sync on startup to seed the local database
+  engine.pushFull().then(() => engine?.pull()).catch((err) => {
+    console.warn("[Sync] Initial full sync failed:", (err as Error).message);
   });
 
   console.log(
