@@ -174,5 +174,6 @@ export interface SiltflowAPI {
     verifyToken: (serverUrl: string, token: string) => Promise<AuthVerifyResponse>;
     getConflicts: () => Promise<ConflictRecord[]>;
     resolveConflict: (id: number, resolution: "local" | "remote") => Promise<void>;
+    onStateChange: (fn: (state: SyncState) => void) => () => void;
   };
 }

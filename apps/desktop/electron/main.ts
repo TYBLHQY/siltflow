@@ -75,7 +75,7 @@ const VAULT_POINTER_PATH = path.join(VAULT_CONFIG_DIR, "vault-path.json");
 
 const SILTFLOW_DIR = ".siltflow";
 
-function getVaultPath(): string {
+export function getVaultPath(): string {
   try {
     const data = JSON.parse(fs.readFileSync(VAULT_POINTER_PATH, "utf-8"));
     if (data.vaultPath && fs.existsSync(data.vaultPath)) {
@@ -106,7 +106,7 @@ function readVaultConfig(vaultPath: string): Record<string, unknown> {
   }
 }
 
-function writeVaultConfig(vaultPath: string, config: Record<string, unknown>) {
+export function writeVaultConfig(vaultPath: string, config: Record<string, unknown>) {
   const p = vaultConfigPath(vaultPath);
   // Merge with existing config so we don't overwrite other keys
   let existing: Record<string, unknown> = {};

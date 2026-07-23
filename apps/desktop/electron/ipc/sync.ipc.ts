@@ -15,7 +15,7 @@
 
 import { ipcMain } from "electron";
 import { getSqlite } from "../database";
-import { SyncClient } from "../sync/sync-client";
+import { SyncClient, SyncClientError } from "../sync/sync-client";
 import { SyncWsClient } from "../sync/ws-client";
 import { SyncEngine } from "../sync/sync-engine";
 import type { SyncState, SyncConfig } from "@siltflow/shared-lib";
@@ -131,12 +131,33 @@ export function registerSyncHandlers(): void {
   });
 
   ipcMain.handle("sync:configure", async (_event, cfg: SyncConfig) => {
+    // Persist to vault config so it survives restart
+    // Dynamic require avoids circular dependency since main.ts imports this module
+    const main = require("../main");
+    const vaultPath: string = main.getVaultPath();
+    if (vaultPath) {
+      main.writeVaultConfig(vaultPath, {
+        syncEnabled: cfg.syncEnabled,
+        syncServerUrl: cfg.serverUrl,
+        syncDeviceToken: cfg.deviceToken,
+        syncDeviceId: cfg.deviceId,
+        syncIntervalMinutes: cfg.syncIntervalMinutes,
+      });
+    }
+
     initSyncEngine(cfg, (state) => {
       // Forward state changes to the renderer
       const { BrowserWindow } = require("electron");
       const win = BrowserWindow.getAllWindows()[0];
       if (win) win.webContents.send("sync:stateChange", state);
     });
+
+    // Run initial sync immediately after connecting
+    if (engine) {
+      engine.sync().catch((err: Error) => {
+        console.warn("[Sync] Initial sync failed:", err.message);
+      });
+    }
   });
 
   ipcMain.handle(
@@ -150,8 +171,11 @@ export function registerSyncHandlers(): void {
         });
         return result;
       } catch (bootstrapErr) {
-        // If bootstrap fails (server already has devices), the user needs an
-        // admin-provided token. Return the error so the UI can prompt.
+        // If server already has devices (409), return a structured result
+        // so the UI can prompt for an admin token instead of showing an error
+        if (bootstrapErr instanceof SyncClientError && bootstrapErr.status === 409) {
+          return { needsAdminToken: true, error: bootstrapErr.message };
+        }
         throw bootstrapErr;
       }
     },

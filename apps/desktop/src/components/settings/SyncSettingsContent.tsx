@@ -56,8 +56,8 @@ export function SyncSettingsContent() {
       setStatusMessage("Connected! Initial sync will start shortly.");
     } catch (err) {
       const msg = (err as Error).message;
-      if (msg.includes("409") || msg.includes("Conflict") || msg.includes("already exists")) {
-        // Server already has devices — the user needs an admin token
+      // The IPC layer returns a special error when the server already has devices
+      if (msg === "NEEDS_ADMIN_TOKEN" || msg.includes("409") || msg.includes("bootstrap already completed")) {
         setNeedsAdminToken(true);
         setStatusMessage("Server already has devices. Enter the admin token to join.");
       } else {

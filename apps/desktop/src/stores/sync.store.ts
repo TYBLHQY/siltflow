@@ -42,7 +42,15 @@ interface SyncStoreActions {
 
 export type SyncStore = SyncStoreState & SyncStoreActions;
 
-export const useSyncStore = create<SyncStore>((set, get) => ({
+export const useSyncStore = create<SyncStore>((set, get) => {
+  // Listen for state changes pushed from the main process
+  if (typeof window !== "undefined" && window.siltflow?.sync?.onStateChange) {
+    window.siltflow.sync.onStateChange((newState) => {
+      set({ syncState: newState });
+    });
+  }
+
+  return {
   config: {
     serverUrl: "",
     deviceToken: "",
@@ -82,10 +90,18 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         serverUrl,
         deviceName,
       );
+      // Check if server already has devices (409 response from IPC layer)
+      if ("needsAdminToken" in result && result.needsAdminToken) {
+        set({ isBootstrapping: false });
+        throw new Error("NEEDS_ADMIN_TOKEN");
+      }
+      const result_ = result as {
+        deviceId: string; token: string; serverUrl: string;
+      };
       const cfg: SyncConfig = {
-        serverUrl: result.serverUrl || serverUrl,
-        deviceToken: result.token,
-        deviceId: result.deviceId,
+        serverUrl: result_.serverUrl || serverUrl,
+        deviceToken: result_.token,
+        deviceId: result_.deviceId,
         syncEnabled: true,
         syncIntervalMinutes: get().config.syncIntervalMinutes,
       };
@@ -142,4 +158,5 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     // Remove from local list
     set((s) => ({ conflicts: s.conflicts.filter((c) => c.id !== id) }));
   },
-}));
+  };
+});
