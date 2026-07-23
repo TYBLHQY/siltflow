@@ -30,8 +30,8 @@ jobs:
       - name: Cache TypeScript build info
         uses: actions/cache@v5
         with:
-          path: node_modules/.cache
-          key: tsc-cache-${{ runner.os }}-${{ hashFiles('tsconfig.json', 'pnpm-lock.yaml') }}
+          path: apps/desktop/node_modules/.cache
+          key: tsc-cache-${{ runner.os }}-${{ hashFiles('apps/desktop/tsconfig.json', 'pnpm-lock.yaml') }}
           restore-keys: |
             tsc-cache-${{ runner.os }}-
 
@@ -39,6 +39,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint + TypeCheck + Test (parallel)
+        working-directory: apps/desktop
         run: |
           set -e
           pnpm run lint &
@@ -90,6 +91,7 @@ jobs:
 
       - name: Bump package.json version to match tag
         shell: bash
+        working-directory: apps/desktop
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           node -e "const p=require('./package.json'); p.version='$VERSION'; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n')"
@@ -120,13 +122,14 @@ jobs:
       - name: Cache TypeScript build info
         uses: actions/cache@v5
         with:
-          path: node_modules/.cache
-          key: tsc-cache-${{ matrix.target }}-${{ hashFiles('tsconfig.json', 'pnpm-lock.yaml') }}
+          path: apps/desktop/node_modules/.cache
+          key: tsc-cache-${{ matrix.target }}-${{ hashFiles('apps/desktop/tsconfig.json', 'pnpm-lock.yaml') }}
           restore-keys: |
             tsc-cache-${{ matrix.target }}-
 
       - name: Build (type-check + vite in parallel)
         shell: bash
+        working-directory: apps/desktop
         run: |
           set -e
           pnpm exec tsc &
@@ -139,12 +142,14 @@ jobs:
           exit $FAIL
 
       - name: Package with electron-builder
+        working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm exec electron-builder --publish=never
 
       - name: Upload artifacts to release
         shell: bash
+        working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -193,6 +198,7 @@ jobs:
 
       - name: Mark release as published (Linux only)
         if: matrix.target == 'linux'
+        working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
