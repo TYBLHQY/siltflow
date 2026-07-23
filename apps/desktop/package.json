@@ -8,10 +8,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
-    "postinstall": "electron-rebuild -f -w better-sqlite3",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "predev": "electron-rebuild -f -w better-sqlite3",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc",

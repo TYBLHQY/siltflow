@@ -5,4 +5,4 @@ dist-ssr
 *.local
 *.tsbuildinfo
 .claude/worktrees/
-Claude.md
+CLAUDE.md

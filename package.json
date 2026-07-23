@@ -2,6 +2,7 @@
   "name": "siltflow-monorepo",
   "private": true,
   "scripts": {
+    "postinstall": "bash scripts/isolate-better-sqlite3.sh",
     "dev": "pnpm -F @siltflow/desktop dev",
     "build": "pnpm -F @siltflow/desktop build",
     "lint": "pnpm -F @siltflow/desktop lint",
