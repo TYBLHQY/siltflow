@@ -103,29 +103,44 @@ export const authRoutes = new Hono<{ Variables: Variables }>()
       warning: "Save this device token. It will not be shown again.",
     }, 201);
   })
-  // ── Verify device token ─────────────────────────────────────────────
+  // ── Verify device or server token ───────────────────────────────────
   .use("*", deviceAuth)
   .post("/verify", async (c) => {
-    if (!c.var.deviceId) {
-      return c.json({ error: "invalid device token" }, 401);
+    // Accept either a valid device token OR the server token.
+    // Device tokens are validated by the deviceAuth middleware above.
+    // Server token is checked explicitly so admins can log into the dashboard
+    // before any device is registered.
+    if (c.var.deviceId) {
+      // Validated by deviceAuth
+      const db = getDb();
+      if (!db) return c.json({ error: "database not ready" }, 503);
+      const device = db
+        .select()
+        .from(devices)
+        .where(eq(devices.id, c.var.deviceId))
+        .get();
+      if (!device) return c.json({ error: "device not found" }, 404);
+      return c.json({
+        deviceId: device.id,
+        deviceName: device.name,
+        isAdmin: device.isAdmin,
+      });
     }
 
-    const db = getDb();
-    if (!db) return c.json({ error: "database not ready" }, 503);
+    // Fall back: check if the token matches the server token
+    const config = c.var.config;
+    if (config.bootstrapToken) {
+      const header = c.req.header("Authorization");
+      if (header === `Bearer ${config.bootstrapToken}`) {
+        return c.json({
+          deviceId: "server",
+          deviceName: "Admin Dashboard",
+          isAdmin: true,
+        });
+      }
+    }
 
-    const device = db
-      .select()
-      .from(devices)
-      .where(eq(devices.id, c.var.deviceId))
-      .get();
-
-    if (!device) return c.json({ error: "device not found" }, 404);
-
-    return c.json({
-      deviceId: device.id,
-      deviceName: device.name,
-      isAdmin: device.isAdmin,
-    });
+    return c.json({ error: "invalid token" }, 401);
   })
   // ── Revoke device token (requires existing device auth, admin only) ──
   .delete("/revoke/:deviceId", async (c) => {

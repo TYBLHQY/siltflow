@@ -42,7 +42,7 @@ export function LoginPage() {
             <BrainCircuit className="h-6 w-6 text-ctp-mauve" />
           </div>
           <h1 className="text-lg font-semibold tracking-tight">SiltFlow Dashboard</h1>
-          <p className="text-xs text-ctp-overlay0">Enter your device token to continue</p>
+          <p className="text-xs text-ctp-overlay0">Enter the server token or a device token to sign in</p>
         </div>
 
         {/* Form */}
@@ -56,7 +56,7 @@ export function LoginPage() {
               <input
                 id="token"
                 type="password"
-                placeholder="Paste your device token…"
+                placeholder="Server token or device token…"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="w-full rounded-lg border border-ctp-overlay0/30 bg-ctp-base py-2.5 pl-9 pr-3 text-sm text-ctp-text placeholder:text-ctp-overlay0/50 focus:border-ctp-mauve/50 focus:ring-2 focus:ring-ctp-mauve/20"
