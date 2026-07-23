@@ -7,6 +7,11 @@
     "lint": "pnpm -F @siltflow/desktop lint",
     "test": "pnpm -F @siltflow/desktop test",
     "typecheck": "pnpm -F @siltflow/desktop typecheck",
-    "ci:check": "pnpm lint && pnpm typecheck && pnpm test"
+    "ci:check": "pnpm lint && pnpm typecheck && pnpm test",
+    "mobile:start": "pnpm -F @siltflow/mobile start",
+    "mobile:android": "pnpm -F @siltflow/mobile android",
+    "mobile:ios": "pnpm -F @siltflow/mobile ios",
+    "mobile:web": "pnpm -F @siltflow/mobile web",
+    "mobile:typecheck": "pnpm -F @siltflow/mobile typecheck"
   }
 }

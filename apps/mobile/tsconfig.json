@@ -1,0 +1,14 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["${configDir}/node_modules", "${configDir}/babel.config.js", "${configDir}/metro.config.js", "${configDir}/jest.config.js", "${configDir}/android", "${configDir}/ios"],
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"]
+}
