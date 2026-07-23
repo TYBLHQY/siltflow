@@ -40,6 +40,7 @@ import {
 interface StatsState {
   cards: Card[];
   reviewLogs: { createdAt: string; data: string; annotationId: string }[];
+  /** Count of non-highlight annotations — used to derive newCards. */
   annotationCount: number;
   loaded: boolean;
   loading: boolean;
@@ -92,10 +93,16 @@ export const useStatsStore = create<StatsState>((set, get) => ({
         annotationId: r.annotationId,
       }));
 
+      // Count real annotations (not highlights) to derive newCards:
+      //   newCards = annotationCount - cardsWithFSRS
+      const annotationCount = annotations.filter(
+        (a) => a.kind !== "highlight",
+      ).length;
+
       set({
         cards,
         reviewLogs,
-        annotationCount: annotations.length,
+        annotationCount,
         loaded: true,
       });
     } catch (err) {

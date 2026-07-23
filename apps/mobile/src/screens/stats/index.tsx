@@ -97,7 +97,20 @@ export function StatsScreen() {
     loadFromDb();
   }, [loadFromDb]);
 
-  // Compute data
+  // Derive total and newCards the same way desktop OverviewCards.tsx does:
+  //   - cards only contains fsrs_cards rows (reviewed annotations).
+  //   - annotationCount counts non-highlight annotations.
+  //   - newCards = annotations without an fsrs_card row yet.
+  //   - total should include unreviewed annotations too.
+  const newCards = useMemo(() => {
+    if (!loaded) return 0;
+    return Math.max(0, annotationCount - cards.length);
+  }, [loaded, annotationCount, cards.length]);
+
+  const total = useMemo(() => {
+    return Math.max(annotationCount, cards.length);
+  }, [annotationCount, cards.length]);
+
   const overview = useMemo(() => {
     if (!loaded) return null;
     return getOverview();
@@ -184,15 +197,27 @@ export function StatsScreen() {
 
         {/* Overview cards */}
         {overview && (
-          <View className="flex-row gap-3">
-            <StatCard label="Total Cards" value={overview.total} />
-            <StatCard label="Due Today" value={overview.dueToday} color="text-ctp-red" />
-            <StatCard
-              label="Avg Retention"
-              value={`${Math.round(overview.avgRetrievability * 100)}%`}
-              color="text-ctp-blue"
-            />
-            <StatCard label="Learning" value={overview.learning} color="text-ctp-yellow" />
+          <View className="gap-3">
+            {/* Row 1 */}
+            <View className="flex-row gap-3">
+              <StatCard label="Total Cards" value={total} />
+              <StatCard label="Due Today" value={overview.dueToday} color="text-ctp-red" />
+              <StatCard label="New Cards" value={newCards} color="text-ctp-blue" />
+            </View>
+            {/* Row 2 */}
+            <View className="flex-row gap-3">
+              <StatCard label="Learning" value={overview.learning} color="text-ctp-yellow" />
+              <StatCard
+                label="Retrievability"
+                value={`${Math.round(overview.avgRetrievability * 100)}%`}
+                color="text-ctp-green"
+              />
+              <StatCard
+                label="Avg Stability"
+                value={`${overview.avgStability.toFixed(1)}d`}
+                color="text-ctp-teal"
+              />
+            </View>
           </View>
         )}
 
