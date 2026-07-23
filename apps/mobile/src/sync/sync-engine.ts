@@ -29,7 +29,7 @@ import {
 
 // ── Tables with composite primary keys ──────────────────────────────
 
-const COMPOSITE_PK_TABLES: Record<string, string[]> = {
+export const COMPOSITE_PK_TABLES: Record<string, string[]> = {
   annotations: ["id", "document_id"],
   ai_results: ["annotation_id", "document_id"],
   fsrs_cards: ["annotation_id", "document_id"],

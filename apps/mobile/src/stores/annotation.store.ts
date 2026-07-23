@@ -105,6 +105,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       try {
         const db = getSQLite();
         deleteAnnotation(db, id, current.documentId);
+        // Changelog entries are recorded inside deleteAnnotation service
       } catch (err) {
         console.error("[annotation.store] deleteAnnotation failed:", err);
       }

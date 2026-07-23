@@ -6,6 +6,7 @@
 
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { SummarySaveRequest, SummarySaveResult } from "./types";
+import { recordDeletion } from "@/sync/changelog";
 
 type DB = SQLiteDatabase;
 
@@ -64,4 +65,5 @@ export function deleteSummary(db: DB, documentId: string): void {
     "DELETE FROM summaries WHERE document_id = ?",
     [p(documentId)],
   );
+  recordDeletion("summaries", documentId);
 }

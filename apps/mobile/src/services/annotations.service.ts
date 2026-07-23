@@ -11,6 +11,7 @@
 
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { AnnotationEnriched, AnnotationSaveRequest } from "./types";
+import { recordCompositeDeletion } from "@/sync/changelog";
 
 type DB = SQLiteDatabase;
 
@@ -145,6 +146,13 @@ export function deleteAnnotation(
       [p(id), p(documentId)],
     );
     db.execSync("COMMIT");
+    // Track deletions for sync (composite PK: id|document_id)
+    recordCompositeDeletion("annotations", { id, document_id: documentId });
+    recordCompositeDeletion("ai_results", { annotation_id: id, document_id: documentId });
+    recordCompositeDeletion("fsrs_cards", { annotation_id: id, document_id: documentId });
+    // review_logs uses id|annotation_id|document_id — we can't know the log ids
+    // here, but the sync engine queries changelog for review_logs by created_at.
+    // Individual review log deletions (if any) should record their own entries.
   } catch (err) {
     db.execSync("ROLLBACK");
     throw err;

@@ -6,6 +6,7 @@
 
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { ReviewLogEntryIPC, ReviewLogSaveResult } from "./types";
+import { recordCompositeDeletion } from "@/sync/changelog";
 
 type DB = SQLiteDatabase;
 
@@ -96,6 +97,15 @@ export function deleteReviewLogsByAnnotation(
   annotationId: string,
   documentId: string,
 ): void {
+  // Record deletion for each log before removing them (composite PK: id|annotation_id|document_id)
+  const rows = db.getAllSync<{ id: string }>(
+    "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?",
+    [p(annotationId), p(documentId)],
+  );
+  for (const row of rows) {
+    recordCompositeDeletion("review_logs", { id: row.id, annotation_id: annotationId, document_id: documentId });
+  }
+
   db.runSync(
     "DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?",
     [p(annotationId), p(documentId)],

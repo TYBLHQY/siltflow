@@ -6,6 +6,7 @@
 
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { FSRSCardSaveResult } from "./types";
+import { recordCompositeDeletion } from "@/sync/changelog";
 
 type DB = SQLiteDatabase;
 
@@ -110,4 +111,5 @@ export function deleteFSRSCard(
     "DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?",
     [p(annotationId), p(documentId)],
   );
+  recordCompositeDeletion("fsrs_cards", { annotation_id: annotationId, document_id: documentId });
 }

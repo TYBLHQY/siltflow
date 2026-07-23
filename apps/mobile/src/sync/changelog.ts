@@ -22,6 +22,20 @@ export const CHANGELOG_DDL = `
   );
 `;
 
+// ── Composite-PK tables ─────────────────────────────────────────────
+
+/**
+ * Tables whose identity cannot be expressed by a single `id` column.
+ * For these the `row_id` in changelog / tombstones uses pipe-delimited
+ * segments, e.g. `"annotationId|documentId"`.
+ */
+const COMPOSITE_PK_TABLES: Record<string, string[]> = {
+  annotations: ["id", "document_id"],
+  ai_results: ["annotation_id", "document_id"],
+  fsrs_cards: ["annotation_id", "document_id"],
+  review_logs: ["id", "annotation_id", "document_id"],
+};
+
 // ── API ───────────────────────────────────────────────────────────────
 
 export function initChangelogTable(): void {
@@ -29,7 +43,7 @@ export function initChangelogTable(): void {
   sql.execSync(CHANGELOG_DDL);
 }
 
-/** Record a single-row deletion. */
+/** Record a single-row deletion (simple PK table — just an id). */
 export function recordDeletion(
   tableName: string,
   rowId: string,
@@ -41,6 +55,25 @@ export function recordDeletion(
     rowId,
     new Date().toISOString(),
   );
+}
+
+/** Record a deletion for a table with a composite primary key. */
+export function recordCompositeDeletion(
+  tableName: string,
+  pkValues: Record<string, string>,
+): void {
+  const cols = COMPOSITE_PK_TABLES[tableName];
+  if (!cols) {
+    // Fall back to id if present
+    if (pkValues.id) {
+      recordDeletion(tableName, pkValues.id);
+      return;
+    }
+    console.warn(`[changelog] Unknown composite PK for table ${tableName}`);
+    return;
+  }
+  const rowId = cols.map((c) => pkValues[c] ?? "").join("|");
+  recordDeletion(tableName, rowId);
 }
 
 /** Record multiple deletions (e.g. batch delete). */

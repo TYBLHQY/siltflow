@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "@siltflow/shared-db/schema";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
 import type { FolderRowIPC, FolderCreateParams } from "./types";
+import { recordDeletion } from "@/sync/changelog";
 
 type DB = ExpoSQLiteDatabase<typeof schema>;
 
@@ -96,11 +97,13 @@ export function deleteFolder(db: DB, id: string): void {
   // Delete documents from DB (cascade deletes annotations, summaries, etc.)
   for (const docId of docIds) {
     db.delete(schema.documents).where(eq(schema.documents.id, docId)).run();
+    recordDeletion("documents", docId);
   }
 
   // Delete folders
   for (const fid of allIds) {
     db.delete(schema.folders).where(eq(schema.folders.id, fid)).run();
+    recordDeletion("folders", fid);
   }
 }
 
