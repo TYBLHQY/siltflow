@@ -38,8 +38,8 @@ export default function TabLayout() {
         </TabTrigger>
 
         <TabTrigger
-          name="study"
-          href="/study"
+          name="review"
+          href="/review"
           style={{
             flex: 1,
             alignItems: "center",
@@ -48,7 +48,7 @@ export default function TabLayout() {
           }}
         >
           <Text style={{ fontSize: 22 }}>📚</Text>
-          <Text style={{ fontSize: 10, color: "#cdd6f4" }}>Study</Text>
+          <Text style={{ fontSize: 10, color: "#cdd6f4" }}>Review</Text>
         </TabTrigger>
 
         <TabTrigger
