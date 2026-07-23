@@ -2,3 +2,5 @@
 - ./apps/desktop
 - ./apps/mobile
 - ./apps/sync-server
+
+plan 文本用中文

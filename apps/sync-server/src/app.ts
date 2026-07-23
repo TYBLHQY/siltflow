@@ -18,6 +18,8 @@ import { summaryRoutes } from "./routes/summaries";
 import { statsRoutes } from "./routes/stats";
 import { syncRoutes } from "./routes/sync";
 import { createFileRoutes } from "./routes/files";
+import { deviceRoutes } from "./routes/devices";
+import { settingsRoutes } from "./routes/settings";
 import { serveDashboard } from "./serve-dashboard";
 import type { ServerConfig } from "./config";
 import type { AppContext, Variables } from "./types";
@@ -58,6 +60,12 @@ export function createApp(config: ServerConfig, ctx: AppContext) {
 
   // Sync
   api.route("/sync", syncRoutes);
+
+  // Device management
+  api.route("/devices", deviceRoutes);
+
+  // Server settings
+  api.route("/settings", settingsRoutes);
 
   // Stats (read-only)
   api.route("/stats", statsRoutes);

@@ -91,6 +91,12 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
       conflictCount: conflicts.length,
     });
 
+    // Update device last_sync_at
+    if (c.var.deviceId) {
+      const now = new Date().toISOString();
+      sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
+    }
+
     return c.json({ accepted, conflicts });
   })
   .post("/pull", async (c) => {
@@ -116,6 +122,12 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
     ).all(since) as Record<string, unknown>[];
 
     const now = new Date().toISOString();
+
+    // Update device last_sync_at
+    if (c.var.deviceId) {
+      sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
+    }
+
     return c.json({ serverTime: now, changes, tombstones });
   });
 

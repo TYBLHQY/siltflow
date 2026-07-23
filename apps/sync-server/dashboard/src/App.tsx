@@ -1,22 +1,10 @@
 import { HashRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useAutoTheme } from "./hooks/useAutoTheme";
 import { LoginPage } from "./pages/LoginPage";
 import { Layout } from "./pages/Layout";
-import { BrainCircuit } from "lucide-react";
-
-/** Placeholder overview page — will be replaced later. */
-function OverviewPage() {
-  const { device } = useAuth();
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3">
-      <BrainCircuit className="h-12 w-12 text-ctp-mauve/50" />
-      <h1 className="text-xl font-semibold">Welcome, {device?.deviceName ?? "User"}</h1>
-      <p className="text-sm text-ctp-overlay0">
-        Dashboard is initialised. Stats pages coming soon.
-      </p>
-    </div>
-  );
-}
+import { DevicesPage } from "./pages/DevicesPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 /** Route guard — redirects to /login if not authenticated. */
 function AuthGuard() {
@@ -35,6 +23,8 @@ function AuthGuard() {
 }
 
 export function App() {
+  useAutoTheme();
+
   return (
     <AuthProvider>
       <HashRouter>
@@ -42,10 +32,11 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<AuthGuard />}>
             <Route element={<Layout />}>
-              <Route path="/overview" element={<OverviewPage />} />
+              <Route path="/devices" element={<DevicesPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/overview" replace />} />
+          <Route path="*" element={<Navigate to="/devices" replace />} />
         </Routes>
       </HashRouter>
     </AuthProvider>

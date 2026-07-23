@@ -1,7 +1,8 @@
 /**
  * Server-specific database migrations.
  *
- * Creates the two server-only tables (devices, sync_tombstones).
+ * Creates server-only tables (devices, sync_tombstones, server_settings)
+ * and handles incremental schema changes via ALTER TABLE.
  * The shared 7 tables are handled by @siltflow/shared-db's initSchema().
  */
 
@@ -26,10 +27,33 @@ const SERVER_TABLES_SQL = [
 
   `CREATE INDEX IF NOT EXISTS idx_tombstones_deleted_at
     ON sync_tombstones(deleted_at);`,
+
+  `CREATE TABLE IF NOT EXISTS server_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );`,
+
+  `INSERT OR IGNORE INTO server_settings (key, value, updated_at)
+    VALUES ('pdf_sync_enabled', 'true', datetime('now'));`,
+];
+
+const MIGRATIONS_SQL = [
+  // Add last_sync_at column to devices (for tracking sync timing)
+  `ALTER TABLE devices ADD COLUMN last_sync_at TEXT;`,
 ];
 
 export function initServerSchema(executor: SqlExecutor): void {
   for (const stmt of SERVER_TABLES_SQL) {
     executor.exec(stmt);
+  }
+
+  // Run incremental migrations (safe to fail if column already exists)
+  for (const stmt of MIGRATIONS_SQL) {
+    try {
+      executor.exec(stmt);
+    } catch {
+      // Column/table already exists — skip
+    }
   }
 }

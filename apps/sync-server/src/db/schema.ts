@@ -2,7 +2,7 @@
  * Server database schema.
  *
  * Uses the shared 7-table Drizzle schema from @siltflow/shared-db,
- * plus 2 server-only tables (devices, sync_tombstones).
+ * plus 3 server-only tables (devices, sync_tombstones, server_settings).
  *
  * The schema is assembled with object spread so Drizzle can infer
  * the full shape at the call site — matching the desktop pattern.
@@ -39,6 +39,12 @@ export const syncTombstones = sqliteTable("sync_tombstones", {
   deletedAt: text("deleted_at").notNull(),
 });
 
+export const serverSettings = sqliteTable("server_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 // ── Combined schema object (for Drizzle init) ─────────────────────────
 
 export const schema = {
@@ -51,4 +57,5 @@ export const schema = {
   reviewLogs,
   devices,
   syncTombstones,
+  serverSettings,
 };

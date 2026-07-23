@@ -52,7 +52,14 @@ export function apiPost<T>(path: string, body?: unknown): Promise<T> {
   });
 }
 
-export async function apiDelete(path: string): Promise<void> {
+export function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method: "PATCH",
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function apiDelete<T = void>(path: string): Promise<T> {
   const token = getToken();
   const res = await fetch(path, {
     method: "DELETE",
@@ -62,5 +69,42 @@ export async function apiDelete(path: string): Promise<void> {
     clearToken();
     window.location.hash = "#/login";
   }
-  if (!res.ok) throw new Error("Delete failed");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error ?? `Delete failed: ${res.status}`);
+  }
+  // Some delete endpoints return JSON, some don't — parse if present
+  const text = await res.text();
+  try { return JSON.parse(text) as T; } catch { return undefined as unknown as T; }
+}
+
+// ── API Types ────────────────────────────────────────────────────────
+
+export interface DeviceInfo {
+  id: string;
+  name: string;
+  isAdmin: boolean;
+  lastSeenAt: string | null;
+  lastSyncAt: string | null;
+  createdAt: string;
+}
+
+export interface ServerSetting {
+  key: string;
+  value: string;
+  updatedAt: string;
+}
+
+export interface RegisterResult {
+  deviceId: string;
+  deviceName: string;
+  token: string;
+  warning: string;
+}
+
+export interface HealthInfo {
+  ok: boolean;
+  uptime: number;
+  db: string;
+  timestamp: string;
 }

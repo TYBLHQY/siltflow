@@ -1,8 +1,9 @@
 /**
  * Bearer-token authentication middleware.
  *
- * Validates the Authorization header against the devices table
- * and injects deviceId + isAdmin into the request context.
+ * Validates the Authorization header against the devices table,
+ * injects deviceId + isAdmin into the request context,
+ * and updates last_seen_at on each authenticated request.
  */
 
 import { createMiddleware } from "hono/factory";
@@ -38,6 +39,10 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
 
     c.set("deviceId", device.id);
     c.set("isAdmin", device.isAdmin);
+
+    // Update last_seen_at (fire-and-forget — don't block the request)
+    const now = new Date().toISOString();
+    db.update(devices).set({ lastSeenAt: now }).where(eq(devices.id, device.id)).run();
 
     await next();
   },

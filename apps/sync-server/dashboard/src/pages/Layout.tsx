@@ -2,17 +2,15 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import {
   BrainCircuit,
-  LayoutDashboard,
-  BarChart3,
   Monitor,
+  Settings,
   LogOut,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 const NAV_ITEMS = [
-  { to: "/overview", icon: LayoutDashboard, label: "Overview" },
-  { to: "/stats", icon: BarChart3, label: "Stats", disabled: true },
-  { to: "/devices", icon: Monitor, label: "Devices", disabled: true },
+  { to: "/devices", icon: Monitor, label: "Devices" },
+  { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export function Layout() {
@@ -43,33 +41,23 @@ export function Layout() {
 
         {/* Nav items */}
         <nav className="flex-1 space-y-0.5 px-2 py-3">
-          {NAV_ITEMS.map(({ to, icon: Icon, label, disabled }) =>
-            disabled ? (
-              <span
-                key={to}
-                className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ctp-overlay0/40"
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </span>
-            ) : (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-ctp-mauve/15 text-ctp-mauve font-medium"
-                      : "text-ctp-text hover:bg-ctp-surface0",
-                  )
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </NavLink>
-            ),
-          )}
+          {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                  isActive
+                    ? "bg-ctp-mauve/15 text-ctp-mauve font-medium"
+                    : "text-ctp-text hover:bg-ctp-surface0",
+                )
+              }
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Device info + Logout */}
