@@ -9,7 +9,7 @@
  */
 
 import * as sharedSchema from "@siltflow/shared-db/schema";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 
 // ── Re-export shared tables ───────────────────────────────────────────
 
@@ -39,6 +39,20 @@ export const syncTombstones = sqliteTable("sync_tombstones", {
   deletedAt: text("deleted_at").notNull(),
 });
 
+export const syncTombstoneAcks = sqliteTable(
+  "sync_tombstone_acks",
+  {
+    tombstoneId: integer("tombstone_id")
+      .notNull()
+      .references(() => syncTombstones.id, { onDelete: "cascade" }),
+    deviceId: text("device_id").notNull(),
+    ackedAt: text("acked_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.tombstoneId, table.deviceId] }),
+  }),
+);
+
 export const serverSettings = sqliteTable("server_settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
@@ -57,5 +71,6 @@ export const schema = {
   reviewLogs,
   devices,
   syncTombstones,
+  syncTombstoneAcks,
   serverSettings,
 };

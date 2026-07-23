@@ -60,29 +60,11 @@ export function getSqlite(): Database.Database | null {
   return _sqlite;
 }
 
-// ── SqlExecutor adapter (TODO: move to shared-db, see plan step 27) ──
+import { createBetterSqlite3Executor } from "@siltflow/shared-db/adapters/better-sqlite3";
 
-import type { SqlExecutor, SqlRunResult } from "@siltflow/shared-db/db";
+// ── Helpers ──────────────────────────────────────────────────────────
 
-function createSqlExecutor(database: Database.Database): SqlExecutor {
-  return {
-    run(sql: string, ...params: unknown[]): SqlRunResult {
-      const result = database.prepare(sql).run(...params);
-      return { changes: result.changes, lastInsertRowId: result.lastInsertRowid };
-    },
-    all<T = Record<string, unknown>>(sql: string, ...params: unknown[]): T[] {
-      return database.prepare(sql).all(...params) as T[];
-    },
-    get<T = Record<string, unknown>>(sql: string, ...params: unknown[]): T | undefined {
-      return database.prepare(sql).get(...params) as T | undefined;
-    },
-    exec(sql: string): void {
-      database.exec(sql);
-    },
-    transaction<T>(fn: (executor: SqlExecutor) => T): T {
-      const self = this;
-      const txFn = database.transaction(() => fn(self));
-      return txFn();
-    },
-  };
+/** Wraps better-sqlite3 Database into the shared SqlExecutor interface. */
+function createSqlExecutor(database: Database.Database) {
+  return createBetterSqlite3Executor(database);
 }

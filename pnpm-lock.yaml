@@ -325,6 +325,9 @@ importers:
 
   packages/shared-db:
     dependencies:
+      better-sqlite3:
+        specifier: '>=11.0.0'
+        version: 12.11.1
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.11.1)(expo-sqlite@57.0.1(expo@57.0.8)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8))

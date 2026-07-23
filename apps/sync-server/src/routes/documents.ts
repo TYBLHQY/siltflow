@@ -19,6 +19,7 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { getDb } from "../db";
 import { documents } from "../db/schema";
+import { LocalFileStorage } from "../storage/local";
 import type { Variables } from "../types";
 
 export const documentRoutes = new Hono<{ Variables: Variables }>()
@@ -64,12 +65,16 @@ export const documentRoutes = new Hono<{ Variables: Variables }>()
     return c.json(row, 201);
   })
   // ── Delete ──────────────────────────────────────────────────────
-  .delete("/:id", (c) => {
+  .delete("/:id", async (c) => {
     const db = getDb();
     if (!db) return c.json({ error: "database not ready" }, 503);
     const id = c.req.param("id");
     db.delete(documents).where(eq(documents.id, id)).run();
-    // TODO: delete stored PDF from dataDir when file storage is wired
+
+    // Clean up stored PDF file (non-fatal if missing)
+    const storage = new LocalFileStorage(c.var.config.dataDir);
+    try { await storage.delete(id); } catch { /* already deleted — noop */ }
+
     c.var.ctx.wsHub.broadcast("sync:available", {
       entity: "documents",
       action: "deleted",
@@ -87,8 +92,11 @@ export const documentRoutes = new Hono<{ Variables: Variables }>()
     if (!body.ids?.length) {
       return c.json({ error: "ids array is required" }, 400);
     }
+    const storage = new LocalFileStorage(c.var.config.dataDir);
     for (const id of body.ids) {
       db.delete(documents).where(eq(documents.id, id)).run();
+      // Clean up stored PDF file (non-fatal if missing)
+      try { await storage.delete(id); } catch { /* already deleted — noop */ }
     }
     c.var.ctx.wsHub.broadcast("sync:available", {
       entity: "documents",

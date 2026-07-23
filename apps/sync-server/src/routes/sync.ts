@@ -123,6 +123,22 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
 
     const now = new Date().toISOString();
 
+    // Mark tombstone acks for this device — it has now received these tombstones
+    if (c.var.deviceId && tombstones.length > 0) {
+      const ackStmt = sql.prepare(
+        "INSERT OR IGNORE INTO sync_tombstone_acks (tombstone_id, device_id, acked_at) VALUES (?, ?, ?)"
+      );
+      // Need tombstone IDs, not just table_name + row_id — refetch by recent tombstones
+      const recentIds = sql.prepare(
+        "SELECT id FROM sync_tombstones WHERE deleted_at > ? ORDER BY id ASC"
+      ).all(since) as Array<{ id: number }>;
+      for (const { id } of recentIds) {
+        ackStmt.run(id, c.var.deviceId, now);
+      }
+      // Also clean up fully-acked tombstones and time-expired ones
+      cleanTombstones(sql, c.var.config.tombstoneRetentionDays);
+    }
+
     // Update device last_sync_at
     if (c.var.deviceId) {
       sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
@@ -173,4 +189,32 @@ function checkConflict(
     return { serverUpdatedAt: existing.updated_at, clientUpdatedAt: row.updated_at };
   }
   return null;
+}
+
+// ── Tombstone cleanup ───────────────────────────────────────────────────
+
+/**
+ * Remove tombstones that are no longer needed:
+ * 1. All registered devices have acknowledged (safe to delete)
+ * 2. OR the tombstone exceeds the retention period (safety net)
+ */
+export function cleanTombstones(
+  sql: ReturnType<typeof getSqlite>,
+  retentionDays: number,
+): void {
+  if (!sql) return;
+  sql.exec(`
+    DELETE FROM sync_tombstones
+    WHERE id IN (
+      SELECT t.id FROM sync_tombstones t
+      WHERE NOT EXISTS (
+        SELECT 1 FROM devices d
+        WHERE NOT EXISTS (
+          SELECT 1 FROM sync_tombstone_acks a
+          WHERE a.tombstone_id = t.id AND a.device_id = d.id
+        )
+      )
+      OR t.deleted_at < datetime('now', '-' || ${retentionDays} || ' days')
+    )
+  `);
 }

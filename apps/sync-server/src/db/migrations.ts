@@ -25,6 +25,16 @@ const SERVER_TABLES_SQL = [
     deleted_at TEXT NOT NULL
   );`,
 
+  `CREATE TABLE IF NOT EXISTS sync_tombstone_acks (
+    tombstone_id INTEGER NOT NULL REFERENCES sync_tombstones(id) ON DELETE CASCADE,
+    device_id TEXT NOT NULL,
+    acked_at TEXT NOT NULL,
+    PRIMARY KEY (tombstone_id, device_id)
+  );`,
+
+  `CREATE INDEX IF NOT EXISTS idx_tombstones_deleted_at
+    ON sync_tombstones(deleted_at);`,
+
   `CREATE INDEX IF NOT EXISTS idx_tombstones_deleted_at
     ON sync_tombstones(deleted_at);`,
 

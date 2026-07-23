@@ -9,12 +9,19 @@
     "./schema": "./src/schema.ts",
     "./types": "./src/types.ts",
     "./migrations": "./src/migrations.ts",
-    "./db": "./src/db.ts"
+    "./db": "./src/db.ts",
+    "./adapters/better-sqlite3": "./src/adapters/better-sqlite3.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"
   },
   "peerDependencies": {
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "better-sqlite3": ">=11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
   }
 }

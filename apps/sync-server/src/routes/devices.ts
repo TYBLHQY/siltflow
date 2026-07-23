@@ -14,6 +14,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { getDb, getSqlite } from "../db";
 import { devices } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { cleanTombstones } from "./sync";
 import type { Variables } from "../types";
 
 interface DeviceInfo {
@@ -100,9 +101,14 @@ export const deviceRoutes = new Hono<{ Variables: Variables }>()
     }
 
     const db = getDb();
-    if (!db) return c.json({ error: "database not ready" }, 503);
+    const sql = getSqlite();
+    if (!db || !sql) return c.json({ error: "database not ready" }, 503);
 
+    // Cascade: remove ack records for this device, then clean tombstones
+    // that are now fully-acked (waiting only on this revoked device)
+    sql.prepare("DELETE FROM sync_tombstone_acks WHERE device_id = ?").run(targetId);
     db.delete(devices).where(eq(devices.id, targetId)).run();
+    cleanTombstones(sql, c.var.config.tombstoneRetentionDays);
 
     return c.json({ ok: true });
   });
