@@ -94,6 +94,16 @@ export interface SiltflowAPI {
   review: {
     getDocMetrics: () => Promise<import("../src/lib/doc-review").DocReviewMetrics[]>
   }
+  sync: {
+    getState: () => Promise<import("@siltflow/shared-lib").SyncState | null>
+    syncNow: () => Promise<void>
+    configure: (config: import("@siltflow/shared-lib").SyncConfig) => Promise<void>
+    bootstrap: (serverUrl: string, deviceName: string) => Promise<import("@siltflow/shared-lib").AuthBootstrapResponse>
+    registerWithToken: (serverUrl: string, adminToken: string, deviceName: string) => Promise<import("@siltflow/shared-lib").AuthRegisterResponse>
+    verifyToken: (serverUrl: string, token: string) => Promise<import("@siltflow/shared-lib").AuthVerifyResponse>
+    getConflicts: () => Promise<import("../electron/sync/sync-engine").ConflictRecord[]>
+    resolveConflict: (id: number, resolution: "local" | "remote") => Promise<void>
+  }
 }
 
 const api: SiltflowAPI = {
@@ -187,6 +197,16 @@ const api: SiltflowAPI = {
   },
   review: {
     getDocMetrics: () => ipcRenderer.invoke('review:getDocMetrics'),
+  },
+  sync: {
+    getState: () => ipcRenderer.invoke('sync:getState'),
+    syncNow: () => ipcRenderer.invoke('sync:syncNow'),
+    configure: (config) => ipcRenderer.invoke('sync:configure', config),
+    bootstrap: (serverUrl, deviceName) => ipcRenderer.invoke('sync:bootstrap', serverUrl, deviceName),
+    registerWithToken: (serverUrl, adminToken, deviceName) => ipcRenderer.invoke('sync:registerWithToken', serverUrl, adminToken, deviceName),
+    verifyToken: (serverUrl, token) => ipcRenderer.invoke('sync:verifyToken', serverUrl, token),
+    getConflicts: () => ipcRenderer.invoke('sync:getConflicts'),
+    resolveConflict: (id, resolution) => ipcRenderer.invoke('sync:resolveConflict', id, resolution),
   },
   tts: {
     speak: (text, options) => ipcRenderer.invoke('tts:speak', text, options ?? {}),

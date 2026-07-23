@@ -32,6 +32,11 @@ import {
 } from "./ipc/folders.ipc";
 import { registerReviewLogHandlers } from "./ipc/review-logs.ipc";
 import { registerReviewHandlers } from "./ipc/review.ipc";
+import {
+  registerSyncHandlers,
+  initSyncEngine,
+} from "./ipc/sync.ipc";
+import type { SyncConfig } from "@siltflow/shared-lib";
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
@@ -258,6 +263,22 @@ function registerAllHandlers(vaultPath: string) {
   registerFolderHandlers();
   setVaultPathForFolders(vaultPath);
   setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"));
+  registerSyncHandlers();
+
+  // Initialize sync engine if configured
+  const vaultCfg = readVaultConfig(vaultPath);
+  if (vaultCfg.syncEnabled) {
+    const syncCfg: SyncConfig = {
+      serverUrl: (vaultCfg.syncServerUrl as string) ?? "",
+      deviceToken: (vaultCfg.syncDeviceToken as string) ?? "",
+      deviceId: (vaultCfg.syncDeviceId as string) ?? "",
+      syncEnabled: true,
+      syncIntervalMinutes: (vaultCfg.syncIntervalMinutes as number) ?? 5,
+    };
+    initSyncEngine(syncCfg, (state) => {
+      win?.webContents.send("sync:stateChange", state);
+    });
+  }
 }
 
 // Vault operations

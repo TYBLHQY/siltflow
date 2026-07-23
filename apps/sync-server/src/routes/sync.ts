@@ -8,29 +8,10 @@
 import { Hono } from "hono";
 import { getDb, getSqlite } from "../db";
 import type { Variables } from "../types";
-
-// ── Types ─────────────────────────────────────────────────────────────
-
-const ENTITY_TABLES = [
-  "documents",
-  "folders",
-  "annotations",
-  "ai_results",
-  "fsrs_cards",
-  "summaries",
-  "review_logs",
-] as const;
-
-type EntityTable = (typeof ENTITY_TABLES)[number];
-
-interface SyncPushBody {
-  lastSyncAt: string;
-  changes: Record<EntityTable, {
-    created?: Record<string, unknown>[];
-    updated?: Record<string, unknown>[];
-    deleted?: string[];
-  }>;
-}
+import {
+  ENTITY_TABLES,
+  type SyncPushBody,
+} from "@siltflow/shared-lib";
 
 // ── Routes ────────────────────────────────────────────────────────────
 

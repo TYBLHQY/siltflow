@@ -23,9 +23,10 @@
     "@radix-ui/react-separator": "^1.1.11",
     "@radix-ui/react-tabs": "^1.1.17",
     "@radix-ui/react-tooltip": "^1.2.12",
+    "@siltflow/shared-db": "workspace:*",
+    "@siltflow/shared-lib": "workspace:*",
     "@tanstack/react-virtual": "^3.14.6",
     "allotment": "^1.20.5",
-    "@siltflow/shared-db": "workspace:*",
     "better-sqlite3": "^12.11.1",
     "bindings": "^1.5.0",
     "class-variance-authority": "^0.7.1",
@@ -45,6 +46,7 @@
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "ts-fsrs": "^5.4.1",
+    "ws": "^8.21.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -56,6 +58,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "@vitejs/plugin-react": "^6.0.3",

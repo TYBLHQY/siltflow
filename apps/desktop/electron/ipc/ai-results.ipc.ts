@@ -1,6 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { AI_DATA_VERSION } from "../database"
+import { recordDeletion } from "../sync/changelog"
 
 export function registerAiResultHandlers() {
   ipcMain.handle("aiResults:get", (_event, annotationId: string, documentId: string) => {
@@ -45,5 +46,6 @@ export function registerAiResultHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM ai_results WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
+    recordDeletion(sql, "ai_results", `${annotationId}|${documentId}`)
   })
 }

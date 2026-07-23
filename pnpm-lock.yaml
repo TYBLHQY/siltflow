@@ -34,6 +34,9 @@ importers:
       '@siltflow/shared-db':
         specifier: workspace:*
         version: link:../../packages/shared-db
+      '@siltflow/shared-lib':
+        specifier: workspace:*
+        version: link:../../packages/shared-lib
       '@tanstack/react-virtual':
         specifier: ^3.14.6
         version: 3.14.7(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -97,6 +100,9 @@ importers:
       ts-fsrs:
         specifier: ^5.4.1
         version: 5.4.1
+      ws:
+        specifier: ^8.21.1
+        version: 8.21.1
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.17)(immer@11.1.15)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
@@ -125,6 +131,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.64.0
         version: 8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.7.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.7.0(jiti@2.7.0))(typescript@6.0.3)

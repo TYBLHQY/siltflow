@@ -1,6 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import crypto from "node:crypto"
+import { recordDeletion } from "../sync/changelog"
 
 export function registerReviewLogHandlers() {
   ipcMain.handle("reviewLogs:listByAnnotation", (_event, annotationId: string, documentId: string) => {
@@ -53,5 +54,6 @@ export function registerReviewLogHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
+    recordDeletion(sql, "review_logs", `${annotationId}|${documentId}`)
   })
 }

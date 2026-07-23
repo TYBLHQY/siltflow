@@ -3,6 +3,8 @@ import { getDb, schema } from "../database"
 import { eq } from "drizzle-orm"
 import fs from "node:fs"
 import path from "node:path"
+import { recordDeletion, recordDeletions } from "../sync/changelog"
+import { getSqlite } from "../database"
 
 let vaultPath = ""
 
@@ -41,6 +43,7 @@ export function registerDocumentHandlers() {
   ipcMain.handle("documents:delete", (_event, id: string) => {
     const db = getDb()
     if (!db) return
+    const sql = getSqlite()
     if (vaultPath) {
       const docPath = path.join(vaultPath, 'documents', `${id}.pdf`)
       if (fs.existsSync(docPath)) {
@@ -48,11 +51,13 @@ export function registerDocumentHandlers() {
       }
     }
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
+    if (sql) recordDeletion(sql, "documents", id)
   })
 
   ipcMain.handle("documents:deleteBatch", (_event, ids: string[]) => {
     const db = getDb()
     if (!db) return
+    const sql = getSqlite()
     for (const id of ids) {
       if (vaultPath) {
         const docPath = path.join(vaultPath, 'documents', `${id}.pdf`)
@@ -62,6 +67,7 @@ export function registerDocumentHandlers() {
       }
       db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
     }
+    if (sql) recordDeletions(sql, "documents", ids)
   })
 
   ipcMain.handle("documents:rename", (_event, { id, title }: { id: string; title: string }) => {

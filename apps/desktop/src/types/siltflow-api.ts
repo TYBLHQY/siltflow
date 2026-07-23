@@ -17,6 +17,14 @@ import type {
 import type { ReviewLogSaveRequest } from "@/types/review";
 import type { DocReviewMetrics } from "@/lib/doc-review";
 import type { Card } from "ts-fsrs";
+import type {
+  SyncState,
+  SyncConfig,
+  AuthBootstrapResponse,
+  AuthRegisterResponse,
+  AuthVerifyResponse,
+} from "@siltflow/shared-lib";
+import type { ConflictRecord } from "../../electron/sync/sync-engine";
 
 export interface SiltflowAPI {
   vaultGetPath: () => Promise<string>;
@@ -156,5 +164,15 @@ export interface SiltflowAPI {
   };
   review: {
     getDocMetrics: () => Promise<DocReviewMetrics[]>;
+  };
+  sync: {
+    getState: () => Promise<SyncState | null>;
+    syncNow: () => Promise<void>;
+    configure: (config: SyncConfig) => Promise<void>;
+    bootstrap: (serverUrl: string, deviceName: string) => Promise<AuthBootstrapResponse>;
+    registerWithToken: (serverUrl: string, adminToken: string, deviceName: string) => Promise<AuthRegisterResponse>;
+    verifyToken: (serverUrl: string, token: string) => Promise<AuthVerifyResponse>;
+    getConflicts: () => Promise<ConflictRecord[]>;
+    resolveConflict: (id: number, resolution: "local" | "remote") => Promise<void>;
   };
 }

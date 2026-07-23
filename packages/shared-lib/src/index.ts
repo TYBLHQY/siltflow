@@ -106,6 +106,26 @@ export {
   hasDetails,
 } from "./annotation-helpers";
 
+// ── Sync Protocol ────────────────────────────────────────────────────
+export {
+  ENTITY_TABLES,
+  type EntityTable,
+  type SyncPushBody,
+  type SyncPushResponse,
+  type ConflictItem,
+  type SyncPullBody,
+  type SyncPullResponse,
+  type TombstoneItem,
+  type SyncAvailablePayload,
+  type AuthBootstrapBody,
+  type AuthBootstrapResponse,
+  type AuthRegisterBody,
+  type AuthRegisterResponse,
+  type AuthVerifyResponse,
+  type SyncState,
+  type SyncConfig,
+} from "./sync-types";
+
 // ── Languages ────────────────────────────────────────────────────────
 export {
   LANGUAGES,

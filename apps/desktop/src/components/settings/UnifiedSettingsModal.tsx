@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Bot, BrainCircuit, TextSelect, Volume2, Keyboard, Info, X } from "lucide-react";
+import { Settings, Bot, BrainCircuit, TextSelect, Volume2, Keyboard, Info, X, Server } from "lucide-react";
 import { IconText } from "@/components/ui/icon-text";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AIConfigContent } from "@/components/settings/AIConfigContent";
@@ -8,8 +8,9 @@ import { StyleConfigContent } from "@/components/settings/StyleConfigContent";
 import { TTSConfigContent } from "@/components/settings/TTSConfigContent";
 import { ShortcutsContent } from "@/components/settings/ShortcutsContent";
 import { AboutContent } from "@/components/settings/AboutContent";
+import { SyncSettingsContent } from "@/components/settings/SyncSettingsContent";
 
-type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "about";
+type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "sync" | "about";
 
 const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
   { id: "ai", icon: Bot, label: "AI" },
@@ -17,6 +18,7 @@ const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
   { id: "style", icon: TextSelect, label: "Style" },
   { id: "tts", icon: Volume2, label: "TTS" },
   { id: "shortcuts", icon: Keyboard, label: "Shortcuts" },
+  { id: "sync", icon: Server, label: "Sync" },
   { id: "about", icon: Info, label: "About" },
 ];
 
@@ -95,6 +97,7 @@ export function UnifiedSettingsModal({
             {tab === "style" && <StyleConfigContent />}
             {tab === "tts" && <TTSConfigContent />}
             {tab === "shortcuts" && <ShortcutsContent />}
+            {tab === "sync" && <SyncSettingsContent />}
             {tab === "about" && <AboutContent />}
           </div>
         </div>

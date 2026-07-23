@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm"
 import crypto from "crypto"
 import fs from "node:fs"
 import path from "node:path"
+import { getSqlite } from "../database"
+import { recordDeletions } from "../sync/changelog"
 
 let vaultPath = ""
 
@@ -45,6 +47,7 @@ export function registerFolderHandlers() {
   // ── Delete a folder (recursive — deletes all descendant docs + folders) ──
   ipcMain.handle("folders:delete", (_event, id: string) => {
     const db = getFullDb()
+    const sql = getSqlite()
 
     // Collect all descendant folder IDs recursively
     function collectIds(parentId: string): string[] {
@@ -86,6 +89,12 @@ export function registerFolderHandlers() {
     // Delete folders (deepest first)
     for (const fid of allIds) {
       db.delete(schema.folders).where(eq(schema.folders.id, fid)).run()
+    }
+
+    // Record deletions for changelog
+    if (sql) {
+      if (docIds.length > 0) recordDeletions(sql, "documents", docIds)
+      recordDeletions(sql, "folders", allIds)
     }
   })
 

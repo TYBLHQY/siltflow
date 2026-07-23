@@ -1,6 +1,7 @@
 import { ipcMain } from "electron"
 import { getDb, getSqlite, schema } from "../database"
 import { eq } from "drizzle-orm"
+import { recordDeletion } from "../sync/changelog"
 
 export function registerSummaryHandlers() {
   ipcMain.handle("summaries:listAll", () => {
@@ -42,5 +43,6 @@ export function registerSummaryHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM summaries WHERE document_id = ?").run(documentId)
+    recordDeletion(sql, "summaries", documentId)
   })
 }

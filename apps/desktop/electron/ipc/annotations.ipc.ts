@@ -1,6 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { invalidateReviewMetricsCache } from "./review.ipc"
+import { recordDeletion } from "../sync/changelog"
 
 function tryParseJson(data: string, fallback: unknown): unknown {
   try {
@@ -123,6 +124,10 @@ export function registerAnnotationHandlers() {
       sql.prepare("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM annotations WHERE id = ? AND document_id = ?").run(id, documentId)
+      // Composite PK: use pipe-separated key for changelog
+      recordDeletion(sql, "annotations", `${id}|${documentId}`)
+      recordDeletion(sql, "ai_results", `${id}|${documentId}`)
+      recordDeletion(sql, "fsrs_cards", `${id}|${documentId}`)
       sql.exec("COMMIT")
       invalidateReviewMetricsCache()
     } catch (err) {
