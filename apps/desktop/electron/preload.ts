@@ -102,6 +102,7 @@ export interface SiltflowAPI {
     verifyToken: (serverUrl: string, token: string) => Promise<import("@siltflow/shared-lib").AuthVerifyResponse>
     getConflicts: () => Promise<import("../electron/sync/sync-engine").ConflictRecord[]>
     resolveConflict: (id: number, resolution: "local" | "remote") => Promise<void>
+    disconnect: () => Promise<{ ok: boolean }>
     onStateChange: (fn: (state: import("@siltflow/shared-lib").SyncState) => void) => () => void
   }
 }
@@ -206,6 +207,7 @@ const api: SiltflowAPI = {
     verifyToken: (serverUrl, token) => ipcRenderer.invoke('sync:verifyToken', serverUrl, token),
     getConflicts: () => ipcRenderer.invoke('sync:getConflicts'),
     resolveConflict: (id, resolution) => ipcRenderer.invoke('sync:resolveConflict', id, resolution),
+    disconnect: () => ipcRenderer.invoke('sync:disconnect'),
     onStateChange: (fn) => {
       const cb = (_: unknown, state: import("@siltflow/shared-lib").SyncState) => fn(state);
       ipcRenderer.on('sync:stateChange', cb);

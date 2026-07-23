@@ -44,8 +44,6 @@ const SERVER_TABLES_SQL = [
     updated_at TEXT NOT NULL
   );`,
 
-  `INSERT OR IGNORE INTO server_settings (key, value, updated_at)
-    VALUES ('pdf_sync_enabled', 'true', datetime('now'));`,
 ];
 
 const MIGRATIONS_SQL = [

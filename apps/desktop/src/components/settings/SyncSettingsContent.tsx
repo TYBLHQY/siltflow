@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Wifi, WifiOff, Loader2, Server, XCircle } from "lucide-react";
+import { RefreshCw, Wifi, WifiOff, Loader2, Server, XCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSyncStore } from "@/stores/sync.store";
 
@@ -24,6 +24,7 @@ export function SyncSettingsContent() {
   const registerDevice = useSyncStore((s) => s.registerDevice);
   const loadConflicts = useSyncStore((s) => s.loadConflicts);
   const resolveConflict = useSyncStore((s) => s.resolveConflict);
+  const disconnect = useSyncStore((s) => s.disconnect);
 
   // Local form state
   const [serverUrl, setServerUrl] = useState(config.serverUrl || "");
@@ -60,15 +61,33 @@ export function SyncSettingsContent() {
     }
   }, [serverUrl, serverToken, deviceName, registerDevice]);
 
+  const handleDisconnect = useCallback(async () => {
+    await disconnect();
+    setStatusMessage(null);
+  }, [disconnect]);
+
   const handleSyncNow = useCallback(async () => {
     try {
       setStatusMessage("Syncing…");
       await syncNow();
       setStatusMessage("Sync complete.");
     } catch (err) {
-      setStatusMessage(`Sync failed: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      if (msg.includes("401") || msg.includes("invalid token")) {
+        await handleDisconnect();
+      } else {
+        setStatusMessage(`Sync failed: ${msg}`);
+      }
     }
-  }, [syncNow]);
+  }, [syncNow, handleDisconnect]);
+
+  // Auto-disconnect when token is no longer valid (revoked server-side)
+  useEffect(() => {
+    const msg = syncState?.lastError;
+    if (msg && (msg.includes("401") || msg.includes("invalid token"))) {
+      handleDisconnect();
+    }
+  }, [syncState?.lastError, handleDisconnect]);
 
   return (
     <>
@@ -213,6 +232,17 @@ export function SyncSettingsContent() {
               <span className="text-xs text-ctp-overlay0">{config.syncIntervalMinutes} min</span>
             </div>
           </div>
+
+          {/* Disconnect button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDisconnect}
+            className="text-xs h-7 w-full border-ctp-red/30 text-ctp-red hover:bg-ctp-red/10"
+          >
+            <LogOut className="h-3 w-3 mr-1" />
+            Disconnect
+          </Button>
         </div>
       )}
 

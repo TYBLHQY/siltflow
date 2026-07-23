@@ -47,6 +47,8 @@ interface SyncStoreActions {
   verifyToken: (serverUrl: string, token: string) => Promise<boolean>;
   loadConflicts: () => Promise<void>;
   resolveConflict: (id: number, resolution: "local" | "remote") => Promise<void>;
+  /** Disconnect and clear all persisted config so the user re-enters credentials. */
+  disconnect: () => Promise<void>;
 }
 
 export type SyncStore = SyncStoreState & SyncStoreActions;
@@ -192,6 +194,23 @@ export const useSyncStore = create<SyncStore>((set, get) => {
     resolveConflict: async (id, resolution) => {
       await window.siltflow.sync.resolveConflict(id, resolution);
       set((s) => ({ conflicts: s.conflicts.filter((c) => c.id !== id) }));
+    },
+
+    disconnect: async () => {
+      await window.siltflow.sync.disconnect();
+      set({
+        config: {
+          serverUrl: "",
+          serverToken: "",
+          deviceToken: "",
+          deviceId: "",
+          syncEnabled: false,
+          syncIntervalMinutes: 5,
+        },
+        syncState: null,
+        conflicts: [],
+        registerError: null,
+      });
     },
   };
 });

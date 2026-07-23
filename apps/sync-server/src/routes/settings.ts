@@ -5,8 +5,6 @@
  * PATCH /api/settings   — update a setting (admin only)
  *
  * Settings are stored in the server_settings key-value table.
- * Currently supported keys:
- *   - pdf_sync_enabled: "true" | "false"
  */
 
 import { Hono } from "hono";
@@ -52,14 +50,9 @@ export const settingsRoutes = new Hono<{ Variables: Variables }>()
     }
 
     // Whitelist allowed keys
-    const ALLOWED_KEYS = ["pdf_sync_enabled", "bootstrap_token", "server_token"];
+    const ALLOWED_KEYS = ["bootstrap_token", "server_token"];
     if (!ALLOWED_KEYS.includes(body.key)) {
       return c.json({ error: `unknown setting key: ${body.key}` }, 400);
-    }
-
-    // Validate pdf_sync_enabled value
-    if (body.key === "pdf_sync_enabled" && !["true", "false"].includes(body.value)) {
-      return c.json({ error: "pdf_sync_enabled must be 'true' or 'false'" }, 400);
     }
 
     const now = new Date().toISOString();

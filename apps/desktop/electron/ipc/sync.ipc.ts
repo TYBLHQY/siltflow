@@ -8,6 +8,7 @@
  *   sync:register        — registers a device with the server (uses server token)
  *   sync:getConflicts    — returns unresolved conflicts
  *   sync:resolveConflict — resolves a conflict (local|remote)
+ *   sync:disconnect      — tears down sync engine and clears persisted config
  *
  * The sync engine is initialized lazily — the main process calls
  * initSyncEngine() after the database is ready and sync config is loaded.
@@ -189,4 +190,24 @@ export function registerSyncHandlers(): void {
       engine.resolveConflict(id, resolution);
     },
   );
+
+  ipcMain.handle("sync:disconnect", async () => {
+    teardownSyncEngine();
+
+    // Clear persisted sync config from vault
+    const main = require("../main");
+    const vaultPath: string = main.getVaultPath();
+    if (vaultPath) {
+      main.writeVaultConfig(vaultPath, {
+        syncEnabled: false,
+        syncServerUrl: "",
+        syncServerToken: "",
+        syncDeviceToken: "",
+        syncDeviceId: "",
+        syncIntervalMinutes: 5,
+      });
+    }
+
+    return { ok: true };
+  });
 }
