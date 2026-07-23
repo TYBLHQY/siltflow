@@ -4,7 +4,7 @@
  * Expo Router route: /kitchen-sink
  */
 
-import { ScrollView, View, Text } from "@/tw";
+import { ScrollView, View, Text, SafeAreaView } from "@/tw";
 import {
   Button,
   Card,
@@ -31,16 +31,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function KitchenSink() {
   return (
-    <ScrollView
-      className="flex-1 bg-ctp-base"
-      contentContainerClassName="p-6 gap-4"
-    >
-      <Text className="mb-2 text-2xl font-bold text-ctp-text">
-        Component Kitchen Sink
-      </Text>
-      <Text className="mb-4 text-ctp-subtext1">
-        NativeWind + Catppuccin UI kit preview
-      </Text>
+    <SafeAreaView className="flex-1 bg-ctp-base">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="p-6 gap-4"
+      >
+        <Text className="mb-2 text-2xl font-bold text-ctp-text">
+          Component Kitchen Sink
+        </Text>
+        <Text className="mb-4 text-ctp-subtext1">
+          NativeWind + Catppuccin UI kit preview
+        </Text>
 
       {/* ── Buttons ──────────────────────────────────────────────── */}
       <Section title="Button">
@@ -201,5 +202,6 @@ export default function KitchenSink() {
         <Text className="text-ctp-text">Below the separator</Text>
       </Section>
     </ScrollView>
+    </SafeAreaView>
   );
 }

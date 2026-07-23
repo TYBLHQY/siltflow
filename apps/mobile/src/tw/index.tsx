@@ -7,6 +7,7 @@ import {
   ScrollView as RNScrollView,
   TextInput as RNTextInput,
 } from "react-native";
+import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
 function tw<
   T extends ComponentType<any>,
@@ -55,3 +56,10 @@ export function TextInput(
   return tw(RNTextInput, props, { className: "style" });
 }
 TextInput.displayName = "CSS(TextInput)";
+
+export function SafeAreaView(
+  props: ComponentProps<typeof RNSafeAreaView> & { className?: string }
+) {
+  return tw(RNSafeAreaView, props, { className: "style" });
+}
+SafeAreaView.displayName = "CSS(SafeAreaView)";
