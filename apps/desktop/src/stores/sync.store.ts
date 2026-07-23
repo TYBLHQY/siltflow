@@ -50,6 +50,24 @@ export const useSyncStore = create<SyncStore>((set, get) => {
     });
   }
 
+  // Load persisted config from vault on store creation (non-blocking).
+  // Starts with empty defaults — the async load updates via set() shortly after.
+  if (typeof window !== "undefined" && window.siltflow?.vaultConfigGet) {
+    window.siltflow.vaultConfigGet().then((vaultCfg) => {
+      if (vaultCfg.syncEnabled) {
+        set({
+          config: {
+            serverUrl: (vaultCfg.syncServerUrl as string) ?? "",
+            deviceToken: (vaultCfg.syncDeviceToken as string) ?? "",
+            deviceId: (vaultCfg.syncDeviceId as string) ?? "",
+            syncEnabled: true,
+            syncIntervalMinutes: (vaultCfg.syncIntervalMinutes as number) ?? 5,
+          },
+        });
+      }
+    }).catch(() => { /* vault config not available yet */ });
+  }
+
   return {
   config: {
     serverUrl: "",
