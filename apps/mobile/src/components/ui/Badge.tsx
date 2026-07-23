@@ -19,7 +19,7 @@ const badgeVariants = cva(
   },
 );
 
-const textVariants = cva("text-xs font-medium", {
+const textVariants = cva("text-sm font-medium", {
   variants: {
     variant: {
       default: "text-ctp-blue",

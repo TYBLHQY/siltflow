@@ -49,9 +49,8 @@ interface SessionSummary {
 
 export function ReviewSession() {
   const router = useRouter();
-  const { documentId, documentTitle } = useLocalSearchParams<{
+  const { documentId } = useLocalSearchParams<{
     documentId: string;
-    documentTitle: string;
   }>();
 
   const [items, setItems] = useState<SessionItem[] | null>(null);
@@ -259,9 +258,8 @@ export function ReviewSession() {
           ← Back
         </Button>
         <Text className="text-sm font-semibold text-ctp-text">{progress}</Text>
-        <Text className="text-xs text-ctp-overlay0" numberOfLines={1}>
-          {documentTitle ?? "Review"}
-        </Text>
+        {/* spacer to balance the flex layout */}
+        <View className="w-16" />
       </View>
 
       {/* Progress bar */}
@@ -295,10 +293,9 @@ export function ReviewSession() {
                 onPress={() => handleGrade(grade)}
                 className={`flex-1 items-center rounded-lg py-3 ${style.bg}`}
               >
-                <Text className={`text-xs font-semibold ${style.text}`}>
+                <Text className={`text-lg font-semibold ${style.text}`}>
                   {GRADE_LABEL[grade]}
                 </Text>
-                <Text className={`text-lg ${style.text}`}>{grade}</Text>
               </Pressable>
             );
           })}
