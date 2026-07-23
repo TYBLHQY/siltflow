@@ -9,12 +9,33 @@
 
 import { Hono } from "hono";
 import { createHash, randomBytes } from "node:crypto";
+import { createMiddleware } from "hono/factory";
 import { getDb } from "../db";
 import { devices } from "../db/schema";
 import { eq } from "drizzle-orm";
 import type { Variables } from "../types";
 
+/** Lightweight auth for /api/auth/* routes — verifies token, sets deviceId + isAdmin. */
+const authVerify = createMiddleware<{ Variables: Variables }>(async (c, next) => {
+  const header = c.req.header("Authorization");
+  if (!header?.startsWith("Bearer ")) return next();
+
+  const token = header.slice(7);
+  const hash = createHash("sha256").update(token).digest("hex");
+
+  const db = getDb();
+  if (!db) return next();
+
+  const device = db.select().from(devices).where(eq(devices.tokenHash, hash)).get();
+  if (!device) return next();
+
+  c.set("deviceId", device.id);
+  c.set("isAdmin", device.isAdmin);
+  await next();
+});
+
 export const authRoutes = new Hono<{ Variables: Variables }>()
+  // Bootstrap: no auth required (or BOOTSTRAP_TOKEN env var)
   .post("/bootstrap", async (c) => {
     const config = c.var.config;
     const db = getDb();
@@ -60,6 +81,8 @@ export const authRoutes = new Hono<{ Variables: Variables }>()
       warning: "Save this token. It will not be shown again.",
     }, 201);
   })
+  // All remaining routes benefit from optional token verification
+  .use("*", authVerify)
   .post("/register", async (c) => {
     if (!c.var.isAdmin) {
       return c.json({ error: "admin token required" }, 403);
