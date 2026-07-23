@@ -35,7 +35,7 @@ interface SyncPushBody {
 // ── Routes ────────────────────────────────────────────────────────────
 
 export const syncRoutes = new Hono<{ Variables: Variables }>()
-  .post("/sync/push", async (c) => {
+  .post("/push", async (c) => {
     const db = getDb();
     const sql = getSqlite();
     if (!db || !sql) return c.json({ error: "database not ready" }, 503);
@@ -93,7 +93,7 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
 
     return c.json({ accepted, conflicts });
   })
-  .post("/sync/pull", async (c) => {
+  .post("/pull", async (c) => {
     const sql = getSqlite();
     if (!sql) return c.json({ error: "database not ready" }, 503);
 
