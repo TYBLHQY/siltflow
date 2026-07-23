@@ -36,14 +36,6 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
 
     if (!device) return c.json({ error: "invalid token" }, 401);
 
-    // Update last seen timestamp (best-effort)
-    try {
-      const now = new Date().toISOString();
-      db.update(devices).set({ lastSeenAt: now }).where(eq(devices.id, device.id)).run();
-    } catch {
-      // best-effort; don't block on timestamp update failure
-    }
-
     c.set("deviceId", device.id);
     c.set("isAdmin", device.isAdmin);
 
