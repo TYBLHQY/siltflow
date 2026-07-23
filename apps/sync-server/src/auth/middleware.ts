@@ -24,6 +24,16 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
     }
 
     const token = header.slice(7);
+
+    // Check server token — grants admin access (dashboard login)
+    if (c.var.config.bootstrapToken && token === c.var.config.bootstrapToken) {
+      c.set("deviceId", "server");
+      c.set("isAdmin", true);
+      await next();
+      return;
+    }
+
+    // Check device token
     const hash = createHash("sha256").update(token).digest("hex");
 
     const db = getDb();
