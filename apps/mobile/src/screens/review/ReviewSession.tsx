@@ -9,7 +9,7 @@
  * 5. Show completion screen when all cards are reviewed
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { View, Text, Pressable, SafeAreaView, ScrollView } from "@/tw";
 import { Button, Badge, Spinner } from "@/components/ui";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -57,16 +57,13 @@ export function ReviewSession() {
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load session items on mount (synchronous, local DB)
-  useMemo(() => {
+  // Load session items synchronously on mount (local DB, no async)
+  const loadedItems = useMemo(() => {
     try {
       const sql = getSQLite();
-
-      // Load all annotations for this document
       const enriched = listAnnotations(sql, documentId);
       const annotationItems = enriched.map((e) => enrichedToItem(e));
 
-      // Load all FSRS cards for this document
       const cardsByAnnotation = new Map<string, FSRSCard>();
       const cardRows = listFSRSCardsByDocument(sql, documentId);
       for (const row of cardRows) {
@@ -75,18 +72,15 @@ export function ReviewSession() {
         } catch { /* skip corrupt data */ }
       }
 
-      // Build session items — include cards that are due/overdue, or new cards
       const now = new Date();
       const sessionItems: SessionItem[] = [];
-
       for (const ann of annotationItems) {
         const card = cardsByAnnotation.get(ann.id) ?? null;
-        // Include if: no card (new), card is due, or card is in learning state
         if (!card) {
           sessionItems.push({ annotation: ann, fsrsCard: null });
         } else {
           const dueDate = card.due instanceof Date ? card.due : new Date(card.due as unknown as string);
-          if (dueDate <= now || card.state === 1 /* Learning */ || card.state === 3 /* Relearning */) {
+          if (dueDate <= now || card.state === 1 || card.state === 3) {
             sessionItems.push({ annotation: ann, fsrsCard: card });
           }
         }
@@ -99,11 +93,21 @@ export function ReviewSession() {
         return aDue - bDue;
       });
 
-      setItems(sessionItems);
+      return sessionItems;
     } catch (err) {
       setError((err as Error).message);
+      return [];
     }
   }, [documentId]);
+
+  // Sync loaded items to state so callbacks read stable reference.
+  // With local synchronous DB, loadedItems is always immediately available
+  // (no flicker), but we still feed it through state to keep the rest of
+  // the component's update loop identical.  useEffect catches the first
+  // assignment synchronously in the same render cycle for local data.
+  useEffect(() => {
+    setItems(loadedItems);
+  }, [loadedItems]);
 
   // Grade the current card
   const handleGrade = useCallback(
@@ -122,7 +126,6 @@ export function ReviewSession() {
         );
 
         if (result) {
-          // Track grades for summary
           setSessionSummary((prev) => {
             const s = prev ?? { total: 0, grades: { 1: 0, 2: 0, 3: 0, 4: 0 } };
             return {
@@ -135,12 +138,10 @@ export function ReviewSession() {
         console.error("[ReviewSession] grade failed:", err);
       }
 
-      // Advance to next card
       if (index + 1 < items.length) {
         setIndex((i) => i + 1);
         setAnswerRevealed(false);
       } else {
-        // Session complete
         setIndex(items.length);
       }
     },
@@ -269,7 +270,7 @@ export function ReviewSession() {
       {/* Progress bar */}
       <View className="h-1 bg-ctp-surface0">
         <View
-          className="h-full bg-ctp-blue rounded-r-full transition-all"
+          className="h-full bg-ctp-blue rounded-r-full"
           style={{ width: `${((index + 1) / items.length) * 100}%` }}
         />
       </View>
@@ -300,16 +301,14 @@ export function ReviewSession() {
                 <Text className={`text-xs font-semibold ${style.text}`}>
                   {GRADE_LABEL[grade]}
                 </Text>
-                <Text className={`text-lg ${style.text}`}>
-                  {grade}
-                </Text>
+                <Text className={`text-lg ${style.text}`}>{grade}</Text>
               </Pressable>
             );
           })}
         </View>
       )}
 
-      {/* Tap-to-reveal hint */}
+      {/* Hint when answer not revealed */}
       {!answerRevealed && (
         <View className="px-4 py-2 border-t border-ctp-surface0">
           <Text className="text-xs text-ctp-overlay0 text-center">
