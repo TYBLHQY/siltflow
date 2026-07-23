@@ -99,6 +99,11 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
     }, cfg.syncIntervalMinutes * 60_000);
   }
 
+  // Run an immediate sync on startup
+  engine.sync().catch((err) => {
+    console.warn("[Sync] Initial sync failed:", (err as Error).message);
+  });
+
   console.log(`[Sync] Initialized — server=${cfg.serverUrl}, interval=${cfg.syncIntervalMinutes}min`);
 }
 
