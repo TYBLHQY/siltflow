@@ -188,6 +188,9 @@ importers:
       '@siltflow/shared-db':
         specifier: workspace:*
         version: link:../../packages/shared-db
+      '@siltflow/shared-lib':
+        specifier: workspace:*
+        version: link:../../packages/shared-lib
       '@tailwindcss/postcss':
         specifier: ^4.0.0
         version: 4.3.3
@@ -224,6 +227,9 @@ importers:
       expo-status-bar:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.8)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
+      fuse.js:
+        specifier: 7.5.0
+        version: 7.5.0
       nativewind:
         specifier: 5.0.0-preview.2
         version: 5.0.0-preview.2(react-native-css@3.0.7(@expo/metro-config@57.0.7(expo@57.0.8)(typescript@6.0.3))(lightningcss@1.30.1)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(tailwindcss@4.3.3)
@@ -260,6 +266,12 @@ importers:
       tailwindcss:
         specifier: ^4.0.0
         version: 4.3.3
+      ts-fsrs:
+        specifier: ^5.4.1
+        version: 5.4.1
+      zustand:
+        specifier: ^5.0.14
+        version: 5.0.14(@types/react@19.2.17)(immer@11.1.15)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
       '@types/react':
         specifier: ~19.2.2
@@ -273,6 +285,15 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@types/better-sqlite3@7.6.13)(better-sqlite3@12.11.1)(expo-sqlite@57.0.1(expo@57.0.8)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8))
+
+  packages/shared-lib:
+    dependencies:
+      openai:
+        specifier: ^6.48.0
+        version: 6.48.0(ws@8.21.1)(zod@4.4.3)
+      ts-fsrs:
+        specifier: ^5.4.1
+        version: 5.4.1
 
 packages:
 
@@ -12082,6 +12103,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
+  use-sync-external-store@1.6.0(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+    optional: true
+
   use-sync-external-store@1.6.0(react@19.2.8):
     dependencies:
       react: 19.2.8
@@ -12320,6 +12346,13 @@ snapshots:
   zod@3.25.76: {}
 
   zod@4.4.3: {}
+
+  zustand@5.0.14(@types/react@19.2.17)(immer@11.1.15)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3)):
+    optionalDependencies:
+      '@types/react': 19.2.17
+      immer: 11.1.15
+      react: 19.2.3
+      use-sync-external-store: 1.6.0(react@19.2.3)
 
   zustand@5.0.14(@types/react@19.2.17)(immer@11.1.15)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)):
     optionalDependencies:

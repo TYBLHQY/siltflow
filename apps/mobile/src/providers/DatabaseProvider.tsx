@@ -10,6 +10,7 @@ import * as schema from "@siltflow/shared-db/schema";
 import { SCHEMA_VERSION } from "@siltflow/shared-db/types";
 import { initSchema } from "@siltflow/shared-db/migrations";
 import { createExpoSqliteExecutor } from "@/lib/expo-sqlite-adapter";
+import { useDBStore } from "@/stores/db.store";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -53,6 +54,9 @@ export function DatabaseProvider({ children }: PropsWithChildren) {
 
     // Wrap with Drizzle ORM
     const db = drizzle(sqlite, { schema });
+
+    // Bridge: make the database available to Zustand stores
+    useDBStore.getState().setDatabase(sqlite, db);
 
     return { db, sqlite };
   }, []);
