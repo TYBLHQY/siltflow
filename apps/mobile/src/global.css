@@ -21,14 +21,12 @@
 }
 
 /* ── Catppuccin colour tokens ─────────────────────────────────
- * @theme defaults are Latte (light). Dark mode (Mocha) is injected
- * at runtime by ThemeProvider via VariableContextProvider.
+ * @theme registers each colour as a Tailwind utility class
+ * (e.g. bg-ctp-base → var(--color-ctp-base) → var(--ctp-base)).
  *
- * IMPORTANT: @theme MUST use direct hex values, not var(--ctp-xxx).
- * A two-level var() chain (--color-ctp-base: var(--ctp-base))
- * prevents VariableContextProvider from overriding colours at
- * runtime on native — the intermediate var() is compiled to a
- * static value by react-native-css and never re-evaluated.
+ * Latte (light) hex values are set on :root as the runtime default;
+ * dark mode (Mocha) is injected by ThemeProvider via
+ * VariableContextProvider, which overrides the same --ctp-* keys.
  *
  * Why manual variables instead of @catppuccin/tailwindcss?
  * The npm package injects colours at runtime via addBase, which

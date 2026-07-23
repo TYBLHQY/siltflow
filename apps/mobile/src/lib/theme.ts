@@ -2,8 +2,8 @@
  * Catppuccin colour tokens for mobile.
  *
  * Two sets of 26 colours — Latte (light) and Mocha (dark).
- * The ThemeProvider selects the active set based on useColorScheme()
- * and injects it via react-native-css's VariableContextProvider.
+ * The ThemeProvider selects the active set based on
+ * Appearance.getColorScheme() and injects it via react-native-css's VariableContextProvider.
  *
  * Keys are --ctp-* to match the CSS variable names that @theme
  * resolves via var(--ctp-xxx), so VariableContextProvider can
