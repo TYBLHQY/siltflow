@@ -9,14 +9,14 @@
  *   deviceToken — per-device secret, server returns on registration
  *   deviceId    — device identity, server returns on registration
  *
- * All three + serverUrl are persisted to AsyncStorage so restarting
- * the mobile app reconnects without re-entering credentials.
+ * All config is persisted to the SQLite `app_settings` table so
+ * restarting the mobile app reconnects without re-entering credentials.
  *
  * Adapted from apps/desktop/src/stores/sync.store.ts
  */
 
 import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getSQLite } from "@/stores/db.store";
 import type { SyncState, SyncConfig } from "@siltflow/shared-lib";
 import type { ConflictRecord } from "@/sync/sync-engine";
 import { SyncClient } from "@/sync/sync-client";
@@ -27,9 +27,9 @@ import {
   setSyncTimestamps,
 } from "@/sync";
 
-// ── AsyncStorage keys ───────────────────────────────────────────────
+// ── Settings keys (used as key column in app_settings table) ────────
 
-const STORAGE_KEYS = {
+const KEYS = {
   syncEnabled: "sync:enabled",
   serverUrl: "sync:serverUrl",
   serverToken: "sync:serverToken",
@@ -39,6 +39,8 @@ const STORAGE_KEYS = {
   lastPushAt: "sync:lastPushAt",
   lastPullAt: "sync:lastPullAt",
 } as const;
+
+const ALL_SYNC_KEYS = Object.values(KEYS);
 
 // ── Store ───────────────────────────────────────────────────────────
 
@@ -107,8 +109,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
   },
 
   configure: async (config) => {
-    // Persist to AsyncStorage
-    await persistConfig(config);
+    persistConfig(config);
     set({ config });
 
     // Re-init engine with new config
@@ -117,8 +118,8 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     });
 
     // Restore timestamps from storage
-    const lastPushAt = await AsyncStorage.getItem(STORAGE_KEYS.lastPushAt);
-    const lastPullAt = await AsyncStorage.getItem(STORAGE_KEYS.lastPullAt);
+    const lastPushAt = getSetting(KEYS.lastPushAt);
+    const lastPullAt = getSetting(KEYS.lastPullAt);
     setSyncTimestamps(lastPushAt, lastPullAt);
   },
 
@@ -139,8 +140,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         syncIntervalMinutes: get().config.syncIntervalMinutes,
       };
 
-      // Persist and start engine
-      await persistConfig(cfg);
+      persistConfig(cfg);
       set({ config: cfg });
 
       initSyncEngine(cfg, (state) => {
@@ -169,13 +169,13 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       const cfg: SyncConfig = {
         serverUrl: result.serverUrl || serverUrl,
         serverToken,
-        deviceToken: get().config.deviceToken, // keep existing token
+        deviceToken: get().config.deviceToken,
         deviceId: result.deviceId,
         syncEnabled: true,
         syncIntervalMinutes: get().config.syncIntervalMinutes,
       };
 
-      await persistConfig(cfg);
+      persistConfig(cfg);
       set({ config: cfg });
 
       initSyncEngine(cfg, (state) => {
@@ -229,9 +229,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
 
   disconnect: async () => {
     teardownSyncEngine();
-
-    // Clear persisted config
-    await clearPersistedConfig();
+    clearPersistedConfig();
 
     set({
       config: {
@@ -249,35 +247,93 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
   },
 }));
 
-// ── Config persistence helpers ───────────────────────────────────────
+// ── SQLite-based config persistence ─────────────────────────────────
 
-async function persistConfig(cfg: SyncConfig): Promise<void> {
-  const entries: [string, string][] = [
-    [STORAGE_KEYS.syncEnabled, cfg.syncEnabled ? "1" : "0"],
-    [STORAGE_KEYS.serverUrl, cfg.serverUrl],
-    [STORAGE_KEYS.serverToken, cfg.serverToken],
-    [STORAGE_KEYS.deviceToken, cfg.deviceToken],
-    [STORAGE_KEYS.deviceId, cfg.deviceId],
-    [STORAGE_KEYS.syncIntervalMinutes, String(cfg.syncIntervalMinutes)],
-  ];
-  await AsyncStorage.setMany(Object.fromEntries(entries));
+type SettingKey = (typeof KEYS)[keyof typeof KEYS];
+
+function getSetting(key: SettingKey): string | null {
+  try {
+    const sql = getSQLite();
+    const row = sql.getFirstSync<{ value: string }>(
+      "SELECT value FROM app_settings WHERE key = ?",
+      key,
+    );
+    return row?.value ?? null;
+  } catch {
+    return null;
+  }
 }
 
-async function clearPersistedConfig(): Promise<void> {
-  const keys = Object.values(STORAGE_KEYS);
-  await AsyncStorage.removeMany(keys);
+function getSettings(keys: SettingKey[]): Record<string, string | null> {
+  try {
+    const sql = getSQLite();
+    const placeholders = keys.map(() => "?").join(", ");
+    const rows = sql.getAllSync<{ key: string; value: string }>(
+      `SELECT key, value FROM app_settings WHERE key IN (${placeholders})`,
+      ...keys,
+    );
+    const map: Record<string, string | null> = {};
+    for (const k of keys) map[k] = null;
+    for (const row of rows) map[row.key] = row.value;
+    return map;
+  } catch {
+    const map: Record<string, string | null> = {};
+    for (const k of keys) map[k] = null;
+    return map;
+  }
+}
+
+function setSetting(key: SettingKey, value: string): void {
+  try {
+    const sql = getSQLite();
+    sql.runSync(
+      "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)",
+      key,
+      value,
+    );
+  } catch {
+    // DB may not be ready yet — ignore
+  }
+}
+
+function persistConfig(cfg: SyncConfig): void {
+  const sql = getSQLite();
+  const stmt = (k: string, v: string) =>
+    sql.runSync(
+      "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)",
+      k,
+      v,
+    );
+  stmt(KEYS.syncEnabled, cfg.syncEnabled ? "1" : "0");
+  stmt(KEYS.serverUrl, cfg.serverUrl);
+  stmt(KEYS.serverToken, cfg.serverToken);
+  stmt(KEYS.deviceToken, cfg.deviceToken);
+  stmt(KEYS.deviceId, cfg.deviceId);
+  stmt(KEYS.syncIntervalMinutes, String(cfg.syncIntervalMinutes));
+}
+
+function clearPersistedConfig(): void {
+  try {
+    const sql = getSQLite();
+    const placeholders = ALL_SYNC_KEYS.map(() => "?").join(", ");
+    sql.runSync(
+      `DELETE FROM app_settings WHERE key IN (${placeholders})`,
+      ...ALL_SYNC_KEYS,
+    );
+  } catch {
+    // ignore
+  }
 }
 
 /**
- * Load sync config from AsyncStorage.
+ * Load sync config from SQLite app_settings table.
  * Called by SyncProvider on app startup.
  */
 export async function loadPersistedSyncConfig(): Promise<SyncConfig> {
   try {
-    const keys = Object.values(STORAGE_KEYS);
-    const record = await AsyncStorage.getMany(keys);
+    const record = getSettings(ALL_SYNC_KEYS);
 
-    const syncEnabled = record[STORAGE_KEYS.syncEnabled] === "1";
+    const syncEnabled = record[KEYS.syncEnabled] === "1";
     if (!syncEnabled) {
       return {
         serverUrl: "",
@@ -290,13 +346,13 @@ export async function loadPersistedSyncConfig(): Promise<SyncConfig> {
     }
 
     return {
-      serverUrl: record[STORAGE_KEYS.serverUrl] ?? "",
-      serverToken: record[STORAGE_KEYS.serverToken] ?? "",
-      deviceToken: record[STORAGE_KEYS.deviceToken] ?? "",
-      deviceId: record[STORAGE_KEYS.deviceId] ?? "",
+      serverUrl: record[KEYS.serverUrl] ?? "",
+      serverToken: record[KEYS.serverToken] ?? "",
+      deviceToken: record[KEYS.deviceToken] ?? "",
+      deviceId: record[KEYS.deviceId] ?? "",
       syncEnabled: true,
       syncIntervalMinutes: parseInt(
-        record[STORAGE_KEYS.syncIntervalMinutes] ?? "5",
+        record[KEYS.syncIntervalMinutes] ?? "5",
         10,
       ),
     };
@@ -311,3 +367,6 @@ export async function loadPersistedSyncConfig(): Promise<SyncConfig> {
     };
   }
 }
+
+// Re-export timestamp helpers used by SyncProvider
+export { KEYS as SYNC_SETTINGS_KEYS, setSetting, getSetting, getSettings };

@@ -48,6 +48,11 @@ export function DatabaseProvider({ children }: PropsWithChildren) {
 
     initSchema(executor, currentVersion);
 
+    // Application-level key-value settings table (sync config, timestamps, etc.)
+    sqlite.execSync(
+      "CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+    );
+
     if (currentVersion < SCHEMA_VERSION) {
       sqlite.execSync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
     }

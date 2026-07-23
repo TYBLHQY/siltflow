@@ -8,11 +8,15 @@
 
 import { useEffect, useRef, type PropsWithChildren } from "react";
 import { AppState, type AppStateStatus } from "react-native";
-import { useSyncStore, loadPersistedSyncConfig } from "@/stores/sync.store";
+import {
+  useSyncStore,
+  loadPersistedSyncConfig,
+  setSetting,
+  getSetting,
+} from "@/stores/sync.store";
 import { initSyncEngine, teardownSyncEngine, setSyncTimestamps } from "@/sync";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const STORAGE_KEYS = {
+const TIMESTAMP_KEYS = {
   lastPushAt: "sync:lastPushAt",
   lastPullAt: "sync:lastPullAt",
 } as const;
@@ -26,7 +30,7 @@ export function SyncProvider({ children }: PropsWithChildren) {
     initialized.current = true;
 
     // Load persisted config and start engine
-    loadPersistedSyncConfig().then(async (cfg) => {
+    loadPersistedSyncConfig().then((cfg) => {
       useSyncStore.getState().setConfig(cfg);
 
       if (cfg.syncEnabled && cfg.deviceToken) {
@@ -36,8 +40,8 @@ export function SyncProvider({ children }: PropsWithChildren) {
         });
 
         // Restore persisted timestamps
-        const lastPushAt = await AsyncStorage.getItem(STORAGE_KEYS.lastPushAt);
-        const lastPullAt = await AsyncStorage.getItem(STORAGE_KEYS.lastPullAt);
+        const lastPushAt = getSetting(TIMESTAMP_KEYS.lastPushAt);
+        const lastPullAt = getSetting(TIMESTAMP_KEYS.lastPullAt);
         setSyncTimestamps(lastPushAt, lastPullAt);
       }
     });
@@ -58,10 +62,12 @@ export function SyncProvider({ children }: PropsWithChildren) {
         const engine = require("@/sync").getSyncEngine();
         if (engine) {
           const { lastPushAt, lastPullAt } = engine.state;
-          AsyncStorage.setMany({
-            [STORAGE_KEYS.lastPushAt]: lastPushAt ?? "",
-            [STORAGE_KEYS.lastPullAt]: lastPullAt ?? "",
-          }).catch(() => {});
+          if (lastPushAt) {
+            setSetting(TIMESTAMP_KEYS.lastPushAt, lastPushAt);
+          }
+          if (lastPullAt) {
+            setSetting(TIMESTAMP_KEYS.lastPullAt, lastPullAt);
+          }
         }
       }
       appStateRef.current = nextState;
