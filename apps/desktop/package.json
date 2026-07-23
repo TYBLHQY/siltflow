@@ -25,6 +25,7 @@
     "@radix-ui/react-tooltip": "^1.2.12",
     "@tanstack/react-virtual": "^3.14.6",
     "allotment": "^1.20.5",
+    "@siltflow/shared-db": "workspace:*",
     "better-sqlite3": "^12.11.1",
     "bindings": "^1.5.0",
     "class-variance-authority": "^0.7.1",
@@ -79,5 +80,9 @@
     "name": "MYQ"
   },
   "homepage": "https://github.com/TYBLHQY/siltflow",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TYBLHQY/siltflow.git"
+  },
   "main": "dist-electron/main.js"
 }

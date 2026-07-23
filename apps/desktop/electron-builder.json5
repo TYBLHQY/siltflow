@@ -48,6 +48,7 @@
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
   },
+  "executableName": "siltflow",
   "linux": {
     "icon": "build/icons",
     "category": "Utility",

@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { useState, useEffect } from "react";
 import { Appearance, type ColorSchemeName } from "react-native";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { DatabaseProvider } from "@/providers/DatabaseProvider";
 import "@/global.css";
 
 export default function RootLayout() {
@@ -20,7 +21,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <DatabaseProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </DatabaseProvider>
     </ThemeProvider>
   );
 }

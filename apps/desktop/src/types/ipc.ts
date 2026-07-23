@@ -1,54 +1,30 @@
 /**
  * IPC request / response types shared between the Electron preload and
- * the renderer's window.siltflow.* API.  Used to narrow vite-env.d.ts so
- * store / component code gets precise types instead of `any`.
+ * the renderer's window.siltflow.* API.
+ *
+ * Base DB row types are imported from @siltflow/shared-db;
+ * desktop-specific IPC shapes are defined here.
  */
 
-// ── Documents ──────────────────────────────────────────────────────────
+// Re-export shared types that consumers previously imported from this file
+export type {
+  DocumentIPCItem,
+  DocumentSaveRequest,
+  AnnotationSaveRequest,
+  SummarySaveRequest,
+  SummarySaveResult,
+  AIResultSaveResult,
+  FSRSCardSaveResult,
+  ReviewLogEntryIPC,
+  ReviewLogSaveResult,
+  FolderRowIPC,
+  FolderCreateParams,
+  UpdateProgress,
+} from "@siltflow/shared-db/types";
 
-export interface DocumentIPCItem {
-  id: string;
-  title: string;
-  totalPages?: number | null;
-  originalName?: string | null;
-  folderId?: string | null;
-  sortOrder?: number;
-  metadata?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+// ── Annotation enriched type (still IPC-specific: JSON parsing happens in main process) ──
 
-export interface DocumentSaveRequest {
-  id: string;
-  title: string;
-}
-
-// ── Annotations ────────────────────────────────────────────────────────
-
-export interface AnnotationSaveRequest {
-  id: string;
-  document_id: string;
-  type: string;
-  text: string;
-  page_number: number;
-  embed_data: string;
-  kind?: string;
-}
-
-export interface AnnotationRowIPC {
-  id: string;
-  document_id: string;
-  type: string;
-  text: string | null;
-  page_number: number | null;
-  embed_data: string;
-  kind: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/** Enriched row from annotations:list (JOINs ai_results + fsrs_cards) */
-export interface AnnotationEnrichedIPC {
+export type AnnotationEnrichedIPC = {
   id: string;
   document_id: string;
   type: string;
@@ -61,79 +37,15 @@ export interface AnnotationEnrichedIPC {
   ai_data: string | null;
   ai_version: number | null;
   fsrs_data: string | null;
-}
+};
 
-// ── Summaries ──────────────────────────────────────────────────────────
+// ── Summary IPC row (snake_case column mapping used by IPC) ──────────
 
-export interface SummaryRowIPC {
+export type SummaryRowIPC = {
   documentId: string;
   text: string;
-  isAiGenerated: number; // SQLite boolean as int
+  isAiGenerated: number; // SQLite boolean stored as INTEGER
   sourceLang: string | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface SummarySaveRequest {
-  documentId: string;
-  text: string;
-  isAiGenerated: boolean;
-  sourceLang?: string;
-}
-
-export interface SummarySaveResult {
-  documentId: string;
-}
-
-// ── AI Results ─────────────────────────────────────────────────────────
-
-export interface AIResultSaveResult {
-  annotationId: string;
-  version: number;
-}
-
-// ── FSRS Cards ─────────────────────────────────────────────────────────
-
-export interface FSRSCardSaveResult {
-  annotationId: string;
-}
-
-// ── Review Logs ────────────────────────────────────────────────────────
-
-export interface ReviewLogEntryIPC {
-  id: string;
-  annotationId: string;
-  documentId: string;
-  data: string;
-  createdAt: string;
-}
-
-export interface ReviewLogSaveResult {
-  id: string;
-  createdAt: string;
-}
-
-// ── Folders ────────────────────────────────────────────────────────────
-
-export interface FolderRowIPC {
-  id: string;
-  name: string;
-  parentId: string | null;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface FolderCreateParams {
-  name: string;
-  parentId?: string | null;
-}
-
-// ── Update ─────────────────────────────────────────────────────────────
-
-export interface UpdateProgress {
-  percent: number;
-  bytesPerSecond: number;
-  total: number;
-  transferred: number;
-}
+};
