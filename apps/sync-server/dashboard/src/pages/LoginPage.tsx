@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { BrainCircuit, Key, Loader2 } from "lucide-react";
@@ -10,11 +10,12 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Already logged in — redirect
-  if (currentToken) {
-    navigate("/overview", { replace: true });
-    return null;
-  }
+  // Already logged in — redirect (must be in useEffect, not during render)
+  useEffect(() => {
+    if (currentToken) {
+      navigate("/overview", { replace: true });
+    }
+  }, [currentToken, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
