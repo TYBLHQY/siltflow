@@ -16,6 +16,8 @@
     "server:dev": "pnpm -F @siltflow/sync-server dev",
     "server:start": "pnpm -F @siltflow/sync-server start",
     "server:typecheck": "pnpm -F @siltflow/sync-server typecheck",
-    "server:test": "pnpm -F @siltflow/sync-server test"
+    "server:test": "pnpm -F @siltflow/sync-server test",
+    "dashboard:dev": "pnpm -F @siltflow/sync-server dev:dashboard",
+    "dashboard:build": "pnpm -F @siltflow/sync-server build:dashboard"
   }
 }

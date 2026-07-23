@@ -18,6 +18,7 @@ import { summaryRoutes } from "./routes/summaries";
 import { statsRoutes } from "./routes/stats";
 import { syncRoutes } from "./routes/sync";
 import { createFileRoutes } from "./routes/files";
+import { serveDashboard } from "./serve-dashboard";
 import type { ServerConfig } from "./config";
 import type { AppContext, Variables } from "./types";
 
@@ -65,6 +66,9 @@ export function createApp(config: ServerConfig, ctx: AppContext) {
   api.route("/files", createFileRoutes(config.dataDir));
 
   app.route("/api", api);
+
+  // ── Dashboard (SPA static files) ──────────────────────────────────
+  app.get("/*", serveDashboard);
 
   return app;
 }

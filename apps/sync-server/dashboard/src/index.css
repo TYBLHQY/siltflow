@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@import "@catppuccin/tailwindcss/mocha.css";
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-card: var(--card-bg);
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  --radius: 0.625rem;
+}
+
+.mocha {
+  --card-bg: var(--catppuccin-color-mantle);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  *:focus {
+    outline: none !important;
+  }
+  *:focus-visible {
+    outline: none !important;
+  }
+  body {
+    @apply bg-ctp-base text-ctp-text m-0;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+}
