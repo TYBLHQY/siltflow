@@ -12,6 +12,10 @@
     "mobile:android": "pnpm -F @siltflow/mobile android",
     "mobile:ios": "pnpm -F @siltflow/mobile ios",
     "mobile:web": "pnpm -F @siltflow/mobile web",
-    "mobile:typecheck": "pnpm -F @siltflow/mobile typecheck"
+    "mobile:typecheck": "pnpm -F @siltflow/mobile typecheck",
+    "server:dev": "pnpm -F @siltflow/sync-server dev",
+    "server:start": "pnpm -F @siltflow/sync-server start",
+    "server:typecheck": "pnpm -F @siltflow/sync-server typecheck",
+    "server:test": "pnpm -F @siltflow/sync-server test"
   }
 }
