@@ -12,9 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@siltflow/shared-db": "workspace:*",
+    "@siltflow/shared-lib": "workspace:*",
     "@tailwindcss/postcss": "^4.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "expo": "~57.0.8",
     "expo-constants": "~57.0.7",
     "expo-dev-client": "~57.0.8",
@@ -22,9 +25,6 @@
     "expo-linking": "~57.0.4",
     "expo-router": "~57.0.8",
     "expo-sqlite": "~57.0.1",
-    "@siltflow/shared-db": "workspace:*",
-    "@siltflow/shared-lib": "workspace:*",
-    "drizzle-orm": "^0.45.2",
     "expo-status-bar": "~57.0.1",
     "fuse.js": "7.5.0",
     "nativewind": "5.0.0-preview.2",

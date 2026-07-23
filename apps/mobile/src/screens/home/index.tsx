@@ -11,6 +11,9 @@ export function Home() {
         <Link href="/kitchen-sink" asChild>
           <Button variant="outline">Component Kitchen Sink</Button>
         </Link>
+        <Link href="/documents" asChild>
+          <Button variant="outline">Documents</Button>
+        </Link>
       </View>
     </SafeAreaView>
   );
