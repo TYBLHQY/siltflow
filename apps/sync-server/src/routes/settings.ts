@@ -52,7 +52,7 @@ export const settingsRoutes = new Hono<{ Variables: Variables }>()
     }
 
     // Whitelist allowed keys
-    const ALLOWED_KEYS = ["pdf_sync_enabled"];
+    const ALLOWED_KEYS = ["pdf_sync_enabled", "bootstrap_token"];
     if (!ALLOWED_KEYS.includes(body.key)) {
       return c.json({ error: `unknown setting key: ${body.key}` }, 400);
     }

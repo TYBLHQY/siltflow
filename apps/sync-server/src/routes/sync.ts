@@ -128,6 +128,18 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
     return c.json({ serverTime: now, changes, tombstones });
   });
 
+// ── Key conversion ──────────────────────────────────────────────────────
+
+/** Convert camelCase keys to snake_case for SQL column names. */
+function snakeKeys(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    const snake = key.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
+    out[snake] = value;
+  }
+  return out;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function applyInsert(
@@ -135,9 +147,10 @@ function applyInsert(
   table: string,
   row: Record<string, unknown>,
 ) {
-  const keys = Object.keys(row);
+  const snaked = snakeKeys(row);
+  const keys = Object.keys(snaked);
   const placeholders = keys.map(() => "?").join(", ");
-  const values = keys.map((k) => row[k]);
+  const values = keys.map((k) => snaked[k]);
   sql!.prepare(
     `INSERT OR REPLACE INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`
   ).run(...values);
@@ -148,7 +161,8 @@ function applyUpdate(
   table: string,
   row: Record<string, unknown>,
 ) {
-  const { id, ...fields } = row;
+  const snaked = snakeKeys(row);
+  const { id, ...fields } = snaked;
   const sets = Object.keys(fields).map((k) => `${k} = ?`).join(", ");
   const values = Object.values(fields);
   sql!.prepare(`UPDATE ${table} SET ${sets} WHERE id = ?`).run(...values, id);
@@ -159,15 +173,16 @@ function checkConflict(
   table: string,
   row: Record<string, unknown>,
 ): Record<string, unknown> | null {
+  const snaked = snakeKeys(row);
   const existing = sql!.prepare(`SELECT * FROM ${table} WHERE id = ?`)
-    .get(row.id) as Record<string, unknown> | undefined;
+    .get(snaked.id) as Record<string, unknown> | undefined;
   if (!existing) return null; // was deleted on server
   if (
     existing.updated_at &&
-    row.updated_at &&
-    new Date(existing.updated_at as string) > new Date(row.updated_at as string)
+    snaked.updated_at &&
+    new Date(existing.updated_at as string) > new Date(snaked.updated_at as string)
   ) {
-    return { serverUpdatedAt: existing.updated_at, clientUpdatedAt: row.updated_at };
+    return { serverUpdatedAt: existing.updated_at, clientUpdatedAt: snaked.updated_at };
   }
   return null;
 }

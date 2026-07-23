@@ -33,6 +33,21 @@ const COMPOSITE_PK_TABLES: Record<string, string[]> = {
   review_logs: ["id", "annotation_id", "document_id"],
 };
 
+/** DDL for creating the sync_conflicts table (idempotent). */
+const CONFLICTS_DDL = `
+  CREATE TABLE IF NOT EXISTS sync_conflicts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name TEXT NOT NULL,
+    row_id TEXT NOT NULL,
+    local_data TEXT,
+    remote_data TEXT NOT NULL,
+    server_updated_at TEXT NOT NULL,
+    client_updated_at TEXT NOT NULL,
+    resolved INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+`;
+
 /** Timestamp column used for change detection per table. */
 function tsCol(table: string): string {
   return table === "review_logs" ? "created_at" : "updated_at";
@@ -75,6 +90,8 @@ export class SyncEngine extends EventEmitter {
     this.client = client;
     this.ws = ws;
     this.sql = sql;
+    // Ensure sync_conflicts table exists
+    sql.exec(CONFLICTS_DDL);
   }
 
   // ── Public API ────────────────────────────────────────────────────
@@ -319,10 +336,11 @@ export class SyncEngine extends EventEmitter {
   // ── Internal helpers ──────────────────────────────────────────────
 
   private upsertRemoteRow(table: string, row: Record<string, unknown>): void {
-    const camel = this.camelKeys(row, table);
-    const keys = Object.keys(camel);
+    // Server returns snake_case keys (raw SQL column names) which match the
+    // local DB columns directly — no conversion needed.
+    const keys = Object.keys(row);
     const placeholders = keys.map(() => "?").join(", ");
-    const values = keys.map((k) => camel[k]);
+    const values = keys.map((k) => row[k]);
     this.sql
       .prepare(
         `INSERT OR REPLACE INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`,
@@ -331,14 +349,16 @@ export class SyncEngine extends EventEmitter {
   }
 
   /**
-   * Convert snake_case column names (from server) to camelCase
-   * (as stored in the local DB). The shared schema uses camelCase.
+   * Convert snake_case column names to camelCase for the sync JSON protocol.
+   * The local DB stores columns as-is from the Drizzle schema (snake_case in
+   * SQL, e.g. "total_pages"). camelKeys is only used on push — the server
+   * expects camelCase JSON keys. Pull uses the server response as-is because
+   * the server also returns raw snake_case column names.
    */
   private camelKeys(row: Record<string, unknown>, _table: string): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(row)) {
-      // The local DB stores columns as-is from shared-db (camelCase).
-      // The server returns snake_case rows. Convert.
+      // snake_case (local DB column) → camelCase (JSON protocol)
       const camel = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
       out[camel] = value;
     }

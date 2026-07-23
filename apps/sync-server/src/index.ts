@@ -6,24 +6,28 @@
  */
 
 import { serve } from "@hono/node-server";
+import { randomBytes } from "node:crypto";
 import { createApp } from "./app";
-import { loadConfig } from "./config";
+import { loadConfig, type ServerConfig } from "./config";
 import { initDatabase, getDb, getSqlite } from "./db";
 import { createWsHub } from "./ws";
 
 // ── Bootstrap ─────────────────────────────────────────────────────────
 
-const config = loadConfig();
+const envConfig = loadConfig();
+
+// Init database (creates dir + all tables + runs migrations)
+initDatabase(envConfig);
+console.log("[sync-server] Database initialised");
+
+// Resolve bootstrap token: env var wins, otherwise persist a generated one
+const config = resolveBootstrapToken(envConfig);
 
 console.log(`[sync-server] Starting with config:
   PORT=${config.port}
   DATA_DIR=${config.dataDir}
   TOMBSTONE_RETENTION_DAYS=${config.tombstoneRetentionDays}
 `);
-
-// Init database (creates dir + all tables + runs migrations)
-initDatabase(config);
-console.log("[sync-server] Database initialised");
 
 // Create WebSocket hub
 const wsHub = createWsHub();
@@ -86,4 +90,60 @@ function startTombstoneCleanup(config: import("./config").ServerConfig) {
   setInterval(run, 60 * 60 * 1000);
   // Also run once on startup
   run();
+}
+
+// ── Bootstrap token persistence ───────────────────────────────────────
+
+/**
+ * Resolve the bootstrap token at startup:
+ *   1. Env var `BOOTSTRAP_TOKEN` always wins (production override).
+ *   2. Otherwise check `server_settings` for a persisted token.
+ *   3. If neither exists, generate one and persist it.
+ *
+ * This ensures the token survives server restarts without needing
+ * environment variables.
+ */
+function resolveBootstrapToken(config: ServerConfig): ServerConfig {
+  // If env has BOOTSTRAP_TOKEN, use it (no persistence needed)
+  if (config.bootstrapToken) {
+    console.log("[sync-server] Using BOOTSTRAP_TOKEN from environment");
+    return config;
+  }
+
+  const sql = getSqlite();
+  if (!sql) {
+    // DB not ready — this shouldn't happen but return as-is
+    console.warn("[sync-server] DB not ready, skipping bootstrap token resolution");
+    return config;
+  }
+
+  // Check for persisted token
+  const row = sql
+    .prepare("SELECT value FROM server_settings WHERE key = ?")
+    .get("bootstrap_token") as { value: string } | undefined;
+
+  if (row) {
+    console.log("[sync-server] Bootstrap token loaded from settings (persisted)");
+    return { ...config, bootstrapToken: row.value };
+  }
+
+  // Generate and persist
+  const token = randomBytes(32).toString("hex");
+  const now = new Date().toISOString();
+  sql
+    .prepare(
+      "INSERT INTO server_settings (key, value, updated_at) VALUES (?, ?, ?)",
+    )
+    .run("bootstrap_token", token, now);
+
+  console.log(`[sync-server] Bootstrap token (auto-generated, persisted): ${token}`);
+  console.log(
+    "[sync-server] Use this token to bootstrap your first device:\n" +
+      `  curl -X POST http://localhost:${config.port}/api/auth/bootstrap \\\n` +
+      `    -H "Authorization: Bearer ${token}" \\\n` +
+      `    -H "Content-Type: application/json" \\\n` +
+      `    -d '{"deviceName": "My Desktop"}'`,
+  );
+
+  return { ...config, bootstrapToken: token };
 }
