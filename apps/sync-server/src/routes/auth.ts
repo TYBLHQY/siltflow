@@ -56,7 +56,7 @@ export const authRoutes = new Hono<{ Variables: Variables }>()
       deviceId,
       deviceName,
       token,
-      serverUrl: `http://localhost:${config.port}`,
+      serverUrl: c.req.url.replace(/\/api\/auth\/.*/, ""),
       warning: "Save this token. It will not be shown again.",
     }, 201);
   })
