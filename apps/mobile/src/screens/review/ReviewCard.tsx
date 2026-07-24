@@ -244,7 +244,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
   if (!answerRevealed) {
     return (
       <Pressable onPress={onReveal}>
-        <View className="rounded border border-ctp-surface1 bg-ctp-surface0 p-6">
+        <View className="rounded-lg border border-ctp-surface1 bg-ctp-surface0 p-6">
           <View className="items-center justify-center py-12 gap-4">
             {/* Source text — large, centered, wraps */}
             <Text className="text-3xl text-ctp-text text-center leading-relaxed flex-shrink">
@@ -269,7 +269,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
   // ── Answer side ─────────────────────────────────────────────────────
 
   return (
-    <View className="rounded border border-ctp-surface1 bg-ctp-surface0 p-4">
+    <View className="rounded-lg border border-ctp-surface1 bg-ctp-surface0 p-4">
       <View className="py-2 gap-2">
 
         {/* ── Header: granularity + kind/page + version ── */}
@@ -311,7 +311,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
           </View>
         ) : ai ? (
           /* V1 fallback — simple translation */
-          <View className="bg-ctp-surface0 rounded p-4 mt-2">
+          <View className="bg-ctp-surface0 rounded-lg p-4 mt-2">
             <Text className="text-sm text-ctp-overlay0 mb-1">Translation</Text>
             <Text className="text-lg text-ctp-text leading-relaxed">
               {(ai as unknown as Record<string, string>).translation ?? "(no translation)"}

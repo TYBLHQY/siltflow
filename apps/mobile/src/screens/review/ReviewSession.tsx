@@ -291,7 +291,7 @@ export function ReviewSession() {
               <Pressable
                 key={grade}
                 onPress={() => handleGrade(grade)}
-                className={`flex-1 items-center rounded py-3 ${style.bg}`}
+                className={`flex-1 items-center rounded-lg py-3 ${style.bg}`}
               >
                 <Text className={`text-lg font-semibold ${style.text}`}>
                   {GRADE_LABEL[grade]}

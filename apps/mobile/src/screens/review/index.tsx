@@ -108,7 +108,7 @@ export function ReviewScreen() {
   const renderItem = ({ item: doc }: { item: MetricsRow }) => (
     <View className="px-4 pb-3">
       <Pressable onPress={() => handleOpenSession(doc)}>
-        <Card className="bg-ctp-base">
+        <Card>
           <CardContent>
             <View className="flex-row items-center justify-between py-1">
               {/* Doc title */}

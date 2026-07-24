@@ -9,7 +9,7 @@ export function Card({
   children?: React.ReactNode;
 }) {
   return (
-    <View className={cn("rounded border border-ctp-surface1 bg-ctp-surface0 p-4", className)}>
+    <View className={cn("rounded-lg border border-ctp-surface0 bg-ctp-base p-4", className)}>
       {children}
     </View>
   );
