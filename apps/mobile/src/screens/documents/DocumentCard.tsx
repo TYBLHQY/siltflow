@@ -36,7 +36,7 @@ export function DocumentCard({
     >
       {/* ── Icon ───────────────────────────────────────────── */}
       <View
-        className="mr-3 h-9 w-9 items-center justify-center rounded-lg"
+        className="mr-3 h-9 w-9 items-center justify-center rounded"
         style={{ backgroundColor: "rgba(137,180,250,0.10)" }}
       >
         <Text className="text-base">📄</Text>
