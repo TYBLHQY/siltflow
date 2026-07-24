@@ -26,6 +26,7 @@ interface TabItem {
 
 const TABS: TabItem[] = [
   { label: "Review", route: "/review", icon: "cards-outline", iconFocused: "cards" },
+  { label: "Stats", route: "/stats", icon: "chart-bar", iconFocused: "chart-bar" },
   { label: "Settings", route: "/settings", icon: "cog-outline", iconFocused: "cog" },
 ];
 

@@ -200,7 +200,6 @@ export function ReviewSession() {
           contentContainerClassName="p-6 gap-6 items-center"
         >
           <View className="items-center gap-4 mt-12">
-            <Text className="text-5xl">✅</Text>
             <Text className="text-2xl font-bold text-ctp-text">
               Session Complete!
             </Text>
@@ -236,11 +235,13 @@ export function ReviewSession() {
               );
             })}
           </View>
-
-          <Button onPress={handleBack} className="mt-4">
-            Back to Documents
-          </Button>
         </ScrollView>
+
+        <View className="p-6 items-center">
+          <Button onPress={handleBack}>
+            Back to Review
+          </Button>
+        </View>
       </SafeAreaView>
     );
   }

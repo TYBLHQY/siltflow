@@ -32,33 +32,6 @@ const SORT_OPTIONS: { field: SortField; label: string }[] = [
   { field: "urgency", label: "Urgency" },
 ];
 
-const SORT_PREF_KEY = "review_sort_field";
-
-function loadSortPref(): SortField {
-  try {
-    const sql = getSQLite();
-    const row = sql.getFirstSync<{ value: string }>(
-      "SELECT value FROM app_settings WHERE key = ?",
-      SORT_PREF_KEY,
-    );
-    if (row?.value && ["new", "due", "soon", "urgency"].includes(row.value)) {
-      return row.value as SortField;
-    }
-  } catch { /* DB not ready — use default */ }
-  return "urgency";
-}
-
-function saveSortPref(field: SortField): void {
-  try {
-    const sql = getSQLite();
-    sql.runSync(
-      "INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)",
-      SORT_PREF_KEY,
-      field,
-    );
-  } catch { /* DB not ready — ignore */ }
-}
-
 /**
  * Multi-level tiebreaker sort. Each dimension chains into the next
  * most relevant signal so documents with equal primary values still
@@ -134,7 +107,7 @@ export function ReviewScreen() {
   const [metrics, setMetrics] = useState<MetricsRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [sortField, setSortField] = useState<SortField>(loadSortPref);
+  const [sortField, setSortField] = useState<SortField>("urgency");
 
   const loadMetrics = useCallback(() => {
     try {
@@ -218,7 +191,7 @@ export function ReviewScreen() {
         return (
           <Pressable
             key={field}
-            onPress={() => { setSortField(field); saveSortPref(field); }}
+            onPress={() => setSortField(field)}
             className={`flex-1 items-center rounded-full py-2 ${
               active ? "bg-ctp-blue" : "bg-ctp-surface0"
             }`}
