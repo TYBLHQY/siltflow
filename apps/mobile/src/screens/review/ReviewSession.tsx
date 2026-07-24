@@ -257,14 +257,6 @@ export function ReviewSession() {
         <Text className="text-sm font-semibold text-ctp-text">{progress}</Text>
       </View>
 
-      {/* Progress bar */}
-      <View className="h-1 bg-ctp-surface0">
-        <View
-          className="h-full bg-ctp-blue rounded-r-full"
-          style={{ width: `${((index + 1) / items.length) * 100}%` }}
-        />
-      </View>
-
       {/* Card area */}
       <ScrollView
         className="flex-1"
