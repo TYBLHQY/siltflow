@@ -116,9 +116,6 @@ export function ReviewScreen() {
                 <Text className="text-base font-semibold text-ctp-text" numberOfLines={1}>
                   {doc.documentTitle}
                 </Text>
-                <Text className="text-xs text-ctp-subtext0 mt-0.5">
-                  {doc.totalCards} cards · Retention {doc.avgRetrievability}%
-                </Text>
               </View>
 
               {/* Badges */}
