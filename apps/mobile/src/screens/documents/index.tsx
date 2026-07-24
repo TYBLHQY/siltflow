@@ -9,7 +9,7 @@
  *   4. Has data — scrollable list of DocumentCards
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
   ScrollView,
 } from "@/tw";
 import { Spinner, EmptyState } from "@/components/ui";
+import { RefreshControl } from "react-native";
 import { useDocumentStore } from "@/stores/document.store";
 import { useFolderStore } from "@/stores/folder.store";
 import { useFolderTree } from "@/hooks/useFolderTree";
@@ -43,6 +44,7 @@ export function DocumentsScreen() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [folderFilterExpanded, setFolderFilterExpanded] = useState(false);
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
   // ── Initialise stores on mount ────────────────────────────
   useEffect(() => {
@@ -90,6 +92,16 @@ export function DocumentsScreen() {
     // Placeholder — will navigate to document detail in a future phase
   }
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Reset loaded flags so loadFromDb re-queries the local DB
+    useDocumentStore.setState({ loaded: false });
+    useFolderStore.setState({ loaded: false });
+    loadDocs();
+    loadFolders();
+    setRefreshing(false);
+  }, [loadDocs, loadFolders]);
+
   // ── Render ────────────────────────────────────────────────
   return (
     <SafeAreaView className="flex-1 bg-ctp-base">
@@ -124,23 +136,44 @@ export function DocumentsScreen() {
       )}
 
       {isEmpty && (
-        <EmptyState
-          title="No documents yet"
-          description="Import a PDF to get started with reading and vocabulary building."
-          action={{ label: "Import PDF", onPress: () => {} }}
-        />
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <EmptyState
+            title="No documents yet"
+            description="Import a PDF to get started with reading and vocabulary building."
+            action={{ label: "Import PDF", onPress: () => {} }}
+          />
+        </ScrollView>
       )}
 
       {isFilteredEmpty && (
-        <EmptyState
-          title="No matching documents"
-          description="Try adjusting your search or folder filter."
-          action={{ label: "Clear filters", onPress: handleClearFilters }}
-        />
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <EmptyState
+            title="No matching documents"
+            description="Try adjusting your search or folder filter."
+            action={{ label: "Clear filters", onPress: handleClearFilters }}
+          />
+        </ScrollView>
       )}
 
       {!isLoading && !isEmpty && !isFilteredEmpty && (
-        <ScrollView className="flex-1">
+        <ScrollView
+          className="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {filteredDocs.map((doc) => (
             <DocumentCard
               key={doc.id}
