@@ -103,7 +103,7 @@ export function registerAnnotationHandlers() {
       "type:", annotation.type)
     sql.prepare(
       `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM annotations WHERE id = ? AND document_id = ?), ?), ?)`
     ).run(
       annotation.id,
       annotation.document_id,
@@ -112,6 +112,9 @@ export function registerAnnotationHandlers() {
       annotation.page_number ?? 0,
       annotation.embed_data || "",
       annotation.kind || "annotation",
+      // COALESCE subquery arguments
+      annotation.id,
+      annotation.document_id,
       now,
       now,
     )
