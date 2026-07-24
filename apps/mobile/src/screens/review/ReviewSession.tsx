@@ -252,14 +252,9 @@ export function ReviewSession() {
 
   return (
     <SafeAreaView className="flex-1 bg-ctp-base">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-ctp-surface0">
-        <Button variant="ghost" size="sm" onPress={handleBack}>
-          ← Back
-        </Button>
+      {/* Header — progress only */}
+      <View className="flex-row items-center justify-center px-4 py-3 border-b border-ctp-surface0">
         <Text className="text-sm font-semibold text-ctp-text">{progress}</Text>
-        {/* spacer to balance the flex layout */}
-        <View className="w-16" />
       </View>
 
       {/* Progress bar */}

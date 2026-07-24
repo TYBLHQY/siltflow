@@ -4,9 +4,9 @@ import {
   View as RNView,
   Text as RNText,
   Pressable as RNPressable,
+  ScrollView as RNScrollView,
   TextInput as RNTextInput,
 } from "react-native";
-import { ScrollView as RNScrollView } from "react-native-gesture-handler";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
 function tw<
