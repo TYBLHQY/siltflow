@@ -15,9 +15,9 @@
  * TabBar taps also trigger the spring via useEffect on activeRoute
  * change (outside of gesture land).
  *
- * Tab screens are rendered via the tab route components directly
- * (not through expo-router Slot), so all three pages stay mounted
- * and their scroll positions / state are preserved while swiping.
+ * IMPORTANT: Pan gesture callbacks run on the UI (worklet) thread.
+ * We use Reanimated shared values inside them so the values are
+ * always current — JS-thread closures would read stale state.
  */
 
 import { useCallback, useEffect } from "react";
@@ -68,54 +68,61 @@ export function SwipeTabView({
   const activeIndex = ROUTES.indexOf(activeRoute);
   const translateX = useSharedValue(-activeIndex * SCREEN_WIDTH);
 
-  // Animate to target index with spring physics.
+  // ── Animate to target index (worklet-safe) ─────────────────────────
+  //   Called from gesture callbacks (UI thread) or from useEffect
+  //   (JS thread). Both are fine — useSharedValue is thread-safe.
+
   const springTo = useCallback(
     (index: number, instant = false) => {
       const target = -index * SCREEN_WIDTH;
       cancelAnimation(translateX);
-      translateX.value = instant
-        ? target
-        : withSpring(target, SPRING);
+      translateX.value = instant ? target : withSpring(target, SPRING);
     },
     [translateX],
   );
 
   // ── TabBar tap → spring ────────────────────────────────────────────
-  // When the user taps a TabBar button, router.replace fires and
-  // activeRoute changes. This effect picks that up and springs the
-  // pager to the new index (no gesture involved, so we skip the
-  // "during gesture" case).
 
   useEffect(() => {
-    // round to nearest screen — if we're mid-gesture, let the gesture
-    // own the animation instead
-    const currentPage = Math.abs(Math.round(translateX.value / SCREEN_WIDTH));
-    if (currentPage !== activeIndex) {
-      springTo(activeIndex);
-    }
-  }, [activeIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+    springTo(activeIndex);
+  }, [activeIndex, springTo]);
 
-  // ── Pan gesture ────────────────────────────────────────────────────
+  // ── Pan gesture (UI-thread safe via shared values) ─────────────────
+  //
+  //   We store the "base" translateX at gesture start in a shared value
+  //   so the UI thread can read it directly during onUpdate/onEnd without
+  //   accessing stale JS closures. The activeIndex is copied to a shared
+  //   value for the same reason.
+
+  const baseX = useSharedValue(0);  // translateX when the finger touched down
+  const activeIdxSV = useSharedValue(activeIndex);
+
+  // Keep the shared-value copy in sync from the JS thread
+  useEffect(() => {
+    activeIdxSV.value = activeIndex;
+  }, [activeIndex]);
 
   const pan = Gesture.Pan()
     .activeOffsetX([-20, 20])
     .failOffsetY([-10, 10])
     .onStart(() => {
       cancelAnimation(translateX);
+      baseX.value = translateX.value;
     })
     .onUpdate((event) => {
-      translateX.value = -activeIndex * SCREEN_WIDTH + event.translationX;
+      translateX.value = baseX.value + event.translationX;
     })
     .onEnd((event) => {
+      const idx = activeIdxSV.value;
       const dx = event.translationX;
-      if (dx < -SWIPE_THRESHOLD && activeIndex < ROUTES.length - 1) {
-        springTo(activeIndex + 1);
-        runOnJS(onTabChange)(ROUTES[activeIndex + 1]);
-      } else if (dx > SWIPE_THRESHOLD && activeIndex > 0) {
-        springTo(activeIndex - 1);
-        runOnJS(onTabChange)(ROUTES[activeIndex - 1]);
+      if (dx < -SWIPE_THRESHOLD && idx < ROUTES.length - 1) {
+        springTo(idx + 1);
+        runOnJS(onTabChange)(ROUTES[idx + 1]);
+      } else if (dx > SWIPE_THRESHOLD && idx > 0) {
+        springTo(idx - 1);
+        runOnJS(onTabChange)(ROUTES[idx - 1]);
       } else {
-        springTo(activeIndex);
+        springTo(idx);
       }
     });
 
