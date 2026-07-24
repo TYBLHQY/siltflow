@@ -265,6 +265,28 @@ export class SyncEngine {
           "created:", created.length,
           table !== "review_logs" ? `updated: ${changes[table]?.updated?.length ?? 0}` : "");
       }
+
+      // Log timestamp diagnostics for any table with changes — why were
+      // rows classified as "created" vs "updated"? Compare row timestamps
+      // against the since cut-off.
+      if (created.length > 0 && (table === "annotations" || table === "fsrs_cards")) {
+        const sample = created[0] as Record<string, unknown>;
+        console.log(`[Sync:Engine] pushIncremental — ${table} CREATED timestamps:`,
+          "row created_at:", sample.created_at,
+          "row updated_at:", sample.updated_at,
+          "since:", since,
+          "created_at > since:", (sample.created_at as string) > since);
+      }
+      if (table === "annotations" || table === "fsrs_cards") {
+        const chg = changes[table];
+        if (chg?.updated && chg.updated.length > 0) {
+          const sample = chg.updated[0] as Record<string, unknown>;
+          console.log(`[Sync:Engine] pushIncremental — ${table} UPDATED timestamps:`,
+            "row created_at:", sample.createdAt,
+            "row updated_at:", sample.updatedAt,
+            "since:", since);
+        }
+      }
     }
 
     // Deletions from changelog
