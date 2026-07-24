@@ -268,7 +268,7 @@ export function ReviewSession() {
       {/* Card area */}
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-4"
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
       >
         <ReviewCard
           item={current.annotation}
