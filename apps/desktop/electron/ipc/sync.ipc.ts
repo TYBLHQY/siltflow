@@ -83,6 +83,7 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
 
   wsClient = new SyncWsClient(wsUrl, cfg.deviceToken);
   wsClient.on("sync:available", () => {
+    console.log("[Sync:Desktop] WebSocket sync:available — triggering pull");
     engine?.pull().catch((err) => {
       console.warn("[Sync] Pull after notification failed:", (err as Error).message);
     });

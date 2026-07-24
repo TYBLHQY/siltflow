@@ -84,6 +84,7 @@ export class SyncEngine extends EventEmitter {
   private _lastPullAt: string | null = null;
   private _syncInProgress = false;
   private _pushInProgress = false;
+  private _pullInProgress = false;
   private _lastError: string | null = null;
 
   constructor(client: SyncClient, ws: SyncWsClient, sql: Database.Database) {
@@ -142,6 +143,8 @@ export class SyncEngine extends EventEmitter {
   async pushFull(): Promise<SyncPushResponse> {
     const changes: SyncPushBody["changes"] = {};
 
+    console.log("[Sync:Desktop] pushFull — reading all tables");
+
     for (const table of ENTITY_TABLES) {
       const rows = this.sql
         .prepare(`SELECT * FROM ${table}`)
@@ -150,10 +153,12 @@ export class SyncEngine extends EventEmitter {
         const camelRows = rows.map((r) => this.camelKeys(r, table));
         changes[table] = { created: camelRows };
       }
+      console.log("[Sync:Desktop] pushFull — table:", table, "rows:", rows.length);
     }
 
     // Also send deletions from changelog
     const deletions = getDeletionsSince(this.sql, "1970-01-01T00:00:00Z");
+    console.log("[Sync:Desktop] pushFull — deletions from changelog:", deletions.length);
     for (const del of deletions) {
       if (!changes[del.table_name as EntityTable]) {
         changes[del.table_name as EntityTable] = {};
@@ -275,50 +280,62 @@ export class SyncEngine extends EventEmitter {
 
   /** Pull remote changes and apply them locally. */
   async pull(): Promise<void> {
-    const body = {
-      lastSyncAt: this._lastPullAt ?? "1970-01-01T00:00:00Z",
-    };
-    console.log("[Sync:Desktop] pull — since:", body.lastSyncAt);
-    const res = await this.client.pull(body);
+    // Guard against concurrent pulls — same as mobile. A standalone pull
+    // (triggered by WebSocket "sync:available") must not race with a pull
+    // that is already part of an active sync() cycle.
+    if (this._pullInProgress) {
+      console.log("[Sync:Desktop] pull — skipped (pull already in progress)");
+      return;
+    }
+    this._pullInProgress = true;
+    try {
+      const body = {
+        lastSyncAt: this._lastPullAt ?? "1970-01-01T00:00:00Z",
+      };
+      console.log("[Sync:Desktop] pull — since:", body.lastSyncAt);
+      const res = await this.client.pull(body);
 
-    let totalRows = 0;
-    // Apply changes row-by-row
-    for (const table of ENTITY_TABLES) {
-      const rows = res.changes?.[table];
-      if (!rows || rows.length === 0) continue;
+      let totalRows = 0;
+      // Apply changes row-by-row
+      for (const table of ENTITY_TABLES) {
+        const rows = res.changes?.[table];
+        if (!rows || rows.length === 0) continue;
 
-      console.log("[Sync:Desktop] pull — table:", table, "rows:", rows.length);
+        console.log("[Sync:Desktop] pull — table:", table, "rows:", rows.length);
 
-      // Log fsrs_cards and review_logs data for debugging
-      if (table === "fsrs_cards" || table === "review_logs") {
-        for (let i = 0; i < Math.min(rows.length, 3); i++) {
-          const r = rows[i] as Record<string, unknown>;
-          console.log(`[Sync:Desktop] pull — ${table}[${i}]:`, JSON.stringify(r).slice(0, 200));
+        // Log fsrs_cards and review_logs data for debugging
+        if (table === "fsrs_cards" || table === "review_logs") {
+          for (let i = 0; i < Math.min(rows.length, 3); i++) {
+            const r = rows[i] as Record<string, unknown>;
+            console.log(`[Sync:Desktop] pull — ${table}[${i}]:`, JSON.stringify(r).slice(0, 200));
+          }
+        }
+
+        for (const row of rows) {
+          totalRows++;
+          this.upsertRemoteRow(table, row);
         }
       }
 
-      for (const row of rows) {
-        totalRows++;
-        this.upsertRemoteRow(table, row);
+      // Apply tombstones (delete local rows that were deleted remotely)
+      if (res.tombstones.length > 0) {
+        console.log("[Sync:Desktop] pull — tombstones:", res.tombstones.length);
+        for (const t of res.tombstones.slice(0, 5)) {
+          console.log(`[Sync:Desktop] pull — tombstone: ${t.table_name} row=${t.row_id}`);
+        }
       }
-    }
-
-    // Apply tombstones (delete local rows that were deleted remotely)
-    if (res.tombstones.length > 0) {
-      console.log("[Sync:Desktop] pull — tombstones:", res.tombstones.length);
-      for (const t of res.tombstones.slice(0, 5)) {
-        console.log(`[Sync:Desktop] pull — tombstone: ${t.table_name} row=${t.row_id}`);
+      for (const tombstone of res.tombstones) {
+        this.applyTombstone(tombstone.table_name, tombstone.row_id);
       }
-    }
-    for (const tombstone of res.tombstones) {
-      this.applyTombstone(tombstone.table_name, tombstone.row_id);
-    }
 
-    console.log("[Sync:Desktop] pull — total rows upserted:", totalRows,
-      "tombstones:", res.tombstones.length,
-      "serverTime:", res.serverTime);
-    this._lastPullAt = res.serverTime;
-    this._emitState();
+      console.log("[Sync:Desktop] pull — total rows upserted:", totalRows,
+        "tombstones:", res.tombstones.length,
+        "serverTime:", res.serverTime);
+      this._lastPullAt = res.serverTime;
+      this._emitState();
+    } finally {
+      this._pullInProgress = false;
+    }
   }
 
   // ── Conflict storage ──────────────────────────────────────────────
