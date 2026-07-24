@@ -2,6 +2,8 @@ node_modules/
 dist
 dist-electron
 dist-ssr
+dist-dashboard
 *.local
 *.tsbuildinfo
 .claude/worktrees/
+package-lock.json

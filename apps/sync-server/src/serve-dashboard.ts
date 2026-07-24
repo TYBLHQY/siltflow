@@ -8,9 +8,14 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Context } from "hono";
 
-const DASHBOARD_DIR = path.resolve(__dirname, "../dist-dashboard");
+const DASHBOARD_DIR = path.resolve(
+  typeof __dirname !== "undefined"
+    ? path.join(__dirname, "../dist-dashboard")
+    : path.join(path.dirname(fileURLToPath(import.meta.url)), "../dist-dashboard")
+);
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

@@ -1,10 +1,18 @@
 <!doctype html>
-<html lang="en" class="mocha">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <title>SiltFlow Dashboard</title>
+    <!-- Inline theme detection — runs before any rendering to prevent FART -->
+    <script>
+      (function() {
+        var d = document.documentElement;
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        d.className = prefersDark ? "mocha dark" : "latte";
+      })();
+    </script>
   </head>
   <body class="bg-ctp-base text-ctp-text">
     <div id="root"></div>
