@@ -108,10 +108,8 @@ function WordView({
           <View className="gap-1.5">
             {output.definitions.map((d, i) => (
               <View key={i} className="gap-0.5">
-                <View className="flex-row items-baseline gap-1.5">
-                  <Badge variant="default">{d.pos}</Badge>
-                  <Text className="text-lg text-ctp-text flex-1 leading-relaxed">{d.definition.source}</Text>
-                </View>
+                <Badge variant="default">{d.pos}</Badge>
+                <Text className="text-lg text-ctp-text leading-relaxed">{d.definition.source}</Text>
                 {d.definition.target ? (
                   <Text className="text-lg text-ctp-overlay0 leading-relaxed">{d.definition.target}</Text>
                 ) : null}
