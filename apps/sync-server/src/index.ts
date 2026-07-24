@@ -105,40 +105,42 @@ function startTombstoneCleanup(config: import("./config").ServerConfig) {
  * requires it. Log it at startup so the operator can copy it.
  */
 function resolveServerToken(config: ServerConfig): ServerConfig {
+  let token: string;
+  let source: string;
+
   if (config.bootstrapToken) {
-    // Legacy: BOOTSTRAP_TOKEN env var maps to serverToken
-    console.log("[sync-server] Using server token from SERVER_TOKEN / BOOTSTRAP_TOKEN env");
-    return config;
+    token = config.bootstrapToken;
+    source = "SERVER_TOKEN env var";
+  } else {
+    const sql = getSqlite();
+    if (!sql) {
+      console.warn("[sync-server] DB not ready, skipping server token resolution");
+      return config;
+    }
+
+    let row = sql
+      .prepare("SELECT value FROM server_settings WHERE key = ?")
+      .get("server_token") as { value: string } | undefined;
+
+    if (row) {
+      token = row.value;
+      source = "settings (persisted)";
+    } else {
+      // First start — generate and persist
+      token = randomBytes(32).toString("hex");
+      const now = new Date().toISOString();
+      sql
+        .prepare("INSERT INTO server_settings (key, value, updated_at) VALUES (?, ?, ?)")
+        .run("server_token", token, now);
+      source = "auto-generated (persisted)";
+    }
   }
 
-  const sql = getSqlite();
-  if (!sql) {
-    console.warn("[sync-server] DB not ready, skipping server token resolution");
-    return config;
-  }
-
-  let row = sql
-    .prepare("SELECT value FROM server_settings WHERE key = ?")
-    .get("server_token") as { value: string } | undefined;
-
-  if (row) {
-    console.log("[sync-server] Server token loaded from settings");
-    return { ...config, bootstrapToken: row.value };
-  }
-
-  // First start — generate and persist
-  const token = randomBytes(32).toString("hex");
-  const now = new Date().toISOString();
-  sql
-    .prepare("INSERT INTO server_settings (key, value, updated_at) VALUES (?, ?, ?)")
-    .run("server_token", token, now);
-
-  console.log(`[sync-server] Server token (auto-generated, persisted):
+  console.log(`[sync-server] Server token (${source}):
   ${token}
 
   Share this token with devices that need to join this server.
-  Set SERVER_TOKEN env var to override (won't be read from settings).
-`);
+  Set SERVER_TOKEN env var to override.`);
 
   return { ...config, bootstrapToken: token };
 }
