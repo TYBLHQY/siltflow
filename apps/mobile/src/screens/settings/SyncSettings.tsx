@@ -13,20 +13,27 @@ import { useState, useEffect, useCallback } from "react";
 import { View, Text } from "@/tw";
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Spinner, Badge } from "@/components/ui";
 import { useSyncStore } from "@/stores/sync.store";
+import { useAnnotationStore } from "@/stores/annotation.store";
+import { useDocumentStore } from "@/stores/document.store";
+import { useFolderStore } from "@/stores/folder.store";
+import { useSummaryStore } from "@/stores/summary.store";
+import { useReviewLogStore } from "@/stores/review-log.store";
+import { useStatsStore } from "@/stores/stats.store";
+import { useSearchStore } from "@/stores/search.store";
 import { getSQLite } from "@/stores/db.store";
 import { initSchema } from "@siltflow/shared-db/migrations";
 import { SCHEMA_VERSION } from "@siltflow/shared-db/types";
-import { ENTITY_TABLES } from "@siltflow/shared-lib";
 import { createExpoSqliteExecutor } from "@/lib/expo-sqlite-adapter";
 
-/** All tables managed by the mobile database. */
-const ALL_TABLES = [
-  ...ENTITY_TABLES,
-  "sync_op_log",
-  "sync_tombstones",
-  "sync_tombstone_acks",
-  "app_settings",
-];
+/** Query sqlite_master for all existing user tables, then DELETE FROM each. */
+function deleteAllRows(executor: ReturnType<typeof createExpoSqliteExecutor>): void {
+  const tables = executor
+    .all<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+    .map((r) => r.name);
+  for (const table of tables) {
+    executor.exec(`DELETE FROM ${table}`);
+  }
+}
 
 export function SyncSettings() {
   const config = useSyncStore((s) => s.config);
@@ -110,20 +117,33 @@ export function SyncSettings() {
     setResetConfirm(false);
     setStatusMessage("Resetting database…");
     try {
+      // 1. Tear down sync engine before touching the database
+      useSyncStore.getState().disconnect();
+
+      // 2. Wipe all tables via SqlExecutor (queries sqlite_master so
+      //     sync_* tables are only deleted if they actually exist)
       const sql = getSQLite();
-      sql.execSync("BEGIN TRANSACTION");
-      for (const table of ALL_TABLES) {
-        sql.execSync(`DELETE FROM ${table}`);
-      }
-      sql.execSync("PRAGMA user_version = 0");
-      sql.execSync("COMMIT");
-      // Re-run schema init so tables are ready for use
       const executor = createExpoSqliteExecutor(sql);
+      executor.transaction((tx) => {
+        deleteAllRows(tx);
+        tx.exec("PRAGMA user_version = 0");
+      });
+
+      // 3. Re-run schema init (idempotent CREATE TABLE IF NOT EXISTS)
       initSchema(executor, 0);
-      sql.execSync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+      executor.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+
+      // 4. Clear all in-memory Zustand stores so no stale data lingers
+      useAnnotationStore.getState().clear();
+      useDocumentStore.getState().clear();
+      useFolderStore.getState().clear();
+      useSummaryStore.getState().clear();
+      useReviewLogStore.getState().clearAll();
+      useStatsStore.getState().clear();
+      useSearchStore.getState().clearSearch();
+
       setStatusMessage("Database reset complete. Reconnect to sync server.");
     } catch (err) {
-      try { getSQLite().execSync("ROLLBACK"); } catch { /* ignore */ }
       setStatusMessage(`Reset failed: ${(err as Error).message}`);
     } finally {
       setIsResetting(false);

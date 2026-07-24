@@ -58,6 +58,7 @@ interface StatsState {
   getReviewForecast: (days?: number) => ForecastDay[];
   getForgettingCurves: () => ForgettingCurvePoint[];
   getRetentionTradeoff: () => RetentionTradeoffPoint[];
+  clear: () => void;
 }
 
 export const useStatsStore = create<StatsState>((set, get) => ({
@@ -183,6 +184,8 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       params.w,
     );
   },
+
+  clear: () => set({ cards: [], reviewLogs: [], annotationCount: 0, loaded: false }),
 }));
 
 // Import at bottom to avoid circular

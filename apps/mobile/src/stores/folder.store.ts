@@ -30,6 +30,7 @@ interface FolderState {
   updateFolder: (id: string, patch: Partial<FolderItem>) => void;
   removeFolder: (id: string) => void;
   setLoading: (loading: boolean) => void;
+  clear: () => void;
 }
 
 export const useFolderStore = create<FolderState>((set, get) => ({
@@ -69,6 +70,8 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     })),
 
   setLoading: (loading) => set({ loading }),
+
+  clear: () => set({ folders: [], loaded: false }),
 }));
 
 // ── Action helpers ───────────────────────────────────────────────────

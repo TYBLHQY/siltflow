@@ -18,6 +18,7 @@ interface ReviewLogState {
   loadForAnnotation: (annotationId: string, documentId: string) => void;
   addLog: (annotationId: string, documentId: string, data: unknown) => ReviewLogEntryIPC | null;
   clearAnnotation: (annotationId: string) => void;
+  clearAll: () => void;
 }
 
 export const useReviewLogStore = create<ReviewLogState>((set) => ({
@@ -70,4 +71,6 @@ export const useReviewLogStore = create<ReviewLogState>((set) => ({
       return { logs: next };
     });
   },
+
+  clearAll: () => set({ logs: {} }),
 }));

@@ -19,6 +19,7 @@ interface SummaryState {
   getSummary: (documentId: string) => { text: string; isAiGenerated: boolean; sourceLang?: string } | undefined;
   saveSummary: (documentId: string, text: string, isAiGenerated: boolean, sourceLang?: string) => void;
   deleteSummary: (documentId: string) => void;
+  clear: () => void;
 }
 
 export const useSummaryStore = create<SummaryState>((set, get) => ({
@@ -81,4 +82,6 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
       console.error("[summary.store] deleteSummary failed:", err);
     }
   },
+
+  clear: () => set({ summaries: {}, loaded: false }),
 }));

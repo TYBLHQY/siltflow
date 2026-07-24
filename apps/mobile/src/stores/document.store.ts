@@ -38,6 +38,7 @@ interface DocumentState {
 
   loadFromDb: () => void;
   setLoading: (loading: boolean) => void;
+  clear: () => void;
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -86,6 +87,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   setLoading: (loading) => set({ loading }),
+
+  clear: () => set({ documents: [], currentDocument: null, loaded: false }),
 }));
 
 // ── Action helpers (called from components / other stores) ──────────
