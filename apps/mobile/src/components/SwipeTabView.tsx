@@ -1,65 +1,104 @@
 /**
- * SwipeTabView — wraps each tab's Slot content in a horizontal pan-gesture
- * detector. Swiping left or right navigates to the adjacent tab.
+ * SwipeTabView — horizontally paginated tab container.
  *
- * We use a single GestureDetector inside the tab layout that tracks
- * accumulated horizontal translation via Reanimated shared values.
- * On gesture end: if the total swipe exceeded the threshold, we
- * jump to the neighbour tab; otherwise we spring back.
+ * Renders all three tab screens side-by-side in a single row at
+ * screen width. A Reanimated shared value tracks the horizontal
+ * translation of the strip as the user swipes.
+ *
+ * During the gesture (onUpdate): translation follows the finger.
+ * On gesture end:
+ *   - swipe left  past threshold → animate to next tab
+ *   - swipe right past threshold → animate to previous tab
+ *   - otherwise spring back to current tab
+ *
+ * Tab screens are rendered via the tab route components directly
+ * (not through expo-router Slot), so all three pages stay mounted
+ * and their scroll positions / state are preserved while swiping.
  */
 
-import { ReactNode, useCallback } from "react";
+import { useCallback } from "react";
+import { Dimensions } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { View } from "@/tw";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
 
-// -- Tab order (same as TabBar.TABS) ------------------------------------
+import { ReviewScreen } from "@/screens/review";
+import { StatsScreen } from "@/screens/stats";
+import { SettingsScreen } from "@/screens/settings";
+
+// -- Config ---------------------------------------------------------------
 
 const TAB_ROUTES = ["/review", "/stats", "/settings"];
+const SWIPE_THRESHOLD = 80;
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// -- Threshold -----------------------------------------------------------
+const SCREENS = [
+  { route: "/review", Component: ReviewScreen },
+  { route: "/stats", Component: StatsScreen },
+  { route: "/settings", Component: SettingsScreen },
+];
 
-const SWIPE_THRESHOLD = 80; // px — must swipe this far to trigger a tab change
-
-// -- Component -----------------------------------------------------------
+// -- Component ------------------------------------------------------------
 
 export function SwipeTabView({
-  children,
   activeRoute,
   onTabChange,
 }: {
-  children: ReactNode;
   activeRoute: string;
   onTabChange: (route: string) => void;
 }) {
-  const navigateToAdjacent = useCallback(
-    (direction: "left" | "right") => {
-      const idx = TAB_ROUTES.indexOf(activeRoute);
-      if (idx === -1) return;
-      const next = direction === "right" ? idx + 1 : idx - 1;
-      if (next < 0 || next >= TAB_ROUTES.length) return;
-      onTabChange(TAB_ROUTES[next]);
+  const activeIndex = TAB_ROUTES.indexOf(activeRoute);
+  const translateX = useSharedValue(-activeIndex * SCREEN_WIDTH);
+
+  // Snap translateX to match the active tab (called via runOnJS on
+  // gesture end, and also when TabBar click changes the route).
+  const snapToIndex = useCallback(
+    (index: number) => {
+      translateX.value = withTiming(-index * SCREEN_WIDTH, { duration: 250 });
     },
-    [activeRoute, onTabChange],
+    [translateX],
   );
 
   const pan = Gesture.Pan()
-    .activeOffsetX([-20, 20]) // only activate on horizontal drags
+    .activeOffsetX([-20, 20])
     .failOffsetY([-10, 10])
+    .onUpdate((event) => {
+      // Follow finger: start from current tab position, offset by drag
+      translateX.value = -activeIndex * SCREEN_WIDTH + event.translationX;
+    })
     .onEnd((event) => {
-      if (event.translationX < -SWIPE_THRESHOLD) {
+      const dx = event.translationX;
+      if (dx < -SWIPE_THRESHOLD && activeIndex < TAB_ROUTES.length - 1) {
         // Swiped left → next tab
-        navigateToAdjacent("right");
-      } else if (event.translationX > SWIPE_THRESHOLD) {
+        snapToIndex(activeIndex + 1);
+        runOnJS(onTabChange)(TAB_ROUTES[activeIndex + 1]);
+      } else if (dx > SWIPE_THRESHOLD && activeIndex > 0) {
         // Swiped right → previous tab
-        navigateToAdjacent("left");
+        snapToIndex(activeIndex - 1);
+        runOnJS(onTabChange)(TAB_ROUTES[activeIndex - 1]);
+      } else {
+        // Snap back
+        snapToIndex(activeIndex);
       }
     });
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
   return (
     <GestureDetector gesture={pan}>
-      <View className="flex-1">
-        {children}
-      </View>
+      <Animated.View style={[{ flex: 1, flexDirection: "row", width: SCREEN_WIDTH * SCREENS.length }, animatedStyle]}>
+        {SCREENS.map(({ route, Component }) => (
+          <Animated.View key={route} style={{ width: SCREEN_WIDTH, flex: 1 }}>
+            <Component />
+          </Animated.View>
+        ))}
+      </Animated.View>
     </GestureDetector>
   );
 }

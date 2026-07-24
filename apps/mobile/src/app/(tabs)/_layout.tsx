@@ -1,14 +1,14 @@
 /**
  * Tab navigation layout — bottom tab bar for the main app screens.
  *
- * Supports horizontal swipe to switch tabs: swiping left goes to the
- * next tab (rightwards in the tab order), swiping right goes back.
+ * SwipeTabView renders all three screens side-by-side with horizontal
+ * swipe-to-switch-tab animation. TabBar at the bottom for tap navigation.
  *
- * Completely replaces expo-router's Tabs/TabList/TabTrigger with our
- * own implementation using Slot + custom TabBar + swipe gesture.
+ * No expo-router Tabs/TabList/TabTrigger — Slot is replaced by SwipeTabView
+ * which renders the screen components directly.
  */
 
-import { Slot, usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { View } from "@/tw";
 import { TabBar } from "@/components/TabBar";
@@ -27,12 +27,8 @@ export default function TabLayout() {
 
   return (
     <View className="flex-1">
-      {/* Swipeable content area */}
-      <SwipeTabView activeRoute={pathname} onTabChange={handleTabChange}>
-        <View className="flex-1">
-          <Slot />
-        </View>
-      </SwipeTabView>
+      {/* Swipeable content area — renders all three screens */}
+      <SwipeTabView activeRoute={pathname} onTabChange={handleTabChange} />
 
       {/* Theme-aware bottom tab bar */}
       <TabBar />
