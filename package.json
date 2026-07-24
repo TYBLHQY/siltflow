@@ -3,23 +3,41 @@
   "private": true,
   "scripts": {
     "postinstall": "bash scripts/isolate-better-sqlite3.sh",
-    "dev": "pnpm -F @siltflow/desktop dev",
-    "build": "pnpm -F @siltflow/desktop build",
-    "lint": "pnpm -F @siltflow/desktop lint",
-    "test": "pnpm -F @siltflow/desktop test",
-    "typecheck": "pnpm -F @siltflow/desktop typecheck",
-    "ci:check": "pnpm lint && pnpm typecheck && pnpm test",
+
+    "desktop:dev": "pnpm -F @siltflow/desktop dev",
+    "desktop:build": "pnpm -F @siltflow/desktop build",
+    "desktop:lint": "pnpm -F @siltflow/desktop lint",
+    "desktop:test": "pnpm -F @siltflow/desktop test",
+    "desktop:test:watch": "pnpm -F @siltflow/desktop test:watch",
+    "desktop:typecheck": "pnpm -F @siltflow/desktop typecheck",
+
     "mobile:start": "pnpm -F @siltflow/mobile start",
     "mobile:android": "pnpm -F @siltflow/mobile android",
     "mobile:ios": "pnpm -F @siltflow/mobile ios",
     "mobile:web": "pnpm -F @siltflow/mobile web",
+    "mobile:lint": "pnpm -F @siltflow/mobile lint",
     "mobile:typecheck": "pnpm -F @siltflow/mobile typecheck",
+    "mobile:build": "pnpm -F @siltflow/mobile build",
+    "mobile:build:android": "pnpm -F @siltflow/mobile build:android",
+    "mobile:build:ios": "pnpm -F @siltflow/mobile build:ios",
+    "mobile:build:web": "pnpm -F @siltflow/mobile build:web",
+    "mobile:build:android:cloud": "pnpm -F @siltflow/mobile build:android:cloud",
+    "mobile:build:ios:cloud": "pnpm -F @siltflow/mobile build:ios:cloud",
+    "mobile:build:cloud": "pnpm -F @siltflow/mobile build:cloud",
+    "mobile:build:android:cloud:preview": "pnpm -F @siltflow/mobile build:android:cloud:preview",
+    "mobile:build:ios:cloud:preview": "pnpm -F @siltflow/mobile build:ios:cloud:preview",
+    "mobile:build:android:cloud:dev": "pnpm -F @siltflow/mobile build:android:cloud:dev",
+    "mobile:build:ios:cloud:dev": "pnpm -F @siltflow/mobile build:ios:cloud:dev",
+
     "server:dev": "pnpm -F @siltflow/sync-server dev",
     "server:start": "pnpm -F @siltflow/sync-server start",
+    "server:build": "pnpm -F @siltflow/sync-server build",
     "server:typecheck": "pnpm -F @siltflow/sync-server typecheck",
     "server:test": "pnpm -F @siltflow/sync-server test",
+
     "dashboard:dev": "pnpm -F @siltflow/sync-server dev:dashboard",
     "dashboard:build": "pnpm -F @siltflow/sync-server build:dashboard",
-    "server:build": "pnpm -F @siltflow/sync-server build"
+
+    "ci:check": "pnpm desktop:lint && pnpm desktop:typecheck && pnpm desktop:test"
   }
 }
