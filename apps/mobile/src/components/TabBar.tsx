@@ -1,6 +1,10 @@
 /**
  * Custom bottom tab bar — theme-aware via CSS variables.
  *
+ * Receives standard React Navigation bottom-tab props from the <Tabs>
+ * wrapper in _layout.tsx. Navigates via `navigation.navigate()` so
+ * React Navigation's tab state stays in sync.
+ *
  * MaterialCommunityIcons need raw hex colors (they don't understand CSS
  * vars), so we track the system appearance and pick from the Catppuccin
  * light/dark color maps. View and Text use Tailwind classes — their colors
@@ -10,10 +14,16 @@
 
 import { View, Text, Pressable } from "@/tw";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { usePathname, useRouter } from "expo-router";
 import { Appearance } from "react-native";
 import { useState, useEffect } from "react";
 import { darkColors, lightColors } from "@/lib/theme";
+
+// -- Tab bar props (inlined — avoids direct dep on @react-navigation/bottom-tabs) --
+
+interface TabBarProps {
+  state: { routes: Array<{ key: string; name: string }>; index: number };
+  navigation: { navigate: (name: string) => void };
+}
 
 // -- Tab definition ------------------------------------------------------
 
@@ -25,34 +35,46 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { label: "Review", route: "/review", icon: "cards-outline", iconFocused: "cards" },
-  { label: "Stats", route: "/stats", icon: "chart-bar", iconFocused: "chart-bar" },
-  { label: "Settings", route: "/settings", icon: "cog-outline", iconFocused: "cog" },
+  { label: "Review", route: "review", icon: "cards-outline", iconFocused: "cards" },
+  { label: "Stats", route: "stats", icon: "chart-bar", iconFocused: "chart-bar" },
+  { label: "Settings", route: "settings", icon: "cog-outline", iconFocused: "cog" },
 ];
 
 // -- Component ------------------------------------------------------------
 
-export function TabBar() {
+export function TabBar({ state, navigation }: TabBarProps) {
   return (
     <View className="flex-row border-t border-ctp-surface0 bg-ctp-crust pb-[20px] pt-2">
-      {TABS.map((tab) => (
-        <TabBarItem key={tab.route} tab={tab} />
-      ))}
+      {TABS.map((tab) => {
+        const route = state.routes.find((r) => r.name === tab.route);
+        if (!route) return null;
+
+        const active = state.index === state.routes.indexOf(route);
+
+        return (
+          <TabBarItem
+            key={route.key}
+            tab={tab}
+            active={active}
+            onPress={() => navigation.navigate(tab.route)}
+          />
+        );
+      })}
     </View>
   );
 }
 
-function TabBarItem({ tab }: { tab: TabItem }) {
-  const pathname = usePathname();
-  const router = useRouter();
+interface TabBarItemProps {
+  tab: TabItem;
+  active: boolean;
+  onPress: () => void;
+}
 
-  // Active if the pathname equals the route or starts with route + "/"
-  const active = pathname === tab.route || pathname.startsWith(tab.route + "/");
-
+function TabBarItem({ tab, active, onPress }: TabBarItemProps) {
   return (
     <Pressable
       className="flex-1 items-center justify-center gap-0.5 py-1"
-      onPress={() => { if (!active) router.replace(tab.route as any); }}
+      onPress={onPress}
     >
       <TabIcon name={active ? tab.iconFocused : tab.icon} active={active} />
       <TabLabel text={tab.label} active={active} />
