@@ -7,8 +7,8 @@
  * Data: computeCalendarHeatmap(logs) from @siltflow/shared-lib
  */
 
-import { useMemo, useState, useEffect } from "react";
-import { View, Text, ScrollView } from "@/tw";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { View, Text, ScrollView, Pressable } from "@/tw";
 import { Appearance } from "react-native";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
 import { useStatsStore } from "@/stores/stats.store";
@@ -84,6 +84,22 @@ export function CalendarHeatmap() {
   }, []);
 
   const palette = scheme === "dark" ? HEATMAP_DARK : HEATMAP_LIGHT;
+
+  // Tappable cell tooltip info
+  const [selectedCell, setSelectedCell] = useState<{
+    label: string;
+    value: number;
+  } | null>(null);
+
+  const handleCellPress = useCallback((cell: { date: Date; value: number }) => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const label = `${months[cell.date.getMonth()]} ${cell.date.getDate()}, ${cell.date.getFullYear()}`;
+    if (selectedCell?.label === label) {
+      setSelectedCell(null); // toggle off
+    } else {
+      setSelectedCell({ label, value: cell.value });
+    }
+  }, [selectedCell]);
 
   const heatmap = useMemo(
     () => computeCalendarHeatmap(reviewLogs),
@@ -199,7 +215,7 @@ export function CalendarHeatmap() {
                   {columns.map((col, colIdx) => (
                     <View key={colIdx} style={{ gap: CELL_GAP }}>
                       {col.map((cell, rowIdx) => (
-                        <View
+                        <Pressable
                           key={`${colIdx}-${rowIdx}`}
                           className="rounded-sm"
                           style={{
@@ -207,6 +223,7 @@ export function CalendarHeatmap() {
                             height: CELL_SIZE,
                             backgroundColor: palette[cell.level] ?? palette[0],
                           }}
+                          onPress={() => handleCellPress(cell)}
                         />
                       ))}
                     </View>
@@ -214,17 +231,28 @@ export function CalendarHeatmap() {
                 </View>
               </View>
 
-              {/* Legend */}
-              <View className="flex-row items-center justify-end gap-1 mt-2">
-                <Text className="text-[9px] text-ctp-overlay0">Less</Text>
-                {palette.map((color, i) => (
-                  <View
-                    key={i}
-                    className="rounded-sm"
-                    style={{ width: CELL_SIZE, height: CELL_SIZE, backgroundColor: color }}
-                  />
-                ))}
-                <Text className="text-[9px] text-ctp-overlay0">More</Text>
+              {/* Legend + tooltip info */}
+              <View className="flex-row items-center justify-between mt-2">
+                <View className="flex-row items-center">
+                  {selectedCell ? (
+                    <Text className="text-[9px] text-ctp-subtext0">
+                      {selectedCell.label}: {selectedCell.value} review{selectedCell.value !== 1 ? "s" : ""}
+                    </Text>
+                  ) : (
+                    <Text className="text-[9px] text-ctp-overlay0">Tap a cell for details</Text>
+                  )}
+                </View>
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-[9px] text-ctp-overlay0">Less</Text>
+                  {palette.map((color, i) => (
+                    <View
+                      key={i}
+                      className="rounded-sm"
+                      style={{ width: CELL_SIZE, height: CELL_SIZE, backgroundColor: color }}
+                    />
+                  ))}
+                  <Text className="text-[9px] text-ctp-overlay0">More</Text>
+                </View>
               </View>
             </View>
           </ScrollView>
