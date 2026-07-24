@@ -49,14 +49,12 @@ export function ReviewForecastChart() {
                   <View className="flex-1 h-4 bg-ctp-surface0 rounded-full overflow-hidden">
                     <View
                       className="h-full rounded-full bg-ctp-green"
-                      style={{ width: `${Math.max(pct, 2)}%` }}
+                      style={{ width: `${Math.max(pct, d.dueCount > 0 ? 2 : 0)}%` }}
                     />
                   </View>
-                  {d.dueCount > 0 && (
-                    <Text className="text-[10px] text-ctp-subtext0 w-5">
-                      {d.dueCount}
-                    </Text>
-                  )}
+                  <Text className="text-[10px] text-ctp-subtext0 w-5 text-right">
+                    {d.dueCount}
+                  </Text>
                 </View>
               );
             })}
