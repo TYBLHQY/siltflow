@@ -60,10 +60,7 @@ export function StatsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
     refresh();
-    // refresh() already sets loading=true; once store updates,
-    // loaded will switch and the loading spinner disappears.
     setRefreshing(false);
   }, [refresh]);
 
