@@ -6,6 +6,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { getSqlite } from "../database"
 import { recordDeletions } from "../sync/changelog"
+import { requestDeferredPush } from "./sync.ipc"
 
 let vaultPath = ""
 
@@ -31,17 +32,20 @@ export function registerFolderHandlers() {
     const db = getFullDb()
     const now = new Date().toISOString()
     const id = crypto.randomUUID()
-    return db
+    const result = db
       .insert(schema.folders)
       .values({ id, name, parentId: parentId ?? null, sortOrder: 0, createdAt: now, updatedAt: now })
       .returning()
-      .get()
+      .get();
+    requestDeferredPush();
+    return result;
   })
 
   // ── Rename a folder ──
   ipcMain.handle("folders:rename", (_event, { id, name }: { id: string; name: string }) => {
     const db = getFullDb()
     db.update(schema.folders).set({ name, updatedAt: new Date().toISOString() }).where(eq(schema.folders.id, id)).run()
+    requestDeferredPush();
   })
 
   // ── Delete a folder (recursive — deletes all descendant docs + folders) ──
@@ -96,6 +100,7 @@ export function registerFolderHandlers() {
       if (docIds.length > 0) recordDeletions(sql, "documents", docIds)
       recordDeletions(sql, "folders", allIds)
     }
+    requestDeferredPush();
   })
 
   // ── Move documents to a target folder (or root) ──
@@ -105,12 +110,14 @@ export function registerFolderHandlers() {
     for (const docId of docIds) {
       db.update(schema.documents).set({ folderId: targetFolderId, updatedAt: now }).where(eq(schema.documents.id, docId)).run()
     }
+    requestDeferredPush();
   })
 
   // ── Move a folder under a new parent (or root) ──
   ipcMain.handle("folders:moveFolder", (_event, { folderId, targetParentId }: { folderId: string; targetParentId: string | null }) => {
     const db = getFullDb()
     db.update(schema.folders).set({ parentId: targetParentId, updatedAt: new Date().toISOString() }).where(eq(schema.folders.id, folderId)).run()
+    requestDeferredPush();
   })
 
   // ── Bulk update sort_order for folders ──
@@ -120,6 +127,7 @@ export function registerFolderHandlers() {
     for (const { id, sortOrder } of items) {
       db.update(schema.folders).set({ sortOrder, updatedAt: now }).where(eq(schema.folders.id, id)).run()
     }
+    requestDeferredPush();
   })
 
   // ── Bulk update sort_order for documents ──
@@ -129,5 +137,6 @@ export function registerFolderHandlers() {
     for (const { id, sortOrder } of items) {
       db.update(schema.documents).set({ sortOrder, updatedAt: now }).where(eq(schema.documents.id, id)).run()
     }
+    requestDeferredPush();
   })
 }

@@ -7,6 +7,7 @@
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { FSRSCardSaveResult } from "./types";
 import { recordCompositeDeletion } from "@/sync/changelog";
+import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
 
@@ -98,6 +99,7 @@ export function saveFSRSCard(
       p(now),
     ],
   );
+  requestDeferredPush();
   return { annotationId };
 }
 
@@ -112,4 +114,5 @@ export function deleteFSRSCard(
     [p(annotationId), p(documentId)],
   );
   recordCompositeDeletion("fsrs_cards", { annotation_id: annotationId, document_id: documentId });
+  requestDeferredPush();
 }

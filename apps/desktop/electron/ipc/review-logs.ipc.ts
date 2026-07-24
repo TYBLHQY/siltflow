@@ -2,6 +2,7 @@ import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import crypto from "node:crypto"
 import { recordDeletion } from "../sync/changelog"
+import { requestDeferredPush } from "./sync.ipc"
 
 export function registerReviewLogHandlers() {
   ipcMain.handle("reviewLogs:listByAnnotation", (_event, annotationId: string, documentId: string) => {
@@ -47,6 +48,7 @@ export function registerReviewLogHandlers() {
     sql.prepare(
       `INSERT INTO review_logs (id, annotation_id, document_id, data, created_at) VALUES (?, ?, ?, ?, ?)`
     ).run(id, record.annotationId, record.documentId, JSON.stringify(record.data), now)
+    requestDeferredPush()
     return { id, createdAt: now }
   })
 
@@ -61,5 +63,6 @@ export function registerReviewLogHandlers() {
       recordDeletion(sql, "review_logs", `${log.id}|${annotationId}|${documentId}`)
     }
     sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
+    requestDeferredPush()
   })
 }

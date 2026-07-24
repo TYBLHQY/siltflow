@@ -2,6 +2,7 @@ import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { invalidateReviewMetricsCache } from "./review.ipc"
 import { recordDeletion } from "../sync/changelog"
+import { requestDeferredPush } from "./sync.ipc"
 
 function tryParseJson(data: string, fallback: unknown): unknown {
   try {
@@ -111,6 +112,7 @@ export function registerAnnotationHandlers() {
       now,
     )
     invalidateReviewMetricsCache()
+    requestDeferredPush()
     return { id: annotation.id }
   })
 
@@ -130,6 +132,7 @@ export function registerAnnotationHandlers() {
       recordDeletion(sql, "fsrs_cards", `${id}|${documentId}`)
       sql.exec("COMMIT")
       invalidateReviewMetricsCache()
+      requestDeferredPush()
     } catch (err) {
       sql.exec("ROLLBACK")
       throw err

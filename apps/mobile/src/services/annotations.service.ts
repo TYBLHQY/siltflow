@@ -12,6 +12,7 @@
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { AnnotationEnriched, AnnotationSaveRequest } from "./types";
 import { recordCompositeDeletion } from "@/sync/changelog";
+import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
 
@@ -117,6 +118,7 @@ export function saveAnnotation(
       p(now),
     ],
   );
+  requestDeferredPush();
   return { id: annotation.id };
 }
 
@@ -150,9 +152,21 @@ export function deleteAnnotation(
     recordCompositeDeletion("annotations", { id, document_id: documentId });
     recordCompositeDeletion("ai_results", { annotation_id: id, document_id: documentId });
     recordCompositeDeletion("fsrs_cards", { annotation_id: id, document_id: documentId });
-    // review_logs uses id|annotation_id|document_id — we can't know the log ids
-    // here, but the sync engine queries changelog for review_logs by created_at.
-    // Individual review log deletions (if any) should record their own entries.
+    // review_logs uses id|annotation_id|document_id — first collect log IDs
+    const logRows = db.getAllSync<{ id: string }>(
+      "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?",
+      [p(id), p(documentId)],
+    );
+    for (const logRow of logRows) {
+      recordCompositeDeletion("review_logs", { id: logRow.id, annotation_id: id, document_id: documentId });
+    }
+
+    db.runSync(
+      "DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?",
+      [p(id), p(documentId)],
+    );
+
+    requestDeferredPush();
   } catch (err) {
     db.execSync("ROLLBACK");
     throw err;

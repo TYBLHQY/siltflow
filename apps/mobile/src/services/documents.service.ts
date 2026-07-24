@@ -9,6 +9,7 @@ import * as schema from "@siltflow/shared-db/schema";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
 import type { DocumentIPCItem, DocumentSaveRequest } from "./types";
 import { recordDeletion } from "@/sync/changelog";
+import { requestDeferredPush } from "@/sync";
 
 type DB = ExpoSQLiteDatabase<typeof schema>;
 
@@ -36,17 +37,20 @@ export function saveDocument(
   doc: DocumentSaveRequest,
 ): DocumentIPCItem {
   const now = new Date().toISOString();
-  return db
+  const result = db
     .insert(schema.documents)
     .values({ id: doc.id, title: doc.title, createdAt: now, updatedAt: now })
     .returning()
     .get();
+  requestDeferredPush();
+  return result;
 }
 
 /** Delete a document by ID. Cascade handles annotations, summaries, etc. */
 export function deleteDocument(db: DB, id: string): void {
   db.delete(schema.documents).where(eq(schema.documents.id, id)).run();
   recordDeletion("documents", id);
+  requestDeferredPush();
 }
 
 /** Delete multiple documents. */
@@ -57,6 +61,7 @@ export function deleteDocuments(db: DB, ids: string[]): void {
   for (const id of ids) {
     recordDeletion("documents", id);
   }
+  requestDeferredPush();
 }
 
 /** Rename a document (update title). */
@@ -70,6 +75,7 @@ export function renameDocument(
     .set({ title, updatedAt: now })
     .where(eq(schema.documents.id, id))
     .run();
+  requestDeferredPush();
 }
 
 /** Update document metadata (totalPages + raw metadata JSON). */
@@ -84,6 +90,7 @@ export function updateDocumentMetadata(
     .set({ totalPages, metadata, updatedAt: now })
     .where(eq(schema.documents.id, id))
     .run();
+  requestDeferredPush();
 }
 
 /** Bulk update sort_order for documents. */
@@ -98,4 +105,5 @@ export function updateDocumentsSortOrder(
       .where(eq(schema.documents.id, id))
       .run();
   }
+  requestDeferredPush();
 }

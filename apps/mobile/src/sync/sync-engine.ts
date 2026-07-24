@@ -91,6 +91,7 @@ export class SyncEngine {
   private _lastPushAt: string | null = null;
   private _lastPullAt: string | null = null;
   private _syncInProgress = false;
+  private _pushInProgress = false;
   private _lastError: string | null = null;
 
   // Callback registrations
@@ -214,6 +215,10 @@ export class SyncEngine {
 
   /** Push only changes since last push. */
   async pushIncremental(): Promise<SyncPushResponse | null> {
+    if (this._pushInProgress) return null;
+    this._pushInProgress = true;
+
+    try {
     const sql = getSQLite();
     const since = this._lastPushAt ?? "1970-01-01T00:00:00Z";
     const changes: SyncPushBody["changes"] = {};
@@ -258,7 +263,10 @@ export class SyncEngine {
       hasChanges = true;
     }
 
-    if (!hasChanges) return null;
+    if (!hasChanges) {
+      this._pushInProgress = false;
+      return null;
+    }
 
     const body: SyncPushBody = { lastSyncAt: since, changes };
     const res = await this.client.push(body);
@@ -275,6 +283,9 @@ export class SyncEngine {
 
     this._emitState();
     return res;
+    } finally {
+      this._pushInProgress = false;
+    }
   }
 
   /** Pull remote changes and apply them locally. */

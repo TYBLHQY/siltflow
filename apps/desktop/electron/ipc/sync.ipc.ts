@@ -24,6 +24,8 @@ import type { SyncState, SyncConfig } from "@siltflow/shared-lib";
 let engine: SyncEngine | null = null;
 let wsClient: SyncWsClient | null = null;
 let syncTimer: ReturnType<typeof setInterval> | null = null;
+let deferredPushTimer: ReturnType<typeof setTimeout> | null = null;
+const DEFERRED_PUSH_MS = 2000;
 let config: SyncConfig = {
   serverUrl: "",
   serverToken: "",
@@ -41,6 +43,19 @@ export function getSyncEngine(): SyncEngine | null {
 
 export function getSyncConfig(): SyncConfig {
   return { ...config };
+}
+
+/** Request a debounced push of local changes. Safe to call after every local write. */
+export function requestDeferredPush(): void {
+  if (!engine) return;
+
+  if (deferredPushTimer) clearTimeout(deferredPushTimer);
+  deferredPushTimer = setTimeout(() => {
+    deferredPushTimer = null;
+    engine?.pushIncremental().catch((err) => {
+      console.warn("[Sync] Deferred push failed:", (err as Error).message);
+    });
+  }, DEFERRED_PUSH_MS);
 }
 
 /**
@@ -109,6 +124,10 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
 
 /** Tear down the sync subsystem (e.g. when config changes). */
 export function teardownSyncEngine(): void {
+  if (deferredPushTimer) {
+    clearTimeout(deferredPushTimer);
+    deferredPushTimer = null;
+  }
   if (syncTimer) {
     clearInterval(syncTimer);
     syncTimer = null;

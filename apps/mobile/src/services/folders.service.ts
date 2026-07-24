@@ -9,6 +9,7 @@ import * as schema from "@siltflow/shared-db/schema";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
 import type { FolderRowIPC, FolderCreateParams } from "./types";
 import { recordDeletion } from "@/sync/changelog";
+import { requestDeferredPush } from "@/sync";
 
 type DB = ExpoSQLiteDatabase<typeof schema>;
 
@@ -39,7 +40,7 @@ export function createFolder(
 ): FolderRowIPC {
   const now = new Date().toISOString();
   const id = uuid();
-  return db
+  const result = db
     .insert(schema.folders)
     .values({
       id,
@@ -51,6 +52,8 @@ export function createFolder(
     })
     .returning()
     .get();
+  requestDeferredPush();
+  return result;
 }
 
 /** Rename a folder. */
@@ -60,6 +63,7 @@ export function renameFolder(db: DB, id: string, name: string): void {
     .set({ name, updatedAt: now })
     .where(eq(schema.folders.id, id))
     .run();
+  requestDeferredPush();
 }
 
 /** Delete a folder and all descendants (recursive). */
@@ -105,6 +109,7 @@ export function deleteFolder(db: DB, id: string): void {
     db.delete(schema.folders).where(eq(schema.folders.id, fid)).run();
     recordDeletion("folders", fid);
   }
+  requestDeferredPush();
 }
 
 /** Move documents to a target folder (or root). */
@@ -120,6 +125,7 @@ export function moveDocuments(
       .where(eq(schema.documents.id, docId))
       .run();
   }
+  requestDeferredPush();
 }
 
 /** Move a folder under a new parent (or root). */
@@ -133,6 +139,7 @@ export function moveFolder(
     .set({ parentId: targetParentId, updatedAt: now })
     .where(eq(schema.folders.id, folderId))
     .run();
+  requestDeferredPush();
 }
 
 /** Bulk update sort_order for folders. */
@@ -147,4 +154,5 @@ export function updateFoldersSortOrder(
       .where(eq(schema.folders.id, id))
       .run();
   }
+  requestDeferredPush();
 }

@@ -2,6 +2,7 @@ import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { invalidateReviewMetricsCache } from "./review.ipc"
 import { recordDeletion } from "../sync/changelog"
+import { requestDeferredPush } from "./sync.ipc"
 
 export function registerFSRSCardHandlers() {
   ipcMain.handle("fsrsCards:get", (_event, annotationId: string, documentId: string) => {
@@ -57,6 +58,7 @@ export function registerFSRSCardHandlers() {
       now,
     )
     invalidateReviewMetricsCache()
+    requestDeferredPush()
     return { annotationId: record.annotationId }
   })
 
@@ -66,5 +68,6 @@ export function registerFSRSCardHandlers() {
     sql.prepare("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
     recordDeletion(sql, "fsrs_cards", `${annotationId}|${documentId}`)
     invalidateReviewMetricsCache()
+    requestDeferredPush()
   })
 }

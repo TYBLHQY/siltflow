@@ -8,6 +8,7 @@ import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import { AI_DATA_VERSION } from "@siltflow/shared-db/types";
 import type { AIResultSaveResult } from "./types";
 import { recordCompositeDeletion } from "@/sync/changelog";
+import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
 
@@ -72,6 +73,7 @@ export function saveAIResult(
       p(now),
     ],
   );
+  requestDeferredPush();
   return { annotationId, version: v };
 }
 
@@ -86,4 +88,5 @@ export function deleteAIResult(
     [p(annotationId), p(documentId)],
   );
   recordCompositeDeletion("ai_results", { annotation_id: annotationId, document_id: documentId });
+  requestDeferredPush();
 }

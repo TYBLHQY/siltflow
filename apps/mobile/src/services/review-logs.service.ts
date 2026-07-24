@@ -7,6 +7,7 @@
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { ReviewLogEntryIPC, ReviewLogSaveResult } from "./types";
 import { recordCompositeDeletion } from "@/sync/changelog";
+import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
 
@@ -88,6 +89,7 @@ export function saveReviewLog(
      VALUES (?, ?, ?, ?, ?)`,
     [p(id), p(annotationId), p(documentId), p(JSON.stringify(data)), p(now)],
   );
+  requestDeferredPush();
   return { id, createdAt: now };
 }
 
@@ -110,4 +112,5 @@ export function deleteReviewLogsByAnnotation(
     "DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?",
     [p(annotationId), p(documentId)],
   );
+  requestDeferredPush();
 }

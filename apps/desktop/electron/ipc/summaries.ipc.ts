@@ -2,6 +2,7 @@ import { ipcMain } from "electron"
 import { getDb, getSqlite, schema } from "../database"
 import { eq } from "drizzle-orm"
 import { recordDeletion } from "../sync/changelog"
+import { requestDeferredPush } from "./sync.ipc"
 
 export function registerSummaryHandlers() {
   ipcMain.handle("summaries:listAll", () => {
@@ -36,6 +37,7 @@ export function registerSummaryHandlers() {
       now,
       now,
     )
+    requestDeferredPush()
     return { documentId: summary.documentId }
   })
 
@@ -44,5 +46,6 @@ export function registerSummaryHandlers() {
     if (!sql) return
     sql.prepare("DELETE FROM summaries WHERE document_id = ?").run(documentId)
     recordDeletion(sql, "summaries", documentId)
+    requestDeferredPush()
   })
 }

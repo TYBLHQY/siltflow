@@ -11,7 +11,6 @@ import {
   saveDocument,
   deleteDocument,
 } from "@/services/documents.service";
-import { recordDeletion } from "@/sync/changelog";
 
 export interface DocumentItem {
   id: string;
@@ -103,8 +102,7 @@ export function persistDocument(doc: DocumentItem) {
 export function persistDocumentDelete(id: string) {
   try {
     const db = getDrizzle();
-    deleteDocument(db, id);
-    recordDeletion("documents", id);
+    deleteDocument(db, id);  // deleteDocument already calls recordDeletion internally
   } catch (err) {
     console.error("[document.store] persistDocumentDelete failed:", err);
   }

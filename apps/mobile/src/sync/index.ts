@@ -20,6 +20,8 @@ import { initChangelogTable } from "./changelog";
 let engine: SyncEngine | null = null;
 let wsClient: SyncWsClient | null = null;
 let syncTimer: ReturnType<typeof setInterval> | null = null;
+let deferredPushTimer: ReturnType<typeof setTimeout> | null = null;
+const DEFERRED_PUSH_MS = 2000;
 let config: SyncConfig = {
   serverUrl: "",
   serverToken: "",
@@ -37,6 +39,20 @@ export function getSyncEngine(): SyncEngine | null {
 
 export function getSyncConfig(): SyncConfig {
   return { ...config };
+}
+
+/** 本地数据变更后请求防抖推送。多次快速调用只在最后一次调用后 2 秒触发一次 pushIncremental()。 */
+export function requestDeferredPush(): void {
+  const eng = getSyncEngine();
+  if (!eng) return;
+
+  if (deferredPushTimer) clearTimeout(deferredPushTimer);
+  deferredPushTimer = setTimeout(() => {
+    deferredPushTimer = null;
+    eng.pushIncremental().catch((err) => {
+      console.warn("[Sync] Deferred push failed:", (err as Error).message);
+    });
+  }, DEFERRED_PUSH_MS);
 }
 
 /**
@@ -115,6 +131,10 @@ export function initSyncEngine(
 
 /** Tear down the sync subsystem (e.g. when config changes). */
 export function teardownSyncEngine(): void {
+  if (deferredPushTimer) {
+    clearTimeout(deferredPushTimer);
+    deferredPushTimer = null;
+  }
   if (syncTimer) {
     clearInterval(syncTimer);
     syncTimer = null;

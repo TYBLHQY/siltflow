@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import fs from "node:fs"
 import path from "node:path"
 import { recordDeletion, recordDeletions } from "../sync/changelog"
+import { requestDeferredPush } from "./sync.ipc"
 import { getSqlite } from "../database"
 
 let vaultPath = ""
@@ -33,11 +34,13 @@ export function registerDocumentHandlers() {
     const db = getDb()
     if (!db) return null
     const now = new Date().toISOString()
-    return db
+    const result = db
       .insert(schema.documents)
       .values({ id: doc.id, title: doc.title, createdAt: now, updatedAt: now })
       .returning()
-      .get()
+      .get();
+    requestDeferredPush();
+    return result;
   })
 
   ipcMain.handle("documents:delete", (_event, id: string) => {
@@ -52,6 +55,7 @@ export function registerDocumentHandlers() {
     }
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
     if (sql) recordDeletion(sql, "documents", id)
+    requestDeferredPush();
   })
 
   ipcMain.handle("documents:deleteBatch", (_event, ids: string[]) => {
@@ -68,6 +72,7 @@ export function registerDocumentHandlers() {
       db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
     }
     if (sql) recordDeletions(sql, "documents", ids)
+    requestDeferredPush();
   })
 
   ipcMain.handle("documents:rename", (_event, { id, title }: { id: string; title: string }) => {
@@ -75,6 +80,7 @@ export function registerDocumentHandlers() {
     if (!db) return null
     const now = new Date().toISOString()
     db.update(schema.documents).set({ title, updatedAt: now }).where(eq(schema.documents.id, id)).run()
+    requestDeferredPush();
   })
 
   ipcMain.handle("documents:updateMetadata", (_event, { id, totalPages, metadata }: { id: string; totalPages: number; metadata: string }) => {
@@ -82,5 +88,6 @@ export function registerDocumentHandlers() {
     if (!db) return null
     const now = new Date().toISOString()
     db.update(schema.documents).set({ totalPages, metadata, updatedAt: now }).where(eq(schema.documents.id, id)).run()
+    requestDeferredPush();
   })
 }
