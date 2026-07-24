@@ -168,13 +168,19 @@ export function StatsScreen() {
   if (!loaded || (cards.length === 0 && reviewLogs.length === 0)) {
     return (
       <SafeAreaView className="flex-1 bg-ctp-base">
-        <View className="flex-1 items-center justify-center px-8 gap-4">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="flex-1 items-center justify-center px-8 gap-4"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           <Text className="text-5xl">📊</Text>
           <Text className="text-xl font-bold text-ctp-text">No Stats Yet</Text>
           <Text className="text-ctp-subtext0 text-center">
             Start reviewing annotations to see your study statistics here.
           </Text>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }

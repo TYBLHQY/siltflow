@@ -13,8 +13,8 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
-import { FlatList } from "react-native";
-import { View, Text, Pressable, SafeAreaView } from "@/tw";
+import { FlatList, RefreshControl } from "react-native";
+import { View, Text, Pressable, SafeAreaView, ScrollView } from "@/tw";
 import { Card, CardContent, Badge, Spinner, EmptyState } from "@/components/ui";
 import { useRouter, useFocusEffect } from "expo-router";
 import { getSQLite } from "@/stores/db.store";
@@ -24,6 +24,7 @@ export function ReviewScreen() {
   const router = useRouter();
   const [metrics, setMetrics] = useState<MetricsRow[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadMetrics = useCallback(() => {
     try {
@@ -34,6 +35,7 @@ export function ReviewScreen() {
       console.error("[ReviewScreen] loadMetrics failed:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -53,6 +55,11 @@ export function ReviewScreen() {
     },
     [router],
   );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadMetrics();
+  }, [loadMetrics]);
 
   // Pre-compute summary counts (stable arrays, computed only when metrics change)
   const totalCards = useMemo(
@@ -81,10 +88,18 @@ export function ReviewScreen() {
   if (!metrics || metrics.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-ctp-base">
-        <EmptyState
-          title="Nothing to review yet"
-          description="Create annotations on your documents to start reviewing with spaced repetition."
-        />
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <EmptyState
+            title="Nothing to review yet"
+            description="Create annotations on your documents to start reviewing with spaced repetition."
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -158,6 +173,9 @@ export function ReviewScreen() {
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListFooterComponent={<View className="h-16" />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         initialNumToRender={12}
         maxToRenderPerBatch={8}
         windowSize={7}
