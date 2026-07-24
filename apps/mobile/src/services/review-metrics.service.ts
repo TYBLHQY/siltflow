@@ -130,16 +130,23 @@ export function getDocMetrics(db: DB): MetricsRow[] {
     }
 
     if (cards.length === 0) {
+      // If the document has no FSRS cards AND no annotations, skip it entirely —
+      // it's an empty document with nothing to review. The review list should
+      // only show documents that have at least one annotation.
+      if (annCount === 0) {
+        continue;
+      }
+      // Annotations exist but no cards yet — all are new cards.
       results.push({
         documentId: doc.id,
         documentTitle: doc.title,
-        totalCards: 0,
-        newCardsCount: 0,
+        totalCards: annCount,
+        newCardsCount: annCount,
         dueNowCount: 0,
         dueSoonCount: 0,
         avgRetrievability: 0,
         avgOverdueRatio: 0,
-        compositeScore: -1,
+        compositeScore: annCount * 50,
       });
       continue;
     }

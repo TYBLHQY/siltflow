@@ -2,14 +2,21 @@
  * Tab navigation layout — bottom tab bar for the main app screens.
  *
  * Expo Router (tabs) layout using headless Tabs pattern with
- * TabList + TabTrigger for each tab. Unicode emoji icons are used
- * instead of SVG (react-native-svg has Fabric incompatibility).
+ * TabList + TabTrigger for each tab. Icons use MaterialCommunityIcons
+ * from @expo/vector-icons (Material Design style).
  */
 
 import { Tabs, TabList, TabSlot, TabTrigger } from "expo-router/ui";
 import { Text } from "@/tw";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+export const unstable_settings = {
+  initialRouteName: "review",
+};
 
 export default function TabLayout() {
+  const SIZE = 24;
+  const INACTIVE = "#6c7086"; // ctp-overlay0
   return (
     <Tabs>
       <TabSlot />
@@ -24,20 +31,6 @@ export default function TabLayout() {
         }}
       >
         <TabTrigger
-          name="documents"
-          href="/documents"
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2,
-          }}
-        >
-          <Text style={{ fontSize: 22 }}>📄</Text>
-          <Text style={{ fontSize: 10, color: "#cdd6f4" }}>Documents</Text>
-        </TabTrigger>
-
-        <TabTrigger
           name="review"
           href="/review"
           style={{
@@ -47,8 +40,12 @@ export default function TabLayout() {
             gap: 2,
           }}
         >
-          <Text style={{ fontSize: 22 }}>📚</Text>
-          <Text style={{ fontSize: 10, color: "#cdd6f4" }}>Review</Text>
+          <MaterialCommunityIcons
+            name="cards-outline"
+            size={SIZE}
+            color={INACTIVE}
+          />
+          <Text style={{ fontSize: 10, color: INACTIVE }}>Review</Text>
         </TabTrigger>
 
         <TabTrigger
@@ -61,8 +58,12 @@ export default function TabLayout() {
             gap: 2,
           }}
         >
-          <Text style={{ fontSize: 22 }}>📊</Text>
-          <Text style={{ fontSize: 10, color: "#cdd6f4" }}>Stats</Text>
+          <MaterialCommunityIcons
+            name="chart-bar"
+            size={SIZE}
+            color={INACTIVE}
+          />
+          <Text style={{ fontSize: 10, color: INACTIVE }}>Stats</Text>
         </TabTrigger>
 
         <TabTrigger
@@ -75,8 +76,12 @@ export default function TabLayout() {
             gap: 2,
           }}
         >
-          <Text style={{ fontSize: 22 }}>⚙️</Text>
-          <Text style={{ fontSize: 10, color: "#cdd6f4" }}>Settings</Text>
+          <MaterialCommunityIcons
+            name="cog-outline"
+            size={SIZE}
+            color={INACTIVE}
+          />
+          <Text style={{ fontSize: 10, color: INACTIVE }}>Settings</Text>
         </TabTrigger>
       </TabList>
     </Tabs>

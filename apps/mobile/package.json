@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@siltflow/shared-db": "workspace:*",
     "@siltflow/shared-lib": "workspace:*",
     "@tailwindcss/postcss": "^4.0.0",
