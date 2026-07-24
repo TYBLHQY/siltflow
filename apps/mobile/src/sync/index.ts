@@ -41,7 +41,7 @@ export function getSyncConfig(): SyncConfig {
   return { ...config };
 }
 
-/** 本地数据变更后请求防抖推送。多次快速调用只在最后一次调用后 2 秒触发一次 pushIncremental()。 */
+/** 本地数据变更后请求防抖推送。多次快速调用只在最后一次调用后 2 秒触发一次 pushOpLog()。 */
 export function requestDeferredPush(): void {
   const eng = getSyncEngine();
   if (!eng) return;
@@ -49,7 +49,7 @@ export function requestDeferredPush(): void {
   if (deferredPushTimer) clearTimeout(deferredPushTimer);
   deferredPushTimer = setTimeout(() => {
     deferredPushTimer = null;
-    eng.pushIncremental().catch((err) => {
+    eng.pushOpLog().catch((err) => {
       console.warn("[Sync] Deferred push failed:", (err as Error).message);
     });
   }, DEFERRED_PUSH_MS);
@@ -77,9 +77,9 @@ export interface SyncInitOptions {
  * Initialize the sync subsystem. Call after the database is ready.
  *
  * On normal app restart the engine runs an incremental sync
- * (pushIncremental + pull) — matching the desktop behaviour.
- * pushFull is only used for the initial seed after a fresh device
- * registration (via `registerDevice` in the sync store).
+ * (pushOpLog + pull) — matching the desktop behaviour.
+ * pushFull is replaced by seedOpLogFromExisting + pushOpLog for the
+ * initial seed after a fresh device registration.
  */
 export function initSyncEngine(
   cfg: SyncConfig,
@@ -140,8 +140,8 @@ export function initSyncEngine(
   }
 
   // Run an initial incremental sync on startup — matching the desktop
-  // behaviour. pushFull is reserved for the first-sync seed after a
-  // fresh registration (called explicitly by registerDevice).
+  // behaviour. seedOpLogFromExisting + pushOpLog handles the first-sync
+  // case (empty op_log, no lastPushAt) automatically.
   // When skipInitialSync is true the caller is responsible for the
   // first sync (e.g. registerDevice runs runInitialFullSync instead).
   if (!options?.skipInitialSync) {
@@ -159,12 +159,12 @@ export function initSyncEngine(
 }
 
 /**
- * Run a full initial sync (pushFull + pull) to seed a freshly registered
- * device's database. Only called once after registration; normal restarts
- * use the incremental sync inside initSyncEngine.
+ * Run a full initial sync (seed + pushOpLog + pull) to seed a freshly
+ * registered device's database. Only called once after registration;
+ * normal restarts use the incremental sync inside initSyncEngine.
  *
- * IMPORTANT: pushFull sends all local rows to the server which triggers
- * a "sync:available" WebSocket broadcast. The browser receives that
+ * IMPORTANT: pushOpLog sends all local rows to the server which triggers
+ * a "sync:available" WebSocket broadcast. The other device receives that
  * broadcast and auto-pulls. To avoid racing with our own pull(), we
  * delay the pull briefly to let the auto-pull finish first.
  */
@@ -174,12 +174,11 @@ export async function runInitialFullSync(): Promise<void> {
     return;
   }
   try {
-    console.log("[Sync] runInitialFullSync — starting pushFull");
-    await engine.pushFull();
+    console.log("[Sync] runInitialFullSync — seeding op_log + pushOpLog");
+    engine.seedOpLogFromExisting();
+    await engine.pushOpLog();
     // Small delay to let the WebSocket-triggered auto-pull finish
-    // before we do our own pull. The pushFull response triggers a
-    // "sync:available" broadcast which causes the local WsClient to
-    // fire a pull(). That pull races with the pull() below.
+    // before we do our own pull.
     await new Promise((r) => setTimeout(r, 500));
     console.log("[Sync] runInitialFullSync — starting pull");
     await engine.pull();

@@ -12,6 +12,16 @@
  */
 
 import type Database from "better-sqlite3";
+import { ENTITY_TABLES } from "@siltflow/shared-lib";
+
+// -- Composite PK tables -------------------------------------------------
+
+const COMPOSITE_PK_TABLES: Record<string, string[]> = {
+  annotations: ["id", "document_id"],
+  ai_results: ["annotation_id", "document_id"],
+  fsrs_cards: ["annotation_id", "document_id"],
+  review_logs: ["id", "annotation_id", "document_id"],
+};
 
 // -- Schema ----------------------------------------------------------------
 
@@ -99,4 +109,39 @@ export function clearOpLogEntries(
   sql.prepare(
     `DELETE FROM sync_op_log WHERE id IN (${placeholders})`
   ).run(...ids);
+}
+
+// -- Migration ------------------------------------------------------------
+
+/**
+ * Seed the op_log with save entries for all existing rows across all
+ * entity tables. Called once when the database already has data but
+ * op_log is empty (first start after op_log migration, or epoch sync).
+ */
+export function seedOpLogFromExisting(sql: Database.Database): void {
+  const now = new Date().toISOString();
+  let totalRows = 0;
+
+  for (const table of ENTITY_TABLES) {
+    const rows = sql.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
+    if (rows.length === 0) continue;
+
+    const cols = COMPOSITE_PK_TABLES[table];
+    const stmt = sql.prepare(
+      "INSERT INTO sync_op_log (table_name, row_id, action, row_data, created_at) VALUES (?, ?, 'save', ?, ?)"
+    );
+
+    for (const row of rows) {
+      let rowId: string;
+      if (cols) {
+        rowId = cols.map((c) => String(row[c] ?? "")).join("|");
+      } else {
+        rowId = String(row.id ?? "");
+      }
+      stmt.run(table, rowId, JSON.stringify(row), now);
+      totalRows++;
+    }
+  }
+
+  console.log(`[Sync:Desktop] seedOpLogFromExisting — ${totalRows} rows seeded across all tables`);
 }

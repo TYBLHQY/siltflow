@@ -51,8 +51,8 @@ export function requestDeferredPush(): void {
   if (deferredPushTimer) clearTimeout(deferredPushTimer);
   deferredPushTimer = setTimeout(() => {
     deferredPushTimer = null;
-    console.log("[Sync:Desktop] deferredPush firing — running pushIncremental");
-    engine?.pushIncremental().catch((err) => {
+    console.log("[Sync:Desktop] deferredPush firing — running pushOpLog");
+    engine?.pushOpLog().catch((err) => {
       console.warn("[Sync] Deferred push failed:", (err as Error).message);
     });
   }, DEFERRED_PUSH_MS);
