@@ -1,12 +1,12 @@
 # ── Stage 1: Build ──────────────────────────────────────────────────────
 # Compiles dashboard (Vite) + bundles server (esbuild) + compiles
 # better-sqlite3 native addon for the container's glibc/Node ABI.
-FROM node:22-slim AS builder
+#
+# node:22 (full) includes python3, make, gcc, g++ needed for node-gyp.
+# We only switch to -slim in the production stage for minimal image size.
+FROM node:22 AS builder
 
-# Native build tools needed ONLY for better-sqlite3's node-gyp
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make gcc g++ && \
-    rm -rf /var/lib/apt/lists/*
+# No apt-get needed — node:22 already has the native build toolchain.
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -30,7 +30,11 @@ COPY apps/sync-server/src/ ./apps/sync-server/src/
 
 # Install all workspace dependencies (prod + dev).
 # pnpm runs better-sqlite3's install script automatically (allowBuilds).
-RUN pnpm install --frozen-lockfile
+# --ignore-scripts on root only skips the isolation postinstall (not needed
+# in Docker — there's only one Node ABI inside the container).
+RUN pnpm install --frozen-lockfile --ignore-scripts && \
+    cd /app/apps/sync-server/node_modules/better-sqlite3 && \
+    npx node-gyp rebuild --release
 
 # ── Dashboard build (separate pnpm project, NOT a workspace package) ──
 COPY apps/sync-server/dashboard/package.json \
