@@ -105,7 +105,9 @@ export function saveAnnotation(
   db.runSync(
     `INSERT OR REPLACE INTO annotations
        (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?,
+       COALESCE((SELECT created_at FROM annotations WHERE id = ? AND document_id = ?), ?),
+       ?)`,
     [
       p(annotation.id),
       p(annotation.document_id),
@@ -114,6 +116,9 @@ export function saveAnnotation(
       p(annotation.page_number ?? 0),
       p(annotation.embed_data || ""),
       p(annotation.kind || "annotation"),
+      // COALESCE subquery arguments
+      p(annotation.id),
+      p(annotation.document_id),
       p(now),
       p(now),
     ],
@@ -129,6 +134,12 @@ export function deleteAnnotation(
   documentId: string,
 ): void {
   const p = (v: unknown): SQLiteBindValue => v as SQLiteBindValue;
+  // Collect review_log IDs BEFORE deleting them (they are needed for
+  // changelog recording with composite PK: id|annotation_id|document_id).
+  const logRows = db.getAllSync<{ id: string }>(
+    "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?",
+    [p(id), p(documentId)],
+  );
   db.execSync("BEGIN TRANSACTION");
   try {
     db.runSync(
@@ -152,20 +163,9 @@ export function deleteAnnotation(
     recordCompositeDeletion("annotations", { id, document_id: documentId });
     recordCompositeDeletion("ai_results", { annotation_id: id, document_id: documentId });
     recordCompositeDeletion("fsrs_cards", { annotation_id: id, document_id: documentId });
-    // review_logs uses id|annotation_id|document_id — first collect log IDs
-    const logRows = db.getAllSync<{ id: string }>(
-      "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?",
-      [p(id), p(documentId)],
-    );
     for (const logRow of logRows) {
       recordCompositeDeletion("review_logs", { id: logRow.id, annotation_id: id, document_id: documentId });
     }
-
-    db.runSync(
-      "DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?",
-      [p(id), p(documentId)],
-    );
-
     requestDeferredPush();
   } catch (err) {
     db.execSync("ROLLBACK");

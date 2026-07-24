@@ -126,6 +126,11 @@ export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:delete", (_event, id: string, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return
+    // Collect review_log IDs BEFORE deleting them (needed for changelog
+    // recording with composite PK: id|annotation_id|document_id).
+    const logRows = sql.prepare(
+      "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?"
+    ).all(id, documentId) as Array<{ id: string }>
     sql.exec("BEGIN TRANSACTION")
     try {
       // Delete child tables first (no FK cascade from annotations)
@@ -137,6 +142,9 @@ export function registerAnnotationHandlers() {
       recordDeletion(sql, "annotations", `${id}|${documentId}`)
       recordDeletion(sql, "ai_results", `${id}|${documentId}`)
       recordDeletion(sql, "fsrs_cards", `${id}|${documentId}`)
+      for (const logRow of logRows) {
+        recordDeletion(sql, "review_logs", `${logRow.id}|${id}|${documentId}`)
+      }
       sql.exec("COMMIT")
       invalidateReviewMetricsCache()
       requestDeferredPush()
