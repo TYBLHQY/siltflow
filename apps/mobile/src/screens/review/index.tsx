@@ -185,19 +185,19 @@ export function ReviewScreen() {
   // ── Render: Sort buttons + list ───────────────────────────────────
 
   const renderSortBar = () => (
-    <View className="flex-row gap-0.5 px-2 py-1.5 border-b border-ctp-surface0">
+    <View className="flex-row gap-1.5 px-4 py-3 border-b border-ctp-surface0">
       {SORT_OPTIONS.map(({ field, label }) => {
         const active = sortField === field;
         return (
           <Pressable
             key={field}
             onPress={() => setSortField(field)}
-            className={`flex-1 items-center rounded px-1 py-1 ${
-              active ? "bg-ctp-blue" : "bg-transparent"
+            className={`flex-1 items-center rounded-full py-2 ${
+              active ? "bg-ctp-blue" : "bg-ctp-surface0"
             }`}
           >
             <Text
-              className={`text-xs font-medium ${
+              className={`text-sm font-medium ${
                 active ? "text-ctp-crust" : "text-ctp-subtext0"
               }`}
             >
