@@ -52,7 +52,10 @@ function TabBarItem({ tab }: { tab: TabItem }) {
   return (
     <Pressable
       className="flex-1 items-center justify-center gap-0.5 py-1"
-      onPress={() => router.replace(tab.route as any)}
+      onPress={() => {
+        // Prevent double-tap crash when already on the tab
+        if (!active) router.replace(tab.route as any);
+      }}
     >
       <TabIcon name={active ? tab.iconFocused : tab.icon} active={active} />
       <TabLabel text={tab.label} active={active} />
