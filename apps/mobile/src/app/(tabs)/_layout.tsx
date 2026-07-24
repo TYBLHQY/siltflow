@@ -37,8 +37,8 @@ export default function TabLayout() {
   );
 
   const pan = Gesture.Pan()
-    .activeOffsetX([-20, 20])
-    .failOffsetY([-10, 10])
+    .activeOffsetX([-50, 50])
+    .failOffsetY([-5, 5])
     .onEnd((event) => {
       "worklet";
       const idx = activeIdx.value;
