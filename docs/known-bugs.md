@@ -106,6 +106,37 @@ Pattern: collect IDs → delete → record deletions. Always verify the order.
 
 ---
 
+## Fixed: Server blind `INSERT OR REPLACE` on "created" rows 🔴
+
+**Severity**: Critical (data loss — defense-in-depth)  
+**Found**: 2026-07-24  
+**Affected**: Server  
+**Commit**: `706831b`
+
+### Root cause
+Server's `applyInsert` trusted the client's "created" classification and
+unconditionally ran `INSERT OR REPLACE` — no conflict detection. When a
+client misclassified an existing row as "created" (epoch sync, COALESCE bug,
+DB corruption, cross-device races), the server silently overwrote fresher
+data from other devices.
+
+### Effect
+Any row pushed as "created" (regardless of whether it actually existed on
+server) was blind-overwritten. This was the **defense-of-last-resort failure**
+— even with all client-side COALESCE fixes, a single DB corruption or
+re-registration could trigger data loss.
+
+### Fix
+`applyInsert` now checks if the row already exists:
+- **Exists**: runs full `checkConflict` (compare `updated_at`). If server
+  wins → reject as conflict. If client wins → gentle `UPDATE`.
+- **Not exists**: plain `INSERT` (genuinely new row).
+
+The caller loop treats `applyInsert` like `applyUpdate` — conflicts are
+added to the response, `accepted` only increments on success.
+
+---
+
 ## Remaining issues (not yet fixed)
 
 ### `sortDocMetrics` tiebreaker bug 🟢
