@@ -236,6 +236,20 @@ export class SyncEngine extends EventEmitter {
           "created:", created.length,
           table !== "review_logs" ? `updated: ${changes[table]?.updated?.length ?? 0}` : "");
       }
+
+      // Log fsrs_cards and review_logs sample data being pushed
+      if (table === "fsrs_cards" || table === "review_logs") {
+        if (changes[table]?.created) {
+          for (let i = 0; i < Math.min(changes[table]!.created!.length, 3); i++) {
+            console.log(`[Sync:Desktop] pushIncremental — ${table} CREATE[${i}]:`, JSON.stringify(changes[table]!.created![i]).slice(0, 200));
+          }
+        }
+        if (changes[table]?.updated) {
+          for (let i = 0; i < Math.min(changes[table]!.updated!.length, 3); i++) {
+            console.log(`[Sync:Desktop] pushIncremental — ${table} UPDATE[${i}]:`, JSON.stringify(changes[table]!.updated![i]).slice(0, 200));
+          }
+        }
+      }
     }
 
     // Deletions from changelog

@@ -45,6 +45,9 @@ export function registerReviewLogHandlers() {
     if (!sql) return null
     const now = new Date().toISOString()
     const id = crypto.randomUUID()
+    console.log("[Sync:Desktop] reviewLogs:save — id:", id,
+      "annotationId:", record.annotationId,
+      "data:", JSON.stringify(record.data).slice(0, 200))
     sql.prepare(
       `INSERT INTO review_logs (id, annotation_id, document_id, data, created_at) VALUES (?, ?, ?, ?, ?)`
     ).run(id, record.annotationId, record.documentId, JSON.stringify(record.data), now)

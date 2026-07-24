@@ -240,9 +240,35 @@ function applyInsert(
   const keys = Object.keys(snaked);
   const placeholders = keys.map(() => "?").join(", ");
   const values = keys.map((k) => snaked[k]);
+
+  // Check existing row BEFORE overwrite (INSERT OR REPLACE silently replaces)
+  if (table === "fsrs_cards" || table === "review_logs") {
+    const pk = COMPOSITE_PK[table] ?? ["id"];
+    const where = pk.map((c) => `${c} = ?`).join(" AND ");
+    const pkValues = pk.map((c) => snaked[c]);
+    const existing = sql!.prepare(`SELECT * FROM ${table} WHERE ${where}`).get(...pkValues) as Record<string, unknown> | undefined;
+    if (existing) {
+      console.log(`[Sync:Server] applyInsert — ${table} ALREADY EXISTS, will be overwritten. Existing:`,
+        JSON.stringify(existing).slice(0, 200));
+      console.log(`[Sync:Server] applyInsert — ${table} incoming row:`,
+        JSON.stringify(snaked).slice(0, 200));
+    }
+  }
+
   sql!.prepare(
     `INSERT OR REPLACE INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`
   ).run(...values);
+
+  // Log what was stored for critical tables
+  if (table === "fsrs_cards" || table === "review_logs") {
+    const pk = COMPOSITE_PK[table] ?? ["id"];
+    const where = pk.map((c) => `${c} = ?`).join(" AND ");
+    const pkValues = pk.map((c) => snaked[c]);
+    const stored = sql!.prepare(`SELECT * FROM ${table} WHERE ${where}`).get(...pkValues) as Record<string, unknown> | undefined;
+    if (stored) {
+      console.log(`[Sync:Server] applyInsert — ${table} after INSERT:`, JSON.stringify(stored).slice(0, 200));
+    }
+  }
 }
 
 function applyUpdate(

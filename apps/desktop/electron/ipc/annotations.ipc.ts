@@ -97,6 +97,10 @@ export function registerAnnotationHandlers() {
     const sql = getSqlite()
     if (!sql) return null
     const now = new Date().toISOString()
+    console.log("[Sync:Desktop] annotations:save — id:", annotation.id,
+      "documentId:", annotation.document_id,
+      "kind:", annotation.kind,
+      "type:", annotation.type)
     sql.prepare(
       `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`

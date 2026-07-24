@@ -49,9 +49,11 @@ export function getSyncConfig(): SyncConfig {
 export function requestDeferredPush(): void {
   if (!engine) return;
 
+  console.log("[Sync:Desktop] requestDeferredPush — scheduling push in", DEFERRED_PUSH_MS, "ms");
   if (deferredPushTimer) clearTimeout(deferredPushTimer);
   deferredPushTimer = setTimeout(() => {
     deferredPushTimer = null;
+    console.log("[Sync:Desktop] deferredPush firing — running pushIncremental");
     engine?.pushIncremental().catch((err) => {
       console.warn("[Sync] Deferred push failed:", (err as Error).message);
     });

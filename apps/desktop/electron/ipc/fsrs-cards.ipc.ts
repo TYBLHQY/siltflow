@@ -45,6 +45,9 @@ export function registerFSRSCardHandlers() {
     const sql = getSqlite()
     if (!sql) return null
     const now = new Date().toISOString()
+    console.log("[Sync:Desktop] fsrsCards:save — annotationId:", record.annotationId,
+      "documentId:", record.documentId,
+      "data:", JSON.stringify(record.data).slice(0, 200))
     sql.prepare(
       `INSERT OR REPLACE INTO fsrs_cards (annotation_id, document_id, data, created_at, updated_at)
        VALUES (?, ?, ?, COALESCE((SELECT created_at FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?), ?), ?)`
