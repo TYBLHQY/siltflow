@@ -73,7 +73,7 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <View className="flex-1 bg-ctp-surface0 rounded p-3 items-center">
+    <View className="flex-1 rounded p-3 items-center">
       <Text className={`text-2xl font-bold ${color ?? "text-ctp-text"}`}>
         {value}
       </Text>
