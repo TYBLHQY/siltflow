@@ -105,32 +105,43 @@ export function ReviewScreen() {
     <View className="px-4 pt-4" />
   );
 
+  // ── Retrievability label (mirrors desktop fsrs-utils.ts) ──────────
+
+  function retrievabilityLabel(r: number): string {
+    if (r >= 90) return "fresh";
+    if (r >= 75) return "ok";
+    if (r >= 50) return "due";
+    return "overdue";
+  }
+
   const renderItem = ({ item: doc }: { item: MetricsRow }) => (
     <View className="px-4 pb-3">
       <Pressable onPress={() => handleOpenSession(doc)}>
         <Card>
           <CardContent>
+            {/* Doc title */}
             <View className="flex-row items-center justify-between py-1">
-              {/* Doc title */}
               <View className="flex-1 mr-3">
                 <Text className="text-base font-semibold text-ctp-text" numberOfLines={1}>
                   {doc.documentTitle}
                 </Text>
               </View>
 
-              {/* Badges */}
-              <View className="flex-row gap-2">
-                {doc.dueNowCount > 0 && (
-                  <Badge variant="destructive">{doc.dueNowCount} due</Badge>
-                )}
-                {doc.newCardsCount > 0 && (
-                  <Badge variant="default">{doc.newCardsCount} new</Badge>
-                )}
-                {doc.dueNowCount === 0 && doc.newCardsCount === 0 && (
-                  <Badge variant="success">Caught up</Badge>
-                )}
-              </View>
+              {/* Quick status — Caught up badge when nothing to do */}
+              {doc.dueNowCount === 0 && doc.newCardsCount === 0 && (
+                <Badge variant="success">Caught up</Badge>
+              )}
             </View>
+
+            {/* Four badges row (mirrors desktop review-tab.tsx) */}
+            {doc.totalCards > 0 && (
+              <View className="flex-row flex-wrap gap-1.5 mt-1.5">
+                <Badge variant="default">{doc.newCardsCount} new</Badge>
+                <Badge variant="destructive">{doc.dueNowCount} due</Badge>
+                <Badge variant="peach">{doc.dueSoonCount} soon</Badge>
+                <Badge variant="mauve">{retrievabilityLabel(doc.avgRetrievability)}</Badge>
+              </View>
+            )}
           </CardContent>
         </Card>
       </Pressable>
