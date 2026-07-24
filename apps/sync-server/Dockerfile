@@ -36,13 +36,14 @@ RUN pnpm install --frozen-lockfile --ignore-scripts && \
     cd /app/apps/sync-server/node_modules/better-sqlite3 && \
     npx node-gyp rebuild --release
 
-# ── Dashboard build (separate pnpm project, NOT a workspace package) ──
-COPY apps/sync-server/dashboard/package.json \
-     apps/sync-server/dashboard/pnpm-lock.yaml \
-     ./apps/sync-server/dashboard/
-RUN cd apps/sync-server/dashboard && pnpm install --frozen-lockfile
+# Build dashboard — it's a Vite SPA inside the sync-server tree.
+# `pnpm` sees the parent workspace and short-circuits, so use npm directly
+# to force a real install into dashboard/node_modules.
 COPY apps/sync-server/dashboard/ ./apps/sync-server/dashboard/
-RUN cd apps/sync-server/dashboard && pnpm build
+RUN cd apps/sync-server/dashboard && \
+    rm -rf node_modules && \
+    npm install && \
+    npx tsc -b && npx vite build
 
 # ── Server bundle (esbuild) ────────────────────────────────────────────
 # Runs from sync-server/ so relative paths in esbuild.config.js resolve.
@@ -59,17 +60,18 @@ COPY --from=builder /app/apps/sync-server/dist/server.cjs ./dist/server.cjs
 # 2. Dashboard static files (SPA served via Hono fallback)
 COPY --from=builder /app/apps/sync-server/dist-dashboard/ ./dist-dashboard/
 
-# 3. better-sqlite3 — native addon + JS wrapper + runtime deps (bindings, prebuild-install).
-#    These are the ONLY node_modules entries needed at runtime; everything else
-#    (hono, drizzle-orm, zod, shared-db, shared-lib, ...) is inside the esbuild bundle.
+# 3. better-sqlite3 — native addon + JS runtime deps (bindings, file-uri-to-path).
+#    These are the ONLY node_modules entries needed; everything else
+#    (hono, drizzle-orm, zod, shared-db, shared-lib, ...) is in the esbuild bundle.
+#    pnpm hoists better-sqlite3 into node_modules/.pnpm/, so copy the real locations.
 COPY --from=builder \
-     /app/apps/sync-server/node_modules/better-sqlite3/ \
+     /app/node_modules/.pnpm/better-sqlite3@12.11.1/node_modules/better-sqlite3/ \
      ./node_modules/better-sqlite3/
 COPY --from=builder \
-     /app/apps/sync-server/node_modules/bindings/ \
+     /app/node_modules/.pnpm/bindings@1.5.0/node_modules/bindings/ \
      ./node_modules/bindings/
 COPY --from=builder \
-     /app/apps/sync-server/node_modules/file-uri-to-path/ \
+     /app/node_modules/.pnpm/file-uri-to-path@1.0.0/node_modules/file-uri-to-path/ \
      ./node_modules/file-uri-to-path/
 
 ENV NODE_ENV=production
