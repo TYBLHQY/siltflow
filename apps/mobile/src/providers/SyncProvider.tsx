@@ -14,7 +14,7 @@ import {
   setSetting,
   getSetting,
 } from "@/stores/sync.store";
-import { initSyncEngine, teardownSyncEngine, setSyncTimestamps } from "@/sync";
+import { initSyncEngine, teardownSyncEngine } from "@/sync";
 
 const TIMESTAMP_KEYS = {
   lastPushAt: "sync:lastPushAt",
@@ -34,15 +34,18 @@ export function SyncProvider({ children }: PropsWithChildren) {
       useSyncStore.getState().setConfig(cfg);
 
       if (cfg.syncEnabled && cfg.deviceToken) {
-        // Init engine
-        initSyncEngine(cfg, (state) => {
-          useSyncStore.getState().setSyncState(state);
-        });
-
-        // Restore persisted timestamps
+        // Load timestamps BEFORE init so the engine starts with the
+        // correct incremental sync window and never fetches epoch→now.
         const lastPushAt = getSetting(TIMESTAMP_KEYS.lastPushAt);
         const lastPullAt = getSetting(TIMESTAMP_KEYS.lastPullAt);
-        setSyncTimestamps(lastPushAt, lastPullAt);
+
+        initSyncEngine(cfg, {
+          lastPushAt,
+          lastPullAt,
+          onStateChange: (state) => {
+            useSyncStore.getState().setSyncState(state);
+          },
+        });
       }
     });
 

@@ -24,7 +24,7 @@ import {
   initSyncEngine,
   teardownSyncEngine,
   getSyncEngine,
-  setSyncTimestamps,
+  runInitialFullSync,
 } from "@/sync";
 
 // ── Settings keys (used as key column in app_settings table) ────────
@@ -112,15 +112,18 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     persistConfig(config);
     set({ config });
 
-    // Re-init engine with new config
-    initSyncEngine(config, (state) => {
-      useSyncStore.getState().setSyncState(state);
-    });
-
-    // Restore timestamps from storage
+    // Load timestamps before init so the engine starts with the
+    // correct incremental sync window.
     const lastPushAt = getSetting(KEYS.lastPushAt);
     const lastPullAt = getSetting(KEYS.lastPullAt);
-    setSyncTimestamps(lastPushAt, lastPullAt);
+
+    initSyncEngine(config, {
+      lastPushAt,
+      lastPullAt,
+      onStateChange: (state) => {
+        useSyncStore.getState().setSyncState(state);
+      },
+    });
   },
 
   registerDevice: async (serverUrl, serverToken, deviceName) => {
@@ -143,9 +146,15 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       persistConfig(cfg);
       set({ config: cfg });
 
-      initSyncEngine(cfg, (state) => {
-        useSyncStore.getState().setSyncState(state);
+      initSyncEngine(cfg, {
+        onStateChange: (state) => {
+          useSyncStore.getState().setSyncState(state);
+        },
       });
+
+      // Seed the fresh device with a full push + pull. After this one-time
+      // seed, subsequent restarts use incremental sync inside initSyncEngine.
+      runInitialFullSync();
 
       set({ isRegistering: false });
       return { deviceId: result.deviceId, token: result.token };
@@ -178,9 +187,15 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       persistConfig(cfg);
       set({ config: cfg });
 
-      initSyncEngine(cfg, (state) => {
-        useSyncStore.getState().setSyncState(state);
+      initSyncEngine(cfg, {
+        onStateChange: (state) => {
+          useSyncStore.getState().setSyncState(state);
+        },
       });
+
+      // Seed the fresh device with a full push + pull. After this one-time
+      // seed, subsequent restarts use incremental sync inside initSyncEngine.
+      runInitialFullSync();
 
       set({ isRegistering: false });
       return { deviceId: result.deviceId, token: cfg.deviceToken };

@@ -55,12 +55,29 @@ export function requestDeferredPush(): void {
   }, DEFERRED_PUSH_MS);
 }
 
+export interface SyncInitOptions {
+  /** Called whenever sync state changes. */
+  onStateChange?: (state: SyncState) => void;
+  /**
+   * Pre-set timestamps from persisted storage. Must be set BEFORE engine
+   * construction so the initial sync uses the correct incremental window
+   * instead of fetching all data since epoch.
+   */
+  lastPushAt?: string | null;
+  lastPullAt?: string | null;
+}
+
 /**
  * Initialize the sync subsystem. Call after the database is ready.
+ *
+ * On normal app restart the engine runs an incremental sync
+ * (pushIncremental + pull) — matching the desktop behaviour.
+ * pushFull is only used for the initial seed after a fresh device
+ * registration (via `registerDevice` in the sync store).
  */
 export function initSyncEngine(
   cfg: SyncConfig,
-  onStateChange?: (state: SyncState) => void,
+  options?: SyncInitOptions,
 ): void {
   config = { ...cfg };
   teardownSyncEngine();
@@ -92,12 +109,13 @@ export function initSyncEngine(
 
   engine = new SyncEngine(client, wsClient);
 
-  // Restore persisted timestamps
-  // These are set by SyncProvider after reading from AsyncStorage
-  // We set them to null here; SyncProvider will update them.
+  // Apply persisted timestamps BEFORE any sync runs so the engine
+  // uses the correct incremental window from t=0.
+  if (options?.lastPushAt) engine.lastPushAt = options.lastPushAt;
+  if (options?.lastPullAt) engine.lastPullAt = options.lastPullAt;
 
-  if (onStateChange) {
-    engine.onStateChange(onStateChange);
+  if (options?.onStateChange) {
+    engine.onStateChange(options.onStateChange);
   }
 
   engine.onError((err) => {
@@ -119,14 +137,35 @@ export function initSyncEngine(
     }, cfg.syncIntervalMinutes * 60_000);
   }
 
-  // Run an initial full sync on startup to seed the local database
-  engine.pushFull().then(() => engine?.pull()).catch((err) => {
-    console.warn("[Sync] Initial full sync failed:", (err as Error).message);
+  // Run an initial incremental sync on startup — matching the desktop
+  // behaviour. pushFull is reserved for the first-sync seed after a
+  // fresh registration (called explicitly by registerDevice).
+  engine.sync().catch((err) => {
+    console.warn("[Sync] Initial sync failed:", (err as Error).message);
   });
 
   console.log(
     `[Sync] Initialized — server=${cfg.serverUrl}, interval=${cfg.syncIntervalMinutes}min`,
   );
+}
+
+/**
+ * Run a full initial sync (pushFull + pull) to seed a freshly registered
+ * device's database. Only called once after registration; normal restarts
+ * use the incremental sync inside initSyncEngine.
+ */
+export async function runInitialFullSync(): Promise<void> {
+  if (!engine) {
+    console.warn("[Sync] Cannot run initial full sync — engine not initialised");
+    return;
+  }
+  try {
+    await engine.pushFull();
+    await engine.pull();
+    console.log("[Sync] Initial full sync complete");
+  } catch (err) {
+    console.warn("[Sync] Initial full sync failed:", (err as Error).message);
+  }
 }
 
 /** Tear down the sync subsystem (e.g. when config changes). */
@@ -144,18 +183,6 @@ export function teardownSyncEngine(): void {
     wsClient = null;
   }
   if (engine) {
-    // Clear callbacks (simple: reassign arrays)
     engine = null;
-  }
-}
-
-/** Set engine timestamps from persisted state (called after init). */
-export function setSyncTimestamps(
-  lastPushAt: string | null,
-  lastPullAt: string | null,
-): void {
-  if (engine) {
-    engine.lastPushAt = lastPushAt;
-    engine.lastPullAt = lastPullAt;
   }
 }
