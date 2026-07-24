@@ -147,6 +147,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       set({ config: cfg });
 
       initSyncEngine(cfg, {
+        skipInitialSync: true,
         onStateChange: (state) => {
           useSyncStore.getState().setSyncState(state);
         },
@@ -188,6 +189,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
       set({ config: cfg });
 
       initSyncEngine(cfg, {
+        skipInitialSync: true,
         onStateChange: (state) => {
           useSyncStore.getState().setSyncState(state);
         },

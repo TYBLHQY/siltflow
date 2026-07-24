@@ -308,6 +308,13 @@ export class SyncEngine {
 
   /** Pull remote changes and apply them locally. */
   async pull(): Promise<void> {
+    // Guard against concurrent pulls: if a sync is already in progress
+    // the pull step will run as part of that sync. Concurrent pulls
+    // cause INSERT OR REPLACE races on the same rows.
+    if (this._syncInProgress) {
+      console.log("[Sync:Engine] pull — skipped (sync already in progress)");
+      return;
+    }
     const sql = getSQLite();
     const since = this._lastPullAt ?? "1970-01-01T00:00:00Z";
     const body = { lastSyncAt: since };

@@ -65,6 +65,12 @@ export interface SyncInitOptions {
    */
   lastPushAt?: string | null;
   lastPullAt?: string | null;
+  /**
+   * When true, initSyncEngine skips the automatic initial sync() call.
+   * The caller is responsible for seeding data (e.g. via runInitialFullSync).
+   * Used by registerDevice to avoid concurrent syncs during first-time setup.
+   */
+  skipInitialSync?: boolean;
 }
 
 /**
@@ -140,10 +146,16 @@ export function initSyncEngine(
   // Run an initial incremental sync on startup — matching the desktop
   // behaviour. pushFull is reserved for the first-sync seed after a
   // fresh registration (called explicitly by registerDevice).
-  console.log("[Sync] initSyncEngine — running initial incremental sync, lastPushAt:", options?.lastPushAt, "lastPullAt:", options?.lastPullAt);
-  engine.sync().catch((err) => {
-    console.warn("[Sync] Initial sync failed:", (err as Error).message);
-  });
+  // When skipInitialSync is true the caller is responsible for the
+  // first sync (e.g. registerDevice runs runInitialFullSync instead).
+  if (!options?.skipInitialSync) {
+    console.log("[Sync] initSyncEngine — running initial incremental sync, lastPushAt:", options?.lastPushAt, "lastPullAt:", options?.lastPullAt);
+    engine.sync().catch((err) => {
+      console.warn("[Sync] Initial sync failed:", (err as Error).message);
+    });
+  } else {
+    console.log("[Sync] initSyncEngine — skipping initial sync (caller will seed)");
+  }
 
   console.log(
     `[Sync] Initialized — server=${cfg.serverUrl}, interval=${cfg.syncIntervalMinutes}min`,
@@ -154,6 +166,11 @@ export function initSyncEngine(
  * Run a full initial sync (pushFull + pull) to seed a freshly registered
  * device's database. Only called once after registration; normal restarts
  * use the incremental sync inside initSyncEngine.
+ *
+ * IMPORTANT: pushFull sends all local rows to the server which triggers
+ * a "sync:available" WebSocket broadcast. The browser receives that
+ * broadcast and auto-pulls. To avoid racing with our own pull(), we
+ * delay the pull briefly to let the auto-pull finish first.
  */
 export async function runInitialFullSync(): Promise<void> {
   if (!engine) {
@@ -161,7 +178,14 @@ export async function runInitialFullSync(): Promise<void> {
     return;
   }
   try {
+    console.log("[Sync] runInitialFullSync — starting pushFull");
     await engine.pushFull();
+    // Small delay to let the WebSocket-triggered auto-pull finish
+    // before we do our own pull. The pushFull response triggers a
+    // "sync:available" broadcast which causes the local WsClient to
+    // fire a pull(). That pull races with the pull() below.
+    await new Promise((r) => setTimeout(r, 500));
+    console.log("[Sync] runInitialFullSync — starting pull");
     await engine.pull();
     console.log("[Sync] Initial full sync complete");
   } catch (err) {
