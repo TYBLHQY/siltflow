@@ -110,7 +110,7 @@ function resolveServerToken(config: ServerConfig): ServerConfig {
 
   if (config.bootstrapToken) {
     token = config.bootstrapToken;
-    source = "SERVER_TOKEN env var";
+    source = "BOOTSTRAP_TOKEN / SERVER_TOKEN env var";
   } else {
     const sql = getSqlite();
     if (!sql) {

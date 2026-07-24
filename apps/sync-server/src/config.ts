@@ -36,6 +36,6 @@ export function loadConfig(env = process.env): ServerConfig {
     port,
     dataDir,
     tombstoneRetentionDays,
-    bootstrapToken: env["BOOTSTRAP_TOKEN"],
+    bootstrapToken: env["BOOTSTRAP_TOKEN"] || env["SERVER_TOKEN"],
   };
 }
