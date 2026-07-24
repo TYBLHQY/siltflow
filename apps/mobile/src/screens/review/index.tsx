@@ -13,7 +13,7 @@
  * hundreds of documents.
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { View, Text, Pressable, SafeAreaView, ScrollView } from "@/tw";
 import { Card, CardContent, Badge, Spinner, EmptyState } from "@/components/ui";
