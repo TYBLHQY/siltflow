@@ -10,10 +10,8 @@ export function SettingsScreen() {
     <SafeAreaView className="flex-1 bg-ctp-base">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-6 gap-6"
+        contentContainerClassName="p-6 gap-6 pt-6"
       >
-        <Text className="text-2xl font-bold text-ctp-text">Settings</Text>
-
         <SyncSettings />
 
         {/* App info footer */}

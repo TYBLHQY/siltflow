@@ -12,7 +12,6 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   View,
-  Text,
   SafeAreaView,
   ScrollView,
 } from "@/tw";
@@ -106,9 +105,7 @@ export function DocumentsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-ctp-base">
       {/* ── Header ──────────────────────────────────────────── */}
-      <View className="px-4 pt-4 pb-2">
-        <Text className="text-2xl font-bold text-ctp-text">Documents</Text>
-      </View>
+      <View className="px-4 pt-4 pb-2" />
 
       {/* ── Search & filter ─────────────────────────────────── */}
       <View className="px-4 pb-2 gap-2">

@@ -214,8 +214,6 @@ export function StatsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text className="text-2xl font-bold text-ctp-text">Stats</Text>
-
         {/* Overview cards */}
         {overview && (
           <View className="gap-3">

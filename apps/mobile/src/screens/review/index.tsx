@@ -108,9 +108,6 @@ export function ReviewScreen() {
 
   const renderHeader = () => (
     <View className="px-4 pt-4 gap-3">
-      <Text className="text-2xl font-bold text-ctp-text px-1 mb-2">
-        Review
-      </Text>
 
       {/* Summary row */}
       <View className="flex-row gap-3 mb-2 px-1">
