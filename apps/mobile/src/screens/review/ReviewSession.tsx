@@ -268,7 +268,7 @@ export function ReviewSession() {
       {/* Card area */}
       <ScrollView
         className="flex-1"
-        contentContainerClassName="p-4"
+        contentContainerClassName="flex-1 p-4"
       >
         <ReviewCard
           item={current.annotation}
