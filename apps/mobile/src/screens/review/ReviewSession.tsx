@@ -183,7 +183,7 @@ export function ReviewSession() {
             No cards are due for review in this document.
           </Text>
           <Button variant="outline" onPress={handleBack}>
-            Back to Documents
+            Back to Review
           </Button>
         </View>
       </SafeAreaView>
@@ -238,7 +238,7 @@ export function ReviewSession() {
           </View>
 
           <Button onPress={handleBack} className="mt-4">
-            Back to Documents
+            Back to Review
           </Button>
         </ScrollView>
       </SafeAreaView>
