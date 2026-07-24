@@ -114,13 +114,15 @@ export class SyncEngine extends EventEmitter {
     this._lastError = null;
     this._emitState();
 
+    console.log("[Sync:Desktop] sync() start — lastPushAt:", this._lastPushAt, "lastPullAt:", this._lastPullAt);
+
     try {
       await this.pushIncremental();
     } catch (err) {
       this._lastError = (err as Error).message;
       this._emitState();
       this.emit("error", err as Error);
-      // Continue to pull — don't let a push failure block incoming data
+      // 即使 push 失败也继续 pull —— 不要让 push 失败阻断接收数据
     }
 
     try {
@@ -131,6 +133,7 @@ export class SyncEngine extends EventEmitter {
       this.emit("error", err as Error);
     } finally {
       this._syncInProgress = false;
+      console.log("[Sync:Desktop] sync() end — lastPushAt:", this._lastPushAt, "lastPullAt:", this._lastPullAt);
       this._emitState();
     }
   }
@@ -193,6 +196,8 @@ export class SyncEngine extends EventEmitter {
     const changes: SyncPushBody["changes"] = {};
     let hasChanges = false;
 
+    console.log("[Sync:Desktop] pushIncremental — since:", since);
+
     for (const table of ENTITY_TABLES) {
       const col = tsCol(table);
 
@@ -219,10 +224,20 @@ export class SyncEngine extends EventEmitter {
           hasChanges = true;
         }
       }
+
+      if (created.length > 0 || (table !== "review_logs" && (
+        changes[table]?.updated?.length ?? 0) > 0)) {
+        console.log("[Sync:Desktop] pushIncremental — table:", table,
+          "created:", created.length,
+          table !== "review_logs" ? `updated: ${changes[table]?.updated?.length ?? 0}` : "");
+      }
     }
 
     // Deletions from changelog
     const deletions = getDeletionsSince(this.sql, since);
+    if (deletions.length > 0) {
+      console.log("[Sync:Desktop] pushIncremental — deletions:", deletions.length);
+    }
     for (const del of deletions) {
       const tbl = del.table_name as EntityTable;
       if (!changes[tbl]) changes[tbl] = {};
@@ -232,12 +247,14 @@ export class SyncEngine extends EventEmitter {
     }
 
     if (!hasChanges) {
+      console.log("[Sync:Desktop] pushIncremental — no local changes, skipping push");
       this._pushInProgress = false;
       return null;
     }
 
     const body: SyncPushBody = { lastSyncAt: since, changes };
     const res = await this.client.push(body);
+    console.log("[Sync:Desktop] pushIncremental — server accepted:", res.accepted, "conflicts:", res.conflicts.length);
     this._lastPushAt = new Date().toISOString();
 
     // Clear pushed changelog entries
@@ -261,23 +278,45 @@ export class SyncEngine extends EventEmitter {
     const body = {
       lastSyncAt: this._lastPullAt ?? "1970-01-01T00:00:00Z",
     };
+    console.log("[Sync:Desktop] pull — since:", body.lastSyncAt);
     const res = await this.client.pull(body);
 
+    let totalRows = 0;
     // Apply changes row-by-row
     for (const table of ENTITY_TABLES) {
       const rows = res.changes?.[table];
       if (!rows || rows.length === 0) continue;
 
+      console.log("[Sync:Desktop] pull — table:", table, "rows:", rows.length);
+
+      // Log fsrs_cards and review_logs data for debugging
+      if (table === "fsrs_cards" || table === "review_logs") {
+        for (let i = 0; i < Math.min(rows.length, 3); i++) {
+          const r = rows[i] as Record<string, unknown>;
+          console.log(`[Sync:Desktop] pull — ${table}[${i}]:`, JSON.stringify(r).slice(0, 200));
+        }
+      }
+
       for (const row of rows) {
+        totalRows++;
         this.upsertRemoteRow(table, row);
       }
     }
 
     // Apply tombstones (delete local rows that were deleted remotely)
+    if (res.tombstones.length > 0) {
+      console.log("[Sync:Desktop] pull — tombstones:", res.tombstones.length);
+      for (const t of res.tombstones.slice(0, 5)) {
+        console.log(`[Sync:Desktop] pull — tombstone: ${t.table_name} row=${t.row_id}`);
+      }
+    }
     for (const tombstone of res.tombstones) {
       this.applyTombstone(tombstone.table_name, tombstone.row_id);
     }
 
+    console.log("[Sync:Desktop] pull — total rows upserted:", totalRows,
+      "tombstones:", res.tombstones.length,
+      "serverTime:", res.serverTime);
     this._lastPullAt = res.serverTime;
     this._emitState();
   }

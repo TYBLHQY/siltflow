@@ -25,9 +25,29 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
     let accepted = 0;
     const conflicts: Record<string, unknown>[] = [];
 
+    console.log("[Sync:Server] push from device:", c.var.deviceId,
+      "lastSyncAt:", body.lastSyncAt);
+
     for (const table of ENTITY_TABLES) {
       const change = body.changes?.[table];
       if (!change) continue;
+
+      console.log("[Sync:Server] push — table:", table,
+        "created:", change.created?.length ?? 0,
+        "updated:", change.updated?.length ?? 0,
+        "deleted:", change.deleted?.length ?? 0);
+
+      // Log fsrs_cards and review_logs data samples from push
+      if ((table === "fsrs_cards" || table === "review_logs") && change.created) {
+        for (let i = 0; i < Math.min(change.created.length, 3); i++) {
+          console.log(`[Sync:Server] push — ${table}[${i}]:`, JSON.stringify(change.created[i]).slice(0, 200));
+        }
+      }
+      if ((table === "fsrs_cards") && change.updated) {
+        for (let i = 0; i < Math.min(change.updated.length, 3); i++) {
+          console.log(`[Sync:Server] push — ${table} UPDATE[${i}]:`, JSON.stringify(change.updated[i]).slice(0, 200));
+        }
+      }
 
       // Process deletions first
       if (change.deleted) {
@@ -84,6 +104,8 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
       sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
     }
 
+    console.log("[Sync:Server] push — done, accepted:", accepted, "conflicts:", conflicts.length);
+
     return c.json({ accepted, conflicts });
   })
   .post("/pull", async (c) => {
@@ -92,6 +114,7 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
 
     const body = await c.req.json<{ lastSyncAt: string }>();
     const since = body.lastSyncAt ?? "1970-01-01T00:00:00Z";
+    console.log("[Sync:Server] pull from device:", c.var.deviceId, "since:", since);
 
     const changes: Record<string, Record<string, unknown>[]> = {};
     for (const table of ENTITY_TABLES) {
@@ -101,12 +124,18 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
         `SELECT * FROM ${table} WHERE ${col} > ? ORDER BY ${col} ASC`
       ).all(since) as Record<string, unknown>[];
       if (rows.length) changes[table] = rows;
+      if (rows.length > 0) {
+        console.log("[Sync:Server] pull — table:", table, "rows:", rows.length);
+      }
     }
 
     // Tombstones
     const tombstones = sql.prepare(
       "SELECT table_name, row_id, deleted_at FROM sync_tombstones WHERE deleted_at > ? ORDER BY deleted_at ASC"
     ).all(since) as Record<string, unknown>[];
+    if (tombstones.length > 0) {
+      console.log("[Sync:Server] pull — tombstones:", tombstones.length);
+    }
 
     const now = new Date().toISOString();
 
@@ -130,6 +159,10 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
     if (c.var.deviceId) {
       sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
     }
+
+    console.log("[Sync:Server] pull — done, changes:", Object.keys(changes).length,
+      "tables, tombstones:", tombstones.length,
+      "serverTime:", now);
 
     return c.json({ serverTime: now, changes, tombstones });
   });
