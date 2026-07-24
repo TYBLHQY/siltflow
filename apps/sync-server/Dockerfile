@@ -1,0 +1,83 @@
+# ── Stage 1: Build ──────────────────────────────────────────────────────
+# Compiles dashboard (Vite) + bundles server (esbuild) + compiles
+# better-sqlite3 native addon for the container's glibc/Node ABI.
+FROM node:22-slim AS builder
+
+# Native build tools needed ONLY for better-sqlite3's node-gyp
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# ── Workspace skeleton ─────────────────────────────────────────────────
+# Layer 1: config files (changes rarely → Docker cache friendly)
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+
+# Layer 2: workspace package manifests
+COPY packages/shared-db/package.json ./packages/shared-db/
+COPY packages/shared-lib/package.json ./packages/shared-lib/
+COPY apps/sync-server/package.json apps/sync-server/tsconfig.json \
+     apps/sync-server/esbuild.config.js \
+     ./apps/sync-server/
+
+# Layer 3: workspace package sources
+COPY packages/shared-db/src/ ./packages/shared-db/src/
+COPY packages/shared-lib/src/ ./packages/shared-lib/src/
+COPY apps/sync-server/src/ ./apps/sync-server/src/
+
+# Install all workspace dependencies (prod + dev).
+# pnpm runs better-sqlite3's install script automatically (allowBuilds).
+RUN pnpm install --frozen-lockfile
+
+# ── Dashboard build (separate pnpm project, NOT a workspace package) ──
+COPY apps/sync-server/dashboard/package.json \
+     apps/sync-server/dashboard/pnpm-lock.yaml \
+     ./apps/sync-server/dashboard/
+RUN cd apps/sync-server/dashboard && pnpm install --frozen-lockfile
+COPY apps/sync-server/dashboard/ ./apps/sync-server/dashboard/
+RUN cd apps/sync-server/dashboard && pnpm build
+
+# ── Server bundle (esbuild) ────────────────────────────────────────────
+# Runs from sync-server/ so relative paths in esbuild.config.js resolve.
+RUN cd apps/sync-server && node esbuild.config.js
+
+# ── Stage 2: Production ─────────────────────────────────────────────────
+FROM node:22-slim AS production
+
+WORKDIR /app
+
+# 1. Esbuild bundle → the entire backend in one file
+COPY --from=builder /app/apps/sync-server/dist/server.cjs ./dist/server.cjs
+
+# 2. Dashboard static files (SPA served via Hono fallback)
+COPY --from=builder /app/apps/sync-server/dist-dashboard/ ./dist-dashboard/
+
+# 3. better-sqlite3 — native addon + JS wrapper + runtime deps (bindings, prebuild-install).
+#    These are the ONLY node_modules entries needed at runtime; everything else
+#    (hono, drizzle-orm, zod, shared-db, shared-lib, ...) is inside the esbuild bundle.
+COPY --from=builder \
+     /app/apps/sync-server/node_modules/better-sqlite3/ \
+     ./node_modules/better-sqlite3/
+COPY --from=builder \
+     /app/apps/sync-server/node_modules/bindings/ \
+     ./node_modules/bindings/
+COPY --from=builder \
+     /app/apps/sync-server/node_modules/file-uri-to-path/ \
+     ./node_modules/file-uri-to-path/
+
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV DATA_DIR=/data
+
+EXPOSE 3001
+
+# Named volume for the SQLite database and uploaded files
+VOLUME /data
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD node -e "fetch('http://localhost:3001/health').then(r => {if(!r.ok) process.exit(1)})"
+
+CMD ["node", "dist/server.cjs"]

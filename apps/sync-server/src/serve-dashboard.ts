@@ -10,7 +10,7 @@ import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import type { Context } from "hono";
 
-const DASHBOARD_DIR = path.resolve(import.meta.dirname, "../dist-dashboard");
+const DASHBOARD_DIR = path.resolve(__dirname, "../dist-dashboard");
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",

@@ -19,6 +19,9 @@
     "server:typecheck": "pnpm -F @siltflow/sync-server typecheck",
     "server:test": "pnpm -F @siltflow/sync-server test",
     "dashboard:dev": "pnpm -F @siltflow/sync-server dev:dashboard",
-    "dashboard:build": "pnpm -F @siltflow/sync-server build:dashboard"
+    "dashboard:build": "pnpm -F @siltflow/sync-server build:dashboard",
+    "docker:build": "docker build -f apps/sync-server/Dockerfile -t siltflow-server .",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   }
 }
