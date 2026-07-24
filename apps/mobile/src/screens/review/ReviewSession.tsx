@@ -297,14 +297,6 @@ export function ReviewSession() {
         </View>
       )}
 
-      {/* Hint when answer not revealed */}
-      {!answerRevealed && (
-        <View className="px-4 py-2 border-t border-ctp-surface0">
-          <Text className="text-xs text-ctp-overlay0 text-center">
-            Tap the card to reveal the answer, then select a grade
-          </Text>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
