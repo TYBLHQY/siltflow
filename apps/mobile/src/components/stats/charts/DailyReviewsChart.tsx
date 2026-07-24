@@ -63,7 +63,7 @@ export function DailyReviewsChart() {
                     <Text className="text-[9px] text-ctp-subtext0 w-8 text-right">
                       {d.date.slice(5)}
                     </Text>
-                    <View className="flex-1 h-3.5 bg-ctp-surface0 rounded-full overflow-hidden flex-row">
+                    <View className="flex-1 h-4 bg-ctp-surface0 rounded-full overflow-hidden flex-row">
                       {learnPct > 0 && (
                         <View
                           className="h-full bg-ctp-sky"
@@ -77,6 +77,11 @@ export function DailyReviewsChart() {
                         />
                       )}
                     </View>
+                    <Text className="text-[10px] w-12 text-right" numberOfLines={1}>
+                      <Text className="text-ctp-sky">{d.learnCount}</Text>
+                      <Text className="text-ctp-text">/</Text>
+                      <Text className="text-ctp-mauve">{d.reviewCount}</Text>
+                    </Text>
                   </View>
                 );
               })}
