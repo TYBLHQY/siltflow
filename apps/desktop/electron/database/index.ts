@@ -4,7 +4,7 @@ import * as schema from "./schema";
 import { SCHEMA_VERSION, AI_DATA_VERSION } from "@siltflow/shared-db/types";
 import { initSchema } from "@siltflow/shared-db/migrations";
 import { createBetterSqlite3Executor } from "./better-sqlite3-adapter";
-import { initChangelogTable } from "../sync/changelog";
+import { initOpLogTable } from "../sync/op-log";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -37,7 +37,7 @@ export function initDatabase(vaultPath: string) {
   initSchema(executor, version);
 
   // Sync changelog — tracks deletions for push
-  initChangelogTable(sqlite);
+  initOpLogTable(sqlite);
 
   // Update schema version after migration
   if (version < SCHEMA_VERSION) {

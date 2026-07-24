@@ -1,8 +1,13 @@
 /**
  * Sync endpoints — push and pull.
  *
- * POST /api/sync/push  — client sends local changes, server applies with conflict detection
+ * POST /api/sync/push  — client sends saves + deletes, server applies unconditionally
  * POST /api/sync/pull  — client requests changes since lastSyncAt
+ *
+ * Design: the server is a database mirror, not a conflict resolver. Every
+ * client operation is trusted and applied as-is. The op-log approach on the
+ * client ensures only genuinely new/changed rows are sent — no more
+ * timestamp-based "created vs updated" classification bugs.
  */
 
 import { Hono } from "hono";
@@ -13,17 +18,15 @@ import {
   type SyncPushBody,
 } from "@siltflow/shared-lib";
 
-// ── Routes ────────────────────────────────────────────────────────────
+// -- Routes --------------------------------------------------------------
 
 export const syncRoutes = new Hono<{ Variables: Variables }>()
   .post("/push", async (c) => {
-    const db = getDb();
     const sql = getSqlite();
-    if (!db || !sql) return c.json({ error: "database not ready" }, 503);
+    if (!sql) return c.json({ error: "database not ready" }, 503);
 
     const body = await c.req.json<SyncPushBody>();
     let accepted = 0;
-    const conflicts: Record<string, unknown>[] = [];
 
     console.log("[Sync:Server] push from device:", c.var.deviceId,
       "lastSyncAt:", body.lastSyncAt);
@@ -32,33 +35,26 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
       const change = body.changes?.[table];
       if (!change) continue;
 
+      const savesCount = change.saves?.length ?? 0;
+      const deletesCount = change.deletes?.length ?? 0;
       console.log("[Sync:Server] push — table:", table,
-        "created:", change.created?.length ?? 0,
-        "updated:", change.updated?.length ?? 0,
-        "deleted:", change.deleted?.length ?? 0);
+        "saves:", savesCount, "deletes:", deletesCount);
 
-      // Log fsrs_cards and review_logs data samples from push
-      if ((table === "fsrs_cards" || table === "review_logs") && change.created) {
-        for (let i = 0; i < Math.min(change.created.length, 3); i++) {
-          console.log(`[Sync:Server] push — ${table}[${i}]:`, JSON.stringify(change.created[i]).slice(0, 200));
-        }
-      }
-      if ((table === "fsrs_cards") && change.updated) {
-        for (let i = 0; i < Math.min(change.updated.length, 3); i++) {
-          console.log(`[Sync:Server] push — ${table} UPDATE[${i}]:`, JSON.stringify(change.updated[i]).slice(0, 200));
+      // Log fsrs_cards and review_logs data samples
+      if ((table === "fsrs_cards" || table === "review_logs") && change.saves) {
+        for (let i = 0; i < Math.min(change.saves.length, 3); i++) {
+          console.log(`[Sync:Server] push — ${table}[${i}]:`, JSON.stringify(change.saves[i]).slice(0, 200));
         }
       }
 
-      // Process deletions first
-      if (change.deleted) {
-        for (const rowId of change.deleted) {
-          // Record tombstone for pull
+      // Process deletions first (so a delete+save sequence for the same key works)
+      if (change.deletes) {
+        for (const rowId of change.deletes) {
           const now = new Date().toISOString();
           sql.prepare(
             "INSERT INTO sync_tombstones (table_name, row_id, deleted_at) VALUES (?, ?, ?)"
           ).run(table, String(rowId), now);
 
-          // Build a PK-aware WHERE clause for the delete
           const pk = parseRowId(table, rowId);
           const where = pkWhere(table, pk);
           sql.prepare(`DELETE FROM ${table} WHERE ${where.clause}`).run(
@@ -68,31 +64,19 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
         }
       }
 
-      // Process creates — with existence check (was: blind INSERT OR REPLACE).
-      // A client may misclassify an existing row as "created" (epoch sync,
-      // COALESCE bug, cross-device race). applyInsert now checks whether the
-      // row already exists and falls through to conflict detection when it does.
-      if (change.created) {
-        for (const row of change.created) {
-          const conflict = applyInsert(sql, table, row as Record<string, unknown>);
-          if (conflict) {
-            conflicts.push({ table, id: (row as Record<string, unknown>).id, conflict });
-          } else {
-            accepted++;
-          }
-        }
-      }
+      // Process saves — unconditional INSERT OR REPLACE.
+      // Server is a mirror: the client knows best what its data is.
+      if (change.saves) {
+        for (const row of change.saves) {
+          const snaked = snakeKeys(row);
+          const keys = Object.keys(snaked);
+          const placeholders = keys.map(() => "?").join(", ");
+          const values = keys.map((k) => snaked[k]);
 
-      // Process updates (with conflict check)
-      if (change.updated) {
-        for (const row of change.updated) {
-          const conflict = checkConflict(sql, table, row as Record<string, unknown>);
-          if (conflict) {
-            conflicts.push({ table, id: (row as Record<string, unknown>).id, conflict });
-          } else {
-            applyUpdate(sql, table, row as Record<string, unknown>);
-            accepted++;
-          }
+          sql!.prepare(
+            `INSERT OR REPLACE INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`
+          ).run(...values);
+          accepted++;
         }
       }
     }
@@ -102,7 +86,6 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
       changedBy: c.var.deviceId,
       timestamp: new Date().toISOString(),
       accepted,
-      conflictCount: conflicts.length,
     });
 
     // Update device last_sync_at
@@ -111,9 +94,9 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
       sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
     }
 
-    console.log("[Sync:Server] push — done, accepted:", accepted, "conflicts:", conflicts.length);
+    console.log("[Sync:Server] push — done, accepted:", accepted);
 
-    return c.json({ accepted, conflicts });
+    return c.json({ accepted });
   })
   .post("/pull", async (c) => {
     const sql = getSqlite();
@@ -125,7 +108,6 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
 
     const changes: Record<string, Record<string, unknown>[]> = {};
     for (const table of ENTITY_TABLES) {
-      // Skip review_logs — they use created_at, not updated_at
       const col = table === "review_logs" ? "created_at" : "updated_at";
       const rows = sql.prepare(
         `SELECT * FROM ${table} WHERE ${col} > ? ORDER BY ${col} ASC`
@@ -146,23 +128,19 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
 
     const now = new Date().toISOString();
 
-    // Mark tombstone acks for this device — it has now received these tombstones
     if (c.var.deviceId && tombstones.length > 0) {
       const ackStmt = sql.prepare(
         "INSERT OR IGNORE INTO sync_tombstone_acks (tombstone_id, device_id, acked_at) VALUES (?, ?, ?)"
       );
-      // Need tombstone IDs, not just table_name + row_id — refetch by recent tombstones
       const recentIds = sql.prepare(
         "SELECT id FROM sync_tombstones WHERE deleted_at > ? ORDER BY id ASC"
       ).all(since) as Array<{ id: number }>;
       for (const { id } of recentIds) {
         ackStmt.run(id, c.var.deviceId, now);
       }
-      // Also clean up fully-acked tombstones and time-expired ones
       cleanTombstones(sql, c.var.config.tombstoneRetentionDays);
     }
 
-    // Update device last_sync_at
     if (c.var.deviceId) {
       sql.prepare("UPDATE devices SET last_sync_at = ? WHERE id = ?").run(now, c.var.deviceId);
     }
@@ -174,7 +152,7 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
     return c.json({ serverTime: now, changes, tombstones });
   });
 
-// ── Key conversion ──────────────────────────────────────────────────────
+// -- Key conversion ------------------------------------------------------
 
 /** Convert camelCase keys to snake_case for SQL column names. */
 function snakeKeys(row: Record<string, unknown>): Record<string, unknown> {
@@ -186,15 +164,8 @@ function snakeKeys(row: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-// ── Composite primary key handling ───────────────────────────────────────
+// -- Composite primary key handling --------------------------------------
 
-/**
- * Tables with composite primary keys. The server needs to know which
- * columns form the identity of each row to correctly build WHERE clauses
- * for DELETE, checkConflict, and applyUpdate.
- *
- * Mirrors COMPOSITE_PK_TABLES in both the desktop and mobile sync engines.
- */
 const COMPOSITE_PK: Record<string, string[]> = {
   annotations: ["id", "document_id"],
   ai_results: ["annotation_id", "document_id"],
@@ -202,10 +173,6 @@ const COMPOSITE_PK: Record<string, string[]> = {
   review_logs: ["id", "annotation_id", "document_id"],
 };
 
-/**
- * Build a WHERE clause + bound values for a specific table's primary key,
- * using the row data. For simple-PK tables the clause is "id = ?".
- */
 function pkWhere(
   table: string,
   row: Record<string, unknown>,
@@ -218,10 +185,6 @@ function pkWhere(
   return { clause: "id = ?", values: [row.id] };
 }
 
-/**
- * Parse a pipe-delimited row_id back into per-column values for a composite
- * primary key table. The client encodes composite keys as "val1|val2|val3".
- */
 function parseRowId(
   table: string,
   rowId: string,
@@ -236,132 +199,8 @@ function parseRowId(
   return { id: rowId };
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// -- Tombstone cleanup --------------------------------------------------
 
-/**
- * Apply a client-tagged "created" row with an existence check.
- *
- * We cannot trust the client's classification. A row may be misclassified
- * as "created" due to epoch sync, COALESCE bugs, DB recreation, or
- * cross-device races. Blind INSERT OR REPLACE would silently overwrite
- * fresher server data.
- *
- * Strategy: if the row already exists, treat as an update with full
- * conflict detection — same path as applyUpdate/checkConflict. If it
- * genuinely doesn't exist, insert it.
- *
- * @returns a ConflictItem if the operation was rejected, or null if accepted.
- */
-function applyInsert(
-  sql: ReturnType<typeof getSqlite>,
-  table: string,
-  row: Record<string, unknown>,
-): Record<string, unknown> | null {
-  const snaked = snakeKeys(row);
-  const keys = Object.keys(snaked);
-  const placeholders = keys.map(() => "?").join(", ");
-  const values = keys.map((k) => snaked[k]);
-
-  // Build a PK-aware WHERE clause for the existence check
-  const pk = COMPOSITE_PK[table] ?? ["id"];
-  const where = pk.map((c) => `${c} = ?`).join(" AND ");
-  const pkValues = pk.map((c) => snaked[c]);
-  const existing = sql!.prepare(
-    `SELECT * FROM ${table} WHERE ${where}`,
-  ).get(...pkValues) as Record<string, unknown> | undefined;
-
-  if (existing) {
-    // Row already exists — client misclassified an update as "created".
-    console.log(
-      `[Sync:Server] applyInsert — ${table} ALREADY EXISTS, treating as update.`,
-      "Existing created_at:", existing.created_at,
-      "incoming created_at:", snaked.created_at,
-    );
-
-    // Apply with conflict detection: reject if server has newer data
-    if (
-      existing.updated_at &&
-      snaked.updated_at &&
-      new Date(existing.updated_at as string) > new Date(snaked.updated_at as string)
-    ) {
-      console.log(
-        `[Sync:Server] applyInsert — ${table} CONFLICT: server updated_at`,
-        existing.updated_at, "> client updated_at", snaked.updated_at,
-      );
-      return {
-        serverUpdatedAt: existing.updated_at,
-        clientUpdatedAt: snaked.updated_at,
-      };
-    }
-
-    // Safe to apply: update non-PK columns, preserve server's created_at
-    const dataCols = Object.entries(snaked).filter(([k]) => !pk.includes(k));
-    const setClause = dataCols.map(([k]) => `${k} = ?`).join(", ");
-    const setValues = dataCols.map(([, v]) => v);
-    sql!.prepare(
-      `UPDATE ${table} SET ${setClause} WHERE ${where}`,
-    ).run(...setValues, ...pkValues);
-
-    console.log(`[Sync:Server] applyInsert — ${table} updated (was misclassified as created)`);
-    return null; // accepted
-  }
-
-  // Genuinely new row — plain INSERT
-  sql!.prepare(
-    `INSERT INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`,
-  ).run(...values);
-
-  console.log(`[Sync:Server] applyInsert — ${table} inserted (new row)`);
-  return null; // accepted
-}
-
-function applyUpdate(
-  sql: ReturnType<typeof getSqlite>,
-  table: string,
-  row: Record<string, unknown>,
-) {
-  const snaked = snakeKeys(row);
-  const pkCols = COMPOSITE_PK[table] ?? ["id"];
-  // Separate PK columns from data columns — don't SET PKs in UPDATE
-  const fields = Object.fromEntries(
-    Object.entries(snaked).filter(([k]) => !pkCols.includes(k)),
-  );
-  const sets = Object.keys(fields).map((k) => `${k} = ?`).join(", ");
-  const setValues = Object.values(fields);
-  const where = pkWhere(table, snaked);
-  sql!.prepare(
-    `UPDATE ${table} SET ${sets} WHERE ${where.clause}`,
-  ).run(...setValues, ...where.values);
-}
-
-function checkConflict(
-  sql: ReturnType<typeof getSqlite>,
-  table: string,
-  row: Record<string, unknown>,
-): Record<string, unknown> | null {
-  const snaked = snakeKeys(row);
-  const where = pkWhere(table, snaked);
-  const existing = sql!.prepare(
-    `SELECT * FROM ${table} WHERE ${where.clause}`,
-  ).get(...where.values) as Record<string, unknown> | undefined;
-  if (!existing) return null; // was deleted on server
-  if (
-    existing.updated_at &&
-    snaked.updated_at &&
-    new Date(existing.updated_at as string) > new Date(snaked.updated_at as string)
-  ) {
-    return { serverUpdatedAt: existing.updated_at, clientUpdatedAt: snaked.updated_at };
-  }
-  return null;
-}
-
-// ── Tombstone cleanup ───────────────────────────────────────────────────
-
-/**
- * Remove tombstones that are no longer needed:
- * 1. All registered devices have acknowledged (safe to delete)
- * 2. OR the tombstone exceeds the retention period (safety net)
- */
 export function cleanTombstones(
   sql: ReturnType<typeof getSqlite>,
   retentionDays: number,

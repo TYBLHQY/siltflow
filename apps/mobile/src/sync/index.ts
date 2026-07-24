@@ -15,7 +15,7 @@ import type { SyncState, SyncConfig } from "@siltflow/shared-lib";
 import { SyncClient } from "./sync-client";
 import { SyncWsClient } from "./ws-client";
 import { SyncEngine } from "./sync-engine";
-import { initChangelogTable } from "./changelog";
+import { initOpLogTable } from "./op-log";
 
 let engine: SyncEngine | null = null;
 let wsClient: SyncWsClient | null = null;
@@ -90,8 +90,8 @@ export function initSyncEngine(
 
   if (!cfg.syncEnabled || !cfg.serverUrl || !cfg.deviceToken) return;
 
-  // Ensure changelog table exists
-  initChangelogTable();
+  // Ensure op_log table exists
+  initOpLogTable();
 
   const client = new SyncClient(cfg.serverUrl, cfg.serverToken, cfg.deviceToken);
 
@@ -126,10 +126,6 @@ export function initSyncEngine(
 
   engine.onError((err) => {
     console.error("[Sync] Engine error:", (err as Error).message);
-  });
-
-  engine.onConflicts((conflicts) => {
-    console.log(`[Sync] ${conflicts.length} conflict(s) detected`);
   });
 
   if (cfg.syncIntervalMinutes > 0) {

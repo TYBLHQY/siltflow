@@ -5,7 +5,7 @@
  * (desktop Electron, mobile Expo) so they agree on API contracts.
  */
 
-// ── Entity tables ──────────────────────────────────────────────────────
+// -- Entity tables -------------------------------------------------------
 
 export const ENTITY_TABLES = [
   "documents",
@@ -19,32 +19,24 @@ export const ENTITY_TABLES = [
 
 export type EntityTable = (typeof ENTITY_TABLES)[number];
 
-// ── Push ───────────────────────────────────────────────────────────────
+// -- Push ----------------------------------------------------------------
 
 export interface SyncPushBody {
   lastSyncAt: string;
   changes: Partial<Record<EntityTable, {
-    created?: Record<string, unknown>[];
-    updated?: Record<string, unknown>[];
-    deleted?: string[];
+    /** Full row objects (snake_case or camelCase — server converts). */
+    saves?: Record<string, unknown>[];
+    /** Row IDs to delete (pipe-delimited for composite PK tables). */
+    deletes?: string[];
   }>>;
 }
 
 export interface SyncPushResponse {
+  /** Number of operations accepted (saves + deletes). */
   accepted: number;
-  conflicts: ConflictItem[];
 }
 
-export interface ConflictItem {
-  table: string;
-  id: string;
-  conflict: {
-    serverUpdatedAt: string;
-    clientUpdatedAt: string;
-  };
-}
-
-// ── Pull ───────────────────────────────────────────────────────────────
+// -- Pull ----------------------------------------------------------------
 
 export interface SyncPullBody {
   lastSyncAt: string;
@@ -62,17 +54,16 @@ export interface TombstoneItem {
   deleted_at: string;
 }
 
-// ── WebSocket notifications ────────────────────────────────────────────
+// -- WebSocket notifications --------------------------------------------
 
 export interface SyncAvailablePayload {
   type: "sync:available";
   changedBy: string;
   timestamp: string;
   accepted: number;
-  conflictCount: number;
 }
 
-// ── Auth ────────────────────────────────────────────────────────────────
+// -- Auth -----------------------------------------------------------------
 
 export interface AuthRegisterBody {
   deviceName: string;
@@ -96,7 +87,7 @@ export interface AuthVerifyResponse {
   isAdmin: boolean;
 }
 
-// ── Sync state (client-side) ────────────────────────────────────────────
+// -- Sync state (client-side) -------------------------------------------
 
 export interface SyncState {
   lastPushAt: string | null;

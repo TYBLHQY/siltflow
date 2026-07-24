@@ -1,7 +1,7 @@
 import { ipcMain } from "electron"
 import { getDb, getSqlite, schema } from "../database"
 import { eq } from "drizzle-orm"
-import { recordDeletion } from "../sync/changelog"
+import { recordSave, recordDelete } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 export function registerSummaryHandlers() {
@@ -29,14 +29,16 @@ export function registerSummaryHandlers() {
       `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at)
        VALUES (?, ?, ?, ?, COALESCE((SELECT created_at FROM summaries WHERE document_id = ?), ?), ?)`
     ).run(
-      summary.documentId,
-      summary.text,
-      summary.isAiGenerated ? 1 : 0,
-      summary.sourceLang ?? null,
-      summary.documentId,
-      now,
-      now,
+      ...
+-      now,
     )
+    // Record save in op_log
+    const savedRow = sql.prepare(
+      "SELECT * FROM summaries WHERE document_id = ?"
+    ).get(summary.documentId) as Record<string, unknown>
+    if (savedRow) {
+      recordSave(sql, "summaries", summary.documentId, savedRow)
+    }
     requestDeferredPush()
     return { documentId: summary.documentId }
   })
@@ -45,7 +47,7 @@ export function registerSummaryHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM summaries WHERE document_id = ?").run(documentId)
-    recordDeletion(sql, "summaries", documentId)
+    recordDelete(sql, "summaries", documentId)
     requestDeferredPush()
   })
 }

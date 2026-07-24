@@ -6,7 +6,7 @@
 
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { ReviewLogEntryIPC, ReviewLogSaveResult } from "./types";
-import { recordCompositeDeletion } from "@/sync/changelog";
+import { recordCompositeSave, recordCompositeDelete } from "@/sync/op-log";
 import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
@@ -105,7 +105,7 @@ export function deleteReviewLogsByAnnotation(
     [p(annotationId), p(documentId)],
   );
   for (const row of rows) {
-    recordCompositeDeletion("review_logs", { id: row.id, annotation_id: annotationId, document_id: documentId });
+    recordCompositeDelete("review_logs", { id: row.id, annotation_id: annotationId, document_id: documentId });
   }
 
   db.runSync(

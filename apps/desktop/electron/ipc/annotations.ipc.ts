@@ -1,7 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { invalidateReviewMetricsCache } from "./review.ipc"
-import { recordDeletion } from "../sync/changelog"
+import { recordSave, recordDelete } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 function tryParseJson(data: string, fallback: unknown): unknown {
@@ -118,6 +118,13 @@ export function registerAnnotationHandlers() {
       now,
       now,
     )
+    // Record in op_log so the sync engine knows about this write
+    const savedRow = sql.prepare(
+      "SELECT * FROM annotations WHERE id = ? AND document_id = ?"
+    ).get(annotation.id, annotation.document_id) as Record<string, unknown>
+    if (savedRow) {
+      recordSave(sql, "annotations", `${annotation.id}|${annotation.document_id}`, savedRow)
+    }
     invalidateReviewMetricsCache()
     requestDeferredPush()
     return { id: annotation.id }
@@ -126,7 +133,7 @@ export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:delete", (_event, id: string, documentId: string) => {
     const sql = getSqlite()
     if (!sql) return
-    // Collect review_log IDs BEFORE deleting them (needed for changelog
+    // Collect review_log IDs BEFORE deleting them (needed for op_log
     // recording with composite PK: id|annotation_id|document_id).
     const logRows = sql.prepare(
       "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?"
@@ -138,12 +145,12 @@ export function registerAnnotationHandlers() {
       sql.prepare("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(id, documentId)
       sql.prepare("DELETE FROM annotations WHERE id = ? AND document_id = ?").run(id, documentId)
-      // Composite PK: use pipe-separated key for changelog
-      recordDeletion(sql, "annotations", `${id}|${documentId}`)
-      recordDeletion(sql, "ai_results", `${id}|${documentId}`)
-      recordDeletion(sql, "fsrs_cards", `${id}|${documentId}`)
+      // Record deletions in op_log
+      recordDelete(sql, "annotations", `${id}|${documentId}`)
+      recordDelete(sql, "ai_results", `${id}|${documentId}`)
+      recordDelete(sql, "fsrs_cards", `${id}|${documentId}`)
       for (const logRow of logRows) {
-        recordDeletion(sql, "review_logs", `${logRow.id}|${id}|${documentId}`)
+        recordDelete(sql, "review_logs", `${logRow.id}|${id}|${documentId}`)
       }
       sql.exec("COMMIT")
       invalidateReviewMetricsCache()

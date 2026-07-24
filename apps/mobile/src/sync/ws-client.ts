@@ -13,7 +13,6 @@ export interface SyncAvailableEvent {
   changedBy: string;
   timestamp: string;
   accepted: number;
-  conflictCount: number;
 }
 
 export type WsCallback = (event: SyncAvailableEvent) => void;

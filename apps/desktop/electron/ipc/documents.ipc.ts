@@ -3,7 +3,7 @@ import { getDb, schema } from "../database"
 import { eq } from "drizzle-orm"
 import fs from "node:fs"
 import path from "node:path"
-import { recordDeletion, recordDeletions } from "../sync/changelog"
+import { recordSave, recordDelete, recordDeletes } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 import { getSqlite } from "../database"
 
@@ -39,6 +39,12 @@ export function registerDocumentHandlers() {
       .values({ id: doc.id, title: doc.title, createdAt: now, updatedAt: now })
       .returning()
       .get();
+    // Record save in op_log
+    const sql = getSqlite()
+    if (sql) {
+      const saved = sql.prepare("SELECT * FROM documents WHERE id = ?").get(doc.id) as Record<string, unknown>
+      if (saved) recordSave(sql, "documents", doc.id, saved)
+    }
     requestDeferredPush();
     return result;
   })
@@ -54,7 +60,7 @@ export function registerDocumentHandlers() {
       }
     }
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
-    if (sql) recordDeletion(sql, "documents", id)
+    if (sql) recordDelete(sql, "documents", id)
     requestDeferredPush();
   })
 
@@ -71,7 +77,7 @@ export function registerDocumentHandlers() {
       }
       db.delete(schema.documents).where(eq(schema.documents.id, id)).run()
     }
-    if (sql) recordDeletions(sql, "documents", ids)
+    if (sql) recordDeletes(sql, "documents", ids)
     requestDeferredPush();
   })
 

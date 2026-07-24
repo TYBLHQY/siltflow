@@ -7,7 +7,7 @@
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import { AI_DATA_VERSION } from "@siltflow/shared-db/types";
 import type { AIResultSaveResult } from "./types";
-import { recordCompositeDeletion } from "@/sync/changelog";
+import { recordCompositeSave, recordCompositeDelete } from "@/sync/op-log";
 import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
@@ -87,6 +87,6 @@ export function deleteAIResult(
     "DELETE FROM ai_results WHERE annotation_id = ? AND document_id = ?",
     [p(annotationId), p(documentId)],
   );
-  recordCompositeDeletion("ai_results", { annotation_id: annotationId, document_id: documentId });
+  recordCompositeDelete("ai_results", { annotation_id: annotationId, document_id: documentId });
   requestDeferredPush();
 }

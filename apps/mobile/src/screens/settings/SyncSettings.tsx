@@ -22,7 +22,7 @@ import { createExpoSqliteExecutor } from "@/lib/expo-sqlite-adapter";
 /** All tables managed by the mobile database. */
 const ALL_TABLES = [
   ...ENTITY_TABLES,
-  "sync_changelog",
+  "sync_op_log",
   "sync_conflicts",
   "app_settings",
 ];

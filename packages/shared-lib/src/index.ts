@@ -112,7 +112,6 @@ export {
   type EntityTable,
   type SyncPushBody,
   type SyncPushResponse,
-  type ConflictItem,
   type SyncPullBody,
   type SyncPullResponse,
   type TombstoneItem,

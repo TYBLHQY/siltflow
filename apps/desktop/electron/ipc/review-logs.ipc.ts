@@ -1,7 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import crypto from "node:crypto"
-import { recordDeletion } from "../sync/changelog"
+import { recordDelete, recordSave } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 export function registerReviewLogHandlers() {
@@ -51,6 +51,13 @@ export function registerReviewLogHandlers() {
     sql.prepare(
       `INSERT INTO review_logs (id, annotation_id, document_id, data, created_at) VALUES (?, ?, ?, ?, ?)`
     ).run(id, record.annotationId, record.documentId, JSON.stringify(record.data), now)
+    // Record save in op_log
+    const savedRow = sql.prepare(
+      "SELECT * FROM review_logs WHERE id = ?"
+    ).get(id) as Record<string, unknown>
+    if (savedRow) {
+      recordSave(sql, "review_logs", `${id}|${record.annotationId}|${record.documentId}`, savedRow)
+    }
     requestDeferredPush()
     return { id, createdAt: now }
   })
@@ -63,7 +70,7 @@ export function registerReviewLogHandlers() {
       .prepare("SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?")
       .all(annotationId, documentId) as Array<{ id: string }>
     for (const log of logs) {
-      recordDeletion(sql, "review_logs", `${log.id}|${annotationId}|${documentId}`)
+      recordDelete(sql, "review_logs", `${log.id}|${annotationId}|${documentId}`)
     }
     sql.prepare("DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
     requestDeferredPush()

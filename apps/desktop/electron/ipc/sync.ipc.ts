@@ -6,8 +6,6 @@
  *   sync:syncNow         — triggers a full push-then-pull cycle
  *   sync:configure       — saves sync config to vault config + starts engine
  *   sync:register        — registers a device with the server (uses server token)
- *   sync:getConflicts    — returns unresolved conflicts
- *   sync:resolveConflict — resolves a conflict (local|remote)
  *   sync:disconnect      — tears down sync engine and clears persisted config
  *
  * The sync engine is initialized lazily — the main process calls
@@ -120,8 +118,8 @@ export function initSyncEngine(
     console.error("[Sync] Engine error:", (err as Error).message);
   });
 
-  engine.on("conflicts", (conflicts) => {
-    console.log(`[Sync] ${conflicts.length} conflict(s) detected`);
+  engine.on("error", (err) => {
+    console.error("[Sync] Engine error:", (err as Error).message);
   });
 
   if (cfg.syncIntervalMinutes > 0) {
@@ -220,19 +218,6 @@ export function registerSyncHandlers(): void {
     async (_event, serverUrl: string, token: string) => {
       const client = new SyncClient(serverUrl, "", token);
       return client.authVerify();
-    },
-  );
-
-  ipcMain.handle("sync:getConflicts", () => {
-    if (!engine) return [];
-    return engine.getConflicts();
-  });
-
-  ipcMain.handle(
-    "sync:resolveConflict",
-    async (_event, id: number, resolution: "local" | "remote") => {
-      if (!engine) throw new Error("Sync is not configured");
-      engine.resolveConflict(id, resolution);
     },
   );
 

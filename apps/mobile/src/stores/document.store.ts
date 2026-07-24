@@ -102,7 +102,7 @@ export function persistDocument(doc: DocumentItem) {
 export function persistDocumentDelete(id: string) {
   try {
     const db = getDrizzle();
-    deleteDocument(db, id);  // deleteDocument already calls recordDeletion internally
+    deleteDocument(db, id);  // deleteDocument already calls recordDelete internally
   } catch (err) {
     console.error("[document.store] persistDocumentDelete failed:", err);
   }

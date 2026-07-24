@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "@siltflow/shared-db/schema";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite";
 import type { DocumentIPCItem, DocumentSaveRequest } from "./types";
-import { recordDeletion } from "@/sync/changelog";
+import { recordSave, recordDelete } from "@/sync/op-log";
 import { requestDeferredPush } from "@/sync";
 
 type DB = ExpoSQLiteDatabase<typeof schema>;
@@ -49,7 +49,7 @@ export function saveDocument(
 /** Delete a document by ID. Cascade handles annotations, summaries, etc. */
 export function deleteDocument(db: DB, id: string): void {
   db.delete(schema.documents).where(eq(schema.documents.id, id)).run();
-  recordDeletion("documents", id);
+  recordDelete("documents", id);
   requestDeferredPush();
 }
 
@@ -59,7 +59,7 @@ export function deleteDocuments(db: DB, ids: string[]): void {
     db.delete(schema.documents).where(eq(schema.documents.id, id)).run();
   }
   for (const id of ids) {
-    recordDeletion("documents", id);
+    recordDelete("documents", id);
   }
   requestDeferredPush();
 }

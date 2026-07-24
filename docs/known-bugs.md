@@ -3,139 +3,68 @@
 This document records bugs we've already found and fixed, and remaining issues.
 When debugging, check these patterns first.
 
-## Fixed: Epoch sync on restart overwrites server data 🔴
+## Timeline of the sync data corruption saga
 
-**Severity**: Critical (data loss)  
-**Found**: 2026-07-24  
-**Affected**: Desktop, Mobile  
-**Commits**: `95d0da6` (desktop), `b45d1c8` (mobile)
+The root cause was **timestamp-based change detection + server blind trust on
+"created" classification**. This created a chain of failures:
 
-### Root cause
-`lastPushAt` / `lastPullAt` were never persisted across restarts. On restart
-both were `null` → `since: "1970-01-01T00:00:00Z"` → ALL rows classified as
-"created" → server `INSERT OR REPLACE` without conflict detection → any fresher
-data from other devices silently overwritten.
+1. **Epoch sync** (timestamps not persisted → all rows classified as "created")
+2. **COALESCE bugs** (created_at reset on every save → updates misclassified as "created")
+3. **Server's `INSERT OR REPLACE` on "created" rows** — no conflict detection
 
-### Fix
-Desktop: persist timestamps to `{vaultPath}/.siltflow/config.json` on every
-sync completion via `onStateChange` callback.
-Mobile: persist to `app_settings` table in SQLite.
+The fix (2026-07-24): **replaced the entire push detection mechanism with op_log**.
+See [[sync-protocol]] for the new design.
 
-### Prevention
-When adding a new sync client platform, ALWAYS implement timestamp persistence
-before the first sync runs. See [[sync-protocol#timestamp-persistence]].
+### Why the old timestamp-based approach was fundamentally wrong
 
----
+```
+pushIncremental():
+  since = lastPushAt
+  "created": SELECT * WHERE created_at > since
+  "updated": SELECT * WHERE updated_at > since AND created_at <= since
 
-## Fixed: `annotations:save` resets `created_at` 🔴
-
-**Severity**: Critical (data corruption)  
-**Found**: 2026-07-24  
-**Affected**: Desktop, Mobile  
-**Commits**: `2dbba98` (desktop), `97675d4` (mobile)
-
-### Root cause
-`INSERT OR REPLACE INTO annotations (...) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-set `created_at = now` every time. No COALESCE.
-
-### Effect
-Every annotation save → `created_at` reset → pushIncremental classifies as
-"created" (since `created_at > lastPushAt`) → server `INSERT OR REPLACE`
-without conflict detection → other concurrent annotation changes lost.
-
-### Fix
-```sql
-INSERT OR REPLACE INTO annotations (..., created_at, updated_at)
-VALUES (...,
-  COALESCE((SELECT created_at FROM annotations WHERE id = ? AND document_id = ?), ?),
-  ?)
+Server:
+  "created" → INSERT OR REPLACE (no conflict check!)
+  "updated" → checkConflict → UPDATE
 ```
 
-### Prevention
-Every `INSERT OR REPLACE` on a table with `created_at` MUST use COALESCE.
-Audit checklist:
-- [ ] `annotations` — uses `INSERT OR REPLACE` → needs COALESCE
-- [ ] `ai_results` — has COALESCE ✅
-- [ ] `fsrs_cards` — has COALESCE ✅
-- [ ] `summaries` — has COALESCE ✅
-- [ ] `review_logs` — uses plain `INSERT INTO` (append-only) ✅
-- [ ] `documents` — uses Drizzle `insert()` (separate from `update()`) ✅
-- [ ] `folders` — uses Drizzle `insert()` (separate from `update()`) ✅
+Any clock skew, COALESCE bug, or timestamp persistence failure caused the client
+to misclassify updates as "created", and the server blindly overwrote.
 
----
+### Why op_log fixes it
 
-## Fixed: Concurrent pull race condition 🟡
+```
+Every write → record in sync_op_log (action='save'|'delete', row_data=full row JSON)
+pushOpLog():
+  entries = SELECT * FROM sync_op_log WHERE created_at > lastPushAt
+  → POST {saves: [...], deletes: [...]}
 
-**Severity**: Medium (duplicate work, not data loss)  
-**Found**: 2026-07-24  
-**Affected**: Desktop, Mobile  
-**Commits**: `1575402` (desktop), `9d1ad90` (mobile)
+Server:
+  All "saves" → INSERT OR REPLACE (unconditional, no conflict detection needed)
+  All "deletes" → DELETE + tombstone
+```
 
-### Root cause
-`_syncInProgress` guard prevented concurrent `sync()` calls, but `pull()` could
-be called independently via WebSocket "sync:available" handler. No guard on
-`pull()` itself.
+No classification. No conflict detection. Server is a mirror. Single-user system.
 
-### Fix
-Added dedicated `_pullInProgress` flag to `pull()`. Also `_pushInProgress` for
-`pushIncremental()`.
+## Fixed: Old bugs (pre-op_log era)
 
-### Prevention
-Any function that can be called from multiple code paths (sync cycle + event
-handler) needs its own guard flag.
+### Epoch sync on restart overwrites server data 🔴
+**Fixed**: Timestamp persistence to config/settings.
+Made irrelevant by op_log — lastPushAt is now just a fence, losing it only
+causes a re-push of the same data (idempotent INSERT OR REPLACE).
 
----
+### `annotations:save` resets `created_at` 🔴
+**Fixed**: COALESCE in SQL.
+Made irrelevant by op_log — the log records the row _after_ write, so the
+correct created_at is captured automatically.
 
-## Fixed: Annotations delete doesn't record review_log deletions 🟡
+### Annotations delete doesn't record review_log deletions 🟡
+**Fixed**: query IDs BEFORE delete, record each.
+Still applies — op_log uses the same pattern.
 
-**Severity**: Medium (orphaned data on other devices)  
-**Found**: 2026-07-24  
-**Affected**: Desktop, Mobile  
-**Commit**: `97675d4`
-
-### Root cause
-Desktop: `annotations:delete` never called `recordDeletion` for `review_logs`.
-Mobile: Queried review_log IDs AFTER the DELETE (empty result).
-
-### Fix
-Desktop: added `recordDeletion` for each review_log.
-Mobile: moved ID collection BEFORE the transaction.
-
-### Prevention
-Pattern: collect IDs → delete → record deletions. Always verify the order.
-
----
-
-## Fixed: Server blind `INSERT OR REPLACE` on "created" rows 🔴
-
-**Severity**: Critical (data loss — defense-in-depth)  
-**Found**: 2026-07-24  
-**Affected**: Server  
-**Commit**: `706831b`
-
-### Root cause
-Server's `applyInsert` trusted the client's "created" classification and
-unconditionally ran `INSERT OR REPLACE` — no conflict detection. When a
-client misclassified an existing row as "created" (epoch sync, COALESCE bug,
-DB corruption, cross-device races), the server silently overwrote fresher
-data from other devices.
-
-### Effect
-Any row pushed as "created" (regardless of whether it actually existed on
-server) was blind-overwritten. This was the **defense-of-last-resort failure**
-— even with all client-side COALESCE fixes, a single DB corruption or
-re-registration could trigger data loss.
-
-### Fix
-`applyInsert` now checks if the row already exists:
-- **Exists**: runs full `checkConflict` (compare `updated_at`). If server
-  wins → reject as conflict. If client wins → gentle `UPDATE`.
-- **Not exists**: plain `INSERT` (genuinely new row).
-
-The caller loop treats `applyInsert` like `applyUpdate` — conflicts are
-added to the response, `accepted` only increments on success.
-
----
+### Server blind `INSERT OR REPLACE` on "created" rows 🔴
+**Fixed**: Server push handler rewritten to accept `{saves, deletes}` without
+distinction. No more checkConflict, applyUpdate, applyInsert.
 
 ## Remaining issues (not yet fixed)
 
@@ -149,30 +78,21 @@ File: `packages/shared-lib/src/doc-review.ts`.
 
 Stats uses `kind !== "highlight"` but review-metrics uses
 `kind IN ('annotation', 'manual')`. Should be a single shared filter.
-Files: review-related components.
 
 ### Desktop pull write-back "sync echo" 🟡
 
 Desktop pull applies remote rows via `INSERT OR REPLACE`, which bumps
-`updated_at` on the local DB. If those updated rows fall within the next
-pushIncremental window, they get pushed back to the server as "updated"
-changes — even though nothing actually changed locally.
-File: `apps/desktop/electron/sync/sync-engine.ts` → `upsertRemoteRow`.
-
-### Mobile `pushFull` called on startup instead of `pushIncremental` 🟡
-
-Early mobile startup ran `pushFull()` → all rows sent as "created". Fixed by
-commit `aaf32cc` to use `pushIncremental` instead, but worth noting: any code
-path calling `pushFull()` during normal operation is a bug.
-
----
+`updated_at` on the local DB. With op_log, this will trigger a spurious save
+in the op_log table unless the pull handler suppresses it or the op_log
+deduplicates.
+**Mitigated**: pull writes do NOT go through CRUD handlers, so they won't
+generate op_log entries unless the upsertRemoteRow path is explicitly wired.
 
 ## Pre-deployment checklist
 
 When making changes that touch sync, CRUD, or timestamps, verify:
 
-1. **No new code path calls `pushFull()` during normal operation**
-2. **All `INSERT OR REPLACE` on entity tables use COALESCE for `created_at`**
-3. **All DELETE operations record deletions BEFORE the delete (for composite PK tables that need ID queries)**
-4. **Timestamps are persisted on every sync completion**
-5. **Both desktop and mobile are audited for the same patterns** (they mirror each other)
+1. **All writes (INSERT/UPDATE/DELETE) are recorded in sync_op_log**
+2. **Pull-side writes (`upsertRemoteRow`) do NOT generate op_log entries**
+3. **Timestamps are persisted on every sync completion** (still needed as fence)
+4. **Both desktop and mobile are audited for the same patterns** (they mirror each other)

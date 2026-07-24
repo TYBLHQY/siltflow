@@ -5,7 +5,7 @@ import crypto from "crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { getSqlite } from "../database"
-import { recordDeletions } from "../sync/changelog"
+import { recordDelete, recordDeletes } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 let vaultPath = ""
@@ -97,8 +97,8 @@ export function registerFolderHandlers() {
 
     // Record deletions for changelog
     if (sql) {
-      if (docIds.length > 0) recordDeletions(sql, "documents", docIds)
-      recordDeletions(sql, "folders", allIds)
+      if (docIds.length > 0) recordDeletes(sql, "documents", docIds)
+      recordDeletes(sql, "folders", allIds)
     }
     requestDeferredPush();
   })

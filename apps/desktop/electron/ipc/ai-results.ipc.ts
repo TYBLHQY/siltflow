@@ -1,7 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { AI_DATA_VERSION } from "../database"
-import { recordDeletion } from "../sync/changelog"
+import { recordSave, recordDelete } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 export function registerAiResultHandlers() {
@@ -40,6 +40,13 @@ export function registerAiResultHandlers() {
       now,
       now,
     )
+    // Record in op_log
+    const savedRow = sql.prepare(
+      "SELECT * FROM ai_results WHERE annotation_id = ? AND document_id = ?"
+    ).get(record.annotationId, record.documentId) as Record<string, unknown>
+    if (savedRow) {
+      recordSave(sql, "ai_results", `${record.annotationId}|${record.documentId}`, savedRow)
+    }
     requestDeferredPush()
     return { annotationId: record.annotationId, version: record.version ?? AI_DATA_VERSION }
   })
@@ -48,7 +55,7 @@ export function registerAiResultHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM ai_results WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
-    recordDeletion(sql, "ai_results", `${annotationId}|${documentId}`)
+    recordDelete(sql, "ai_results", `${annotationId}|${documentId}`)
     requestDeferredPush()
   })
 }

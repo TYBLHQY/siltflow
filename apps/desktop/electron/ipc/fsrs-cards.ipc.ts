@@ -1,7 +1,7 @@
 import { ipcMain } from "electron"
 import { getSqlite } from "../database"
 import { invalidateReviewMetricsCache } from "./review.ipc"
-import { recordDeletion } from "../sync/changelog"
+import { recordSave, recordDelete } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 export function registerFSRSCardHandlers() {
@@ -67,10 +67,17 @@ export function registerFSRSCardHandlers() {
     )
     // Verify what was actually stored
     const stored = sql.prepare(
-      "SELECT created_at, updated_at FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?"
+      "SELECT * FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?"
     ).get(record.annotationId, record.documentId) as { created_at: string; updated_at: string }
     console.log("[Sync:Desktop] fsrsCards:save — stored created_at:", stored.created_at,
       "updated_at:", stored.updated_at)
+    // Record in op_log
+    const savedRow = sql.prepare(
+      "SELECT * FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?"
+    ).get(record.annotationId, record.documentId) as Record<string, unknown>
+    if (savedRow) {
+      recordSave(sql, "fsrs_cards", `${record.annotationId}|${record.documentId}`, savedRow)
+    }
     invalidateReviewMetricsCache()
     requestDeferredPush()
     return { annotationId: record.annotationId }
@@ -80,7 +87,7 @@ export function registerFSRSCardHandlers() {
     const sql = getSqlite()
     if (!sql) return
     sql.prepare("DELETE FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?").run(annotationId, documentId)
-    recordDeletion(sql, "fsrs_cards", `${annotationId}|${documentId}`)
+    recordDelete(sql, "fsrs_cards", `${annotationId}|${documentId}`)
     invalidateReviewMetricsCache()
     requestDeferredPush()
   })

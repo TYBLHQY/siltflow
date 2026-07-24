@@ -11,7 +11,7 @@
 
 import type { SQLiteDatabase, SQLiteBindValue } from "expo-sqlite";
 import type { AnnotationEnriched, AnnotationSaveRequest } from "./types";
-import { recordCompositeDeletion } from "@/sync/changelog";
+import { recordCompositeSave, recordCompositeDelete } from "@/sync/op-log";
 import { requestDeferredPush } from "@/sync";
 
 type DB = SQLiteDatabase;
@@ -135,7 +135,7 @@ export function deleteAnnotation(
 ): void {
   const p = (v: unknown): SQLiteBindValue => v as SQLiteBindValue;
   // Collect review_log IDs BEFORE deleting them (they are needed for
-  // changelog recording with composite PK: id|annotation_id|document_id).
+  // op_log recording with composite PK: id|annotation_id|document_id).
   const logRows = db.getAllSync<{ id: string }>(
     "SELECT id FROM review_logs WHERE annotation_id = ? AND document_id = ?",
     [p(id), p(documentId)],
@@ -160,11 +160,11 @@ export function deleteAnnotation(
     );
     db.execSync("COMMIT");
     // Track deletions for sync (composite PK: id|document_id)
-    recordCompositeDeletion("annotations", { id, document_id: documentId });
-    recordCompositeDeletion("ai_results", { annotation_id: id, document_id: documentId });
-    recordCompositeDeletion("fsrs_cards", { annotation_id: id, document_id: documentId });
+    recordCompositeDelete("annotations", { id, document_id: documentId });
+    recordCompositeDelete("ai_results", { annotation_id: id, document_id: documentId });
+    recordCompositeDelete("fsrs_cards", { annotation_id: id, document_id: documentId });
     for (const logRow of logRows) {
-      recordCompositeDeletion("review_logs", { id: logRow.id, annotation_id: id, document_id: documentId });
+      recordCompositeDelete("review_logs", { id: logRow.id, annotation_id: id, document_id: documentId });
     }
     requestDeferredPush();
   } catch (err) {

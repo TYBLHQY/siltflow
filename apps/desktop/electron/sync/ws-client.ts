@@ -21,7 +21,6 @@ export interface SyncAvailableEvent {
   changedBy: string;
   timestamp: string;
   accepted: number;
-  conflictCount: number;
 }
 
 export class SyncWsClient extends EventEmitter {
