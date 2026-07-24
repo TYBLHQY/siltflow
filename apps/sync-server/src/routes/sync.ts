@@ -68,11 +68,18 @@ export const syncRoutes = new Hono<{ Variables: Variables }>()
         }
       }
 
-      // Process creates (INSERT OR REPLACE)
+      // Process creates — with existence check (was: blind INSERT OR REPLACE).
+      // A client may misclassify an existing row as "created" (epoch sync,
+      // COALESCE bug, cross-device race). applyInsert now checks whether the
+      // row already exists and falls through to conflict detection when it does.
       if (change.created) {
         for (const row of change.created) {
-          applyInsert(sql, table, row as Record<string, unknown>);
-          accepted++;
+          const conflict = applyInsert(sql, table, row as Record<string, unknown>);
+          if (conflict) {
+            conflicts.push({ table, id: (row as Record<string, unknown>).id, conflict });
+          } else {
+            accepted++;
+          }
         }
       }
 
@@ -231,44 +238,81 @@ function parseRowId(
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Apply a client-tagged "created" row with an existence check.
+ *
+ * We cannot trust the client's classification. A row may be misclassified
+ * as "created" due to epoch sync, COALESCE bugs, DB recreation, or
+ * cross-device races. Blind INSERT OR REPLACE would silently overwrite
+ * fresher server data.
+ *
+ * Strategy: if the row already exists, treat as an update with full
+ * conflict detection — same path as applyUpdate/checkConflict. If it
+ * genuinely doesn't exist, insert it.
+ *
+ * @returns a ConflictItem if the operation was rejected, or null if accepted.
+ */
 function applyInsert(
   sql: ReturnType<typeof getSqlite>,
   table: string,
   row: Record<string, unknown>,
-) {
+): Record<string, unknown> | null {
   const snaked = snakeKeys(row);
   const keys = Object.keys(snaked);
   const placeholders = keys.map(() => "?").join(", ");
   const values = keys.map((k) => snaked[k]);
 
-  // Check existing row BEFORE overwrite (INSERT OR REPLACE silently replaces)
-  if (table === "fsrs_cards" || table === "review_logs") {
-    const pk = COMPOSITE_PK[table] ?? ["id"];
-    const where = pk.map((c) => `${c} = ?`).join(" AND ");
-    const pkValues = pk.map((c) => snaked[c]);
-    const existing = sql!.prepare(`SELECT * FROM ${table} WHERE ${where}`).get(...pkValues) as Record<string, unknown> | undefined;
-    if (existing) {
-      console.log(`[Sync:Server] applyInsert — ${table} ALREADY EXISTS, will be overwritten. Existing:`,
-        JSON.stringify(existing).slice(0, 200));
-      console.log(`[Sync:Server] applyInsert — ${table} incoming row:`,
-        JSON.stringify(snaked).slice(0, 200));
+  // Build a PK-aware WHERE clause for the existence check
+  const pk = COMPOSITE_PK[table] ?? ["id"];
+  const where = pk.map((c) => `${c} = ?`).join(" AND ");
+  const pkValues = pk.map((c) => snaked[c]);
+  const existing = sql!.prepare(
+    `SELECT * FROM ${table} WHERE ${where}`,
+  ).get(...pkValues) as Record<string, unknown> | undefined;
+
+  if (existing) {
+    // Row already exists — client misclassified an update as "created".
+    console.log(
+      `[Sync:Server] applyInsert — ${table} ALREADY EXISTS, treating as update.`,
+      "Existing created_at:", existing.created_at,
+      "incoming created_at:", snaked.created_at,
+    );
+
+    // Apply with conflict detection: reject if server has newer data
+    if (
+      existing.updated_at &&
+      snaked.updated_at &&
+      new Date(existing.updated_at as string) > new Date(snaked.updated_at as string)
+    ) {
+      console.log(
+        `[Sync:Server] applyInsert — ${table} CONFLICT: server updated_at`,
+        existing.updated_at, "> client updated_at", snaked.updated_at,
+      );
+      return {
+        serverUpdatedAt: existing.updated_at,
+        clientUpdatedAt: snaked.updated_at,
+      };
     }
+
+    // Safe to apply: update non-PK columns, preserve server's created_at
+    const dataCols = Object.entries(snaked).filter(([k]) => !pk.includes(k));
+    const setClause = dataCols.map(([k]) => `${k} = ?`).join(", ");
+    const setValues = dataCols.map(([, v]) => v);
+    sql!.prepare(
+      `UPDATE ${table} SET ${setClause} WHERE ${where}`,
+    ).run(...setValues, ...pkValues);
+
+    console.log(`[Sync:Server] applyInsert — ${table} updated (was misclassified as created)`);
+    return null; // accepted
   }
 
+  // Genuinely new row — plain INSERT
   sql!.prepare(
-    `INSERT OR REPLACE INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`
+    `INSERT INTO ${table} (${keys.join(", ")}) VALUES (${placeholders})`,
   ).run(...values);
 
-  // Log what was stored for critical tables
-  if (table === "fsrs_cards" || table === "review_logs") {
-    const pk = COMPOSITE_PK[table] ?? ["id"];
-    const where = pk.map((c) => `${c} = ?`).join(" AND ");
-    const pkValues = pk.map((c) => snaked[c]);
-    const stored = sql!.prepare(`SELECT * FROM ${table} WHERE ${where}`).get(...pkValues) as Record<string, unknown> | undefined;
-    if (stored) {
-      console.log(`[Sync:Server] applyInsert — ${table} after INSERT:`, JSON.stringify(stored).slice(0, 200));
-    }
-  }
+  console.log(`[Sync:Server] applyInsert — ${table} inserted (new row)`);
+  return null; // accepted
 }
 
 function applyUpdate(
