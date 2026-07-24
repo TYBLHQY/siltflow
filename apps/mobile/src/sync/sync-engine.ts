@@ -92,6 +92,7 @@ export class SyncEngine {
   private _lastPullAt: string | null = null;
   private _syncInProgress = false;
   private _pushInProgress = false;
+  private _pullInProgress = false;
   private _lastError: string | null = null;
 
   // Callback registrations
@@ -308,13 +309,16 @@ export class SyncEngine {
 
   /** Pull remote changes and apply them locally. */
   async pull(): Promise<void> {
-    // Guard against concurrent pulls: if a sync is already in progress
-    // the pull step will run as part of that sync. Concurrent pulls
-    // cause INSERT OR REPLACE races on the same rows.
-    if (this._syncInProgress) {
-      console.log("[Sync:Engine] pull — skipped (sync already in progress)");
+    // Guard against concurrent pulls — a standalone pull (e.g. triggered
+    // by WebSocket "sync:available") should not race with a pull that is
+    // already part of an active sync() cycle. Use a dedicated flag so
+    // that sync()'s own internal pull() is never blocked.
+    if (this._pullInProgress) {
+      console.log("[Sync:Engine] pull — skipped (pull already in progress)");
       return;
     }
+    this._pullInProgress = true;
+    try {
     const sql = getSQLite();
     const since = this._lastPullAt ?? "1970-01-01T00:00:00Z";
     const body = { lastSyncAt: since };
@@ -359,6 +363,9 @@ export class SyncEngine {
       "serverTime:", res.serverTime);
     this._lastPullAt = res.serverTime;
     this._emitState();
+    } finally {
+      this._pullInProgress = false;
+    }
   }
 
   // ── Conflict storage ──────────────────────────────────────────────

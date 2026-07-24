@@ -44,6 +44,14 @@ export function SyncProvider({ children }: PropsWithChildren) {
           lastPullAt,
           onStateChange: (state) => {
             useSyncStore.getState().setSyncState(state);
+            // Persist timestamps on every state change so the next
+            // restart picks up the correct incremental window.
+            if (state.lastPushAt) {
+              setSetting(TIMESTAMP_KEYS.lastPushAt, state.lastPushAt);
+            }
+            if (state.lastPullAt) {
+              setSetting(TIMESTAMP_KEYS.lastPullAt, state.lastPullAt);
+            }
           },
         });
       }
