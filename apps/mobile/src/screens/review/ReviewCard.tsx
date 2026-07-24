@@ -251,12 +251,6 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
               {item.text || "(no text)"}
             </Text>
 
-            {/* State + granularity badges */}
-            <View className="flex-row items-center gap-2">
-              <Badge variant="secondary">{stateLabel}</Badge>
-              <Badge variant="outline">{granularity}</Badge>
-            </View>
-
             <Text className="text-sm text-ctp-overlay0 mt-4">
               Tap to reveal answer
             </Text>
