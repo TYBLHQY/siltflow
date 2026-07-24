@@ -269,7 +269,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
   // ── Answer side ─────────────────────────────────────────────────────
 
   return (
-    <View className="rounded-lg border border-ctp-surface0 bg-ctp-base p-4">
+    <View className="rounded-lg bg-ctp-base p-4">
       <View className="py-2 gap-2">
 
         {/* ── Header: granularity + kind/page + version ── */}
