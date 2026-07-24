@@ -12,7 +12,7 @@
  * even with hundreds of documents.
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { View, Text, Pressable, SafeAreaView, ScrollView } from "@/tw";
 import { Card, CardContent, Badge, Spinner, EmptyState } from "@/components/ui";
@@ -61,16 +61,6 @@ export function ReviewScreen() {
     loadMetrics();
   }, [loadMetrics]);
 
-  // Pre-compute summary counts (stable arrays, computed only when metrics change)
-  const totalCards = useMemo(
-    () => (metrics ? metrics.reduce((sum, m) => sum + m.totalCards, 0) : 0),
-    [metrics],
-  );
-  const totalDueNow = useMemo(
-    () => (metrics ? metrics.reduce((sum, m) => sum + m.dueNowCount, 0) : 0),
-    [metrics],
-  );
-
   // ── Render: Loading ──────────────────────────────────────────────
 
   if (loading) {
@@ -107,24 +97,7 @@ export function ReviewScreen() {
   // ── Render: Metrics list (FlatList) ───────────────────────────────
 
   const renderHeader = () => (
-    <View className="px-4 pt-4 gap-3">
-
-      {/* Summary row */}
-      <View className="flex-row gap-3 mb-2 px-1">
-        <View className="flex-1 bg-ctp-surface0 rounded-lg p-3 items-center">
-          <Text className="text-xs text-ctp-subtext0">Documents</Text>
-          <Text className="text-xl font-bold text-ctp-text">{metrics.length}</Text>
-        </View>
-        <View className="flex-1 bg-ctp-surface0 rounded-lg p-3 items-center">
-          <Text className="text-xs text-ctp-subtext0">Total Cards</Text>
-          <Text className="text-xl font-bold text-ctp-text">{totalCards}</Text>
-        </View>
-        <View className="flex-1 bg-ctp-surface0 rounded-lg p-3 items-center">
-          <Text className="text-xs text-ctp-subtext0">Due Now</Text>
-          <Text className="text-xl font-bold text-ctp-red">{totalDueNow}</Text>
-        </View>
-      </View>
-    </View>
+    <View className="px-4 pt-4" />
   );
 
   const renderItem = ({ item: doc }: { item: MetricsRow }) => (
