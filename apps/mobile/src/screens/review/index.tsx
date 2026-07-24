@@ -120,18 +120,9 @@ export function ReviewScreen() {
         <Card>
           <CardContent>
             {/* Doc title */}
-            <View className="flex-row items-center justify-between py-1">
-              <View className="flex-1 mr-3">
-                <Text className="text-base font-semibold text-ctp-text" numberOfLines={1}>
-                  {doc.documentTitle}
-                </Text>
-              </View>
-
-              {/* Quick status — Caught up badge when nothing to do */}
-              {doc.dueNowCount === 0 && doc.newCardsCount === 0 && (
-                <Badge variant="success">Caught up</Badge>
-              )}
-            </View>
+            <Text className="text-base font-semibold text-ctp-text" numberOfLines={1}>
+              {doc.documentTitle}
+            </Text>
 
             {/* Four badges row (mirrors desktop review-tab.tsx) */}
             {doc.totalCards > 0 && (
