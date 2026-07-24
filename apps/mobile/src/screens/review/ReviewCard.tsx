@@ -243,9 +243,9 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
 
   if (!answerRevealed) {
     return (
-      <Pressable onPress={onReveal}>
-        <View className="rounded-lg border border-ctp-surface0 bg-ctp-base p-6">
-          <View className="items-center justify-center py-12 gap-4">
+      <Pressable onPress={onReveal} className="flex-1">
+        <View className="rounded-lg border border-ctp-surface0 bg-ctp-base p-6 flex-1">
+          <View className="items-center justify-center flex-1 gap-4">
             {/* Source text — large, centered, wraps */}
             <Text className="text-3xl text-ctp-text text-center leading-relaxed flex-shrink">
               {item.text || "(no text)"}
