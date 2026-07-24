@@ -1,61 +1,96 @@
 /**
  * Custom bottom tab bar — theme-aware via CSS variables.
  *
- * MaterialCommunityIcons need raw hex colors (they don't understand CSS
- * vars), so we track the system appearance and pick from the Catppuccin
- * light/dark color maps. View and Text use Tailwind classes — their colors
- * auto-switch because react-native-css's useCssElement resolves var() refs
- * against the current VariableContext.
+ * Designed to be passed as the `tabBar` prop to expo-router's Tabs
+ * component (which is react-navigation's bottom-tabs navigator).
+ *
+ * Receives `BottomTabBarProps` from react-navigation so tab presses
+ * go through the navigator's state machine rather than raw router.replace().
  */
 
 import { View, Text, Pressable } from "@/tw";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { usePathname, useRouter } from "expo-router";
 import { Appearance } from "react-native";
 import { useState, useEffect } from "react";
-import { darkColors, lightColors } from "@/lib/theme";
+
+// -- Minimal types (react-navigation's BottomTabBarProps subset) ----------
+
+interface TabBarNavigationState {
+  index: number;
+  routes: Array<{ key: string; name: string }>;
+}
+
+interface TabBarNavigation {
+  emit: (event: { type: string; target: string; canPreventDefault?: boolean }) => { defaultPrevented?: boolean };
+  navigate: (name: string) => void;
+}
+
+interface TabBarProps {
+  state: TabBarNavigationState;
+  navigation: TabBarNavigation;
+}
 
 // -- Tab definition ------------------------------------------------------
 
-interface TabItem {
-  label: string;
+interface TabDef {
   route: string;
-  icon: string;          // unfocused
-  iconFocused: string;   // focused
+  label: string;
+  icon: string;
+  iconFocused: string;
 }
 
-const TABS: TabItem[] = [
-  { label: "Review", route: "/review", icon: "cards-outline", iconFocused: "cards" },
-  { label: "Stats", route: "/stats", icon: "chart-bar", iconFocused: "chart-bar" },
-  { label: "Settings", route: "/settings", icon: "cog-outline", iconFocused: "cog" },
+const TABS: TabDef[] = [
+  { route: "review",  label: "Review",   icon: "cards-outline", iconFocused: "cards" },
+  { route: "stats",   label: "Stats",    icon: "chart-bar",     iconFocused: "chart-bar" },
+  { route: "settings",label: "Settings", icon: "cog-outline",   iconFocused: "cog" },
 ];
 
 // -- Component ------------------------------------------------------------
 
-export function TabBar() {
+export function TabBar({ state, navigation }: TabBarProps) {
   return (
     <View className="flex-row border-t border-ctp-surface0 bg-ctp-crust pb-[20px] pt-2">
-      {TABS.map((tab) => (
-        <TabBarItem key={tab.route} tab={tab} />
-      ))}
+      {TABS.map((tab, idx) => {
+        const route = state.routes[idx];
+        const focused = state.index === idx;
+        return (
+          <TabBarItem
+            key={tab.route}
+            tab={tab}
+            focused={focused}
+            onPress={() => {
+              const event = navigation.emit({
+                type: "tabPress",
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!focused && !event.defaultPrevented) {
+                navigation.navigate(tab.route);
+              }
+            }}
+          />
+        );
+      })}
     </View>
   );
 }
 
-function TabBarItem({ tab }: { tab: TabItem }) {
-  const pathname = usePathname();
-  const router = useRouter();
-
-  // Active if the pathname equals the route or starts with route + "/"
-  const active = pathname === tab.route || pathname.startsWith(tab.route + "/");
-
+function TabBarItem({
+  tab,
+  focused,
+  onPress,
+}: {
+  tab: TabDef;
+  focused: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       className="flex-1 items-center justify-center gap-0.5 py-1"
-      onPress={() => router.replace(tab.route as any)}
+      onPress={onPress}
     >
-      <TabIcon name={active ? tab.iconFocused : tab.icon} active={active} />
-      <TabLabel text={tab.label} active={active} />
+      <TabIcon name={focused ? tab.iconFocused : tab.icon} active={focused} />
+      <TabLabel text={tab.label} active={focused} />
     </Pressable>
   );
 }
@@ -87,11 +122,6 @@ function TabLabel({ text, active }: { text: string; active: boolean }) {
 
 // -- Theme color helper ---------------------------------------------------
 
-/**
- * Returns the current Catppuccin color hex for a given token.
- * Listens to system appearance changes so the icon re-renders
- * when the user toggles light/dark mode.
- */
 function useThemeColor(key: string): string {
   const [scheme, setScheme] = useState(
     () => Appearance.getColorScheme() ?? "light",
@@ -104,6 +134,7 @@ function useThemeColor(key: string): string {
     return () => sub.remove();
   }, []);
 
+  const { darkColors, lightColors } = require("@/lib/theme");
   const colors = scheme === "dark" ? darkColors : lightColors;
   return colors[`--ctp-${key}`] ?? colors["--ctp-text"] ?? "#000";
 }
