@@ -64,7 +64,17 @@ export function requestDeferredPush(): void {
  * Initialize the sync subsystem. Call this after the database is ready
  * and config has been loaded from the vault.
  */
-export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncState) => void): void {
+export function initSyncEngine(
+  cfg: SyncConfig,
+  options?: {
+    onStateChange?: (state: SyncState) => void;
+    /** Pre-set timestamps from persisted storage. Must be set BEFORE the
+     *  engine runs its first sync so it uses the correct incremental
+     *  window instead of fetching all data since epoch. */
+    lastPushAt?: string | null;
+    lastPullAt?: string | null;
+  },
+): void {
   config = { ...cfg };
   teardownSyncEngine();
 
@@ -97,8 +107,13 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
 
   engine = new SyncEngine(client, wsClient, sql);
 
-  if (onStateChange) {
-    engine.on("state-change", onStateChange);
+  // Apply persisted timestamps BEFORE any sync runs so the engine
+  // uses the correct incremental window and never sends epoch→now.
+  if (options?.lastPushAt) engine.lastPushAt = options.lastPushAt;
+  if (options?.lastPullAt) engine.lastPullAt = options.lastPullAt;
+
+  if (options?.onStateChange) {
+    engine.on("state-change", options.onStateChange);
   }
 
   engine.on("error", (err) => {
@@ -118,6 +133,7 @@ export function initSyncEngine(cfg: SyncConfig, onStateChange?: (state: SyncStat
   }
 
   // Run an immediate sync on startup
+  console.log("[Sync:Desktop] initSyncEngine — running initial sync, lastPushAt:", options?.lastPushAt, "lastPullAt:", options?.lastPullAt);
   engine.sync().catch((err) => {
     console.warn("[Sync] Initial sync failed:", (err as Error).message);
   });
@@ -173,10 +189,12 @@ export function registerSyncHandlers(): void {
       });
     }
 
-    initSyncEngine(cfg, (state) => {
-      const { BrowserWindow } = require("electron");
-      const win = BrowserWindow.getAllWindows()[0];
-      if (win) win.webContents.send("sync:stateChange", state);
+    initSyncEngine(cfg, {
+      onStateChange: (state) => {
+        const { BrowserWindow } = require("electron");
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win) win.webContents.send("sync:stateChange", state);
+      },
     });
 
     if (engine) {
@@ -232,6 +250,8 @@ export function registerSyncHandlers(): void {
         syncDeviceToken: "",
         syncDeviceId: "",
         syncIntervalMinutes: 5,
+        syncLastPushAt: "",
+        syncLastPullAt: "",
       });
     }
 

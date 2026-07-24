@@ -276,8 +276,21 @@ function registerAllHandlers(vaultPath: string) {
       syncEnabled: true,
       syncIntervalMinutes: (vaultCfg.syncIntervalMinutes as number) ?? 5,
     };
-    initSyncEngine(syncCfg, (state) => {
-      win?.webContents.send("sync:stateChange", state);
+    initSyncEngine(syncCfg, {
+      lastPushAt: (vaultCfg.syncLastPushAt as string) ?? null,
+      lastPullAt: (vaultCfg.syncLastPullAt as string) ?? null,
+      onStateChange: (state) => {
+        win?.webContents.send("sync:stateChange", state);
+        // Persist timestamps on every sync completion so the next restart
+        // picks up the correct incremental window.
+        const vault = getVaultPath();
+        if (vault && (state.lastPushAt || state.lastPullAt)) {
+          const partial: Record<string, unknown> = {};
+          if (state.lastPushAt) partial.syncLastPushAt = state.lastPushAt;
+          if (state.lastPullAt) partial.syncLastPullAt = state.lastPullAt;
+          writeVaultConfig(vault, partial);
+        }
+      },
     });
   }
 }
