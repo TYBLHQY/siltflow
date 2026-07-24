@@ -15,7 +15,7 @@
 import { View, Text, Pressable } from "@/tw";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Appearance } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { darkColors, lightColors } from "@/lib/theme";
 
 // -- Tab bar props (inlined — avoids direct dep on @react-navigation/bottom-tabs) --
@@ -43,6 +43,8 @@ const TABS: TabItem[] = [
 // -- Component ------------------------------------------------------------
 
 export function TabBar({ state, navigation }: TabBarProps) {
+  const scheme = useColorScheme();
+
   return (
     <View className="flex-row border-t border-ctp-surface0 bg-ctp-crust pb-[20px] pt-2">
       {TABS.map((tab) => {
@@ -57,6 +59,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
             tab={tab}
             active={active}
             onPress={() => navigation.navigate(tab.route)}
+            scheme={scheme}
           />
         );
       })}
@@ -68,64 +71,92 @@ interface TabBarItemProps {
   tab: TabItem;
   active: boolean;
   onPress: () => void;
+  scheme: "light" | "dark";
 }
 
-function TabBarItem({ tab, active, onPress }: TabBarItemProps) {
+const TabBarItem = memo(function TabBarItem({
+  tab,
+  active,
+  onPress,
+  scheme,
+}: TabBarItemProps) {
+  // Use a stable callback to avoid re-rendering children on each tab press
+  const handlePress = useCallback(() => {
+    onPress();
+  }, [onPress]);
+
   return (
     <Pressable
       className="flex-1 items-center justify-center gap-0.5 py-1"
-      onPress={onPress}
+      onPress={handlePress}
     >
-      <TabIcon name={active ? tab.iconFocused : tab.icon} active={active} />
+      <TabIcon
+        name={active ? tab.iconFocused : tab.icon}
+        colorKey={active ? "blue" : "overlay0"}
+        scheme={scheme}
+      />
       <TabLabel text={tab.label} active={active} />
     </Pressable>
   );
-}
+});
 
 // -- Icon (raw hex — MaterialCommunityIcons doesn't do CSS vars) -----------
 
 const ICON_SIZE = 24;
 
-function TabIcon({ name, active }: { name: string; active: boolean }) {
-  const color = useThemeColor(active ? "blue" : "overlay0");
+const TabIcon = memo(function TabIcon({
+  name,
+  colorKey,
+  scheme,
+}: {
+  name: string;
+  colorKey: string;
+  scheme: "light" | "dark";
+}) {
+  const colors = scheme === "dark" ? darkColors : lightColors;
+  const color = colors[`--ctp-${colorKey}`] ?? colors["--ctp-text"] ?? "#000";
+
   return (
-    <MaterialCommunityIcons
-      name={name as any}
-      size={ICON_SIZE}
-      color={color}
-    />
+    <MaterialCommunityIcons name={name as any} size={ICON_SIZE} color={color} />
   );
-}
+});
 
 // -- Label (Tailwind class — auto-switches via CSS vars) -------------------
 
-function TabLabel({ text, active }: { text: string; active: boolean }) {
+const TabLabel = memo(function TabLabel({
+  text,
+  active,
+}: {
+  text: string;
+  active: boolean;
+}) {
   return (
-    <Text className={`text-[10px] ${active ? "text-ctp-blue" : "text-ctp-overlay0"}`}>
+    <Text
+      className={`text-[10px] ${active ? "text-ctp-blue" : "text-ctp-overlay0"}`}
+    >
       {text}
     </Text>
   );
-}
+});
 
-// -- Theme color helper ---------------------------------------------------
+// -- Shared theme subscription (one listener for the whole tab bar) --------
 
 /**
- * Returns the current Catppuccin color hex for a given token.
- * Listens to system appearance changes so the icon re-renders
- * when the user toggles light/dark mode.
+ * Returns the current light/dark scheme.
+ * A single listener shared by all tab bar children — avoids each icon
+ * subscribing to Appearance individually.
  */
-function useThemeColor(key: string): string {
-  const [scheme, setScheme] = useState(
-    () => Appearance.getColorScheme() ?? "light",
+function useColorScheme(): "light" | "dark" {
+  const [scheme, setScheme] = useState<"light" | "dark">(
+    () => (Appearance.getColorScheme() as "light" | "dark") ?? "light",
   );
 
   useEffect(() => {
     const sub = Appearance.addChangeListener(({ colorScheme }) => {
-      setScheme(colorScheme ?? "light");
+      setScheme((colorScheme as "light" | "dark") ?? "light");
     });
     return () => sub.remove();
   }, []);
 
-  const colors = scheme === "dark" ? darkColors : lightColors;
-  return colors[`--ctp-${key}`] ?? colors["--ctp-text"] ?? "#000";
+  return scheme;
 }
