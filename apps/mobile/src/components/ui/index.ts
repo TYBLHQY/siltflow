@@ -5,3 +5,4 @@ export { Badge, type BadgeProps } from "./Badge";
 export { Separator } from "./Separator";
 export { Spinner } from "./Spinner";
 export { EmptyState } from "./EmptyState";
+export { ToastContainer } from "./Toast";

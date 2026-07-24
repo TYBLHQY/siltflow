@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { DatabaseProvider } from "@/providers/DatabaseProvider";
 import { SyncProvider } from "@/providers/SyncProvider";
+import { ToastContainer } from "@/components/ui";
 import "@/global.css";
 
 export default function RootLayout() {
@@ -27,6 +28,7 @@ export default function RootLayout() {
         <DatabaseProvider>
           <SyncProvider>
             <Stack screenOptions={{ headerShown: false }} />
+            <ToastContainer />
           </SyncProvider>
         </DatabaseProvider>
       </ThemeProvider>

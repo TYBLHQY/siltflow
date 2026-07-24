@@ -16,6 +16,28 @@ import { SyncClient } from "./sync-client";
 import { SyncWsClient } from "./ws-client";
 import { SyncEngine } from "./sync-engine";
 import { initOpLogTable } from "./op-log";
+import { useToastStore } from "@/stores/toast.store";
+
+// Deduplicate sync error toasts — same message within 30s shows once.
+let lastNetworkErrorToast = 0;
+const NETWORK_TOAST_DEDUPE_MS = 30_000;
+const NETWORK_ERROR_LIST = ["fetch failed", "Network request failed", "timeout"];
+
+function isNetworkErr(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return NETWORK_ERROR_LIST.some((p) => lower.includes(p.toLowerCase()));
+}
+
+function toastError(tag: string, msg: string): void {
+  if (isNetworkErr(msg)) {
+    const now = Date.now();
+    if (now - lastNetworkErrorToast < NETWORK_TOAST_DEDUPE_MS) return;
+    lastNetworkErrorToast = now;
+    useToastStore.getState().pushToast("Sync: unable to reach server", "error");
+  } else {
+    useToastStore.getState().pushToast(`Sync: ${msg}`, "error");
+  }
+}
 
 let engine: SyncEngine | null = null;
 let wsClient: SyncWsClient | null = null;
@@ -50,7 +72,9 @@ export function requestDeferredPush(): void {
   deferredPushTimer = setTimeout(() => {
     deferredPushTimer = null;
     eng.pushOpLog().catch((err) => {
-      console.warn("[Sync] Deferred push failed:", (err as Error).message);
+      const msg = (err as Error).message;
+      console.warn("[Sync] Deferred push failed:", msg);
+      toastError("push", msg);
     });
   }, DEFERRED_PUSH_MS);
 }
@@ -102,14 +126,17 @@ export function initSyncEngine(
   wsClient = new SyncWsClient(wsUrl, cfg.deviceToken);
   wsClient.onSyncAvailable(() => {
     engine?.pull().catch((err) => {
+      const msg = (err as Error).message;
       console.warn(
         "[Sync] Pull after notification failed:",
-        (err as Error).message,
+        msg,
       );
+      toastError("pull", msg);
     });
   });
   wsClient.onError((err) => {
     console.warn("[Sync] WebSocket error:", err.message);
+    toastError("ws", err.message);
   });
   wsClient.connect();
 
@@ -125,16 +152,20 @@ export function initSyncEngine(
   }
 
   engine.onError((err) => {
-    console.error("[Sync] Engine error:", (err as Error).message);
+    const msg = (err as Error).message;
+    console.error("[Sync] Engine error:", msg);
+    toastError("engine", msg);
   });
 
   if (cfg.syncIntervalMinutes > 0) {
     syncTimer = setInterval(() => {
       engine?.sync().catch((err) => {
+        const msg = (err as Error).message;
         console.warn(
           "[Sync] Periodic sync failed:",
-          (err as Error).message,
+          msg,
         );
+        toastError("sync", msg);
       });
     }, cfg.syncIntervalMinutes * 60_000);
   }
@@ -147,7 +178,9 @@ export function initSyncEngine(
   if (!options?.skipInitialSync) {
     console.log("[Sync] initSyncEngine — running initial incremental sync, lastPushAt:", options?.lastPushAt, "lastPullAt:", options?.lastPullAt);
     engine.sync().catch((err) => {
-      console.warn("[Sync] Initial sync failed:", (err as Error).message);
+      const msg = (err as Error).message;
+      console.warn("[Sync] Initial sync failed:", msg);
+      toastError("init", msg);
     });
   } else {
     console.log("[Sync] initSyncEngine — skipping initial sync (caller will seed)");
@@ -184,7 +217,9 @@ export async function runInitialFullSync(): Promise<void> {
     await engine.pull();
     console.log("[Sync] Initial full sync complete");
   } catch (err) {
-    console.warn("[Sync] Initial full sync failed:", (err as Error).message);
+    const msg = (err as Error).message;
+    console.warn("[Sync] Initial full sync failed:", msg);
+    toastError("seed", msg);
   }
 }
 
