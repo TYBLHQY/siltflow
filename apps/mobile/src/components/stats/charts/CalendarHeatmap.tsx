@@ -7,8 +7,9 @@
  * Data: computeCalendarHeatmap(logs) from @siltflow/shared-lib
  */
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { View, Text, ScrollView } from "@/tw";
+import { Appearance } from "react-native";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
 import { useStatsStore } from "@/stores/stats.store";
 import { computeCalendarHeatmap } from "@siltflow/shared-lib";
@@ -18,13 +19,11 @@ import { computeCalendarHeatmap } from "@siltflow/shared-lib";
 const CELL_SIZE = 12;
 const CELL_GAP = 3;
 const CELL_STRIDE = CELL_SIZE + CELL_GAP;
-const COLOR_LEVELS = [
-  "bg-ctp-surface0",
-  "bg-ctp-mauve/30",
-  "bg-ctp-mauve/50",
-  "bg-ctp-mauve/70",
-  "bg-ctp-mauve",
-] as const;
+
+// Desktop heatmap palette — levels 1-4 are fixed green, level 0
+// switches between light/dark (mirrors desktop index.css).
+const HEATMAP_LIGHT = ["#ebedf0", "#9be9a8", "#54d17a", "#2da44e", "#116329"];
+const HEATMAP_DARK = ["#161b22", "#9be9a8", "#54d17a", "#2da44e", "#116329"];
 
 const WEEKDAY_LABELS = ["", "MON", "", "WED", "", "FRI", ""];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -73,6 +72,18 @@ function findLastInRange(col: { date: Date; value: number; level: number }[], st
 
 export function CalendarHeatmap() {
   const reviewLogs = useStatsStore((s) => s.reviewLogs);
+
+  const [scheme, setScheme] = useState(
+    () => Appearance.getColorScheme() ?? "light",
+  );
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(({ colorScheme }) => {
+      setScheme(colorScheme ?? "light");
+    });
+    return () => sub.remove();
+  }, []);
+
+  const palette = scheme === "dark" ? HEATMAP_DARK : HEATMAP_LIGHT;
 
   const heatmap = useMemo(
     () => computeCalendarHeatmap(reviewLogs),
@@ -190,8 +201,12 @@ export function CalendarHeatmap() {
                       {col.map((cell, rowIdx) => (
                         <View
                           key={`${colIdx}-${rowIdx}`}
-                          className={`rounded-sm ${COLOR_LEVELS[cell.level]}`}
-                          style={{ width: CELL_SIZE, height: CELL_SIZE }}
+                          className="rounded-sm"
+                          style={{
+                            width: CELL_SIZE,
+                            height: CELL_SIZE,
+                            backgroundColor: palette[cell.level] ?? palette[0],
+                          }}
                         />
                       ))}
                     </View>
@@ -202,11 +217,11 @@ export function CalendarHeatmap() {
               {/* Legend */}
               <View className="flex-row items-center justify-end gap-1 mt-2">
                 <Text className="text-[9px] text-ctp-overlay0">Less</Text>
-                {COLOR_LEVELS.map((color, i) => (
+                {palette.map((color, i) => (
                   <View
                     key={i}
-                    className={`rounded-sm ${color}`}
-                    style={{ width: CELL_SIZE, height: CELL_SIZE }}
+                    className="rounded-sm"
+                    style={{ width: CELL_SIZE, height: CELL_SIZE, backgroundColor: color }}
                   />
                 ))}
                 <Text className="text-[9px] text-ctp-overlay0">More</Text>
