@@ -10,6 +10,7 @@ import { RefreshControl } from "react-native";
 import { View, Text, SafeAreaView, ScrollView } from "@/tw";
 import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@/components/ui";
 import { useStatsStore } from "@/stores/stats.store";
+import { getSQLite } from "@/stores/db.store";
 import {
   STATE_LABEL,
 } from "@siltflow/shared-lib";
@@ -103,6 +104,15 @@ export function StatsScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
+      // Log DB state before refresh
+      try {
+        const sql = getSQLite();
+        const fcCount = sql.getFirstSync<{ cnt: number }>("SELECT COUNT(*) as cnt FROM fsrs_cards");
+        const rlCount = sql.getFirstSync<{ cnt: number }>("SELECT COUNT(*) as cnt FROM review_logs");
+        const annCount = sql.getFirstSync<{ cnt: number }>("SELECT COUNT(*) as cnt FROM annotations");
+        console.log("[StatsScreen] onRefresh — DB before refresh: fsrs_cards:", fcCount?.cnt,
+          "review_logs:", rlCount?.cnt, "annotations:", annCount?.cnt);
+      } catch {}
       refresh();
     } finally {
       setRefreshing(false);

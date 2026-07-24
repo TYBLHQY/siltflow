@@ -140,6 +140,7 @@ export function initSyncEngine(
   // Run an initial incremental sync on startup — matching the desktop
   // behaviour. pushFull is reserved for the first-sync seed after a
   // fresh registration (called explicitly by registerDevice).
+  console.log("[Sync] initSyncEngine — running initial incremental sync, lastPushAt:", options?.lastPushAt, "lastPullAt:", options?.lastPullAt);
   engine.sync().catch((err) => {
     console.warn("[Sync] Initial sync failed:", (err as Error).message);
   });

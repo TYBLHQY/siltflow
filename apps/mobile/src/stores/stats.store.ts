@@ -78,6 +78,10 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       const logRows = listAllReviewLogs(db);
       const annotations = listAllAnnotations(db);
 
+      console.log("[StatsStore] loadFromDb — fsrs_cards:", cardRows.length,
+        "review_logs:", logRows.length,
+        "annotations:", annotations.length);
+
       // Parse cards from raw JSON strings
       const cards: Card[] = [];
       for (const row of cardRows) {
@@ -99,6 +103,9 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       const annotationCount = annotations.filter(
         (a) => a.kind !== "highlight",
       ).length;
+
+      console.log("[StatsStore] loadFromDb — parsed cards:", cards.length,
+        "annotationCount:", annotationCount);
 
       set({
         cards,
@@ -122,6 +129,10 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       const logRows = listAllReviewLogs(db);
       const annotations = listAllAnnotations(db);
 
+      console.log("[StatsStore] refresh — raw fsrs_cards:", cardRows.length,
+        "review_logs:", logRows.length,
+        "annotations:", annotations.length);
+
       const cards: Card[] = [];
       for (const row of cardRows) {
         try {
@@ -140,6 +151,9 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       const annotationCount = annotations.filter(
         (a) => a.kind !== "highlight",
       ).length;
+
+      console.log("[StatsStore] refresh — parsed cards:", cards.length,
+        "annotationCount:", annotationCount);
 
       set({ cards, reviewLogs, annotationCount });
     } catch (err) {

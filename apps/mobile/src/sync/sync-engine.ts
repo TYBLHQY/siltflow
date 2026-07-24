@@ -143,13 +143,14 @@ export class SyncEngine {
     this._lastError = null;
     this._emitState();
 
+    console.log("[Sync:Engine] sync() start — lastPushAt:", this._lastPushAt, "lastPullAt:", this._lastPullAt);
+
     try {
       await this.pushIncremental();
     } catch (err) {
       this._lastError = (err as Error).message;
       this._emitState();
       for (const cb of this._onError) cb(err as Error);
-      // Continue to pull — don't let a push failure block incoming data
     }
 
     try {
@@ -159,6 +160,7 @@ export class SyncEngine {
       this._emitState();
       for (const cb of this._onError) cb(err as Error);
     } finally {
+      console.log("[Sync:Engine] sync() end — lastPushAt:", this._lastPushAt, "lastPullAt:", this._lastPullAt);
       this._syncInProgress = false;
       this._emitState();
     }
@@ -177,10 +179,12 @@ export class SyncEngine {
         const camelRows = rows.map((r) => this.camelKeys(r));
         changes[table] = { created: camelRows };
       }
+      console.log("[Sync:Engine] pushFull — table:", table, "rows:", rows.length);
     }
 
     // Also send deletions from changelog
     const deletions = getDeletionsSince("1970-01-01T00:00:00Z");
+    console.log("[Sync:Engine] pushFull — deletions from changelog:", deletions.length);
     for (const del of deletions) {
       if (!changes[del.table_name as EntityTable]) {
         changes[del.table_name as EntityTable] = {};
@@ -224,6 +228,8 @@ export class SyncEngine {
     const changes: SyncPushBody["changes"] = {};
     let hasChanges = false;
 
+    console.log("[Sync:Engine] pushIncremental — since:", since);
+
     for (const table of ENTITY_TABLES) {
       const col = tsCol(table);
 
@@ -251,10 +257,20 @@ export class SyncEngine {
           hasChanges = true;
         }
       }
+
+      if (created.length > 0 || (table !== "review_logs" && (
+        changes[table]?.updated?.length ?? 0) > 0)) {
+        console.log("[Sync:Engine] pushIncremental — table:", table,
+          "created:", created.length,
+          table !== "review_logs" ? `updated: ${changes[table]?.updated?.length ?? 0}` : "");
+      }
     }
 
     // Deletions from changelog
     const deletions = getDeletionsSince(since);
+    if (deletions.length > 0) {
+      console.log("[Sync:Engine] pushIncremental — deletions:", deletions.length);
+    }
     for (const del of deletions) {
       const tbl = del.table_name as EntityTable;
       if (!changes[tbl]) changes[tbl] = {};
@@ -264,12 +280,14 @@ export class SyncEngine {
     }
 
     if (!hasChanges) {
+      console.log("[Sync:Engine] pushIncremental — no local changes, skipping push");
       this._pushInProgress = false;
       return null;
     }
 
     const body: SyncPushBody = { lastSyncAt: since, changes };
     const res = await this.client.push(body);
+    console.log("[Sync:Engine] pushIncremental — server accepted:", res.accepted, "conflicts:", res.conflicts.length);
     this._lastPushAt = new Date().toISOString();
 
     // Clear pushed changelog entries
@@ -291,26 +309,47 @@ export class SyncEngine {
   /** Pull remote changes and apply them locally. */
   async pull(): Promise<void> {
     const sql = getSQLite();
-    const body = {
-      lastSyncAt: this._lastPullAt ?? "1970-01-01T00:00:00Z",
-    };
+    const since = this._lastPullAt ?? "1970-01-01T00:00:00Z";
+    const body = { lastSyncAt: since };
+    console.log("[Sync:Engine] pull — since:", since);
     const res = await this.client.pull(body);
 
+    let totalRows = 0;
     // Apply changes row-by-row
     for (const table of ENTITY_TABLES) {
       const rows = res.changes?.[table];
       if (!rows || rows.length === 0) continue;
 
+      console.log("[Sync:Engine] pull — table:", table, "rows:", rows.length);
+
+      // Log fsrs_cards and review_logs data for debugging
+      if (table === "fsrs_cards" || table === "review_logs") {
+        for (let i = 0; i < Math.min(rows.length, 3); i++) {
+          const r = rows[i] as Record<string, unknown>;
+          console.log(`[Sync:Engine] pull — ${table}[${i}]:`, JSON.stringify(r).slice(0, 200));
+        }
+      }
+
       for (const row of rows) {
+        totalRows++;
         this.upsertRemoteRow(sql, table, row);
       }
     }
 
     // Apply tombstones (delete local rows that were deleted remotely)
+    if (res.tombstones.length > 0) {
+      console.log("[Sync:Engine] pull — tombstones:", res.tombstones.length);
+      for (const t of res.tombstones.slice(0, 5)) {
+        console.log(`[Sync:Engine] pull — tombstone: ${t.table_name} row=${t.row_id}`);
+      }
+    }
     for (const tombstone of res.tombstones) {
       this.applyTombstone(sql, tombstone.table_name, tombstone.row_id);
     }
 
+    console.log("[Sync:Engine] pull — total rows upserted:", totalRows,
+      "tombstones:", res.tombstones.length,
+      "serverTime:", res.serverTime);
     this._lastPullAt = res.serverTime;
     this._emitState();
   }

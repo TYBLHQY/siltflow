@@ -29,7 +29,12 @@ export function ReviewScreen() {
   const loadMetrics = useCallback(() => {
     try {
       const sql = getSQLite();
+      // Log DB state
+      const fcCount = sql.getFirstSync<{ cnt: number }>("SELECT COUNT(*) as cnt FROM fsrs_cards");
+      const annCount = sql.getFirstSync<{ cnt: number }>("SELECT COUNT(*) as cnt FROM annotations WHERE kind IN ('annotation', 'manual')");
+      console.log("[ReviewScreen] loadMetrics — DB: fsrs_cards:", fcCount?.cnt, "annotations(kind=annotation/manual):", annCount?.cnt);
       const data = getDocMetrics(sql);
+      console.log("[ReviewScreen] loadMetrics — got", data.length, "documents with metrics, totalCards:", data.reduce((s, m) => s + m.totalCards, 0));
       setMetrics(data);
     } catch (err) {
       console.error("[ReviewScreen] loadMetrics failed:", err);
