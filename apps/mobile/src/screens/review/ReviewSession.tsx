@@ -145,7 +145,7 @@ export function ReviewSession() {
   );
 
   const handleBack = useCallback(() => {
-    router.back();
+    router.replace("/review");
   }, [router]);
 
   // ── Render: Loading / Error ────────────────────────────────────────
@@ -165,7 +165,7 @@ export function ReviewSession() {
       <SafeAreaView className="flex-1 bg-ctp-base">
         <View className="flex-1 items-center justify-center px-8 gap-4">
           <Text className="text-ctp-red text-center">{error}</Text>
-          <Button variant="outline" onPress={handleBack}>Back</Button>
+          <Button variant="outline" onPress={handleBack}>Back to Review</Button>
         </View>
       </SafeAreaView>
     );
