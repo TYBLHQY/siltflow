@@ -89,6 +89,14 @@ export function saveReviewLog(
      VALUES (?, ?, ?, ?, ?)`,
     [p(id), p(annotationId), p(documentId), p(JSON.stringify(data)), p(now)],
   );
+  // Record save in op_log
+  const savedRow = db.getFirstSync<Record<string, unknown>>(
+    "SELECT * FROM review_logs WHERE id = ?",
+    p(id),
+  );
+  if (savedRow) {
+    recordCompositeSave("review_logs", { id, annotation_id: annotationId, document_id: documentId }, savedRow);
+  }
   requestDeferredPush();
   return { id, createdAt: now };
 }

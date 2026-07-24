@@ -42,6 +42,11 @@ export function saveDocument(
     .values({ id: doc.id, title: doc.title, createdAt: now, updatedAt: now })
     .returning()
     .get();
+  // Record save in op_log
+  const savedRow = db.select().from(schema.documents).where(eq(schema.documents.id, doc.id)).get();
+  if (savedRow) {
+    recordSave("documents", doc.id, savedRow as Record<string, unknown>);
+  }
   requestDeferredPush();
   return result;
 }

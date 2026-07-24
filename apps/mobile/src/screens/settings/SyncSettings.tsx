@@ -23,22 +23,19 @@ import { createExpoSqliteExecutor } from "@/lib/expo-sqlite-adapter";
 const ALL_TABLES = [
   ...ENTITY_TABLES,
   "sync_op_log",
-  "sync_conflicts",
+  "sync_tombstones",
+  "sync_tombstone_acks",
   "app_settings",
 ];
 
 export function SyncSettings() {
   const config = useSyncStore((s) => s.config);
   const syncState = useSyncStore((s) => s.syncState);
-  const conflicts = useSyncStore((s) => s.conflicts);
   const isRegistering = useSyncStore((s) => s.isRegistering);
   const registerError = useSyncStore((s) => s.registerError);
-  const isLoadingConflicts = useSyncStore((s) => s.isLoadingConflicts);
 
   const syncNow = useSyncStore((s) => s.syncNow);
   const registerDevice = useSyncStore((s) => s.registerDevice);
-  const loadConflicts = useSyncStore((s) => s.loadConflicts);
-  const resolveConflict = useSyncStore((s) => s.resolveConflict);
   const disconnect = useSyncStore((s) => s.disconnect);
 
   // Local form state
@@ -52,11 +49,6 @@ export function SyncSettings() {
     if (config.serverUrl) setServerUrl(config.serverUrl);
     if (config.serverToken) setServerToken(config.serverToken);
   }, [config.serverUrl, config.serverToken]);
-
-  // Load conflicts when connected
-  useEffect(() => {
-    if (config.syncEnabled) loadConflicts();
-  }, [config.syncEnabled, loadConflicts]);
 
   const isConfigured = config.syncEnabled && config.deviceToken;
 
@@ -104,7 +96,7 @@ export function SyncSettings() {
     }
   }, [syncState?.lastError, handleDisconnect]);
 
-  // ── Reset database ─────────────────────────────────────────────────
+  // -- Reset database ---------------------------------------------------
 
   const [isResetting, setIsResetting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
@@ -136,13 +128,13 @@ export function SyncSettings() {
     } finally {
       setIsResetting(false);
     }
-  }, [resetConfirm, getSQLite, setStatusMessage, setIsResetting, setResetConfirm]);
+  }, [resetConfirm]);
 
   const cancelReset = useCallback(() => {
     setResetConfirm(false);
   }, []);
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // -- Render -------------------------------------------------------------
 
   return (
     <View className="gap-4">
@@ -308,61 +300,6 @@ export function SyncSettings() {
         >
           Disconnect
         </Button>
-      )}
-
-      {/* Conflicts */}
-      {isConfigured && (
-        <Card>
-          <CardHeader>
-            <View className="flex-row items-center gap-2">
-              <CardTitle>Conflicts</CardTitle>
-              {conflicts.length > 0 && (
-                <Badge variant="warning">{conflicts.length}</Badge>
-              )}
-            </View>
-          </CardHeader>
-          <CardContent>
-            {isLoadingConflicts ? (
-              <Spinner size="sm" label="Loading…" />
-            ) : conflicts.length === 0 ? (
-              <Text className="text-sm text-ctp-subtext0">No unresolved conflicts</Text>
-            ) : (
-              <View className="gap-2">
-                {conflicts.map((c) => (
-                  <View
-                    key={c.id}
-                    className="border border-ctp-surface1 rounded-md p-3 gap-2"
-                  >
-                    <View className="flex-row justify-between">
-                      <Text className="text-xs text-ctp-overlay0">{c.table_name}</Text>
-                      <Text className="text-xs text-ctp-overlay0">
-                        {new Date(c.created_at).toLocaleString()}
-                      </Text>
-                    </View>
-                    <View className="flex-row gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onPress={() => resolveConflict(c.id, "local")}
-                        className="flex-1"
-                      >
-                        Keep Local
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onPress={() => resolveConflict(c.id, "remote")}
-                        className="flex-1"
-                      >
-                        Accept Remote
-                      </Button>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
-          </CardContent>
-        </Card>
       )}
 
       {/* Reset Database */}

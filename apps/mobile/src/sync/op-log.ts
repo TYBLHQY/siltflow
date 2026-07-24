@@ -11,6 +11,7 @@
  */
 
 import { getSQLite } from "@/stores/db.store";
+import { ENTITY_TABLES } from "@siltflow/shared-lib";
 
 // -- Schema ----------------------------------------------------------------
 
@@ -152,4 +153,42 @@ export function clearOpLogEntries(ids: number[]): void {
     `DELETE FROM sync_op_log WHERE id IN (${placeholders})`,
     ...ids,
   );
+}
+
+// -- Migration ------------------------------------------------------------
+
+/**
+ * Seed the op_log with save entries for all existing rows across all
+ * entity tables. Called once when the database already has data but
+ * op_log is empty (first start after op_log migration, or epoch sync).
+ */
+export function seedOpLogFromExisting(): void {
+  const sql = getSQLite();
+  const now = new Date().toISOString();
+  let totalRows = 0;
+
+  for (const table of ENTITY_TABLES) {
+    const rows = sql.getAllSync<Record<string, unknown>>(`SELECT * FROM ${table}`);
+    if (rows.length === 0) continue;
+
+    const cols = COMPOSITE_PK_TABLES[table];
+    for (const row of rows) {
+      let rowId: string;
+      if (cols) {
+        rowId = cols.map((c) => String(row[c] ?? "")).join("|");
+      } else {
+        rowId = String(row.id ?? "");
+      }
+      sql.runSync(
+        "INSERT INTO sync_op_log (table_name, row_id, action, row_data, created_at) VALUES (?, ?, 'save', ?, ?)",
+        table,
+        rowId,
+        JSON.stringify(row),
+        now,
+      );
+      totalRows++;
+    }
+  }
+
+  console.log(`[op-log] seedOpLogFromExisting — ${totalRows} rows seeded`);
 }

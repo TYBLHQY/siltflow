@@ -11,14 +11,11 @@
  *
  * All config is persisted to the SQLite `app_settings` table so
  * restarting the mobile app reconnects without re-entering credentials.
- *
- * Adapted from apps/desktop/src/stores/sync.store.ts
  */
 
 import { create } from "zustand";
 import { getSQLite } from "@/stores/db.store";
 import type { SyncState, SyncConfig } from "@siltflow/shared-lib";
-import type { ConflictRecord } from "@/sync/sync-engine";
 import { SyncClient } from "@/sync/sync-client";
 import {
   initSyncEngine,
@@ -27,7 +24,7 @@ import {
   runInitialFullSync,
 } from "@/sync";
 
-// ── Settings keys (used as key column in app_settings table) ────────
+// -- Settings keys (used as key column in app_settings table) ----------
 
 const KEYS = {
   syncEnabled: "sync:enabled",
@@ -42,20 +39,17 @@ const KEYS = {
 
 const ALL_SYNC_KEYS = Object.values(KEYS);
 
-// ── Store ───────────────────────────────────────────────────────────
+// -- Store ---------------------------------------------------------------
 
 interface SyncStoreState {
   config: SyncConfig;
   syncState: SyncState | null;
-  conflicts: ConflictRecord[];
   isRegistering: boolean;
   registerError: string | null;
-  isLoadingConflicts: boolean;
 }
 
 interface SyncStoreActions {
   setSyncState: (state: SyncState | null) => void;
-  setConflicts: (conflicts: ConflictRecord[]) => void;
   setConfig: (partial: Partial<SyncConfig>) => void;
 
   syncNow: () => Promise<void>;
@@ -74,8 +68,6 @@ interface SyncStoreActions {
     deviceName: string,
   ) => Promise<{ deviceId: string; token: string }>;
   verifyToken: (serverUrl: string, token: string) => Promise<boolean>;
-  loadConflicts: () => void;
-  resolveConflict: (id: number, resolution: "local" | "remote") => void;
   /** Disconnect and clear all persisted config so the user re-enters credentials. */
   disconnect: () => Promise<void>;
 }
@@ -92,13 +84,10 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     syncIntervalMinutes: 5,
   },
   syncState: null,
-  conflicts: [],
   isRegistering: false,
   registerError: null,
-  isLoadingConflicts: false,
 
   setSyncState: (syncState) => set({ syncState }),
-  setConflicts: (conflicts) => set({ conflicts }),
   setConfig: (partial) =>
     set((s) => ({ config: { ...s.config, ...partial } })),
 
@@ -195,8 +184,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         },
       });
 
-      // Seed the fresh device with a full push + pull. After this one-time
-      // seed, subsequent restarts use incremental sync inside initSyncEngine.
+      // Seed the fresh device with a full push + pull.
       runInitialFullSync();
 
       set({ isRegistering: false });
@@ -220,30 +208,6 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
     }
   },
 
-  loadConflicts: () => {
-    set({ isLoadingConflicts: true });
-    try {
-      const engine = getSyncEngine();
-      if (!engine) {
-        set({ conflicts: [], isLoadingConflicts: false });
-        return;
-      }
-      const conflicts = engine.getConflicts();
-      set({ conflicts, isLoadingConflicts: false });
-    } catch {
-      set({ isLoadingConflicts: false });
-    }
-  },
-
-  resolveConflict: (id, resolution) => {
-    const engine = getSyncEngine();
-    if (!engine) return;
-    engine.resolveConflict(id, resolution);
-    set((s) => ({
-      conflicts: s.conflicts.filter((c) => c.id !== id),
-    }));
-  },
-
   disconnect: async () => {
     teardownSyncEngine();
     clearPersistedConfig();
@@ -258,13 +222,12 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         syncIntervalMinutes: 5,
       },
       syncState: null,
-      conflicts: [],
       registerError: null,
     });
   },
 }));
 
-// ── SQLite-based config persistence ─────────────────────────────────
+// -- SQLite-based config persistence ------------------------------------
 
 type SettingKey = (typeof KEYS)[keyof typeof KEYS];
 

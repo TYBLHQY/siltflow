@@ -99,6 +99,15 @@ export function saveFSRSCard(
       p(now),
     ],
   );
+  // Record save in op_log
+  const savedRow = db.getFirstSync<Record<string, unknown>>(
+    "SELECT * FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?",
+    p(annotationId),
+    p(documentId),
+  );
+  if (savedRow) {
+    recordCompositeSave("fsrs_cards", { annotation_id: annotationId, document_id: documentId }, savedRow);
+  }
   requestDeferredPush();
   return { annotationId };
 }

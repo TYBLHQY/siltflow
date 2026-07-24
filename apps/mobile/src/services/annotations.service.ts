@@ -123,6 +123,15 @@ export function saveAnnotation(
       p(now),
     ],
   );
+  // Record save in op_log
+  const savedRow = db.getFirstSync<Record<string, unknown>>(
+    "SELECT * FROM annotations WHERE id = ? AND document_id = ?",
+    p(annotation.id),
+    p(annotation.document_id),
+  );
+  if (savedRow) {
+    recordCompositeSave("annotations", { id: annotation.id, document_id: annotation.document_id }, savedRow);
+  }
   requestDeferredPush();
   return { id: annotation.id };
 }

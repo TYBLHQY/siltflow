@@ -27,6 +27,7 @@ import type { SyncWsClient } from "./ws-client";
 import {
   getOpLogSince,
   clearOpLogEntries,
+  seedOpLogFromExisting,
 } from "./op-log";
 
 // -- Tables with composite primary keys ----------------------------------
@@ -147,9 +148,16 @@ export class SyncEngine {
     this._pushInProgress = true;
 
     try {
-    const sql = getSQLite();
     const since = this._lastPushAt ?? "1970-01-01T00:00:00Z";
-    const entries = getOpLogSince(since);
+    let entries = getOpLogSince(since);
+
+    // If first sync (lastPushAt is null) and op_log is empty, seed it
+    // from existing data so the initial full sync works.
+    if (since === "1970-01-01T00:00:00Z" && entries.length === 0) {
+      console.log("[Sync:Engine] pushOpLog — op_log empty, seeding from existing data");
+      seedOpLogFromExisting();
+      entries = getOpLogSince(since);
+    }
 
     if (entries.length === 0) {
       console.log("[Sync:Engine] pushOpLog — no entries since", since);
@@ -195,6 +203,20 @@ export class SyncEngine {
     } finally {
       this._pushInProgress = false;
     }
+  }
+
+  // -- OpLog seeding ---------------------------------------------------
+
+  /**
+   * Seed the op_log with save entries for all existing rows across all
+   * entity tables. Called once when the database already has data but
+   * op_log is empty (first start after op_log migration, or epoch sync).
+   *
+   * Each existing row gets a 'save' entry so the next pushOpLog will
+   * push all data to the server — equivalent to the old pushFull().
+   */
+  seedOpLogFromExisting(): void {
+    seedOpLogFromExisting();
   }
 
   /** Pull remote changes and apply them locally. */

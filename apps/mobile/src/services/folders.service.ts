@@ -52,6 +52,11 @@ export function createFolder(
     })
     .returning()
     .get();
+  // Record save in op_log
+  const savedRow = db.select().from(schema.folders).where(eq(schema.folders.id, result.id)).get();
+  if (savedRow) {
+    recordSave("folders", result.id, savedRow as Record<string, unknown>);
+  }
   requestDeferredPush();
   return result;
 }

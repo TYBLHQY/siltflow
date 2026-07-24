@@ -73,6 +73,15 @@ export function saveAIResult(
       p(now),
     ],
   );
+  // Record save in op_log
+  const savedRow = db.getFirstSync<Record<string, unknown>>(
+    "SELECT * FROM ai_results WHERE annotation_id = ? AND document_id = ?",
+    p(annotationId),
+    p(documentId),
+  );
+  if (savedRow) {
+    recordCompositeSave("ai_results", { annotation_id: annotationId, document_id: documentId }, savedRow);
+  }
   requestDeferredPush();
   return { annotationId, version: v };
 }

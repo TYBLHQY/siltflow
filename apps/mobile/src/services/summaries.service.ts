@@ -57,6 +57,14 @@ export function saveSummary(
       p(now),
     ],
   );
+  // Record save in op_log
+  const savedRow = db.getFirstSync<Record<string, unknown>>(
+    "SELECT * FROM summaries WHERE document_id = ?",
+    p(summary.documentId),
+  );
+  if (savedRow) {
+    recordSave("summaries", summary.documentId, savedRow);
+  }
   requestDeferredPush();
   return { documentId: summary.documentId };
 }
