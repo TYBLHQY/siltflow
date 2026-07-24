@@ -145,7 +145,7 @@ export function ReviewSession() {
   );
 
   const handleBack = useCallback(() => {
-    router.replace("/review");
+    router.back();
   }, [router]);
 
   // ── Render: Loading / Error ────────────────────────────────────────
@@ -165,7 +165,7 @@ export function ReviewSession() {
       <SafeAreaView className="flex-1 bg-ctp-base">
         <View className="flex-1 items-center justify-center px-8 gap-4">
           <Text className="text-ctp-red text-center">{error}</Text>
-          <Button variant="outline" onPress={handleBack}>Back to Review</Button>
+          <Button variant="outline" onPress={handleBack}>Back</Button>
         </View>
       </SafeAreaView>
     );
@@ -183,7 +183,7 @@ export function ReviewSession() {
             No cards are due for review in this document.
           </Text>
           <Button variant="outline" onPress={handleBack}>
-            Back to Review
+            Back to Documents
           </Button>
         </View>
       </SafeAreaView>
@@ -238,7 +238,7 @@ export function ReviewSession() {
           </View>
 
           <Button onPress={handleBack} className="mt-4">
-            Back to Review
+            Back to Documents
           </Button>
         </ScrollView>
       </SafeAreaView>
@@ -252,7 +252,7 @@ export function ReviewSession() {
 
   return (
     <SafeAreaView className="flex-1 bg-ctp-base">
-      {/* Header — progress only */}
+      {/* Header */}
       <View className="flex-row items-center justify-center px-4 py-3 border-b border-ctp-surface0">
         <Text className="text-sm font-semibold text-ctp-text">{progress}</Text>
       </View>
