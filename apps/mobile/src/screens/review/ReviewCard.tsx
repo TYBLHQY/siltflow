@@ -311,7 +311,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
           </View>
         ) : ai ? (
           /* V1 fallback — simple translation */
-          <View className="bg-ctp-base rounded-lg p-4 mt-2">
+          <View className="bg-ctp-mantle rounded-lg p-4 mt-2">
             <Text className="text-sm text-ctp-overlay0 mb-1">Translation</Text>
             <Text className="text-lg text-ctp-text leading-relaxed">
               {(ai as unknown as Record<string, string>).translation ?? "(no translation)"}
