@@ -13,7 +13,7 @@ main.ts                         sync.ipc.ts                    sync-engine.ts
     │                               ├─ engine.lastPullAt = ...      │
     │                               ├─ engine.on("state-change",…)  │
     │                               ├─ engine.sync() ──────────────►│
-    │                               │                               ├─ pushIncremental()
+    │                               │                               ├─ pushOpLog()
     │                               │                               ├─ pull()
     │                               │                               ├─ _emitState()
     │                               │  ◄── state-change event ─────┤
@@ -33,67 +33,73 @@ Located in `apps/desktop/electron/sync/sync-engine.ts`.
 private _lastPushAt: string | null = null;
 private _lastPullAt: string | null = null;
 private _syncInProgress = false;     // guards sync()
-private _pushInProgress = false;     // guards pushIncremental()
+private _pushInProgress = false;     // guards pushOpLog()
 private _pullInProgress = false;     // guards pull()
 private _lastError: string | null = null;
 ```
-
-Three separate progress flags are intentional — see [[known-bugs#concurrent-pull-race]].
 
 ### Public API
 
 | Method | Description | Guards |
 |---|---|---|
 | `sync()` | Push then pull (full cycle) | `_syncInProgress` |
-| `pushFull()` | Send ALL rows as created (epoch sync) | None |
-| `pushIncremental()` | Send only rows changed since `_lastPushAt` | `_pushInProgress` |
+| `pushOpLog()` | Read `sync_op_log`, send to server, clear sent entries | `_pushInProgress` |
 | `pull()` | Fetch and apply remote changes | `_pullInProgress` |
 
-### camelKeys conversion
+### pushOpLog flow
 
-On push, local DB columns (snake_case) are converted to camelCase for the JSON
-protocol. On pull, server returns snake_case directly — no conversion needed.
-
-```typescript
-private camelKeys(row: Record<string, unknown>, _table: string): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(row)) {
-    const camel = key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-    out[camel] = value;
-  }
-  return out;
-}
 ```
+1. SELECT * FROM sync_op_log WHERE created_at > _lastPushAt
+2. Group entries by table_name:
+   - 'save' entries → parse row_data JSON → add to saves[]
+   - 'delete' entries → add to deletes[]
+3. POST /api/sync/push { changes: { table: { saves, deletes } } }
+4. On success:
+   - DELETE FROM sync_op_log WHERE id IN (...pushed IDs)
+   - _lastPushAt = now()
+```
+
+No more `camelKeys` conversion on push — rows are read from DB (snake_case)
+and sent as-is. The server converts camelCase to snake_case on receipt, so
+we send camelCase to match the server's expectation... Actually, looking at
+the op_log entries: `recordSave` stores `row_data` as JSON of the raw DB
+row (snake_case). When push reads it, `JSON.parse(entry.row_data)` gives
+snake_case keys. The server's `snakeKeys()` converts camelCase→snake_case,
+so we need to be consistent.
+
+**Current approach**: `recordSave` stores the DB row as-is (snake_case).
+The `camelKeys` helper is kept on the engine class for when rows need to be
+converted. For now, rows in op_log come from DB queries (snake_case) and
+the server has a `snakeKeys` converter — but the protocol says we send
+camelCase. We call `camelKeys` on the row data before putting it in
+`op_log.row_data`.
+
+Wait — actually the simplest approach: store the row as-is from the DB
+(snake_case), and on push, convert to camelCase before sending. The
+`camelKeys` helper is still on the engine class for this purpose.
 
 ### upsertRemoteRow
 
-Pulled rows are applied with `INSERT OR REPLACE` using the raw snake_case keys
-from the server. **This means a pull always bumps `updated_at`** even if the
-data didn't change — potential "sync echo" issue (see [[known-bugs]]).
+Pulled rows are applied with `INSERT OR REPLACE` using the raw snake_case
+keys from the server. **This means a pull always bumps `updated_at`** even
+if the data didn't change — but with op_log this doesn't matter because
+pull writes don't go through CRUD handlers (no op_log entry generated).
+
+### Diagnostic log convention
+
+All logs use `[Sync:Desktop]` prefix for easy grep filtering.
 
 ## IPC layer: `sync.ipc.ts`
 
 ### `initSyncEngine(cfg, options?)`
 
-Called from `main.ts` at startup with persisted timestamps:
-
-```typescript
-initSyncEngine(syncCfg, {
-  lastPushAt: vaultCfg.syncLastPushAt,
-  lastPullAt: vaultCfg.syncLastPullAt,
-  onStateChange: (state) => {
-    // Persist timestamps on every sync completion
-    writeVaultConfig(vault, { syncLastPushAt, syncLastPullAt });
-  },
-});
-```
-
-**Order matters**: timestamps must be applied BEFORE `engine.sync()` runs.
+Called from `main.ts` at startup with persisted timestamps. Timestamps are
+applied before `engine.sync()` runs.
 
 ### `requestDeferredPush()`
 
 2-second debounced push. Called after every local write (annotation save,
-FSRS card save, etc.). Multiple rapid writes → only one push fires.
+FSRS card save, etc.).
 
 ### Channels
 
@@ -101,26 +107,21 @@ FSRS card save, etc.). Multiple rapid writes → only one push fires.
 |---|---|
 | `sync:getState` | Returns `engine.state` |
 | `sync:syncNow` | `engine.sync()` |
-| `sync:configure` | Saves config, re-inits engine with new settings |
-| `sync:register` | Registers device with server (uses server token) |
-| `sync:verifyToken` | Verifies a token is still valid |
-| `sync:getConflicts` | Returns unresolved `sync_conflicts` rows |
-| `sync:resolveConflict` | Resolves a conflict (local | remote) |
+| `sync:configure` | Saves config, re-inits engine |
+| `sync:register` | Registers device with server |
+| `sync:verifyToken` | Verifies token validity |
 | `sync:disconnect` | Tears down engine, clears config |
 
-## Diagnostic log convention
-
-All logs use `[Sync:Desktop]` prefix for easy grep filtering. These diagnostic
-logs are still in the code (added 2026-07-24 for debugging the data corruption).
-They can be removed once stability is fully confirmed.
+Note: `sync:getConflicts` and `sync:resolveConflict` removed — no more
+conflicts in the op_log design.
 
 ## File Map
 
 | File | What |
 |---|---|
 | `apps/desktop/electron/sync/sync-engine.ts` | Core engine |
+| `apps/desktop/electron/sync/op-log.ts` | Operation log (save/delete tracking) |
 | `apps/desktop/electron/sync/sync-client.ts` | HTTP client |
 | `apps/desktop/electron/sync/ws-client.ts` | WebSocket client |
-| `apps/desktop/electron/sync/changelog.ts` | Deletion tracking |
 | `apps/desktop/electron/ipc/sync.ipc.ts` | IPC glue + deferredPush |
 | `apps/desktop/electron/main.ts` | Startup init + timestamp persistence |
