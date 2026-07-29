@@ -110,4 +110,6 @@ jobs:
             --notes "Sync server release $TITLE"
 
           gh release upload "$TAG" dist/server.cjs --clobber
+          gh release upload "$TAG" install.sh --clobber
+          gh release upload "$TAG" siltflow-server.service --clobber
           gh release upload "$TAG" ../../latest-server.json --clobber
