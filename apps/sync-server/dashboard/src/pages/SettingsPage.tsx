@@ -5,8 +5,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { apiGet, apiPost, type HealthInfo } from "../lib/api";
-import { Server, Loader2, AlertTriangle, Trash2, CheckCircle } from "lucide-react";
+import { apiGet, apiPost, type HealthInfo, type TTSStatus } from "../lib/api";
+import { Server, Loader2, AlertTriangle, Trash2, CheckCircle, Volume2, XCircle } from "lucide-react";
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -25,12 +25,17 @@ export function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [resetStatus, setResetStatus] = useState<"idle" | "confirming" | "done" | "error">("idle");
   const [resetError, setResetError] = useState<string | null>(null);
+  const [ttsStatus, setTTSStatus] = useState<TTSStatus | null>(null);
 
   const fetchData = useCallback(async () => {
     setError(null);
     try {
-      const healthData = await apiGet<HealthInfo>("/health");
+      const [healthData, ttsData] = await Promise.all([
+        apiGet<HealthInfo>("/health"),
+        apiGet<TTSStatus>("/api/tts/status").catch(() => ({ available: false } as TTSStatus)),
+      ]);
       setHealth(healthData);
+      setTTSStatus(ttsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load settings");
     } finally {
@@ -143,6 +148,53 @@ export function SettingsPage() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TTS Engine status */}
+        {ttsStatus && (
+          <div className="rounded-xl border border-ctp-overlay0/20 bg-ctp-mantle p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${ttsStatus.available ? "bg-ctp-green/10" : "bg-ctp-red/10"}`}>
+                {ttsStatus.available ? (
+                  <Volume2 className="h-4 w-4 text-ctp-green" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-ctp-red" />
+                )}
+              </div>
+              <h2 className="text-sm font-semibold">TTS Engine</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-ctp-base px-3 py-2.5">
+                <p className="text-[10px] font-medium text-ctp-overlay0 uppercase tracking-wide">
+                  Edge-TTS
+                </p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-sm">
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full ${
+                      ttsStatus.available ? "bg-ctp-green" : "bg-ctp-red"
+                    }`}
+                  />
+                  {ttsStatus.available
+                    ? `Installed${ttsStatus.version ? ` (v${ttsStatus.version})` : ""}`
+                    : "Not Installed"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-ctp-base px-3 py-2.5">
+                <p className="text-[10px] font-medium text-ctp-overlay0 uppercase tracking-wide">
+                  Provider
+                </p>
+                <p className="mt-0.5 text-sm">Microsoft Edge</p>
+              </div>
+            </div>
+            {!ttsStatus.available && (
+              <p className="mt-3 text-xs text-ctp-overlay0">
+                Install edge-tts on the server:{" "}
+                <code className="rounded bg-ctp-surface0 px-1 py-0.5 text-[11px]">
+                  pip install edge-tts
+                </code>
+              </p>
+            )}
           </div>
         )}
 

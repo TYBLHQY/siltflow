@@ -3,14 +3,12 @@
   "private": true,
   "scripts": {
     "postinstall": "bash scripts/isolate-better-sqlite3.sh",
-
     "desktop:dev": "pnpm -F @siltflow/desktop dev",
     "desktop:build": "pnpm -F @siltflow/desktop build",
     "desktop:lint": "pnpm -F @siltflow/desktop lint",
     "desktop:test": "pnpm -F @siltflow/desktop test",
     "desktop:test:watch": "pnpm -F @siltflow/desktop test:watch",
     "desktop:typecheck": "pnpm -F @siltflow/desktop typecheck",
-
     "mobile:start": "pnpm -F @siltflow/mobile start",
     "mobile:android": "pnpm -F @siltflow/mobile android",
     "mobile:ios": "pnpm -F @siltflow/mobile ios",
@@ -28,17 +26,17 @@
     "mobile:build:ios:cloud:preview": "pnpm -F @siltflow/mobile build:ios:cloud:preview",
     "mobile:build:android:cloud:dev": "pnpm -F @siltflow/mobile build:android:cloud:dev",
     "mobile:build:ios:cloud:dev": "pnpm -F @siltflow/mobile build:ios:cloud:dev",
-
     "server:dev": "pnpm -F @siltflow/sync-server dev",
     "server:start": "pnpm -F @siltflow/sync-server start",
     "server:build": "pnpm -F @siltflow/sync-server build",
     "server:build:server": "pnpm -F @siltflow/sync-server build:server",
     "server:typecheck": "pnpm -F @siltflow/sync-server typecheck",
     "server:test": "pnpm -F @siltflow/sync-server test",
-
     "dashboard:dev": "pnpm -F @siltflow/sync-server dev:dashboard",
     "dashboard:build": "pnpm -F @siltflow/sync-server build:dashboard",
-
     "ci:check": "pnpm desktop:lint && pnpm desktop:typecheck && pnpm desktop:test && pnpm server:typecheck && pnpm server:test"
+  },
+  "dependencies": {
+    "ws": "^8.21.1"
   }
 }

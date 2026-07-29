@@ -22,6 +22,8 @@ import type {
   SentenceOutputV2,
 } from "@siltflow/shared-lib/types";
 import type { AnnotationItem } from "@/stores/annotation.store";
+import { useTTS } from "@/hooks/useTts";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export interface ReviewCardProps {
   item: AnnotationItem;
@@ -216,9 +218,13 @@ function SentenceView({ output }: { output: SentenceOutputV2 }) {
 // ── Main component ───────────────────────────────────────────────────
 
 export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) {
+  const tts = useTTS();
+
   const ai = item.aiVersion === 2
     ? (item.aiResult as AIAnnotationDataV2 | undefined)
     : undefined;
+
+  const sourceLang = ai?.input?.source_lang;
   const fsrsCard = item.fsrsCard as {
     state?: number;
     stability?: number;
@@ -249,7 +255,37 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
               {item.text || "(no text)"}
             </Text>
 
-            <Text className="text-sm text-ctp-overlay0 mt-4">
+            {/* Speak button on question side */}
+            <Pressable
+              onPress={() => {
+                if (item.text) {
+                  tts.speak(item.text, undefined, sourceLang, item.id);
+                }
+              }}
+              disabled={tts.state === "loading"}
+              className="p-2 rounded-full active:bg-ctp-surface0"
+              accessibilityLabel="Read aloud"
+            >
+              <MaterialCommunityIcons
+                name={
+                  tts.state === "loading" && tts.speakingId === item.id
+                    ? "loading"
+                    : tts.state === "playing" && tts.speakingId === item.id
+                      ? "volume-high"
+                      : "volume-medium"
+                }
+                size={22}
+                color={
+                  tts.state === "loading" && tts.speakingId === item.id
+                    ? "#7b7f8a"
+                    : tts.state === "playing" && tts.speakingId === item.id
+                      ? "#c4a1e0"
+                      : "#7b7f8a"
+                }
+              />
+            </Pressable>
+
+            <Text className="text-sm text-ctp-overlay0">
               Tap to reveal answer
             </Text>
           </View>
@@ -264,7 +300,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
     <View className="rounded-lg bg-ctp-base p-4">
       <View className="py-2 gap-2">
 
-        {/* ── Header: granularity + kind/page + version ── */}
+        {/* ── Header: granularity + kind/page + version + speak button ── */}
         <View className="flex-row items-center justify-between mb-1">
           <View className="flex-row items-center gap-2 flex-1">
             <Text className="text-sm font-medium text-ctp-maroon uppercase tracking-wider">
@@ -276,6 +312,38 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
               <Text className="text-xs text-ctp-overlay0">p.{item.pageNumber}</Text>
             )}
           </View>
+
+          {/* TTS speak button */}
+          <Pressable
+            onPress={() => {
+              const text = ai?.input?.normalized ?? item.text;
+              if (text) {
+                tts.speak(text, undefined, sourceLang, item.id);
+              }
+            }}
+            disabled={tts.state === "loading"}
+            className="p-1.5 rounded-md active:bg-ctp-surface0"
+            accessibilityLabel="Read aloud"
+          >
+            <MaterialCommunityIcons
+              name={
+                tts.state === "loading" && tts.speakingId === item.id
+                  ? "loading"
+                  : tts.state === "playing" && tts.speakingId === item.id
+                    ? "volume-high"
+                    : "volume-medium"
+              }
+              size={18}
+              color={
+                tts.state === "loading" && tts.speakingId === item.id
+                  ? "#7b7f8a"
+                  : tts.state === "playing" && tts.speakingId === item.id
+                    ? "#c4a1e0"
+                    : "#7b7f8a"
+              }
+            />
+          </Pressable>
+
           {item.aiVersion != null && (
             <Badge variant="secondary">v{item.aiVersion}</Badge>
           )}

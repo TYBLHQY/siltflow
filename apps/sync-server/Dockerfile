@@ -31,9 +31,10 @@ RUN addgroup -S siltflow && adduser -S siltflow -G siltflow
 # Install it fresh so the .node binary matches the runtime's musl libc.
 WORKDIR /app
 COPY --from=build /app/apps/sync-server/package.json /app/
-RUN apk add --no-cache python3 make g++ && \
+RUN apk add --no-cache python3 py3-pip make g++ && \
     npm install --omit=dev better-sqlite3@12 && \
-    apk del python3 make g++
+    pip3 install --no-cache-dir edge-tts --break-system-packages && \
+    apk del make g++ py3-pip
 
 # Copy esbuild output (server.cjs) and dashboard SPA
 COPY --from=build /app/apps/sync-server/dist /app/dist

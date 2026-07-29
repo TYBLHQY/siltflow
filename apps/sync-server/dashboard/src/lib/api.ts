@@ -109,3 +109,9 @@ export interface HealthInfo {
   db: string;
   timestamp: string;
 }
+
+export interface TTSStatus {
+  available: boolean;
+  version?: string;
+  error?: string;
+}

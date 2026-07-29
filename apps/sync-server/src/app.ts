@@ -20,6 +20,7 @@ import { syncRoutes } from "./routes/sync";
 import { createFileRoutes } from "./routes/files";
 import { deviceRoutes } from "./routes/devices";
 import { settingsRoutes } from "./routes/settings";
+import { ttsRoutes } from "./routes/tts";
 import { serveDashboard } from "./serve-dashboard";
 import type { ServerConfig } from "./config";
 import type { AppContext, Variables } from "./types";
@@ -66,6 +67,9 @@ export function createApp(config: ServerConfig, ctx: AppContext) {
 
   // Server settings
   api.route("/settings", settingsRoutes);
+
+  // TTS proxy (Edge TTS via Python CLI)
+  api.route("/tts", ttsRoutes);
 
   // Stats (read-only)
   api.route("/stats", statsRoutes);

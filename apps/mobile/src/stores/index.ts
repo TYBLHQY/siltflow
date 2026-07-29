@@ -9,3 +9,4 @@ export { useStatsStore } from "./stats.store";
 export { useSearchStore } from "./search.store";
 export { useSettingsStore, type AIProfile } from "./settings.store";
 export { useSyncStore, type SyncStore, loadPersistedSyncConfig } from "./sync.store";
+export { useTTSStore, MIMO_PRESET_VOICES, MIMO_MODELS, type TTSConfig, type TTSProvider } from "./tts.store";
