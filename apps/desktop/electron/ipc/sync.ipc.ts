@@ -224,7 +224,8 @@ export function registerSyncHandlers(): void {
   ipcMain.handle("sync:disconnect", async () => {
     teardownSyncEngine();
 
-    // Clear persisted sync config from vault
+    // Clear persisted sync config from vault (but keep syncDeviceId —
+    // device identity survives disconnect so re-registration reuses it).
     const main = require("../main");
     const vaultPath: string = main.getVaultPath();
     if (vaultPath) {
@@ -233,7 +234,7 @@ export function registerSyncHandlers(): void {
         syncServerUrl: "",
         syncServerToken: "",
         syncDeviceToken: "",
-        syncDeviceId: "",
+        // syncDeviceId intentionally preserved
         syncIntervalMinutes: 5,
         syncLastPushAt: "",
         syncLastPullAt: "",

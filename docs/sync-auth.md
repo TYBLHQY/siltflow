@@ -65,9 +65,11 @@ c.set("isAdmin", device.isAdmin);
 ## Device re-registration
 
 If the client already has a `deviceId` from a previous registration, it sends
-it in the register request. The server re-uses the existing device record
-instead of creating a duplicate. This allows re-registering without losing
-the device's identity.
+it in the register request. The server re-uses the existing device record,
+issues a new device token, and updates the device name (allowing renames).
+This prevents duplicate device records when a client disconnects and reconnects.
+The deviceId is permanent device identity — it survives disconnect cycles on
+the client side.
 
 ## Server token in sync requests?
 

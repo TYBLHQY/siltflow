@@ -217,7 +217,7 @@ export const useSyncStore = create<SyncStore>((set, get) => ({
         serverUrl: "",
         serverToken: "",
         deviceToken: "",
-        deviceId: "",
+        deviceId: get().config.deviceId,
         syncEnabled: false,
         syncIntervalMinutes: 5,
       },
@@ -295,10 +295,13 @@ function persistConfig(cfg: SyncConfig): void {
 function clearPersistedConfig(): void {
   try {
     const sql = getSQLite();
-    const placeholders = ALL_SYNC_KEYS.map(() => "?").join(", ");
+    // Delete operational sync settings but keep deviceId — it's permanent
+    // device identity that should survive disconnect/reconnect cycles.
+    const keysToClear = ALL_SYNC_KEYS.filter((k) => k !== KEYS.deviceId);
+    const placeholders = keysToClear.map(() => "?").join(", ");
     sql.runSync(
       `DELETE FROM app_settings WHERE key IN (${placeholders})`,
-      ...ALL_SYNC_KEYS,
+      ...keysToClear,
     );
   } catch {
     // ignore
@@ -314,12 +317,13 @@ export async function loadPersistedSyncConfig(): Promise<SyncConfig> {
     const record = getSettings(ALL_SYNC_KEYS);
 
     const syncEnabled = record[KEYS.syncEnabled] === "1";
+    const deviceId = record[KEYS.deviceId] ?? "";
     if (!syncEnabled) {
       return {
         serverUrl: "",
         serverToken: "",
         deviceToken: "",
-        deviceId: "",
+        deviceId,
         syncEnabled: false,
         syncIntervalMinutes: 5,
       };

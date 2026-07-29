@@ -69,11 +69,18 @@ export const authRoutes = new Hono<{ Variables: Variables }>()
         .where(eq(devices.id, body.deviceId))
         .get();
       if (existing) {
-        // Return existing device info (don't generate new token)
+        // Re-registration: update existing device info and issue a new token.
+        // The client may have cleared its token on disconnect and needs a fresh one.
+        token = randomBytes(32).toString("hex");
+        const newHash = createHash("sha256").update(token).digest("hex");
+        db.update(devices)
+          .set({ name: body.deviceName, tokenHash: newHash, lastSeenAt: now })
+          .where(eq(devices.id, body.deviceId))
+          .run();
         return c.json({
           deviceId: existing.id,
-          deviceName: existing.name,
-          token: "", // token is not recoverable — client should already have it
+          deviceName: body.deviceName,
+          token,
           serverUrl: c.req.url.replace(/\/api\/auth\/.*/, ""),
           warning: "",
         });

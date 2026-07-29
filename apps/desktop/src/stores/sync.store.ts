@@ -203,7 +203,7 @@ export const useSyncStore = create<SyncStore>((set, get) => {
           serverUrl: "",
           serverToken: "",
           deviceToken: "",
-          deviceId: "",
+          deviceId: get().config.deviceId,
           syncEnabled: false,
           syncIntervalMinutes: 5,
         },
