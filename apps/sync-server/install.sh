@@ -215,7 +215,11 @@ DASHBOARD_DIR="$INSTALL_DIR/dist-dashboard"
 if [ -d "$DASHBOARD_DIR" ] && [ "$FORCE_DOWNLOAD" != "1" ]; then
   log "Dashboard already exists at $DASHBOARD_DIR.  (Set SILTFLOW_FORCE_DOWNLOAD=1 to replace.)"
 else
-  DASHBOARD_URL=$(echo "$RELEASES_JSON" | "$NODE_CMD" -e "
+  # Fetch releases if not already done by the server.cjs block
+  if [ -z "${RELEASES_JSON:-}" ]; then
+    RELEASES_JSON=$(curl -fsSL "$RELEASES_API" || true)
+  fi
+  DASHBOARD_URL=$(echo "${RELEASES_JSON:-}" | "$NODE_CMD" -e "
     let data = '';
     process.stdin.on('data', c => data += c);
     process.stdin.on('end', () => {
