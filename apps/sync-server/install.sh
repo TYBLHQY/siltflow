@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
 #
-# install.sh — install Siltflow sync server as a systemd service
+# install.sh — install Siltflow sync server
 #
-# Fetches the latest server-v* release from GitHub, installs system
-# dependencies, creates a dedicated user, and registers the service.
-#
-# Usage:
+# System install (default, requires root):
 #   curl -fsSL https://raw.githubusercontent.com/TYBLHQY/siltflow/master/apps/sync-server/install.sh | sudo bash
-#   # or:
-#   sudo bash install.sh
+#
+# User install (no root needed):
+#   bash install.sh --user
 #
 # Environment overrides:
 #   PORT=3001                  HTTP port
-#   DATA_DIR=/var/lib/siltflow-server
+#   DATA_DIR=~/.local/share/siltflow-server
 #   SERVER_TOKEN=...           skip auto-generate, use this token
-#   SiltFlow_FORCE_DOWNLOAD=1  re-download even if server.cjs exists
+#   SILTFLOW_FORCE_DOWNLOAD=1  re-download even if server.cjs exists
 #
 
 set -euo pipefail
@@ -25,11 +23,6 @@ GITHUB_OWNER="TYBLHQY"
 GITHUB_REPO="siltflow"
 RELEASES_API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=10"
 
-SILTFLOW_USER="siltflow"
-INSTALL_DIR="/opt/siltflow-server"
-DATA_DIR="${DATA_DIR:-/var/lib/siltflow-server}"
-PORT="${PORT:-3001}"
-FORCE_DOWNLOAD="${SILTFLOW_FORCE_DOWNLOAD:-0}"
 SERVICE_NAME="siltflow-server"
 NODE_BIN="${NODE_BIN:-/usr/bin/node}"
 
@@ -42,72 +35,126 @@ log()  { echo -e "${GREEN}[siltflow]${NC} $*"; }
 warn() { echo -e "${YELLOW}[siltflow]${NC} $*"; }
 err()  { echo -e "${RED}[siltflow]${NC} $*" >&2; }
 
-# ── Preflight ───────────────────────────────────────────────────────────────
+# ── Mode detection ──────────────────────────────────────────────────────────
 
-if [ "$(id -u)" -ne 0 ]; then
-  err "This script must be run as root (or via sudo)."
-  exit 1
+if [ "${1:-}" = "--user" ]; then
+  MODE="user"
+  SILTFLOW_USER="$USER"
+  INSTALL_DIR="${HOME}/.local/siltflow-server"
+  DATA_DIR="${DATA_DIR:-${HOME}/.local/share/siltflow-server}"
+  SYSTEMD_DIR="${HOME}/.config/systemd/user"
+  IS_ROOT=false
+  USE_SUDO=""
+else
+  MODE="system"
+  if [ "$(id -u)" -ne 0 ]; then
+    err "This script must be run as root (or via sudo) for system install."
+    err "For user-level install, use: bash install.sh --user"
+    exit 1
+  fi
+  SILTFLOW_USER="siltflow"
+  INSTALL_DIR="/opt/siltflow-server"
+  DATA_DIR="${DATA_DIR:-/var/lib/siltflow-server}"
+  SYSTEMD_DIR="/etc/systemd/system"
+  IS_ROOT=true
+  USE_SUDO="sudo -u ${SILTFLOW_USER}"
 fi
+
+PORT="${PORT:-3001}"
+FORCE_DOWNLOAD="${SILTFLOW_FORCE_DOWNLOAD:-0}"
+
+log "Install mode: ${MODE}"
+log "  Install dir: ${INSTALL_DIR}"
+log "  Data dir:    ${DATA_DIR}"
 
 # ── Dependencies ────────────────────────────────────────────────────────────
 
 log "Checking system dependencies…"
 
-# Node.js
-if ! command -v node &>/dev/null; then
-  err "Node.js is not installed. Install Node 24+ first: https://nodejs.org"
+# Node.js — check PATH first, then common locations
+NODE_CMD=""
+for candidate in "$NODE_BIN" /usr/local/bin/node /opt/homebrew/bin/node; do
+  if [ -x "$candidate" ]; then
+    NODE_CMD="$candidate"
+    NODE_BIN="$candidate"
+    break
+  fi
+done
+if [ -z "$NODE_CMD" ]; then
+  if command -v node &>/dev/null; then
+    NODE_CMD="$(command -v node)"
+    NODE_BIN="$NODE_CMD"
+  fi
+fi
+
+if [ -z "$NODE_CMD" ]; then
+  err "Node.js is not installed."
+  if [ "$MODE" = "user" ]; then
+    log "Install Node.js via one of:"
+    log "  curl -fsSL https://nodejs.org/dist/v24.18.0/node-v24.18.0-linux-x64.tar.xz | tar -xJC ~/.local"
+    log "  export PATH=\"\$HOME/.local/node-v24.18.0-linux-x64/bin:\$PATH\""
+    log "  Or use: fnm / nvm / asdf"
+  else
+    log "Install Node 24+ first: https://nodejs.org"
+  fi
   exit 1
 fi
 
-NODE_VERSION=$(node -v | sed 's/v//' | cut -d. -f1)
+NODE_VERSION=$("$NODE_CMD" -v | sed 's/v//' | cut -d. -f1)
 if [ "$NODE_VERSION" -lt 22 ]; then
-  warn "Node $(node -v) detected. Node 22+ recommended. Continuing anyway…"
+  warn "Node $("$NODE_CMD" -v) detected. Node 22+ recommended. Continuing anyway…"
 fi
 
-# better-sqlite3 (global, needed by server.cjs at runtime)
-if ! node -e "require('better-sqlite3')" &>/dev/null; then
-  log "Installing better-sqlite3 globally…"
-  npm install -g better-sqlite3@12
+# better-sqlite3 (must be accessible to server.cjs at runtime)
+if ! "$NODE_CMD" -e "require('better-sqlite3')" &>/dev/null; then
+  log "Installing better-sqlite3…"
+  if [ "$MODE" = "system" ]; then
+    npm install -g better-sqlite3@12
+  else
+    npm install --prefix "$INSTALL_DIR" better-sqlite3@12
+    # Add to NODE_PATH so server.cjs finds it
+    export NODE_PATH="${INSTALL_DIR}/node_modules:${NODE_PATH:-}"
+  fi
 fi
 
 # edge-tts (Python CLI, used for TTS proxy)
 if ! command -v edge-tts &>/dev/null; then
   log "Installing edge-tts…"
-  if command -v pip3 &>/dev/null; then
-    pip3 install --break-system-packages edge-tts
-  elif command -v pip &>/dev/null; then
-    pip install --break-system-packages edge-tts
-  else
-    err "pip3 not found. Install Python 3 and pip, then re-run."
-    exit 1
+  PIP=""
+  for p in pip3 pip; do
+    if command -v $p &>/dev/null; then $p install --break-system-packages --user edge-tts 2>/dev/null && break; fi
+  done
+  if ! command -v edge-tts &>/dev/null; then
+    warn "edge-tts not found — TTS proxy will not work until installed."
   fi
 fi
 
 # ── User / directories ──────────────────────────────────────────────────────
 
-if ! id -u "$SILTFLOW_USER" &>/dev/null; then
-  log "Creating system user '$SILTFLOW_USER'…"
-  useradd -r -s /usr/sbin/nologin "$SILTFLOW_USER"
+if [ "$MODE" = "system" ]; then
+  if ! id -u "$SILTFLOW_USER" &>/dev/null; then
+    log "Creating system user '$SILTFLOW_USER'…"
+    useradd -r -s /usr/sbin/nologin "$SILTFLOW_USER"
+  fi
+  mkdir -p "$INSTALL_DIR" "$DATA_DIR"
+  chown "$SILTFLOW_USER:$SILTFLOW_USER" "$INSTALL_DIR" "$DATA_DIR"
+  chmod 750 "$INSTALL_DIR" "$DATA_DIR"
+else
+  mkdir -p "$INSTALL_DIR" "$DATA_DIR" "$SYSTEMD_DIR"
 fi
-
-mkdir -p "$INSTALL_DIR" "$DATA_DIR"
-chown "$SILTFLOW_USER:$SILTFLOW_USER" "$INSTALL_DIR" "$DATA_DIR"
-chmod 750 "$INSTALL_DIR" "$DATA_DIR"
 
 # ── Resolve server token ────────────────────────────────────────────────────
 
 if [ -n "${SERVER_TOKEN:-}" ]; then
   log "Using SERVER_TOKEN from environment."
 else
-  # Try existing token file, otherwise generate
   TOKEN_FILE="$DATA_DIR/server-token"
   if [ -f "$TOKEN_FILE" ]; then
     SERVER_TOKEN=$(cat "$TOKEN_FILE")
     log "Reusing existing server token from $TOKEN_FILE."
   else
-    SERVER_TOKEN=$(openssl rand -hex 32)
+    SERVER_TOKEN=$(openssl rand -hex 32 || python3 -c "import secrets; print(secrets.token_hex(32))" || node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
     echo "$SERVER_TOKEN" > "$TOKEN_FILE"
-    chown "$SILTFLOW_USER:$SILTFLOW_USER" "$TOKEN_FILE"
     chmod 600 "$TOKEN_FILE"
     log "Generated new server token → $TOKEN_FILE"
   fi
@@ -128,8 +175,7 @@ else
     exit 1
   fi
 
-  # Find first server-v* release that has a server.cjs asset
-  DOWNLOAD_URL=$(echo "$RELEASES_JSON" | node -e "
+  DOWNLOAD_URL=$(echo "$RELEASES_JSON" | "$NODE_CMD" -e "
     const data = '';
     process.stdin.on('data', c => data += c);
     process.stdin.on('end', () => {
@@ -152,9 +198,8 @@ else
   log "  URL: $DOWNLOAD_URL"
 
   curl -fsSL "$DOWNLOAD_URL" -o "$CJS_PATH.download"
-  chown "$SILTFLOW_USER:$SILTFLOW_USER" "$CJS_PATH.download"
-  chmod 750 "$CJS_PATH.download"
   mv "$CJS_PATH.download" "$CJS_PATH"
+  chmod 750 "$CJS_PATH"
 
   log "Download complete."
 fi
@@ -162,7 +207,7 @@ fi
 # ── Server version (for health endpoint) ────────────────────────────────────
 
 TAG_JSON=$(curl -fsSL "$RELEASES_API" || true)
-SERVER_VERSION=$(echo "$TAG_JSON" | node -e "
+SERVER_VERSION=$(echo "$TAG_JSON" | "$NODE_CMD" -e "
   const data = '';
   process.stdin.on('data', c => data += c);
   process.stdin.on('end', () => {
@@ -179,16 +224,21 @@ SERVER_VERSION=$(echo "$TAG_JSON" | node -e "
 
 # ── systemd unit ────────────────────────────────────────────────────────────
 
-SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+SERVICE_FILE="$SYSTEMD_DIR/${SERVICE_NAME}.service"
 
 if [ -f "$SERVICE_FILE" ]; then
   log "systemd unit already exists — stopping before overwriting."
-  systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+  if [ "$MODE" = "system" ]; then
+    systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+  else
+    systemctl --user stop "$SERVICE_NAME" 2>/dev/null || true
+  fi
 fi
 
 log "Writing systemd unit → $SERVICE_FILE"
 
-cat > "$SERVICE_FILE" << UNIT
+if [ "$MODE" = "system" ]; then
+  cat > "$SERVICE_FILE" << UNIT
 [Unit]
 Description=Siltflow Sync Server
 Documentation=https://github.com/TYBLHQY/siltflow
@@ -221,18 +271,63 @@ Environment=SERVER_VERSION=$SERVER_VERSION
 [Install]
 WantedBy=multi-user.target
 UNIT
+else
+  cat > "$SERVICE_FILE" << UNIT
+[Unit]
+Description=Siltflow Sync Server (user)
+Documentation=https://github.com/TYBLHQY/siltflow
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+
+WorkingDirectory=$INSTALL_DIR
+ExecStart=$NODE_BIN $INSTALL_DIR/server.cjs
+
+Restart=always
+RestartSec=2
+
+Environment=PORT=$PORT
+Environment=DATA_DIR=$DATA_DIR
+Environment=SERVER_TOKEN=$SERVER_TOKEN
+Environment=SERVER_VERSION=$SERVER_VERSION
+Environment=NODE_PATH=${INSTALL_DIR}/node_modules:\${NODE_PATH:-}
+
+[Install]
+WantedBy=default.target
+UNIT
+fi
 
 # ── Start ───────────────────────────────────────────────────────────────────
 
-systemctl daemon-reload
-systemctl enable "$SERVICE_NAME"
-systemctl restart "$SERVICE_NAME"
+if [ "$MODE" = "system" ]; then
+  systemctl daemon-reload
+  systemctl enable "$SERVICE_NAME"
+  systemctl restart "$SERVICE_NAME"
+  STATUS_CMD="systemctl status $SERVICE_NAME"
+  JOURNAL_CMD="journalctl -u $SERVICE_NAME -f"
+  RESTART_CMD="systemctl restart $SERVICE_NAME"
+else
+  systemctl --user daemon-reload
+  systemctl --user enable "$SERVICE_NAME"
+  systemctl --user restart "$SERVICE_NAME"
+  # Enable lingering so the user service survives logout
+  if [ "$IS_ROOT" = true ]; then
+    loginctl enable-linger "$SILTFLOW_USER" 2>/dev/null || true
+  else
+    loginctl enable-linger 2>/dev/null || warn "Run 'loginctl enable-linger' to keep the service running after logout"
+  fi
+  STATUS_CMD="systemctl --user status $SERVICE_NAME"
+  JOURNAL_CMD="journalctl --user -u $SERVICE_NAME -f"
+  RESTART_CMD="systemctl --user restart $SERVICE_NAME"
+fi
 
 # ── Done ────────────────────────────────────────────────────────────────────
 
 echo ""
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-log "  Siltflow server installed!"
+log "  Siltflow server installed! (mode: ${MODE})"
 log ""
 log "  Version:      $SERVER_VERSION"
 log "  Port:         $PORT"
@@ -240,11 +335,11 @@ log "  Data dir:     $DATA_DIR"
 log "  Server token: $SERVER_TOKEN"
 log ""
 log "  Commands:"
-log "    systemctl status  $SERVICE_NAME"
-log "    journalctl -u     $SERVICE_NAME -f"
-log "    systemctl restart $SERVICE_NAME"
+log "    $STATUS_CMD"
+log "    $JOURNAL_CMD"
+log "    $RESTART_CMD"
 log ""
-log "  Update (mobile or curl):"
-log "    curl -X POST http://\$(hostname -I | awk '{print \$1}'):$PORT/api/admin/update \\"
+log "  Update (curl):"
+log "    curl -X POST http://localhost:$PORT/api/admin/update \\"
 log "      -H 'Authorization: Bearer $SERVER_TOKEN'"
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
