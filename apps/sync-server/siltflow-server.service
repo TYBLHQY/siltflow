@@ -1,0 +1,40 @@
+[Unit]
+Description=Siltflow Sync Server
+Documentation=https://github.com/TYBLHQY/siltflow
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=siltflow
+Group=siltflow
+
+# ── Runtime ─────────────────────────────────────────────────────────────
+WorkingDirectory=/opt/siltflow-server
+ExecStart=/usr/bin/node /opt/siltflow-server/server.cjs
+
+# ── Self-update contract ─────────────────────────────────────────────────
+# POST /api/admin/update replaces server.cjs then calls process.exit(0).
+# Restart=always brings it back on the new binary immediately.
+Restart=always
+RestartSec=2
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/siltflow-server /var/lib/siltflow-server
+ReadOnlyPaths=/usr/bin/node
+
+# ── Environment ─────────────────────────────────────────────────────────
+Environment=PORT=3001
+Environment=DATA_DIR=/var/lib/siltflow-server
+# Generate a random token on first run:
+#   openssl rand -hex 32
+# Then uncomment and paste:
+# Environment=SERVER_TOKEN=your-64-char-hex-token-here
+# Environment=SERVER_VERSION=0.2.0
+
+[Install]
+WantedBy=multi-user.target
