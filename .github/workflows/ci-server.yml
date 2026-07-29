@@ -110,7 +110,7 @@ jobs:
           gh release create "$TAG" \
             --title "Server $TITLE" \
             --target "${{ github.sha }}" \
-            --notes "Sync server release $TITLE"
+            --generate-notes
 
           gh release upload "$TAG" dist/server.cjs --clobber
           gh release upload "$TAG" install.sh --clobber
