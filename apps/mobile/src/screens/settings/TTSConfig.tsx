@@ -52,8 +52,6 @@ export function TTSConfig() {
     }
   }, [hasCachedLists, refreshVoices]);
 
-  const isEdge = config.provider === "edge-tts";
-
   return (
     <View className="gap-4">
       {/* Header */}
