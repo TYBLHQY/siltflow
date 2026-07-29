@@ -1,0 +1,168 @@
+name: CI – Server
+
+on:
+  push:
+    tags: ['server-v*']
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Check ──────────────────────────────────────────────────────────────
+  check:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeCheck + Test
+        working-directory: apps/sync-server
+        run: |
+          set -e
+          pnpm run typecheck &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
+
+  # ── Server ─────────────────────────────────────────────────────────────
+  server:
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/server-v')
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Bump version to match tag
+        shell: bash
+        working-directory: apps/sync-server
+        run: |
+          VERSION="${GITHUB_REF_NAME#server-v}"
+          node -e "
+            const p = require('./package.json');
+            p.version = '$VERSION';
+            require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          node -e "
+            const p = require('./dashboard/package.json');
+            p.version = '$VERSION';
+            require('fs').writeFileSync('./dashboard/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeCheck + Test
+        working-directory: apps/sync-server
+        run: |
+          set -e
+          pnpm run typecheck &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
+
+      - name: Build server + dashboard
+        working-directory: apps/sync-server
+        run: |
+          pnpm run build:server
+          pnpm run build:dashboard
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/siltflow-server
+          tags: |
+            type=semver,pattern={{version}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}},value=${{ github.ref_name }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/sync-server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate latest-server.json
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#server-v}"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          IMAGE="ghcr.io/${OWNER}/siltflow-server:${VERSION}"
+
+          cat > latest-server.json << EOF
+          {
+            "version": "${VERSION}",
+            "dockerImage": "${IMAGE}",
+            "bundleUrl": "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/server.cjs",
+            "healthEndpoint": "/health"
+          }
+          EOF
+
+          echo "Generated latest-server.json:"
+          cat latest-server.json
+
+      - name: Create release + upload artifacts
+        shell: bash
+        working-directory: apps/sync-server
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          TITLE="${TAG#server-v}"
+
+          gh release create "$TAG" \
+            --title "Server $TITLE" \
+            --target "${{ github.sha }}" \
+            --notes "Sync server release $TITLE"
+
+          gh release upload "$TAG" dist/server.cjs --clobber
+          gh release upload "$TAG" ../../latest-server.json --clobber
