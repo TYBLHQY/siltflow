@@ -75,6 +75,10 @@ jobs:
           pnpm run build:server
           pnpm run build:dashboard
 
+      - name: Package dashboard
+        working-directory: apps/sync-server
+        run: tar -czf dist/dashboard.tar.gz dist-dashboard
+
       - name: Generate latest-server.json
         shell: bash
         run: |
@@ -112,4 +116,5 @@ jobs:
 
           gh release upload "$TAG" dist/server.cjs --clobber
           gh release upload "$TAG" install.sh --clobber
+          gh release upload "$TAG" dist/dashboard.tar.gz --clobber
           gh release upload "$TAG" ../../latest-server.json --clobber

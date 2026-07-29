@@ -208,6 +208,36 @@ else
   log "Download complete."
 fi
 
+# ── Download dashboard ─────────────────────────────────────────────────────
+
+DASHBOARD_DIR="$INSTALL_DIR/dist-dashboard"
+
+if [ -d "$DASHBOARD_DIR" ] && [ "$FORCE_DOWNLOAD" != "1" ]; then
+  log "Dashboard already exists at $DASHBOARD_DIR.  (Set SILTFLOW_FORCE_DOWNLOAD=1 to replace.)"
+else
+  DASHBOARD_URL=$(echo "$RELEASES_JSON" | "$NODE_CMD" -e "
+    let data = '';
+    process.stdin.on('data', c => data += c);
+    process.stdin.on('end', () => {
+      const releases = JSON.parse(data);
+      for (const r of releases) {
+        if (!r.tag_name.startsWith('server-v')) continue;
+        const d = r.assets.find(a => a.name === 'dashboard.tar.gz');
+        if (d) { console.log(d.browser_download_url); process.exit(0); }
+      }
+      process.exit(1);
+    });
+  " 2>/dev/null || true)
+
+  if [ -n "$DASHBOARD_URL" ]; then
+    log "Downloading dashboard → $DASHBOARD_DIR"
+    curl -fsSL "$DASHBOARD_URL" | tar -xz -C "$INSTALL_DIR"
+    log "Dashboard extracted to $DASHBOARD_DIR"
+  else
+    warn "No dashboard.tar.gz found in release — dashboard will not be available."
+  fi
+fi
+
 # ── Server version (for health endpoint) ────────────────────────────────────
 
 TAG_JSON=$(curl -fsSL "$RELEASES_API" || true)

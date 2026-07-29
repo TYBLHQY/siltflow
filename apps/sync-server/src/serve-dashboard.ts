@@ -13,7 +13,7 @@ import type { Context } from "hono";
 
 const DASHBOARD_DIR = path.resolve(
   typeof __dirname !== "undefined"
-    ? path.join(__dirname, "../dist-dashboard")
+    ? path.join(__dirname, "dist-dashboard")
     : path.join(path.dirname(fileURLToPath(import.meta.url)), "../dist-dashboard")
 );
 
