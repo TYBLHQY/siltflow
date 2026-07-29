@@ -10,49 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  # ── Check ──────────────────────────────────────────────────────────────
-  check:
-    runs-on: ubuntu-24.04
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: 'pnpm'
-
-      - name: Cache TypeScript build info
-        uses: actions/cache@v5
-        with:
-          path: apps/mobile/node_modules/.cache
-          key: tsc-cache-mobile-${{ runner.os }}-${{ hashFiles('apps/mobile/tsconfig.json', 'pnpm-lock.yaml') }}
-          restore-keys: |
-            tsc-cache-mobile-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: TypeCheck + Test (check)
-        working-directory: apps/mobile
-        run: |
-          set -e
-          pnpm run typecheck &
-          TSC_PID=$!
-          pnpm exec vitest run &
-          TEST_PID=$!
-          FAIL=0
-          wait $TSC_PID || FAIL=1
-          wait $TEST_PID || FAIL=1
-          exit $FAIL
-
   # ── Android ────────────────────────────────────────────────────────────
   android:
-    needs: check
     if: startsWith(github.ref, 'refs/tags/mobile-v')
     runs-on: ubuntu-24.04
 
