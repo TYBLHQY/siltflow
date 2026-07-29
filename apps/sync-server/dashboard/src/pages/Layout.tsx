@@ -5,8 +5,11 @@ import {
   Monitor,
   Settings,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useState } from "react";
 
 const NAV_ITEMS = [
   { to: "/devices", icon: Monitor, label: "Devices" },
@@ -16,16 +19,33 @@ const NAV_ITEMS = [
 export function Layout() {
   const { device, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={closeSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="flex w-56 shrink-0 flex-col border-r border-ctp-overlay0/20 bg-ctp-mantle">
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r border-ctp-overlay0/20 bg-ctp-mantle transition-transform duration-200",
+          "lg:relative lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
         {/* Brand */}
         <div className="flex items-center gap-2 px-4 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-ctp-mauve/15">
@@ -45,6 +65,7 @@ export function Layout() {
             <NavLink
               key={to}
               to={to}
+              onClick={closeSidebar}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
@@ -82,6 +103,25 @@ export function Layout() {
 
       {/* Main content */}
       <main className="flex flex-1 flex-col overflow-auto bg-ctp-base">
+        {/* Mobile header bar */}
+        <div className="flex items-center gap-3 border-b border-ctp-overlay0/10 bg-ctp-mantle px-4 py-2.5 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="rounded-lg p-1.5 text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text"
+          >
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-ctp-mauve/15">
+              <BrainCircuit className="h-3.5 w-3.5 text-ctp-mauve" />
+            </div>
+            <span className="text-sm font-semibold">SiltFlow</span>
+          </div>
+        </div>
         <Outlet />
       </main>
     </div>

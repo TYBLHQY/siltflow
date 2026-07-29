@@ -117,7 +117,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col p-6">
+    <div className="flex flex-1 flex-col p-4 sm:p-6">
       <div className="mb-6">
         <h1 className="text-xl font-semibold">Settings</h1>
         <p className="text-sm text-ctp-overlay0">Server configuration</p>
@@ -130,7 +130,7 @@ export function SettingsPage() {
         </div>
       )}
 
-      <div className="max-w-2xl space-y-6">
+      <div className="w-full space-y-6">
         {health && (
           <div className="rounded-xl border border-ctp-overlay0/20 bg-ctp-mantle p-5">
             <div className="flex items-center gap-3 mb-3">
@@ -283,7 +283,7 @@ export function SettingsPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <div className="relative flex-1">
               <input
                 type={showToken ? "text" : "password"}
@@ -304,7 +304,7 @@ export function SettingsPage() {
             <button
               onClick={handleSaveToken}
               disabled={tokenSaving || !newToken.trim()}
-              className="inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-ctp-mauve px-4 py-2.5 text-sm font-semibold text-ctp-crust transition-colors hover:bg-ctp-mauve/90 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-lg bg-ctp-mauve px-4 py-2.5 text-sm font-semibold text-ctp-crust transition-colors hover:bg-ctp-mauve/90 disabled:opacity-50"
             >
               {tokenSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
               Save
