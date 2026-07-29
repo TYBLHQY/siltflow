@@ -12,7 +12,7 @@
  * initSyncEngine() after the database is ready and sync config is loaded.
  */
 
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import { getSqlite } from "../database";
 import { SyncClient } from "../sync/sync-client";
 import { SyncWsClient } from "../sync/ws-client";
@@ -174,7 +174,7 @@ export function registerSyncHandlers(): void {
   ipcMain.handle("sync:configure", async (_event, cfg: SyncConfig) => {
     config = { ...cfg };
     // Persist to vault config
-    const main = require("../main");
+    const main = await import("../main");
     const vaultPath: string = main.getVaultPath();
     if (vaultPath) {
       main.writeVaultConfig(vaultPath, {
@@ -189,7 +189,6 @@ export function registerSyncHandlers(): void {
 
     initSyncEngine(cfg, {
       onStateChange: (state) => {
-        const { BrowserWindow } = require("electron");
         const win = BrowserWindow.getAllWindows()[0];
         if (win) win.webContents.send("sync:stateChange", state);
       },
@@ -226,7 +225,7 @@ export function registerSyncHandlers(): void {
 
     // Clear persisted sync config from vault (but keep syncDeviceId —
     // device identity survives disconnect so re-registration reuses it).
-    const main = require("../main");
+    const main = await import("../main");
     const vaultPath: string = main.getVaultPath();
     if (vaultPath) {
       main.writeVaultConfig(vaultPath, {

@@ -8,6 +8,13 @@ export default tseslint.config(
   },
   ...tseslint.configs.recommended,
   {
+    // Relax rules for test files — `as any` is standard for partial mocks
+    files: ["src/__tests__/**", "**/*.test.*", "**/*.spec.*"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,

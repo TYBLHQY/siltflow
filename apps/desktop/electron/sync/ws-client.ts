@@ -9,6 +9,7 @@
 import { EventEmitter } from "node:events";
 import { WebSocket } from "ws";
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface SyncWsClient {
   on(event: "sync:available", listener: (payload: SyncAvailableEvent) => void): this;
   on(event: "connected", listener: () => void): this;
@@ -23,6 +24,7 @@ export interface SyncAvailableEvent {
   accepted: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class SyncWsClient extends EventEmitter {
   private wsUrl: string;
   private token: string;
