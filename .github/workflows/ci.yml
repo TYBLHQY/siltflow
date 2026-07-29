@@ -274,6 +274,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: TypeCheck + Test (mobile)
+        working-directory: apps/mobile
+        run: |
+          set -e
+          pnpm run typecheck &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
+
       - name: Build release APK
         working-directory: apps/mobile/android
         run: ./gradlew assembleRelease
