@@ -235,6 +235,7 @@ else
 
   if [ -n "$DASHBOARD_URL" ]; then
     log "Downloading dashboard → $DASHBOARD_DIR"
+    rm -rf "$DASHBOARD_DIR"
     curl -fsSL "$DASHBOARD_URL" | tar -xz -C "$INSTALL_DIR"
     log "Dashboard extracted to $DASHBOARD_DIR"
   else
