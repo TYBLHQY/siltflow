@@ -5,8 +5,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { apiGet, apiPost, type HealthInfo, type TTSStatus } from "../lib/api";
-import { Server, Loader2, AlertTriangle, Trash2, CheckCircle, Volume2, XCircle } from "lucide-react";
+import { apiGet, apiPost, apiPatch, type HealthInfo, type TTSStatus } from "../lib/api";
+import { Server, Loader2, AlertTriangle, Trash2, CheckCircle, Volume2, XCircle, Key, Eye, EyeOff } from "lucide-react";
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -26,6 +26,12 @@ export function SettingsPage() {
   const [resetStatus, setResetStatus] = useState<"idle" | "confirming" | "done" | "error">("idle");
   const [resetError, setResetError] = useState<string | null>(null);
   const [ttsStatus, setTTSStatus] = useState<TTSStatus | null>(null);
+  // ── Server token editing ─────────────────────────────────────────────
+  const [showToken, setShowToken] = useState(false);
+  const [newToken, setNewToken] = useState("");
+  const [tokenSaving, setTokenSaving] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -74,6 +80,32 @@ export function SettingsPage() {
   const cancelReset = () => {
     setResetStatus("idle");
     setResetError(null);
+  };
+
+  // ── Change server token ──────────────────────────────────────────────
+
+  const handleSaveToken = async () => {
+    const trimmed = newToken.trim();
+    if (!trimmed || trimmed.length < 8) {
+      setTokenError("Token must be at least 8 characters.");
+      setTokenStatus("error");
+      return;
+    }
+    setTokenSaving(true);
+    setTokenError(null);
+    try {
+      await apiPatch("/api/settings", { key: "server_token", value: trimmed });
+      setTokenStatus("saved");
+      setNewToken("");
+      // Also update the token in session so the dashboard doesn't get logged out
+      sessionStorage.setItem("siltflow_token", trimmed);
+      setTimeout(() => setTokenStatus("idle"), 3000);
+    } catch (err) {
+      setTokenError(err instanceof Error ? err.message : "Failed to update token");
+      setTokenStatus("error");
+    } finally {
+      setTokenSaving(false);
+    }
   };
 
   if (loading) {
@@ -224,6 +256,61 @@ export function SettingsPage() {
             )}
           </div>
         )}
+
+        {/* Server Token — change the bootstrap/join password */}
+        <div className="rounded-xl border border-ctp-overlay0/20 bg-ctp-mantle p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ctp-mauve/10">
+              <Key className="h-4 w-4 text-ctp-mauve" />
+            </div>
+            <h2 className="text-sm font-semibold">Server Token</h2>
+          </div>
+          <p className="mb-4 text-xs text-ctp-overlay0">
+            This is the password that devices use to join this server.
+            Changing it does not affect already-registered devices.
+          </p>
+
+          {tokenStatus === "saved" && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-ctp-green/10 px-3 py-2 text-xs text-ctp-green">
+              <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+              Server token updated — refreshing this page will require the new token.
+            </div>
+          )}
+          {tokenStatus === "error" && tokenError && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg bg-ctp-red/10 px-3 py-2 text-xs text-ctp-red">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              {tokenError}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type={showToken ? "text" : "password"}
+                placeholder="Enter new server token (min 8 characters)"
+                value={newToken}
+                onChange={(e) => { setNewToken(e.target.value); setTokenStatus("idle"); setTokenError(null); }}
+                className="w-full rounded-lg border border-ctp-overlay0/30 bg-ctp-base px-3 py-2.5 pr-10 text-sm text-ctp-text placeholder:text-ctp-overlay0/50 focus:border-ctp-mauve/50 focus:ring-2 focus:ring-ctp-mauve/20"
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(!showToken)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ctp-overlay0 hover:text-ctp-text"
+                title={showToken ? "Hide token" : "Show token"}
+              >
+                {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <button
+              onClick={handleSaveToken}
+              disabled={tokenSaving || !newToken.trim()}
+              className="inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-ctp-mauve px-4 py-2.5 text-sm font-semibold text-ctp-crust transition-colors hover:bg-ctp-mauve/90 disabled:opacity-50"
+            >
+              {tokenSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+              Save
+            </button>
+          </div>
+        </div>
 
         {/* Reset database */}
         <div className="rounded-xl border border-ctp-red/20 bg-ctp-mantle p-5">
