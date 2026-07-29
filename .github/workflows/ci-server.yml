@@ -104,6 +104,9 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           TITLE="${TAG#server-v}"
 
+          # Delete existing release (idempotent re-run)
+          gh release delete "$TAG" --yes 2>/dev/null || true
+
           gh release create "$TAG" \
             --title "Server $TITLE" \
             --target "${{ github.sha }}" \
