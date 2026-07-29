@@ -248,24 +248,13 @@ export function DevicesPage() {
             {devices.length} registered device{devices.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchDevices}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-          {isAdmin && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-ctp-mauve px-4 py-2 text-sm font-semibold text-ctp-crust transition-colors hover:bg-ctp-mauve/90"
-            >
-              <Plus className="h-4 w-4" />
-              Register
-            </button>
-          )}
-        </div>
+        <button
+          onClick={fetchDevices}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+          title="Refresh"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Error banner */}
@@ -281,15 +270,6 @@ export function DevicesPage() {
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-ctp-overlay0">
           <Monitor className="h-12 w-12 text-ctp-overlay0/40" />
           <p className="text-sm">No devices registered yet</p>
-          {isAdmin && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-ctp-mauve px-4 py-2 text-sm font-medium text-ctp-crust hover:bg-ctp-mauve/90"
-            >
-              <Plus className="h-4 w-4" />
-              Register First Device
-            </button>
-          )}
         </div>
       )}
 
