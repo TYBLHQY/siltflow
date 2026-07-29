@@ -16,11 +16,9 @@ import { useSyncStore } from "@/stores/sync.store";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
-export type TTSProvider = "edge-tts" | "mimo";
+export type TTSProvider = "edge-tts";
 
 export interface TTSConfig {
-  /** Active TTS provider */
-  provider: TTSProvider;
   /** Speech rate string, e.g. "+0%", "-10%", "+50%". */
   rate: string;
   /** Volume string, e.g. "+0%", "-20%", "+30%". */
@@ -31,17 +29,6 @@ export interface TTSConfig {
   defaultVoice: string;
   /** Per-language voice overrides: { "zh-CN": "zh-CN-XiaoxiaoNeural", ... } */
   perLanguageVoices: Record<string, string>;
-  // ── MiMo settings ──
-  /** MiMo API key */
-  mimoApiKey: string;
-  /** MiMo voice ID (e.g. "冰糖", "Chloe") */
-  mimoVoice: string;
-  /** MiMo model */
-  mimoModel: string;
-  /** MiMo style — natural language tone instruction (sent in user role) */
-  mimoStylePrompt: string;
-  /** MiMo inline audio tags — inserted at start of assistant content (e.g. "(温柔)") */
-  mimoInlineTag: string;
 }
 
 interface TTSStoreState {
@@ -57,7 +44,6 @@ interface TTSStoreState {
 // ── Defaults ────────────────────────────────────────────────────────────
 
 const DEFAULT_CONFIG: TTSConfig = {
-  provider: "edge-tts",
   rate: "+0%",
   volume: "+0%",
   pitch: "+0Hz",
@@ -70,31 +56,7 @@ const DEFAULT_CONFIG: TTSConfig = {
     "fr-FR": "fr-FR-DeniseNeural",
     "es-ES": "es-ES-ElviraNeural",
   },
-  mimoApiKey: "",
-  mimoVoice: "冰糖",
-  mimoModel: "mimo-v2.5-tts",
-  mimoStylePrompt: "",
-  mimoInlineTag: "",
 };
-
-// ── Constants (mirrors desktop) ─────────────────────────────────────────
-
-export const MIMO_PRESET_VOICES = [
-  { id: "冰糖", label: "冰糖 (Chinese, Female)" },
-  { id: "茉莉", label: "茉莉 (Chinese, Female)" },
-  { id: "苏打", label: "苏打 (Chinese, Male)" },
-  { id: "白桦", label: "白桦 (Chinese, Male)" },
-  { id: "Mia", label: "Mia (English, Female)" },
-  { id: "Chloe", label: "Chloe (English, Female)" },
-  { id: "Milo", label: "Milo (English, Male)" },
-  { id: "Dean", label: "Dean (English, Male)" },
-];
-
-export const MIMO_MODELS = [
-  { id: "mimo-v2.5-tts", label: "mimo-v2.5-tts (Preset voices)" },
-  { id: "mimo-v2.5-tts-voicedesign", label: "mimo-v2.5-tts-voicedesign (Voice design)" },
-  { id: "mimo-v2.5-tts-voiceclone", label: "mimo-v2.5-tts-voiceclone (Voice clone)" },
-];
 
 // ── Store ───────────────────────────────────────────────────────────────
 
@@ -157,7 +119,6 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
 
   getVoice: (language?: string) => {
     const { config } = get();
-    if (config.provider === "mimo") return config.mimoVoice;
     if (language) {
       // Exact BCP 47 match: "en-US" → "en-US-EmmaMultilingualNeural"
       if (config.perLanguageVoices[language])

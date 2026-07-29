@@ -14,18 +14,11 @@ import Slider from "@react-native-community/slider";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   Input,
   Button,
   Spinner,
 } from "@/components/ui";
-import {
-  useTTSStore,
-  MIMO_PRESET_VOICES,
-  MIMO_MODELS,
-} from "@/stores/tts.store";
+import { useTTSStore } from "@/stores/tts.store";
 
 const LANG_META = [
   { id: "zh-CN", label: "简体中文" },
@@ -35,13 +28,6 @@ const LANG_META = [
   { id: "fr-FR", label: "Français" },
   { id: "es-ES", label: "Español" },
 ] as const;
-
-const QUICK_TAGS = [
-  "开心", "悲伤", "愤怒", "温柔", "活泼", "严肃",
-  "慵懒", "俏皮", "紧张", "激动", "疲惫", "委屈",
-  "撒娇", "害怕", "颤抖", "气声", "鼻音", "沙哑",
-  "轻笑", "哽咽", "抽泣", "吸气", "深呼吸", "叹气", "喘息",
-];
 
 /** Parse a rate/volume/pitch string like "+10%" or "+0Hz" into a slider number. */
 function parseSliderValue(raw: string): number {
@@ -78,33 +64,12 @@ export function TTSConfig() {
           color="#c4a1e0"
         />
         <Text className="text-lg font-semibold text-ctp-text">
-          TTS{isEdge ? " (Edge-TTS)" : " (MiMo)"}
+          TTS (Edge-TTS)
         </Text>
       </View>
 
-      {/* ── Provider selector ── */}
-      <View className="flex-row gap-2">
-        <Button
-          variant={isEdge ? "default" : "outline"}
-          size="sm"
-          onPress={() => setConfig({ provider: "edge-tts" })}
-          className="flex-1"
-        >
-          Edge-TTS
-        </Button>
-        <Button
-          variant={!isEdge ? "default" : "outline"}
-          size="sm"
-          onPress={() => setConfig({ provider: "mimo" })}
-          className="flex-1"
-        >
-          MiMo TTS
-        </Button>
-      </View>
-
-      {/* ── Edge-TTS settings ── */}
-      {isEdge && (
-        <Card>
+      {/* ── Rate/Volume/Pitch + Voices ── */}
+      <Card>
           <CardContent>
             <View className="gap-4 pt-3">
               {/* Rate slider */}
@@ -235,171 +200,6 @@ export function TTSConfig() {
 
               <Text className="text-xs text-ctp-overlay0">
                 Voices provided by Microsoft Edge online TTS.
-              </Text>
-            </View>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── MiMo settings ── */}
-      {!isEdge && (
-        <Card>
-          <CardContent>
-            <View className="gap-4 pt-3">
-              {/* API Key */}
-              <View>
-                <Text className="text-xs font-medium text-ctp-subtext0 mb-1">
-                  API Key
-                </Text>
-                <Input
-                  value={config.mimoApiKey}
-                  onChangeText={(v) => setConfig({ mimoApiKey: v })}
-                  placeholder="mimo-xxx..."
-                  secureTextEntry
-                />
-                <Text className="text-xs text-ctp-overlay0 mt-0.5">
-                  Get your key from mimo.mi.com
-                </Text>
-              </View>
-
-              {/* Model */}
-              <View>
-                <Text className="text-xs font-medium text-ctp-subtext0 mb-1">
-                  Model
-                </Text>
-                {/* Use Button row as pseudo-select (mobile has no <select>) */}
-                <View className="flex-row flex-wrap gap-1.5">
-                  {MIMO_MODELS.map((m) => (
-                    <Button
-                      key={m.id}
-                      variant={
-                        config.mimoModel === m.id ? "default" : "outline"
-                      }
-                      size="sm"
-                      onPress={() => setConfig({ mimoModel: m.id })}
-                    >
-                      <Text
-                        className={`text-xs ${config.mimoModel === m.id ? "text-ctp-crust" : "text-ctp-text"}`}
-                        numberOfLines={1}
-                      >
-                        {m.id}
-                      </Text>
-                    </Button>
-                  ))}
-                </View>
-              </View>
-
-              {/* Voice */}
-              <View>
-                <Text className="text-xs font-medium text-ctp-subtext0 mb-1">
-                  Voice
-                </Text>
-                <View className="flex-row flex-wrap gap-1.5">
-                  {MIMO_PRESET_VOICES.map((v) => (
-                    <Button
-                      key={v.id}
-                      variant={
-                        config.mimoVoice === v.id ? "default" : "outline"
-                      }
-                      size="sm"
-                      onPress={() => setConfig({ mimoVoice: v.id })}
-                    >
-                      <Text
-                        className={`text-xs ${config.mimoVoice === v.id ? "text-ctp-crust" : "text-ctp-text"}`}
-                        numberOfLines={1}
-                      >
-                        {v.id}
-                      </Text>
-                    </Button>
-                  ))}
-                </View>
-                {!MIMO_PRESET_VOICES.some(
-                  (v) => v.id === config.mimoVoice,
-                ) && (
-                  <Input
-                    className="mt-1.5"
-                    value={config.mimoVoice}
-                    onChangeText={(v) => setConfig({ mimoVoice: v })}
-                    placeholder="Custom voice ID"
-                  />
-                )}
-              </View>
-
-              {/* Style prompt */}
-              <View>
-                <Text className="text-xs font-medium text-ctp-subtext0 mb-1">
-                  Style prompt
-                  <Text className="text-ctp-overlay0 font-normal">
-                    {" "}
-                    (tone description)
-                  </Text>
-                </Text>
-                <Input
-                  value={config.mimoStylePrompt}
-                  onChangeText={(v) =>
-                    setConfig({ mimoStylePrompt: v })
-                  }
-                  placeholder="e.g. Bright, bouncy tone."
-                  multiline
-                />
-              </View>
-
-              {/* Inline audio tag */}
-              <View>
-                <Text className="text-xs font-medium text-ctp-subtext0 mb-1">
-                  Inline tag
-                  <Text className="text-ctp-overlay0 font-normal">
-                    {" "}
-                    (prepended to text)
-                  </Text>
-                </Text>
-                <Input
-                  value={config.mimoInlineTag}
-                  onChangeText={(v) =>
-                    setConfig({ mimoInlineTag: v })
-                  }
-                  placeholder='e.g. (温柔) or (紧张，深呼吸)'
-                />
-                <Text className="text-xs text-ctp-overlay0 mt-0.5">
-                  Wrap in parentheses. Examples: (开心) (颤抖) (轻笑).
-                </Text>
-              </View>
-
-              {/* Quick tags */}
-              <View>
-                <Text className="text-xs font-medium text-ctp-subtext0 mb-1.5">
-                  Quick tags
-                </Text>
-                <View className="flex-row flex-wrap gap-1">
-                  {QUICK_TAGS.map((tag) => {
-                    const isActive =
-                      config.mimoInlineTag === `(${tag})`;
-                    return (
-                      <Button
-                        key={tag}
-                        variant={isActive ? "default" : "outline"}
-                        size="sm"
-                        onPress={() =>
-                          setConfig({
-                            mimoInlineTag: isActive
-                              ? ""
-                              : `(${tag})`,
-                          })
-                        }
-                      >
-                        <Text
-                          className={`text-xs ${isActive ? "text-ctp-crust" : "text-ctp-text"}`}
-                        >
-                          ({tag})
-                        </Text>
-                      </Button>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <Text className="text-xs text-ctp-overlay0">
-                Powered by XiaoMi MiMo API · mimo.mi.com
               </Text>
             </View>
           </CardContent>

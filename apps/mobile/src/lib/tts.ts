@@ -6,7 +6,6 @@
  *  - Edge-TTS: POST to sync-server's /api/tts/speak proxy (server spawns
  *    the edge-tts Python CLI, returns MP3) → writes to cache → plays via
  *    `expo-audio` AudioPlayer
- *  - MiMo: calls xiaomimomo API → base64 WAV → plays via expo-audio
  *
  * Share a single AudioPlayer instance and playback state across all
  * callers, same as the desktop singleton model.
@@ -105,11 +104,7 @@ export async function speakTTS(
 
   const config = useTTSStore.getState().config;
 
-  if (config.provider === "mimo") {
-    await speakMiMo(text, voice ?? config.mimoVoice, config);
-  } else {
-    await speakEdgeTTS(text, voice, language, config);
-  }
+  await speakEdgeTTS(text, voice, language, config);
 }
 
 // ── Status listener management ──────────────────────────────────────────
@@ -219,80 +214,7 @@ async function speakEdgeTTS(
     player.play();
     setState("playing");
   } catch (err) {
-    console.error("[Edge-TTS mobile] failed:", err);
-    setState("error");
-  }
-}
-
-// ── MiMo ────────────────────────────────────────────────────────────────
-
-async function speakMiMo(
-  text: string,
-  voice: string,
-  config: ReturnType<typeof useTTSStore.getState>["config"],
-) {
-  setState("loading");
-
-  try {
-    const messages: { role: string; content: string }[] = [];
-    if (config.mimoStylePrompt?.trim()) {
-      messages.push({ role: "user", content: config.mimoStylePrompt.trim() });
-    }
-    let assistantContent = text;
-    if (config.mimoInlineTag?.trim()) {
-      assistantContent = `${config.mimoInlineTag.trim()}${text}`;
-    }
-    messages.push({ role: "assistant", content: assistantContent });
-
-    const response = await fetch(
-      "https://api.xiaomimomo.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": config.mimoApiKey,
-        },
-        body: JSON.stringify({
-          model: config.mimoModel,
-          messages,
-          audio: { format: "wav", voice },
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `MiMo API ${response.status}: ${await response.text().catch(() => "Unknown error")}`,
-      );
-    }
-
-    const data = await response.json();
-    const base64Audio = data?.choices?.[0]?.message?.audio?.data;
-    if (!base64Audio) throw new Error("MiMo response missing audio data");
-
-    // Decode base64
-    const binaryStr = atob(base64Audio);
-    const wavBytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) {
-      wavBytes[i] = binaryStr.charCodeAt(i);
-    }
-
-    // Write WAV to cache and play
-    const wavFile = new File(Paths.cache, `tts-${Date.now()}.wav`);
-    wavFile.create();
-    const wavBase64 = bytesToBase64(wavBytes);
-    wavFile.write(wavBase64, { encoding: EncodingType.Base64 });
-
-    await ensureAudioMode();
-
-    const player = createAudioPlayer(wavFile.uri);
-    playerRef = player;
-
-    attachListener(player, wavFile);
-    player.play();
-    setState("playing");
-  } catch (err) {
-    console.error("[MiMo TTS mobile] failed:", err);
+    console.error("[TTS mobile] failed:", err);
     setState("error");
   }
 }
