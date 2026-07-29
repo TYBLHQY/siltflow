@@ -180,7 +180,7 @@ else
   fi
 
   DOWNLOAD_URL=$(echo "$RELEASES_JSON" | "$NODE_CMD" -e "
-    const data = '';
+    let data = '';
     process.stdin.on('data', c => data += c);
     process.stdin.on('end', () => {
       const releases = JSON.parse(data);
@@ -212,7 +212,7 @@ fi
 
 TAG_JSON=$(curl -fsSL "$RELEASES_API" || true)
 SERVER_VERSION=$(echo "$TAG_JSON" | "$NODE_CMD" -e "
-  const data = '';
+  let data = '';
   process.stdin.on('data', c => data += c);
   process.stdin.on('end', () => {
     const releases = JSON.parse(data);
