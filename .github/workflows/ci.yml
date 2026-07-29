@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint + TypeCheck + Test (parallel)
+      - name: Lint + TypeCheck + Test (desktop)
         working-directory: apps/desktop
         run: |
           set -e
@@ -50,6 +50,32 @@ jobs:
           TEST_PID=$!
           FAIL=0
           wait $LINT_PID || FAIL=1
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
+
+      - name: TypeCheck + Test (sync-server)
+        working-directory: apps/sync-server
+        run: |
+          set -e
+          pnpm run typecheck &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
+
+      - name: TypeCheck + Test (mobile)
+        working-directory: apps/mobile
+        run: |
+          set -e
+          pnpm run typecheck &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
           wait $TSC_PID || FAIL=1
           wait $TEST_PID || FAIL=1
           exit $FAIL
@@ -355,6 +381,19 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: TypeCheck + Test (sync-server)
+        working-directory: apps/sync-server
+        run: |
+          set -e
+          pnpm run typecheck &
+          TSC_PID=$!
+          pnpm exec vitest run &
+          TEST_PID=$!
+          FAIL=0
+          wait $TSC_PID || FAIL=1
+          wait $TEST_PID || FAIL=1
+          exit $FAIL
 
       - name: Build server + dashboard
         working-directory: apps/sync-server

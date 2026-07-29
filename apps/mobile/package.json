@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "build": "expo run:android --variant release",
     "build:android": "expo run:android --variant release",
     "build:ios": "expo run:ios --configuration Release",
@@ -62,6 +63,7 @@
     "eas-cli": "^21.1.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
   }
 }

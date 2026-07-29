@@ -45,10 +45,16 @@ export function initDatabase(config: ServerConfig) {
   }
 
   // Server-only tables: read stored version, run migrations, persist
-  const svRow = executor.get<{ value: string }>(
-    "SELECT value FROM server_settings WHERE key = 'schema_version'",
-  );
-  const svVersion = svRow ? parseInt(svRow.value, 10) : 0;
+  let svVersion = 0;
+  try {
+    const svRow = executor.get<{ value: string }>(
+      "SELECT value FROM server_settings WHERE key = 'schema_version'",
+    );
+    svVersion = svRow ? parseInt(svRow.value, 10) : 0;
+  } catch {
+    // server_settings table doesn't exist yet (first cold start) —
+    // svVersion stays 0 so initServerSchema runs the full bootstrap.
+  }
   if (svVersion < SV_SCHEMA_VERSION) {
     console.log(
       `[sync-server] Server schema migration: v${svVersion} → v${SV_SCHEMA_VERSION}`,
