@@ -46,7 +46,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
   const scheme = useColorScheme();
 
   return (
-    <View className="flex-row border-t border-ctp-surface0 bg-ctp-crust pb-[20px] pt-2">
+    <View className="flex-row border-t border-ctp-surface0 bg-ctp-crust pb-5 pt-2">
       {TABS.map((tab) => {
         const route = state.routes.find((r) => r.name === tab.route);
         if (!route) return null;

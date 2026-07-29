@@ -105,6 +105,12 @@ export function SettingsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-ctp-base px-3 py-2.5">
                 <p className="text-[10px] font-medium text-ctp-overlay0 uppercase tracking-wide">
+                  Version
+                </p>
+                <p className="mt-0.5 text-sm font-mono">v{health.version}</p>
+              </div>
+              <div className="rounded-lg bg-ctp-base px-3 py-2.5">
+                <p className="text-[10px] font-medium text-ctp-overlay0 uppercase tracking-wide">
                   Status
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-sm">

@@ -104,6 +104,7 @@ export interface RegisterResult {
 
 export interface HealthInfo {
   ok: boolean;
+  version: string;
   uptime: number;
   db: string;
   timestamp: string;

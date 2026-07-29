@@ -32,12 +32,13 @@
     "server:dev": "pnpm -F @siltflow/sync-server dev",
     "server:start": "pnpm -F @siltflow/sync-server start",
     "server:build": "pnpm -F @siltflow/sync-server build",
+    "server:build:server": "pnpm -F @siltflow/sync-server build:server",
     "server:typecheck": "pnpm -F @siltflow/sync-server typecheck",
     "server:test": "pnpm -F @siltflow/sync-server test",
 
     "dashboard:dev": "pnpm -F @siltflow/sync-server dev:dashboard",
     "dashboard:build": "pnpm -F @siltflow/sync-server build:dashboard",
 
-    "ci:check": "pnpm desktop:lint && pnpm desktop:typecheck && pnpm desktop:test"
+    "ci:check": "pnpm desktop:lint && pnpm desktop:typecheck && pnpm desktop:test && pnpm server:typecheck && pnpm server:test"
   }
 }

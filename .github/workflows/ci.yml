@@ -204,3 +204,249 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           gh release edit "$TAG" --draft=false
+
+  # ── Android ──────────────────────────────────────────────────────────────
+  # Builds the mobile APK on version tags and uploads it along with
+  # latest.json so the app can check for updates via GitHub Releases.
+  android:
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # Gradle needs ANDROID_HOME / ANDROID_SDK_ROOT. The ubuntu-24.04
+      # runner ships cmdline-tools; we accept whatever license so the
+      # build doesn't hang.
+      - name: Setup Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          yes | ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+
+      - name: Bump version to match tag
+        shell: bash
+        working-directory: apps/mobile
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "
+            const p = require('./package.json');
+            const a = require('./app.json');
+            p.version = '$VERSION';
+            a.expo.version = '$VERSION';
+            require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+            require('fs').writeFileSync('app.json', JSON.stringify(a, null, 2) + '\n');
+          "
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease
+
+      - name: Generate latest.json
+        shell: bash
+        working-directory: apps/mobile
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          APK_DIR="android/app/build/outputs/apk/release"
+          APK=$(find "$APK_DIR" -name "Siltflow-v${VERSION}-*.apk" | head -1)
+
+          if [ ! -f "$APK" ]; then
+            echo "APK not found in $APK_DIR"
+            ls -la "$APK_DIR" || true
+            exit 1
+          fi
+
+          SIZE=$(stat -c%s "$APK")
+          SHA256=$(sha256sum "$APK" | cut -d' ' -f1)
+          APK_NAME=$(basename "$APK")
+
+          # Read versionCode from the build output (we compute it in build.gradle)
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+
+          cat > latest.json << EOF
+          {
+            "versionName": "${VERSION}",
+            "versionCode": ${VERSION_CODE},
+            "url": "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${APK_NAME}",
+            "size": ${SIZE},
+            "sha256": "${SHA256}",
+            "abi": "arm64-v8a",
+            "minSdkVersion": 24
+          }
+          EOF
+
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Upload APK and latest.json to release
+        shell: bash
+        working-directory: apps/mobile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          APK_DIR="android/app/build/outputs/apk/release"
+
+          # Wait for the desktop linux job to create the release
+          echo "Waiting for release $TAG to be created…"
+          for i in $(seq 1 30); do
+            if gh release view "$TAG" --json tagName &>/dev/null; then
+              echo "Release $TAG found."
+              break
+            fi
+            echo "  attempt $i/30 — not ready yet, sleeping 10s…"
+            sleep 10
+          done
+          if ! gh release view "$TAG" --json tagName &>/dev/null; then
+            echo "ERROR: Release $TAG was not created after 5 minutes."
+            exit 1
+          fi
+
+          gh release upload "$TAG" "$APK_DIR"/*.apk --clobber
+          gh release upload "$TAG" latest.json --clobber
+
+  # ── Server ───────────────────────────────────────────────────────────────
+  # Builds the sync-server Docker image on version tags, pushes to GHCR,
+  # and uploads latest-server.json to the release.
+  server:
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Bump version to match tag
+        shell: bash
+        working-directory: apps/sync-server
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node -e "
+            const p = require('./package.json');
+            p.version = '$VERSION';
+            require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          # Also bump the dashboard package.json (same version, same release)
+          node -e "
+            const p = require('./dashboard/package.json');
+            p.version = '$VERSION';
+            require('fs').writeFileSync('./dashboard/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server + dashboard
+        working-directory: apps/sync-server
+        run: |
+          pnpm run build:server
+          pnpm run build:dashboard
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/siltflow-server
+          tags: |
+            type=semver,pattern={{version}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}},value=${{ github.ref_name }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/sync-server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate latest-server.json
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          IMAGE="ghcr.io/${OWNER}/siltflow-server:${VERSION}"
+
+          cat > latest-server.json << EOF
+          {
+            "version": "${VERSION}",
+            "dockerImage": "${IMAGE}",
+            "bundleUrl": "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/server.cjs",
+            "healthEndpoint": "/health"
+          }
+          EOF
+
+          echo "Generated latest-server.json:"
+          cat latest-server.json
+
+      - name: Upload artifacts to release
+        shell: bash
+        working-directory: apps/sync-server
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+
+          # Wait for release
+          echo "Waiting for release $TAG to be created…"
+          for i in $(seq 1 30); do
+            if gh release view "$TAG" --json tagName &>/dev/null; then
+              echo "Release $TAG found."
+              break
+            fi
+            echo "  attempt $i/30 — not ready yet, sleeping 10s…"
+            sleep 10
+          done
+
+          gh release upload "$TAG" dist/server.cjs --clobber
+          gh release upload "$TAG" ../../latest-server.json --clobber
