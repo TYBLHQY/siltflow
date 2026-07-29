@@ -12,7 +12,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { schema } from "./schema";
 import { initSchema } from "@siltflow/shared-db/migrations";
 import { SCHEMA_VERSION } from "@siltflow/shared-db/types";
-import { initServerSchema } from "./migrations";
+import { initServerSchema, SV_SCHEMA_VERSION } from "./migrations";
 import type { ServerConfig } from "../config";
 import fs from "node:fs";
 import path from "node:path";
@@ -39,13 +39,22 @@ export function initDatabase(config: ServerConfig) {
   const executor = createSqlExecutor(_sqlite);
   initSchema(executor, version);
 
-  // Server-only tables
-  initServerSchema(executor);
-
-  // Update schema version
+  // Update shared schema version
   if (version < SCHEMA_VERSION) {
     _sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
   }
+
+  // Server-only tables: read stored version, run migrations, persist
+  const svRow = executor.get<{ value: string }>(
+    "SELECT value FROM server_settings WHERE key = 'schema_version'",
+  );
+  const svVersion = svRow ? parseInt(svRow.value, 10) : 0;
+  if (svVersion < SV_SCHEMA_VERSION) {
+    console.log(
+      `[sync-server] Server schema migration: v${svVersion} → v${SV_SCHEMA_VERSION}`,
+    );
+  }
+  initServerSchema(executor, svVersion);
 
   return _db;
 }
