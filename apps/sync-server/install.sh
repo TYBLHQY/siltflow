@@ -6,7 +6,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/TYBLHQY/siltflow/master/apps/sync-server/install.sh | sudo bash
 #
 # User install (no root needed):
-#   bash install.sh --user
+#   curl -fsSL https://raw.githubusercontent.com/TYBLHQY/siltflow/master/apps/sync-server/install.sh | bash -s -- --user
+#   (Or download first: bash install.sh --user)
 #
 # Environment overrides:
 #   PORT=3001                  HTTP port
@@ -39,6 +40,15 @@ err()  { echo -e "${RED}[siltflow]${NC} $*" >&2; }
 
 if [ "${1:-}" = "--user" ]; then
   MODE="user"
+elif [ "$(id -u)" -eq 0 ]; then
+  MODE="system"
+else
+  warn "Not running as root — auto-selecting --user mode."
+  warn "For system install, re-run with: sudo bash install.sh"
+  MODE="user"
+fi
+
+if [ "$MODE" = "user" ]; then
   SILTFLOW_USER="$USER"
   INSTALL_DIR="${HOME}/.local/siltflow-server"
   DATA_DIR="${DATA_DIR:-${HOME}/.local/share/siltflow-server}"
@@ -46,12 +56,6 @@ if [ "${1:-}" = "--user" ]; then
   IS_ROOT=false
   USE_SUDO=""
 else
-  MODE="system"
-  if [ "$(id -u)" -ne 0 ]; then
-    err "This script must be run as root (or via sudo) for system install."
-    err "For user-level install, use: bash install.sh --user"
-    exit 1
-  fi
   SILTFLOW_USER="siltflow"
   INSTALL_DIR="/opt/siltflow-server"
   DATA_DIR="${DATA_DIR:-/var/lib/siltflow-server}"
