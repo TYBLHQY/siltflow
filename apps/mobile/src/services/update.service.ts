@@ -27,7 +27,7 @@ const RELEASES_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO
 /** Narrow GitHub release info — only the fields we care about. */
 interface GhRelease {
   tag_name: string;
-  assets: Array<{ name: string; browser_download_url: string }>;
+  assets: { name: string; browser_download_url: string }[];
 }
 
 export interface LatestRelease {

@@ -27,16 +27,14 @@ export function createExpoSqliteExecutor(
     },
 
     all<T = Record<string, unknown>>(sql: string, ...params: unknown[]): T[] {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return db.getAllSync(sql, bind(params)) as any;
+      return db.getAllSync(sql, bind(params)) as T[];
     },
 
     get<T = Record<string, unknown>>(
       sql: string,
       ...params: unknown[]
     ): T | undefined {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return db.getFirstSync(sql, bind(params)) as any;
+      return db.getFirstSync(sql, bind(params)) as T | undefined;
     },
 
     exec(sql: string): void {
@@ -44,12 +42,11 @@ export function createExpoSqliteExecutor(
     },
 
     transaction<T>(fn: (executor: SqlExecutor) => T): T {
-      let result: T;
+      let result!: T;
       db.withTransactionSync(() => {
         result = fn(this);
       });
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return result!;
+      return result;
     },
   };
 }

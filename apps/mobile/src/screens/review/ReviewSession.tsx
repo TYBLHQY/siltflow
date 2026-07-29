@@ -22,8 +22,7 @@ import { listFSRSCardsByDocument } from "@/services/fsrs-cards.service";
 import { reviewAnnotation, initAnnotationCard } from "@/stores/fsrs.store";
 import { enrichedToItem, type AnnotationItem } from "@/stores/annotation.store";
 import { GRADE_LABEL } from "@siltflow/shared-lib";
-import type { Card as FSRSCard } from "ts-fsrs";
-import type { Grade } from "ts-fsrs";
+import type { Card as FSRSCard, Grade } from "ts-fsrs";
 import { ReviewCard } from "./ReviewCard";
 
 // ── Grade button styles ─────────────────────────────────────────────
@@ -58,12 +57,11 @@ export function ReviewSession() {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loading = items === null && error === null;
 
-  // Load session items when screen mounts (lazy, not during render)
+  // Load session items when screen mounts.
   useEffect(() => {
     try {
-      setLoading(true);
       const sql = getSQLite();
       const enriched = listAnnotations(sql, documentId);
       const annotationItems = enriched.map((e) => enrichedToItem(e));
@@ -97,11 +95,11 @@ export function ReviewSession() {
         return aDue - bDue;
       });
 
+      /* eslint-disable react-hooks/set-state-in-effect */
       setItems(sessionItems);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [documentId]);
 

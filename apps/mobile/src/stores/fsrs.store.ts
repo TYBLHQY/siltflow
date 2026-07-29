@@ -107,9 +107,8 @@ export function reviewAnnotation(
     const scheduledCards = engine.next(card, new Date(), grade);
     // `next()` returns a RecordLog-like object with `card` and `log`.
     // ts-fsrs types it as RecordLog, but the runtime object has { card, log }.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = scheduledCards as any;
-    const updatedCard: Card = result.card;
+    const result = scheduledCards as Record<string, unknown>;
+    const updatedCard = result.card as Card;
 
     // Persist updated card
     const db = getSQLite();

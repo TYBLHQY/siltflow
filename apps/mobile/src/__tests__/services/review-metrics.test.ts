@@ -96,7 +96,7 @@ function getDocMetrics(db: MockSQLiteDatabase): MetricsRow[] {
   for (const doc of docs) {
     const rawCards = cardsByDoc.get(doc.id) ?? [];
     const annCount = annCountByDoc.get(doc.id) ?? 0;
-    const cards: Array<{ state: number; due: string; stability: number; scheduled_days: number }> = [];
+    const cards: { state: number; due: string; stability: number; scheduled_days: number }[] = [];
     for (const raw of rawCards) {
       try { cards.push(JSON.parse(raw)); } catch { /* skip */ }
     }

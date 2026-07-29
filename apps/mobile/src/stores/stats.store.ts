@@ -188,5 +188,6 @@ export const useStatsStore = create<StatsState>((set, get) => ({
   clear: () => set({ cards: [], reviewLogs: [], annotationCount: 0, loaded: false }),
 }));
 
-// Import at bottom to avoid circular
+// Import at bottom to avoid circular dependency with fsrs.store
+// eslint-disable-next-line import/first
 import { useFSRSStore } from "@/stores/fsrs.store";

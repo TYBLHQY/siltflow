@@ -78,7 +78,7 @@ class SyncClient {
 
 describe("SyncClient", () => {
   let client: SyncClient;
-  let fetchCalls: Array<{ url: string; init: RequestInit }>;
+  let fetchCalls: { url: string; init: RequestInit }[];
 
   beforeEach(() => {
     fetchCalls = [];

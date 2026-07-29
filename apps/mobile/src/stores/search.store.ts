@@ -9,8 +9,7 @@
 
 import { create } from "zustand";
 import Fuse from "fuse.js";
-import { getDrizzle } from "@/stores/db.store";
-import { getSQLite } from "@/stores/db.store";
+import { getDrizzle, getSQLite } from "@/stores/db.store";
 import { listDocuments } from "@/services/documents.service";
 import { listAllAnnotations } from "@/services/annotations.service";
 

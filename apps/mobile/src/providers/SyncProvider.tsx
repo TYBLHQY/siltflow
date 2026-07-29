@@ -70,6 +70,7 @@ export function SyncProvider({ children }: PropsWithChildren) {
         appStateRef.current === "active" &&
         nextState.match(/inactive|background/)
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const engine = require("@/sync").getSyncEngine();
         if (engine) {
           const { lastPushAt, lastPullAt } = engine.state;

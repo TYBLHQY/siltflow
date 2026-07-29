@@ -43,7 +43,7 @@ const SORT_OPTIONS: { field: SortField; label: string }[] = [
 function sortMetrics(metrics: MetricsRow[], field: SortField): MetricsRow[] {
   const sorted = [...metrics];
 
-  const chains: Record<SortField, Array<(a: MetricsRow, b: MetricsRow) => number>> = {
+  const chains: Record<SortField, ((a: MetricsRow, b: MetricsRow) => number)[]> = {
     new: [
       (a, b) => b.newCardsCount - a.newCardsCount,
       (a, b) => b.dueNowCount - a.dueNowCount,

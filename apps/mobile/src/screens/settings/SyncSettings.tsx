@@ -51,12 +51,6 @@ export function SyncSettings() {
   const [deviceName, setDeviceName] = useState("Mobile");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Sync from config on mount
-  useEffect(() => {
-    if (config.serverUrl) setServerUrl(config.serverUrl);
-    if (config.serverToken) setServerToken(config.serverToken);
-  }, [config.serverUrl, config.serverToken]);
-
   const isConfigured = config.syncEnabled && config.deviceToken;
 
   const handleConnect = useCallback(async () => {
@@ -99,9 +93,10 @@ export function SyncSettings() {
   useEffect(() => {
     const msg = syncState?.lastError;
     if (msg && (msg.includes("401") || msg.includes("invalid token"))) {
-      handleDisconnect();
+      disconnect();
+      // No setState here — disconnect() already triggers store updates
     }
-  }, [syncState?.lastError, handleDisconnect]);
+  }, [syncState?.lastError, disconnect]);
 
   // -- Reset database ---------------------------------------------------
 

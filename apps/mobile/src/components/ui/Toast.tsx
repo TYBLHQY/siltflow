@@ -8,7 +8,7 @@
  * library dependency beyond react-native core.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Animated } from "react-native";
 import { View, Text } from "@/tw";
 import { useToastStore, type Toast as ToastType } from "@/stores/toast.store";
@@ -29,8 +29,9 @@ export function ToastContainer() {
 
 function ToastItem({ toast }: { toast: ToastType }) {
   const dismissToast = useToastStore((s) => s.dismissToast);
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(-20)).current;
+  // useMemo avoids accessing ref.current during render (react-hooks/refs)
+  const opacity = useMemo(() => new Animated.Value(0), []);
+  const translateY = useMemo(() => new Animated.Value(-20), []);
 
   useEffect(() => {
     // Slide down from top

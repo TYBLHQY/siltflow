@@ -12,7 +12,6 @@ permissions:
 jobs:
   # ── Android ────────────────────────────────────────────────────────────
   android:
-    if: startsWith(github.ref, 'refs/tags/mobile-v')
     runs-on: ubuntu-24.04
 
     permissions:
@@ -41,17 +40,20 @@ jobs:
             tsc-cache-mobile-${{ runner.os }}-
 
       - uses: actions/setup-java@v4
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Setup Android SDK
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
         run: |
           echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
           yes | ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
 
       - name: Bump version to match tag
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
         shell: bash
         working-directory: apps/mobile
         run: |
@@ -70,24 +72,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: TypeCheck + Test
+      - name: Lint + TypeCheck + Test
+        shell: bash
         working-directory: apps/mobile
         run: |
           set -e
+          pnpm run lint &
+          LINT_PID=$!
           pnpm run typecheck &
           TSC_PID=$!
           pnpm exec vitest run &
           TEST_PID=$!
           FAIL=0
+          wait $LINT_PID || FAIL=1
           wait $TSC_PID || FAIL=1
           wait $TEST_PID || FAIL=1
           exit $FAIL
 
       - name: Build release APK
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
         working-directory: apps/mobile/android
         run: ./gradlew assembleRelease
 
       - name: Generate latest.json
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
         shell: bash
         working-directory: apps/mobile
         run: |
@@ -126,6 +134,7 @@ jobs:
           cat latest.json
 
       - name: Create release + upload APK and latest.json
+        if: startsWith(github.ref, 'refs/tags/mobile-v')
         shell: bash
         working-directory: apps/mobile
         env:

@@ -13,7 +13,7 @@
  */
 
 import { View, Text, Pressable } from "@/tw";
-import { useRef, useEffect, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { Animated, Easing } from "react-native";
 import { Badge } from "@/components/ui";
 import { STATE_LABEL } from "@siltflow/shared-lib";
@@ -250,7 +250,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
 
   // ── TTS speak button (Badge-styled, placed in CEFR & Lemma) ─────────
 
-  const spin = useRef(new Animated.Value(0)).current;
+  const spin = useMemo(() => new Animated.Value(0), []);
   useEffect(() => {
     if (tts.state === "loading" && tts.speakingId === item.id) {
       const loop = Animated.loop(

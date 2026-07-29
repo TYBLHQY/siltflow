@@ -30,9 +30,6 @@ export function ServerUpdateConfig() {
   const [status, setStatus] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
 
-  // Only show when sync is configured
-  if (!config.syncEnabled || !config.serverUrl) return null;
-
   const serverUrl = config.serverUrl;
 
   const fetchStatus = useCallback(async () => {
@@ -50,10 +47,11 @@ export function ServerUpdateConfig() {
     }
   }, [serverUrl]);
 
-  useEffect(() => { fetchStatus(); }, [fetchStatus]);
-
-  const hasUpdate = health && latestVersion && isNewerServer(latestVersion, health.version);
-  const serverToken = config.serverToken;
+  // Fetch status on mount.
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
+    fetchStatus();
+  }, [fetchStatus]);
 
   const handleCheck = useCallback(async () => {
     setChecking(true);
@@ -82,6 +80,7 @@ export function ServerUpdateConfig() {
   }, [serverUrl]);
 
   const handleUpdate = useCallback(async () => {
+    const serverToken = config.serverToken;
     if (!serverToken) {
       setStatus("No server token configured. Reconnect to the server first.");
       setIsError(true);
@@ -108,7 +107,12 @@ export function ServerUpdateConfig() {
     } finally {
       setUpdating(false);
     }
-  }, [serverUrl, serverToken]);
+  }, [serverUrl, config.serverToken]);
+
+  // Only show when sync is configured
+  if (!config.syncEnabled || !config.serverUrl) return null;
+
+  const hasUpdate = health && latestVersion && isNewerServer(latestVersion, health.version);
 
   const statusColor = isError ? "text-ctp-red" : hasUpdate ? "text-ctp-peach" : "text-ctp-green";
 

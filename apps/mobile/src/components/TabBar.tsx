@@ -21,7 +21,7 @@ import { darkColors, lightColors } from "@/lib/theme";
 // -- Tab bar props (inlined — avoids direct dep on @react-navigation/bottom-tabs) --
 
 interface TabBarProps {
-  state: { routes: Array<{ key: string; name: string }>; index: number };
+  state: { routes: { key: string; name: string }[]; index: number };
   navigation: { navigate: (name: string) => void };
 }
 

@@ -23,7 +23,7 @@ export interface ServerHealth {
 
 interface GhRelease {
   tag_name: string;
-  assets: Array<{ name: string; browser_download_url: string }>;
+  assets: { name: string; browser_download_url: string }[];
 }
 
 export interface ServerUpdateResult {
