@@ -21,6 +21,7 @@ import { createFileRoutes } from "./routes/files";
 import { deviceRoutes } from "./routes/devices";
 import { settingsRoutes } from "./routes/settings";
 import { ttsRoutes } from "./routes/tts";
+import { updateRoutes } from "./routes/update";
 import { serveDashboard } from "./serve-dashboard";
 import type { ServerConfig } from "./config";
 import type { AppContext, Variables } from "./types";
@@ -70,6 +71,9 @@ export function createApp(config: ServerConfig, ctx: AppContext) {
 
   // TTS proxy (Edge TTS via Python CLI)
   api.route("/tts", ttsRoutes);
+
+  // Admin (self-update etc.) — protected by authMiddleware
+  api.route("/admin", updateRoutes);
 
   // Stats (read-only)
   api.route("/stats", statsRoutes);

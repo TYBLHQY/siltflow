@@ -13,6 +13,8 @@
  */
 
 import { View, Text, Pressable } from "@/tw";
+import { useRef, useEffect, type ReactNode } from "react";
+import { Animated, Easing } from "react-native";
 import { Badge } from "@/components/ui";
 import { STATE_LABEL } from "@siltflow/shared-lib";
 import type {
@@ -67,9 +69,11 @@ function SectionHeader({ label }: { label: string }) {
 function WordView({
   output,
   lemma,
+  ttsButton,
 }: {
   output: WordOutputV2;
   lemma?: string | null;
+  ttsButton?: ReactNode;
 }) {
   return (
     <View className="gap-1">
@@ -77,12 +81,13 @@ function WordView({
       {(output.cefr || lemma) && (
         <View>
           <SectionHeader label="CEFR & Lemma" />
-          <View className="flex-row flex-wrap gap-1.5">
+          <View className="flex-row flex-wrap gap-1.5 items-center">
+            {ttsButton}
             {output.cefr ? (
-              <Badge variant="destructive">{output.cefr}</Badge>
+              <Badge variant="destructive" className="py-1">{output.cefr}</Badge>
             ) : null}
             {lemma ? (
-              <Badge variant="warning">{lemma}</Badge>
+              <Badge variant="warning" className="py-1">{lemma}</Badge>
             ) : null}
           </View>
         </View>
@@ -243,6 +248,67 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
   const granularity = ai?.input?.type ?? "word";
   const output = ai?.output;
 
+  // ── TTS speak button (Badge-styled, placed in CEFR & Lemma) ─────────
+
+  const spin = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (tts.state === "loading" && tts.speakingId === item.id) {
+      const loop = Animated.loop(
+        Animated.timing(spin, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      spin.setValue(0);
+    }
+  }, [tts.state, tts.speakingId, item.id, spin]);
+
+  const spinInterpolate = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const isActive =
+    (tts.state === "loading" || tts.state === "playing") &&
+    tts.speakingId === item.id;
+  const iconColor = isActive ? "#c4a1e0" : "#7b7f8a";
+
+  const ttsButton = (
+    <Pressable
+      onPress={() => {
+        const text = ai?.input?.normalized ?? item.text;
+        if (text) {
+          tts.speak(text, undefined, sourceLang, item.id);
+        }
+      }}
+      disabled={tts.state === "loading"}
+      className="rounded-full px-2.5 py-0.5 active:bg-ctp-mauve/25"
+      style={{ backgroundColor: "rgba(196,161,224,0.15)" }}
+      accessibilityLabel="Read aloud"
+    >
+      <Animated.View
+        style={{ transform: [{ rotate: spinInterpolate }] }}
+      >
+        <MaterialCommunityIcons
+          name={
+            tts.state === "loading" && tts.speakingId === item.id
+              ? "loading"
+              : tts.state === "playing" && tts.speakingId === item.id
+                ? "volume-high"
+                : "volume-medium"
+          }
+          size={18}
+          color={iconColor}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+
   // ── Question side (answer not yet revealed) ─────────────────────────
 
   if (!answerRevealed) {
@@ -254,36 +320,6 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
             <Text className="text-3xl text-ctp-text text-center leading-relaxed flex-shrink">
               {item.text || "(no text)"}
             </Text>
-
-            {/* Speak button on question side */}
-            <Pressable
-              onPress={() => {
-                if (item.text) {
-                  tts.speak(item.text, undefined, sourceLang, item.id);
-                }
-              }}
-              disabled={tts.state === "loading"}
-              className="p-2 rounded-full active:bg-ctp-surface0"
-              accessibilityLabel="Read aloud"
-            >
-              <MaterialCommunityIcons
-                name={
-                  tts.state === "loading" && tts.speakingId === item.id
-                    ? "loading"
-                    : tts.state === "playing" && tts.speakingId === item.id
-                      ? "volume-high"
-                      : "volume-medium"
-                }
-                size={22}
-                color={
-                  tts.state === "loading" && tts.speakingId === item.id
-                    ? "#7b7f8a"
-                    : tts.state === "playing" && tts.speakingId === item.id
-                      ? "#c4a1e0"
-                      : "#7b7f8a"
-                }
-              />
-            </Pressable>
 
             <Text className="text-sm text-ctp-overlay0">
               Tap to reveal answer
@@ -300,7 +336,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
     <View className="rounded-lg bg-ctp-base p-4">
       <View className="py-2 gap-2">
 
-        {/* ── Header: granularity + kind/page + version + speak button ── */}
+        {/* ── Header: granularity + kind/page + version ── */}
         <View className="flex-row items-center justify-between mb-1">
           <View className="flex-row items-center gap-2 flex-1">
             <Text className="text-sm font-medium text-ctp-maroon uppercase tracking-wider">
@@ -312,37 +348,6 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
               <Text className="text-xs text-ctp-overlay0">p.{item.pageNumber}</Text>
             )}
           </View>
-
-          {/* TTS speak button */}
-          <Pressable
-            onPress={() => {
-              const text = ai?.input?.normalized ?? item.text;
-              if (text) {
-                tts.speak(text, undefined, sourceLang, item.id);
-              }
-            }}
-            disabled={tts.state === "loading"}
-            className="p-1.5 rounded-md active:bg-ctp-surface0"
-            accessibilityLabel="Read aloud"
-          >
-            <MaterialCommunityIcons
-              name={
-                tts.state === "loading" && tts.speakingId === item.id
-                  ? "loading"
-                  : tts.state === "playing" && tts.speakingId === item.id
-                    ? "volume-high"
-                    : "volume-medium"
-              }
-              size={18}
-              color={
-                tts.state === "loading" && tts.speakingId === item.id
-                  ? "#7b7f8a"
-                  : tts.state === "playing" && tts.speakingId === item.id
-                    ? "#c4a1e0"
-                    : "#7b7f8a"
-              }
-            />
-          </Pressable>
 
           {item.aiVersion != null && (
             <Badge variant="secondary">v{item.aiVersion}</Badge>
@@ -360,7 +365,7 @@ export function ReviewCard({ item, answerRevealed, onReveal }: ReviewCardProps) 
         {ai && output ? (
           <View className="gap-1">
             {isWordOutput(output) && (
-              <WordView output={output} lemma={ai.input.lemma} />
+              <WordView output={output} lemma={ai.input.lemma} ttsButton={ttsButton} />
             )}
             {isPhraseOutput(output) && (
               <PhraseView output={output} />

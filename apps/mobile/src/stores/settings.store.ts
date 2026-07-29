@@ -12,6 +12,16 @@ import { create } from "zustand";
 
 // ── Types ────────────────────────────────────────────────────────────
 
+export type StackAnimation =
+  | "none"
+  | "default"
+  | "fade"
+  | "simple_push"
+  | "slide_from_right"
+  | "slide_from_bottom"
+  | "flip"
+  | "slide_from_left";
+
 export interface AIProfile {
   id: string;
   name: string;
@@ -32,6 +42,7 @@ interface SettingsState {
   // App
   checkUpdateOnStartup: boolean;
   hasCompletedOnboarding: boolean;
+  animation: string;
 
   // Actions
   setAIProfiles: (profiles: AIProfile[]) => void;
@@ -40,6 +51,7 @@ interface SettingsState {
   removeAIProfile: (id: string) => void;
   setDefaultTargetLang: (lang: string) => void;
   setHasCompletedOnboarding: (v: boolean) => void;
+  setAnimation: (v: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -47,6 +59,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   defaultTargetLang: "zh-CN",
   checkUpdateOnStartup: true,
   hasCompletedOnboarding: false,
+  animation: "default",
 
   setAIProfiles: (profiles) => set({ aiProfiles: profiles }),
 
@@ -68,4 +81,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setDefaultTargetLang: (lang) => set({ defaultTargetLang: lang }),
 
   setHasCompletedOnboarding: (v) => set({ hasCompletedOnboarding: v }),
+
+  setAnimation: (v) => set({ animation: v }),
 }));

@@ -215,7 +215,7 @@ export function ReviewScreen() {
         <Card>
           <CardContent>
             {/* Doc title */}
-            <Text className="text-base font-semibold text-ctp-text" numberOfLines={1}>
+            <Text className="text-base font-semibold text-ctp-text">
               {doc.documentTitle}
             </Text>
 

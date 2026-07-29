@@ -4,7 +4,10 @@
 
 import { ScrollView, View, Text, SafeAreaView } from "@/tw";
 import { SyncSettings } from "./SyncSettings";
+import { AnimationConfig } from "./AnimationConfig";
 import { TTSConfig } from "./TTSConfig";
+import { UpdateConfig } from "./UpdateConfig";
+import { ServerUpdateConfig } from "./ServerUpdateConfig";
 
 export function SettingsScreen() {
   return (
@@ -15,11 +18,16 @@ export function SettingsScreen() {
       >
         <SyncSettings />
 
+        <ServerUpdateConfig />
+
+        <AnimationConfig />
+
         <TTSConfig />
+
+        <UpdateConfig />
 
         {/* App info footer */}
         <View className="items-center py-4">
-          <Text className="text-xs text-ctp-overlay0">Siltflow v0.1.0</Text>
           <Text className="text-xs text-ctp-overlay0">Mobile</Text>
         </View>
       </ScrollView>

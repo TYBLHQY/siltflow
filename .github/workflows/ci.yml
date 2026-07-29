@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    tags: ['v*']
+    tags: ['desktop-v*', 'mobile-v*', 'server-v*']
   pull_request:
     branches: [master]
 
@@ -55,10 +55,10 @@ jobs:
           exit $FAIL
 
   # ── Release ────────────────────────────────────────────────────────────
-  # Only on version tags, and only after check passes.
+  # Only on desktop version tags, and only after check passes.
   release:
     needs: check
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
     runs-on: ${{ matrix.os }}
 
     permissions:
@@ -88,13 +88,6 @@ jobs:
         with:
           node-version: 24
           cache: 'pnpm'
-
-      - name: Bump package.json version to match tag
-        shell: bash
-        working-directory: apps/desktop
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          node -e "const p=require('./package.json'); p.version='$VERSION'; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n')"
 
       - name: Install system deps (Linux)
         if: matrix.target == 'linux'
@@ -154,8 +147,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
+          TITLE="${TAG#desktop-v}"
 
-          # ── Create the release (linux only) ──────────────────────────
+          # ── Create the release (once, from the linux runner) ────────────
           if [ "${{ matrix.target }}" = "linux" ]; then
             PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName' 2>/dev/null || echo "")
             if [ -n "$PREV_TAG" ]; then
@@ -170,10 +164,10 @@ jobs:
               echo ""
               echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG:-$(git tag --sort=-creatordate | head -1)}...${TAG}"
             } > /tmp/release-notes.md
-            gh release create "$TAG" --title "${TAG#v}" --target "${{ github.sha }}" --notes-file /tmp/release-notes.md
+            gh release create "$TAG" --title "Desktop $TITLE" --target "${{ github.sha }}" --notes-file /tmp/release-notes.md
           else
-            # ── Wait for linux job to create the release ──────────────
-            echo "Waiting for release $TAG to be created by the linux job…"
+            # ── Wait for linux to create the release ───────────────────
+            echo "Waiting for release $TAG to be created…"
             for i in $(seq 1 30); do
               if gh release view "$TAG" --json tagName &>/dev/null; then
                 echo "Release $TAG found."
@@ -188,7 +182,7 @@ jobs:
             fi
           fi
 
-          # ── Upload artifacts ────────────────────────────────────────
+          # ── Upload artifacts ────────────────────────────────────────────
           for f in release/*/*; do
             if [ -f "$f" ]; then
               echo "Uploading: $f"
@@ -196,21 +190,12 @@ jobs:
             fi
           done
 
-      - name: Mark release as published (Linux only)
-        if: matrix.target == 'linux'
-        working-directory: apps/desktop
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          gh release edit "$TAG" --draft=false
-
   # ── Android ──────────────────────────────────────────────────────────────
-  # Builds the mobile APK on version tags and uploads it along with
+  # Builds the mobile APK on mobile version tags and uploads it along with
   # latest.json so the app can check for updates via GitHub Releases.
   android:
     needs: check
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/mobile-v')
     runs-on: ubuntu-24.04
 
     permissions:
@@ -248,7 +233,7 @@ jobs:
         shell: bash
         working-directory: apps/mobile
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME#mobile-v}"
           node -e "
             const p = require('./package.json');
             const a = require('./app.json');
@@ -257,6 +242,8 @@ jobs:
             require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
             require('fs').writeFileSync('app.json', JSON.stringify(a, null, 2) + '\n');
           "
+          sed -i "s/const APP_VERSION = \"[^\"]*\"/const APP_VERSION = \"$VERSION\"/" \
+            src/services/update.service.ts
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -269,7 +256,7 @@ jobs:
         shell: bash
         working-directory: apps/mobile
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME#mobile-v}"
           APK_DIR="android/app/build/outputs/apk/release"
           APK=$(find "$APK_DIR" -name "Siltflow-v${VERSION}-*.apk" | head -1)
 
@@ -304,39 +291,31 @@ jobs:
           echo "Generated latest.json:"
           cat latest.json
 
-      - name: Upload APK and latest.json to release
+      - name: Create release + upload APK and latest.json
         shell: bash
         working-directory: apps/mobile
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
+          TITLE="${TAG#mobile-v}"
           APK_DIR="android/app/build/outputs/apk/release"
 
-          # Wait for the desktop linux job to create the release
-          echo "Waiting for release $TAG to be created…"
-          for i in $(seq 1 30); do
-            if gh release view "$TAG" --json tagName &>/dev/null; then
-              echo "Release $TAG found."
-              break
-            fi
-            echo "  attempt $i/30 — not ready yet, sleeping 10s…"
-            sleep 10
-          done
-          if ! gh release view "$TAG" --json tagName &>/dev/null; then
-            echo "ERROR: Release $TAG was not created after 5 minutes."
-            exit 1
-          fi
+          # Create the release directly (this job owns it)
+          gh release create "$TAG" \
+            --title "Mobile $TITLE" \
+            --target "${{ github.sha }}" \
+            --notes "Mobile Android release $TITLE"
 
           gh release upload "$TAG" "$APK_DIR"/*.apk --clobber
           gh release upload "$TAG" latest.json --clobber
 
   # ── Server ───────────────────────────────────────────────────────────────
-  # Builds the sync-server Docker image on version tags, pushes to GHCR,
+  # Builds the sync-server Docker image on server version tags, pushes to GHCR,
   # and uploads latest-server.json to the release.
   server:
     needs: check
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/server-v')
     runs-on: ubuntu-24.04
 
     permissions:
@@ -361,7 +340,7 @@ jobs:
         shell: bash
         working-directory: apps/sync-server
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME#server-v}"
           node -e "
             const p = require('./package.json');
             p.version = '$VERSION';
@@ -412,7 +391,7 @@ jobs:
       - name: Generate latest-server.json
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME#server-v}"
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
           IMAGE="ghcr.io/${OWNER}/siltflow-server:${VERSION}"
@@ -429,24 +408,19 @@ jobs:
           echo "Generated latest-server.json:"
           cat latest-server.json
 
-      - name: Upload artifacts to release
+      - name: Create release + upload artifacts
         shell: bash
         working-directory: apps/sync-server
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
+          TITLE="${TAG#server-v}"
 
-          # Wait for release
-          echo "Waiting for release $TAG to be created…"
-          for i in $(seq 1 30); do
-            if gh release view "$TAG" --json tagName &>/dev/null; then
-              echo "Release $TAG found."
-              break
-            fi
-            echo "  attempt $i/30 — not ready yet, sleeping 10s…"
-            sleep 10
-          done
+          gh release create "$TAG" \
+            --title "Server $TITLE" \
+            --target "${{ github.sha }}" \
+            --notes "Sync server release $TITLE"
 
           gh release upload "$TAG" dist/server.cjs --clobber
           gh release upload "$TAG" ../../latest-server.json --clobber

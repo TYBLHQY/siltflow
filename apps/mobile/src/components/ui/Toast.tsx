@@ -78,7 +78,7 @@ function ToastItem({ toast }: { toast: ToastType }) {
       }}
     >
       <View
-        className={`rounded-xl px-4 py-3 shadow-lg ${
+        className={`rounded-xl px-4 py-3 ${
           isError
             ? "bg-ctp-red/90 border border-ctp-red/30"
             : "bg-ctp-blue/90 border border-ctp-blue/30"
