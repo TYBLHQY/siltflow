@@ -148,6 +148,33 @@ export function SettingsPage() {
                 </p>
               </div>
             </div>
+            {/* Schema versions — second row, full width for readability */}
+            {health.schema && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-ctp-base px-3 py-2.5">
+                  <p className="text-[10px] font-medium text-ctp-overlay0 uppercase tracking-wide">
+                    Shared Schema
+                  </p>
+                  <p className="mt-0.5 text-sm font-mono">
+                    v{health.schema.shared}
+                    {health.schema.shared < health.schema.sharedLatest && (
+                      <span className="ml-1 text-ctp-peach">(latest v{health.schema.sharedLatest})</span>
+                    )}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-ctp-base px-3 py-2.5">
+                  <p className="text-[10px] font-medium text-ctp-overlay0 uppercase tracking-wide">
+                    Server Schema
+                  </p>
+                  <p className="mt-0.5 text-sm font-mono">
+                    v{health.schema.server}
+                    {health.schema.server < health.schema.serverLatest && (
+                      <span className="ml-1 text-ctp-peach">(latest v{health.schema.serverLatest})</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -105,6 +105,12 @@ export interface RegisterResult {
 export interface HealthInfo {
   ok: boolean;
   version: string;
+  schema: {
+    shared: number;
+    sharedLatest: number;
+    server: number;
+    serverLatest: number;
+  };
   uptime: number;
   db: string;
   timestamp: string;
