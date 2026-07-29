@@ -26,10 +26,18 @@ jobs:
           node-version: 24
           cache: 'pnpm'
 
+      - name: Cache TypeScript build info
+        uses: actions/cache@v5
+        with:
+          path: apps/mobile/node_modules/.cache
+          key: tsc-cache-mobile-${{ runner.os }}-${{ hashFiles('apps/mobile/tsconfig.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            tsc-cache-mobile-${{ runner.os }}-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: TypeCheck + Test
+      - name: TypeCheck + Test (check)
         working-directory: apps/mobile
         run: |
           set -e
@@ -64,6 +72,14 @@ jobs:
         with:
           node-version: 24
           cache: 'pnpm'
+
+      - name: Cache TypeScript build info
+        uses: actions/cache@v5
+        with:
+          path: apps/mobile/node_modules/.cache
+          key: tsc-cache-mobile-${{ runner.os }}-${{ hashFiles('apps/mobile/tsconfig.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            tsc-cache-mobile-${{ runner.os }}-
 
       - uses: actions/setup-java@v4
         with:

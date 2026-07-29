@@ -15,6 +15,9 @@
   "dependencies": {
     "drizzle-orm": "^0.45.2"
   },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  },
   "peerDependencies": {
     "drizzle-orm": "^0.45.2",
     "better-sqlite3": ">=11.0.0"

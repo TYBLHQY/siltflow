@@ -5,7 +5,7 @@
  * Network-dependent functions require fetch mock.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 // We import only the pure functions; the module uses react-native imports
 // which won't resolve in Node. So we test via extraction.

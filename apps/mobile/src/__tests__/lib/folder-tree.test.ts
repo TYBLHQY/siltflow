@@ -75,7 +75,6 @@ function folder(id: string, parentId: string | null, name: string): FolderItem {
     name,
     parentId,
     sortOrder: 0,
-    documentCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

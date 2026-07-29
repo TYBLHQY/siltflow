@@ -29,8 +29,13 @@ export function registerSummaryHandlers() {
       `INSERT OR REPLACE INTO summaries (document_id, text, is_ai_generated, source_lang, created_at, updated_at)
        VALUES (?, ?, ?, ?, COALESCE((SELECT created_at FROM summaries WHERE document_id = ?), ?), ?)`
     ).run(
-      ...
--      now,
+      summary.documentId,
+      summary.text,
+      summary.isAiGenerated ? 1 : 0,
+      summary.sourceLang ?? null,
+      summary.documentId,
+      now,
+      now,
     )
     // Record save in op_log
     const savedRow = sql.prepare(

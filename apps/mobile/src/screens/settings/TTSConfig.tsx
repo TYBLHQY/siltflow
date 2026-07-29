@@ -258,7 +258,6 @@ export function TTSConfig() {
               <View className="gap-1.5">
                 {LANG_META.map((lang) => {
                   const current = config.perLanguageVoices[lang.id] ?? "";
-                  const list = voiceLists[lang.id];
                   return (
                     <Pressable
                       key={lang.id}

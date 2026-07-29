@@ -60,6 +60,16 @@ export interface SyncState {
   connected: boolean;
 }
 
+/** A row-level conflict returned to the UI for manual resolution. */
+export interface ConflictRecord {
+  id: number;
+  tableName: string;
+  rowId: string;
+  localData: Record<string, unknown> | null;
+  remoteData: Record<string, unknown> | null;
+  createdAt: string;
+}
+
 export class SyncEngine extends EventEmitter {
   private client: SyncClient;
   private ws: SyncWsClient;

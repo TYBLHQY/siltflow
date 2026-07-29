@@ -5,7 +5,7 @@ import crypto from "crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { getSqlite } from "../database"
-import { recordDelete, recordDeletes } from "../sync/op-log"
+import { recordDeletes } from "../sync/op-log"
 import { requestDeferredPush } from "./sync.ipc"
 
 let vaultPath = ""

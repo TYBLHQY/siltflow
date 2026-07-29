@@ -6,13 +6,10 @@
  * algorithm without real SQLite.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 // In-memory mock database compatible with the sync subset of SQLiteDatabase API
 class MockSQLiteDatabase {
-  private tables: Map<string, Map<string, Record<string, unknown>>> = new Map();
-  private autoIncrementIds = 0;
-
   // Simulate execSync for DDL
   execSync(_sql: string): void {}
 
@@ -184,7 +181,6 @@ describe("getDocMetrics", () => {
   });
 
   it("sorts results by composite score descending", () => {
-    const now = new Date().toISOString();
     const yesterday = new Date(Date.now() - 86400000).toISOString();
 
     db.setData("documents", [

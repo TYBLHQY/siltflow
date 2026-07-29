@@ -28,7 +28,7 @@ function isNetworkErr(msg: string): boolean {
   return NETWORK_ERROR_LIST.some((p) => lower.includes(p.toLowerCase()));
 }
 
-function toastError(tag: string, msg: string): void {
+function toastError(_tag: string, msg: string): void {
   if (isNetworkErr(msg)) {
     const now = Date.now();
     if (now - lastNetworkErrorToast < NETWORK_TOAST_DEDUPE_MS) return;

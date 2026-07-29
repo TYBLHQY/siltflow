@@ -52,9 +52,7 @@ async function ensureAudioMode() {
   if (audioModeSet) return;
   await setAudioModeAsync({
     playsInSilentMode: true,
-    staysActiveInBackground: false,
-    interruptionModeIOS: "duckOthers",
-    shouldDuckAndroid: true,
+    interruptionMode: "duckOthers",
   });
   audioModeSet = true;
 }
