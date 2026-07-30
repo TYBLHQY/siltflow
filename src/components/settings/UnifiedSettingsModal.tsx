@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Bot, BrainCircuit, TextSelect, Volume2, Keyboard, Info, X } from "lucide-react";
+import { Bot, BrainCircuit, TextSelect, Volume2, Keyboard, Info } from "lucide-react";
 import { IconText } from "@/components/ui/icon-text";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AIConfigContent } from "@/components/settings/AIConfigContent";
@@ -55,11 +55,6 @@ export function UnifiedSettingsModal({
       >
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
-          <div className="flex items-center gap-2 px-2 py-3">
-            <IconText icon={Settings} size="md">
-              <span className="text-xs font-semibold">Settings</span>
-            </IconText>
-          </div>
           <nav className="flex flex-col gap-0.5 mt-1">
             {SETTINGS_TABS.map((t) => {
               const Icon = t.icon;
@@ -84,16 +79,7 @@ export function UnifiedSettingsModal({
 
         {/* ── Right content ── */}
         <div className="flex flex-1 min-w-0 flex-col">
-          <div className="flex items-center justify-between px-5 pt-5 pb-0">
-            <div />
-            <button
-              className="flex h-6 w-6 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-5">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-5">
             {tab === "ai" && <AIConfigContent />}
             {tab === "fsrs" && <FSRSConfigContent />}
             {tab === "style" && <StyleConfigContent />}

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { X, BarChart3 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useStatsStore } from "@/stores/stats.store";
@@ -53,22 +52,6 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
 
   return (
     <div ref={containerRef} className="flex h-full w-full select-none flex-col">
-      {/* Header */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-ctp-overlay0" />
-          <h2 className="text-sm font-semibold">Statistics</h2>
-        </div>
-        {onClose && (
-          <button
-            className="flex h-6 w-6 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
       {/* Content: fixed tabs + fill remaining space */}
       <div className="flex flex-1 flex-col min-h-0 gap-6 p-4">
         <section className="shrink-0">
