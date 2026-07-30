@@ -53,6 +53,10 @@ export function AIAnnotationResultBase({
 
   // ── Translate spinner ──────────────────────────────────────────────
   const [translating, setTranslating] = useState(false);
+  // Also show spinner when aiResult === null, which signals an in-flight
+  // translation from batch translate (translateItemV2 clears aiResult before
+  // the AI call so individual card buttons animate too).
+  const isTranslating = translating || item.aiResult === null;
 
   async function handleTranslate() {
     if (!onTranslate) return;
@@ -167,7 +171,7 @@ export function AIAnnotationResultBase({
           {onTranslate && (
             <button
               className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
-                translating
+                isTranslating
                   ? "text-ctp-maroon/60"
                   : "text-ctp-maroon hover:bg-ctp-surface0"
               }`}
@@ -176,9 +180,9 @@ export function AIAnnotationResultBase({
                 handleTranslate();
               }}
               title="Translate"
-              disabled={translating}
+              disabled={isTranslating}
             >
-              {translating ? (
+              {isTranslating ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />

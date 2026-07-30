@@ -407,6 +407,9 @@ export function AIAnnotationResultV2({
 
   // ── Translate spinner ──
   const [translating, setTranslating] = useState(false);
+  // Also show spinner when aiResult === null — batch translate clears aiResult
+  // before the AI call so individual card buttons animate.
+  const isTranslating = translating || item.aiResult === null;
 
   async function handleTranslate() {
     if (!onTranslate) return;
@@ -428,7 +431,7 @@ export function AIAnnotationResultV2({
     { enabled: enableShortcut && !!item },
   );
 
-  if (!ai && !showCore && !translating) return null;
+  if (!ai && !showCore && !isTranslating) return null;
 
   const granularity = ai?.input?.type ?? "word";
   const output = ai?.output;
@@ -537,7 +540,7 @@ export function AIAnnotationResultV2({
               {onTranslate && (
                 <button
                   className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
-                    translating
+                    isTranslating
                       ? "text-ctp-maroon/60"
                       : "text-ctp-maroon hover:bg-ctp-surface0"
                   }`}
@@ -546,9 +549,9 @@ export function AIAnnotationResultV2({
                     handleTranslate();
                   }}
                   title="Translate"
-                  disabled={translating}
+                  disabled={isTranslating}
                 >
-                  {translating ? (
+                  {isTranslating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Sparkles className="h-3.5 w-3.5" />
