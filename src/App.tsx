@@ -74,10 +74,8 @@ function App() {
       const anchor = target.closest?.("a");
       if (!anchor?.href || anchor.target !== "_blank") return;
       // Skip blob: and javascript: URLs
-      // eslint-disable-next-line no-script-url -- This is a security filter checking for malicious javascript: URLs, not using them
       if (
         anchor.href.startsWith("blob:") ||
-        // eslint-disable-next-line no-script-url -- security check, not usage
         anchor.href.startsWith("javascript:")
       )
         return;
