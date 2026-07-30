@@ -1,0 +1,33 @@
+# Build outputs
+dist/
+dist-electron/
+dist-ssr/
+release/
+main.js
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Lockfile (generated)
+pnpm-lock.yaml
+
+# Claude Code internals
+.claude/
+
+# Audit reports
+reports/
+.semgrep/
+electronegativity-report.sarif
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
