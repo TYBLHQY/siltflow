@@ -7,8 +7,7 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import type { NodeRendererProps, TreeApi } from "react-arborist";
-import { Tree } from "react-arborist";
+import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { useDocumentStore, type DocumentItem } from "@/stores/document.store";
 import { useFolderStore, type FolderItem } from "@/stores/folder.store";
@@ -189,8 +188,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
 
     // Load folders
     useEffect(() => {
-      useFolderStore.getState().loadFolders();
-    }, []);
+      void useFolderStore.getState().loadFolders();    }, []);
 
     // Tree data
     const treeData = useMemo(
@@ -245,8 +243,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         const treeNodes = tree?.visibleNodes ?? [];
         for (const n of treeNodes) {
           if (n.id === `folder:${folder.id}`) {
-            n.edit();
-            break;
+            void n.edit();            break;
           }
         }
       },
@@ -355,8 +352,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         countSubfolders(folder.id);
         // If folder is empty, delete without confirmation
         if (docCount === 0 && subFolderCount === 0) {
-          deleteFolder(folder.id);
-        } else {
+          void deleteFolder(folder.id);        } else {
           setDeleteConfirm(folder);
         }
       },
@@ -366,8 +362,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       (folder: FolderItem) => {
         for (const n of tree?.visibleNodes ?? []) {
           if (n.id === `folder:${folder.id}`) {
-            n.edit();
-            break;
+            void n.edit();            break;
           }
         }
         setContextMenu(null);
@@ -376,14 +371,12 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     );
     const handleNewSubfolder = useCallback(
       (folder: FolderItem) => {
-        createDirectFolder(folder.id);
-        setContextMenu(null);
+        void createDirectFolder(folder.id);        setContextMenu(null);
       },
       [createDirectFolder],
     );
     const handleNewFolder = useCallback(() => {
-      createDirectFolder(null);
-      setContextMenu(null);
+      void createDirectFolder(null);      setContextMenu(null);
     }, [createDirectFolder]);
 
     // Dismiss context menu
@@ -470,8 +463,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
                 // Find the tree node and trigger inline edit
                 for (const n of tree?.visibleNodes ?? []) {
                   if (n.id === `doc:${contextMenu.target.id}`) {
-                    n.edit();
-                    break;
+                    void n.edit();                    break;
                   }
                 }
                 setContextMenu(null);

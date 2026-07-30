@@ -14,8 +14,7 @@ export const useAppSettingsStore = create<AppSettingsState>()((set) => ({
 
   setCheckUpdateOnStartup: (v) => {
     set({ checkUpdateOnStartup: v });
-    window.siltflow.vaultConfigSet({
-      [STORAGE_KEY]: { checkUpdateOnStartup: v },
+    void window.siltflow.vaultConfigSet({      [STORAGE_KEY]: { checkUpdateOnStartup: v },
     });
   },
 }));
@@ -23,8 +22,8 @@ export const useAppSettingsStore = create<AppSettingsState>()((set) => ({
 /** Call once on app boot to restore app settings from vault. */
 export async function loadAppSettingsFromVault(cfg?: Record<string, unknown>) {
   try {
-    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
-    const saved = (cfg as Record<string, unknown>)[STORAGE_KEY] as
+    cfg ??= await window.siltflow.vaultConfigGet();
+    const saved = (cfg)[STORAGE_KEY] as
       Partial<AppSettingsState> | undefined;
     if (saved && typeof saved === "object") {
       const patch: Partial<AppSettingsState> = {};

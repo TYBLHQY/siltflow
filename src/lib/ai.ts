@@ -1,4 +1,4 @@
-import { type AIProfile } from "@/types/ai";
+import type { AIProfile } from "@/types/ai";
 
 /** Standard Chat Completion request message. */
 export interface ChatMessage {
@@ -81,9 +81,9 @@ export async function chatCompletion(
     // Deep search fallback for providers that nest content differently
     const deep =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (response as any)?.choices?.[0]?.delta?.content ||
+      ((response as any)?.choices?.[0]?.delta?.content ??
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (response as any)?.choices?.[0]?.text ||
+      (response as any)?.choices?.[0]?.text) ||
       "";
     if (deep) {
       console.warn("[ai] found content at alternate path:", deep.slice(0, 200));

@@ -31,3 +31,8 @@ dist-ssr
 release/
 main.js
 *.tsbuildinfo
+
+# Audit outputs
+electronegativity-report.sarif
+reports/
+.semgrep/

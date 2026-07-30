@@ -116,9 +116,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       if (patch.aiResult && patch.aiResult !== null) {
         // Version is assigned by the caller (translate function knows its version).
         // Fall back to 1 if no version provided (v1 callers).
-        if (patch.aiVersion === undefined || patch.aiVersion === null) {
-          patch.aiVersion = 1;
-        }
+        patch.aiVersion ??= 1;
       }
       const merged = { ...current, ...patch };
       // Always persist the annotation core

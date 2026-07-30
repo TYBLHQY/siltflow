@@ -30,8 +30,7 @@ const DEFAULT_CONFIG: ThemeConfig = {
 };
 
 function persist(config: ThemeConfig) {
-  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });
-}
+  void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });}
 
 export const useThemeStore = create<ThemeStoreState>((set, get) => ({
   config: { ...DEFAULT_CONFIG },
@@ -67,7 +66,7 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
   resolveTheme: () => {
     const { lightTheme, darkTheme, themeMode } = get().config;
     if (themeMode === "light") {
-      return { flavor: lightTheme as ThemeFlavor, isDark: false };
+      return { flavor: lightTheme, isDark: false };
     }
     if (themeMode === "dark") {
       return { flavor: darkTheme, isDark: true };
@@ -79,15 +78,15 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
     if (prefersDark) {
       return { flavor: darkTheme, isDark: true };
     }
-    return { flavor: lightTheme as ThemeFlavor, isDark: false };
+    return { flavor: lightTheme, isDark: false };
   },
 }));
 
 /** Call once on app boot to restore theme config from vault. */
 export async function loadThemeFromVault(cfg?: Record<string, unknown>) {
   try {
-    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
-    const saved = (cfg as Record<string, unknown>)[STORAGE_KEY] as
+    cfg ??= await window.siltflow.vaultConfigGet();
+    const saved = (cfg)[STORAGE_KEY] as
       Partial<ThemeConfig> | undefined;
     if (saved && typeof saved === "object") {
       // Migrate legacy boolean pdfDarkInvert

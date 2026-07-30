@@ -4,7 +4,7 @@ interface ReleaseNoteInfo {
 }
 
 interface ReleaseNotesViewProps {
-  releaseNotes: string | Array<ReleaseNoteInfo> | null;
+  releaseNotes: string | ReleaseNoteInfo[] | null;
 }
 
 const HTML_STYLES =
@@ -16,6 +16,7 @@ export function ReleaseNotesView({ releaseNotes }: ReleaseNotesViewProps) {
   if (typeof releaseNotes === "string") {
     return (
       <div className="max-h-60 overflow-y-auto rounded bg-ctp-base/50 p-2 text-xs text-ctp-text">
+        {/* oxlint-disable-next-line react/no-danger -- Release notes HTML from electron-updater (trusted server source) */}
         <div
           className={HTML_STYLES}
           dangerouslySetInnerHTML={{ __html: releaseNotes }}

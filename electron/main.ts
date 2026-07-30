@@ -207,15 +207,15 @@ function createWindow() {
 
   // Open external links in system browser
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    void void shell.openExternal(url);
     return { action: "deny" };
   });
 
   if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
+    void win.loadURL(VITE_DEV_SERVER_URL);
     win.webContents.openDevTools({ mode: "bottom" });
   } else {
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+    void win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }
 
@@ -417,7 +417,7 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
     return folderId;
   }
 
-  const importedDocs: { id: string; title: string; folderId: string | null }[] =
+  const importedDocs: Array<{ id: string; title: string; folderId: string | null }> =
     [];
 
   for (const dirEntry of dirs) {
@@ -499,7 +499,7 @@ ipcMain.handle("update:check", async () => {
 });
 
 ipcMain.handle("update:download", async () => {
-  autoUpdater.downloadUpdate();
+  void autoUpdater.downloadUpdate();
 });
 
 ipcMain.handle("update:install", async () => {
@@ -509,7 +509,7 @@ ipcMain.handle("update:install", async () => {
 
 // Open external URL in system browser
 ipcMain.handle("shell:openExternal", async (_event, url: string) => {
-  shell.openExternal(url);
+  void shell.openExternal(url);
 });
 
 // Expose the DB schema version to the renderer so About can display it
@@ -520,7 +520,7 @@ ipcMain.handle("db:schemaVersion", () => {
 });
 
 // ── App Bootstrap ─────────────────────────────────────────────────
-app.whenReady().then(async () => {
+void app.whenReady().then(async () => {
   // Initialize database and register IPC handlers if vault is set
   const vaultPath = getVaultPath();
   if (vaultPath) {
@@ -561,10 +561,10 @@ app.whenReady().then(async () => {
     // Handle HTTP Range requests (pdfjs-dist uses partial range requests per page)
     const rangeHeader = request.headers.get("Range");
     if (rangeHeader) {
-      const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+      const match = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
       if (match) {
-        const start = parseInt(match[1], 10);
-        const end = match[2] ? parseInt(match[2], 10) : data.byteLength - 1;
+        const start = Number.parseInt(match[1], 10);
+        const end = match[2] ? Number.parseInt(match[2], 10) : data.byteLength - 1;
         const chunk = data.slice(start, end + 1);
         return new Response(chunk, {
           status: 206,

@@ -73,8 +73,7 @@ export const useReviewLogStore = create<ReviewLogStoreState>((set) => ({
 
   clearAnnotation: (annotationId) => {
     set((s) => {
-      const next = { ...s.logs };
-      delete next[annotationId];
+      const { [annotationId]: _, ...next } = s.logs;
       return { logs: next };
     });
   },

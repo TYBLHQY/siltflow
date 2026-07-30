@@ -13,7 +13,7 @@ import {
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
+  if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString(undefined, {
     month: "short",
     day: "numeric",
@@ -40,8 +40,7 @@ export function ReviewHistorySection({
   useEffect(() => {
     if (!logs) {
       setLoading(true);
-      load(annotationId, documentId).finally(() => setLoading(false));
-    }
+      void load(annotationId, documentId).finally(() => setLoading(false));    }
   }, [annotationId, documentId, load, logs]);
 
   if (loading) {

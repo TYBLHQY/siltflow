@@ -44,7 +44,7 @@ export function AIConfigContent() {
                 {renameId === profile.id ? (
                   <input
                     className="w-40 rounded border bg-ctp-base px-2 py-0.5 text-sm"
-                    autoFocus
+                    
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => {
@@ -151,7 +151,7 @@ export function AIConfigContent() {
                       value={profile.temperature}
                       onChange={(e) =>
                         updateProfile(profile.id, {
-                          temperature: parseFloat(e.target.value),
+                          temperature: Number.parseFloat(e.target.value),
                         })
                       }
                     />
@@ -167,7 +167,7 @@ export function AIConfigContent() {
                       value={profile.maxTokens}
                       onChange={(e) =>
                         updateProfile(profile.id, {
-                          maxTokens: parseInt(e.target.value, 10) || 512,
+                          maxTokens: Number.parseInt(e.target.value, 10) || 512,
                         })
                       }
                     />
@@ -185,7 +185,7 @@ export function AIConfigContent() {
                       value={profile.topP}
                       onChange={(e) =>
                         updateProfile(profile.id, {
-                          topP: parseFloat(e.target.value),
+                          topP: Number.parseFloat(e.target.value),
                         })
                       }
                     />

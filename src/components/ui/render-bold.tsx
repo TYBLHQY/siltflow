@@ -13,7 +13,7 @@ export function renderBoldText(
 ): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
-    const m = part.match(/^\*\*([^*]+)\*\*$/);
+    const m = /^\*\*([^*]+)\*\*$/.exec(part);
     if (m) {
       return (
         <span key={i} className={options?.boldClassName ?? "font-bold"}>

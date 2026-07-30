@@ -56,7 +56,7 @@ export function registerReviewHandlers() {
 
     const docs = sql
       .prepare("SELECT id, title FROM documents ORDER BY title")
-      .all() as { id: string; title: string }[];
+      .all() as Array<{ id: string; title: string }>;
 
     if (docs.length === 0) return [];
 
@@ -64,7 +64,7 @@ export function registerReviewHandlers() {
     const cardsByDoc = new Map<string, string[]>();
     const cardRows = sql
       .prepare("SELECT document_id, data FROM fsrs_cards")
-      .all() as { document_id: string; data: string }[];
+      .all() as Array<{ document_id: string; data: string }>;
 
     for (const row of cardRows) {
       let list = cardsByDoc.get(row.document_id);
@@ -81,7 +81,7 @@ export function registerReviewHandlers() {
       .prepare(
         "SELECT document_id, COUNT(*) as cnt FROM annotations WHERE kind IN ('annotation', 'manual') GROUP BY document_id",
       )
-      .all() as { document_id: string; cnt: number }[];
+      .all() as Array<{ document_id: string; cnt: number }>;
 
     for (const row of annRows) {
       annCountByDoc.set(row.document_id, row.cnt);

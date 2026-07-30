@@ -18,7 +18,7 @@ import { MemoryStateExplorer } from "./charts/MemoryStateExplorer";
 
 type Panel = "learning" | "memory" | "growth" | "explorer";
 
-const PANELS: { id: Panel; label: string }[] = [
+const PANELS: Array<{ id: Panel; label: string }> = [
   { id: "learning", label: "Learning" },
   { id: "memory", label: "Memory (FSRS)" },
   { id: "growth", label: "Growth" },
@@ -37,7 +37,7 @@ export function StatsDashboard({ onClose }: StatsDashboardProps) {
   const isExplorer = activePanel === "explorer";
 
   useEffect(() => {
-    if (!loaded) loadAllData();
+    if (!loaded) void loadAllData();
   }, [loaded, loadAllData]);
 
   // Close on Escape

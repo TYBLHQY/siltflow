@@ -194,22 +194,23 @@ export function extractArticleContext(pdfText: string): string {
     /^#{1,3}\s|^(?:Abstract|Introduction|Background|Method|Result|Discussion|Conclusion|References)\b/i;
 
   for (let i = 0; i < lines.length && remaining > 0; i++) {
-    const line = lines[i]!.trim();
+    const line = lines[i].trim();
     if (!line) continue;
     if (headingRe.test(line)) {
       result.push(line);
       remaining -= line.length;
 
       let sentence = "";
-      for (let j = i + 1; j < Math.min(lines.length, i + 5); j++) {
-        const next = lines[j]!.trim();
-        if (!next) break;
-        sentence = next;
-        break;
+      const j = i + 1;
+      if (j < Math.min(lines.length, i + 5)) {
+        const next = lines[j].trim();
+        if (next) {
+          sentence = next;
+        }
       }
       if (sentence) {
         const snippet =
-          sentence.length > 500 ? sentence.slice(0, 500) + "…" : sentence;
+          sentence.length > 500 ? `${sentence.slice(0, 500)  }…` : sentence;
         result.push(snippet);
         remaining -= snippet.length;
       }

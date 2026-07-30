@@ -147,8 +147,7 @@ function SelectionTTSButton({
 
   const handlePlay = useCallback(() => {
     if (!btn) return;
-    tts.speak(btn.text, undefined, btn.lang, annId);
-    setBtn(null);
+    void tts.speak(btn.text, undefined, btn.lang, annId);    setBtn(null);
   }, [btn, tts, annId]);
 
   return (
@@ -443,7 +442,7 @@ export function AIAnnotationResultV2({
     "listenCardAudio",
     () => {
       if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
-      else tts.speak(item.text, undefined, ai?.input?.source_lang, item.id);
+      else void tts.speak(item.text, undefined, ai?.input?.source_lang, item.id);
     },
     { enabled: enableShortcut && !!item },
   );
@@ -534,8 +533,7 @@ export function AIAnnotationResultV2({
                   if (tts.speakingId === item.id && tts.state === "playing")
                     tts.stop();
                   else
-                    tts.speak(
-                      item.text,
+                    void tts.speak(                      item.text,
                       undefined,
                       ai?.input?.source_lang,
                       item.id,
@@ -563,8 +561,7 @@ export function AIAnnotationResultV2({
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleTranslate();
-                  }}
+                    void handleTranslate();                  }}
                   title="Translate"
                   disabled={isTranslating}
                 >

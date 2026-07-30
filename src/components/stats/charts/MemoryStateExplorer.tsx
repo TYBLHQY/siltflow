@@ -41,8 +41,7 @@ export function MemoryStateExplorer() {
 
   // Load all annotations for text lookup
   useEffect(() => {
-    window.siltflow.annotations.listAll().then((rows) => {
-      const map = new Map<string, string>();
+    void window.siltflow.annotations.listAll().then((rows) => {      const map = new Map<string, string>();
       // Only index annotation-kind rows; highlights have no FSRS cards to display
       for (const row of rows) {
         if (row.text && row.kind !== "highlight") map.set(row.id, row.text);
@@ -54,7 +53,7 @@ export function MemoryStateExplorer() {
   // Build annotation list from raw card data
   const annotations = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const list: { id: string; documentId: string; text: string; card: any }[] =
+    const list: Array<{ id: string; documentId: string; text: string; card: any }> =
       [];
     for (const row of rawCards) {
       try {
@@ -123,9 +122,9 @@ export function MemoryStateExplorer() {
               const data = JSON.parse(e.data);
               const card = data.card;
               return {
-                timestamp: new Date(data.log.review || e.createdAt).getTime(),
+                timestamp: new Date(data.log.review ?? e.createdAt).getTime(),
                 date: new Date(
-                  data.log.review || e.createdAt,
+                  data.log.review ?? e.createdAt,
                 ).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -135,7 +134,7 @@ export function MemoryStateExplorer() {
                 difficulty: card.difficulty,
                 scheduledDays: card.scheduled_days,
                 state: card.state,
-              } as ParsedReviewLog;
+              };
             } catch {
               return null;
             }

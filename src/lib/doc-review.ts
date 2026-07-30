@@ -12,8 +12,7 @@
  * 4. overdue_depth     — how far past-due cards are on average (elapsed/scheduled)
  * 5. avg_retrievability — average retrievability of non-new cards (lower = more urgent)
  */
-import type { Card } from "ts-fsrs";
-import { State } from "ts-fsrs";
+import { State, type Card } from "ts-fsrs";
 import { retrievability } from "@/lib/fsrs-utils";
 
 export interface CardWithDoc {

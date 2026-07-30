@@ -117,7 +117,7 @@ export function StyleConfigContent() {
                   placeholder="Search fonts…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  autoFocus
+                  
                 />
               </div>
               <div className="max-h-40 overflow-y-auto rounded-md border">
@@ -244,7 +244,7 @@ export function StyleConfigContent() {
                   placeholder="Search fonts…"
                   value={search2}
                   onChange={(e) => setSearch2(e.target.value)}
-                  autoFocus
+                  
                 />
               </div>
               <div className="max-h-40 overflow-y-auto rounded-md border">
@@ -322,7 +322,7 @@ export function StyleConfigContent() {
             step="1"
             className="w-full"
             value={style.fontSize}
-            onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
+            onChange={(e) => setFontSize(Number.parseInt(e.target.value, 10))}
           />
         </div>
 
@@ -338,7 +338,7 @@ export function StyleConfigContent() {
             step="1"
             className="w-full"
             value={style.globalFontSize}
-            onChange={(e) => setGlobalFontSize(parseInt(e.target.value, 10))}
+            onChange={(e) => setGlobalFontSize(Number.parseInt(e.target.value, 10))}
           />
         </div>
       </div>
@@ -369,7 +369,7 @@ export function StyleConfigContent() {
           step="10"
           className="w-full"
           value={style.learnPanelHeight}
-          onChange={(e) => setLearnPanelHeight(parseInt(e.target.value, 10))}
+          onChange={(e) => setLearnPanelHeight(Number.parseInt(e.target.value, 10))}
         />
       </div>
 

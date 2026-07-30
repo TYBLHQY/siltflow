@@ -18,7 +18,7 @@ interface StudyPanelProps {
   onBack: () => void;
 }
 
-const GRADE_LABELS: { grade: number; label: string; color: string }[] = [
+const GRADE_LABELS: Array<{ grade: number; label: string; color: string }> = [
   {
     grade: 1,
     label: "Again",

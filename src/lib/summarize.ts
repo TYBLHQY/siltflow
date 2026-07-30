@@ -70,7 +70,7 @@ export async function summarizeSelectedPages(
 ): Promise<SummaryResult> {
   const parts = selectedPageNumbers
     .filter((p) => p >= 1 && p <= pageTexts.length)
-    .map((p) => `[Page ${p}]\n${pageTexts[p - 1]!}`);
+    .map((p) => `[Page ${p}]\n${pageTexts[p - 1]}`);
 
   if (parts.length === 0) {
     throw new Error("No pages selected");

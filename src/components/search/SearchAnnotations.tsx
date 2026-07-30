@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Search, Highlighter, SearchX } from "lucide-react";
-import { useSearchStore } from "@/stores/search.store";
+import { useSearchStore, type SearchEntry } from "@/stores/search.store";
 import { useDocumentStore } from "@/stores/document.store";
 import {
   usePdfViewerStore,
@@ -10,7 +10,6 @@ import {
 } from "@/stores/pdf-viewer.store";
 import { SearchResultItem } from "./SearchResultItem";
 import { AnnotationSearchCard } from "./AnnotationSearchCard";
-import type { SearchEntry } from "@/stores/search.store";
 
 /**
  * Navigate to an annotation — switch document, scroll PDF highlight,
@@ -98,8 +97,7 @@ export function SearchAnnotations() {
   // (annotation/document changes invalidate indexBuilt but keep old entries).
   useEffect(() => {
     if (isOpen && !indexBuilt && !isBuilding) {
-      buildIndex();
-    }
+      void buildIndex();    }
   }, [isOpen, indexBuilt, isBuilding, buildIndex]);
 
   // Focus input on open
@@ -143,8 +141,7 @@ export function SearchAnnotations() {
           e.preventDefault();
           if (results.length > 0) {
             const idx = Math.min(selectedIndex, results.length - 1);
-            navigateToAnnotation(results[idx].item);
-          }
+            void navigateToAnnotation(results[idx].item);          }
           break;
         case "Escape":
           e.preventDefault();
@@ -157,8 +154,7 @@ export function SearchAnnotations() {
 
   // ── Handlers ──
   const handleJumpTo = useCallback((entry: SearchEntry) => {
-    navigateToAnnotation(entry);
-  }, []);
+    void navigateToAnnotation(entry);  }, []);
 
   // ── Filter results with highlights ──
   const hasQuery = query.trim().length > 0;

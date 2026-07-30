@@ -4,8 +4,7 @@
  * All UI components and libs that need FSRS state/grade labels, date formatting,
  * or card stubs should import from here instead of defining their own copies.
  */
-import { createEmptyCard } from "ts-fsrs";
-import type { Card } from "ts-fsrs";
+import { createEmptyCard, type Card } from "ts-fsrs";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -115,7 +114,7 @@ export function cardDueDate(card: Card): Date {
 /** Human-readable "due today / due tomorrow / 3d overdue / due in 5d" string. */
 export function formatDue(due: Date | string): string {
   const d = toDate(due);
-  if (isNaN(d.getTime())) return "unknown";
+  if (Number.isNaN(d.getTime())) return "unknown";
   const diffMs = d.getTime() - Date.now();
   const diffDays = Math.round(diffMs / 86_400_000);
   if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
@@ -128,7 +127,7 @@ export function formatDue(due: Date | string): string {
 export function formatDate(d: Date | string | undefined): string | null {
   if (!d) return null;
   const date = toDate(d);
-  if (isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",

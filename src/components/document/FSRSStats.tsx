@@ -19,7 +19,7 @@ export function FSRSStats({
   annotationId?: string;
   documentId?: string;
 }) {
-  const state = card.state as 0 | 1 | 2 | 3;
+  const state = card.state;
   const canShowHistory = !!annotationId && !!documentId;
   const activeHistoryId = useReviewLogStore((s) => s.activeHistoryId);
   const setActiveHistoryId = useReviewLogStore((s) => s.setActiveHistoryId);
@@ -28,7 +28,7 @@ export function FSRSStats({
   const handleToggle = (e: React.MouseEvent) => {
     if (!canShowHistory) return;
     e.stopPropagation();
-    setActiveHistoryId(historyExpanded ? null : annotationId!);
+    setActiveHistoryId(historyExpanded ? null : annotationId);
   };
 
   return (
@@ -96,8 +96,8 @@ export function FSRSStats({
         <div className="overflow-hidden">
           {canShowHistory && (
             <ReviewHistorySection
-              annotationId={annotationId!}
-              documentId={documentId!}
+              annotationId={annotationId}
+              documentId={documentId}
             />
           )}
         </div>

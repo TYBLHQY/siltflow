@@ -27,7 +27,7 @@ export function CalendarHeatmap() {
   }, []);
 
   const data = useMemo(() => {
-    const arr: { date: string; value: number }[] = [];
+    const arr: Array<{ date: string; value: number }> = [];
     for (const [date, count] of heatmap) arr.push({ date, value: count });
     return arr;
   }, [heatmap]);

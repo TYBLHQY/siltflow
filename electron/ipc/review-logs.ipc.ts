@@ -13,7 +13,7 @@ export function registerReviewLogHandlers() {
         .prepare(
           "SELECT id, annotation_id, document_id, data, created_at FROM review_logs WHERE annotation_id = ? AND document_id = ? ORDER BY created_at DESC",
         )
-        .all(annotationId, documentId) as Record<string, unknown>[];
+        .all(annotationId, documentId) as Array<Record<string, unknown>>;
       return rows.map((r) => ({
         id: r.id as string,
         annotationId: r.annotation_id as string,
@@ -32,7 +32,7 @@ export function registerReviewLogHandlers() {
       .prepare(
         "SELECT id, annotation_id, document_id, data, created_at FROM review_logs ORDER BY created_at ASC",
       )
-      .all() as Record<string, unknown>[];
+      .all() as Array<Record<string, unknown>>;
     return rows.map((r) => ({
       id: r.id as string,
       annotationId: r.annotation_id as string,

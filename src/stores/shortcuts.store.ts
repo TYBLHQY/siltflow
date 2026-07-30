@@ -221,14 +221,13 @@ function persistShortcuts(shortcuts: ShortcutEntry[]) {
       custom[s.actionId] = s.keys;
     }
   }
-  window.siltflow.vaultConfigSet({ [VAULT_KEY]: custom });
-}
+  void window.siltflow.vaultConfigSet({ [VAULT_KEY]: custom });}
 
 /** Call once on app boot to restore shortcuts from vault. */
 export async function loadShortcutsFromVault(cfg?: Record<string, unknown>) {
   try {
-    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
-    const saved = (cfg as Record<string, unknown>)[VAULT_KEY] as
+    cfg ??= await window.siltflow.vaultConfigGet();
+    const saved = (cfg)[VAULT_KEY] as
       Record<string, string> | undefined;
     if (saved && typeof saved === "object") {
       const next = DEFAULT_SHORTCUTS.map((s) => ({

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { CartesianGrid, ResponsiveContainer } from "recharts";
 import { ChartCard } from "./ChartCard";
 

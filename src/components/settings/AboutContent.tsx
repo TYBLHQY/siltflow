@@ -35,11 +35,10 @@ export function AboutContent() {
 
   // Fetch DB schema version on mount
   useEffect(() => {
-    window.siltflow.dbSchemaVersion().then(setDbVersion);
-  }, []);
+    void window.siltflow.dbSchemaVersion().then(setDbVersion);  }, []);
 
   useEffect(() => {
-    const unsubs: (() => void)[] = [];
+    const unsubs: Array<() => void> = [];
 
     unsubs.push(
       window.siltflow.update.onAvailable((info) => {
@@ -84,18 +83,15 @@ export function AboutContent() {
   const handleCheck = () => {
     setUpdateState("checking");
     setErrorMsg(null);
-    window.siltflow.update.check();
-  };
+    void window.siltflow.update.check();  };
 
   const handleDownload = () => {
     setUpdateState("downloading");
     setProgress(0);
-    window.siltflow.update.download();
-  };
+    void window.siltflow.update.download();  };
 
   const handleInstall = () => {
-    window.siltflow.update.install();
-  };
+    void window.siltflow.update.install();  };
 
   return (
     <div className="space-y-5 pt-3">

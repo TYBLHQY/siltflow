@@ -51,7 +51,7 @@ function buildMimoBody(
   voice: string,
   text: string,
 ) {
-  const messages: { role: string; content: string }[] = [];
+  const messages: Array<{ role: string; content: string }> = [];
   if (config.mimoStylePrompt?.trim()) {
     messages.push({ role: "user", content: config.mimoStylePrompt.trim() });
   }
@@ -103,7 +103,7 @@ export async function speakTTS(
           "api-key": config.mimoApiKey,
         },
         body: JSON.stringify(
-          buildMimoBody(config, voice || config.mimoVoice, text),
+          buildMimoBody(config, voice ?? config.mimoVoice, text),
         ),
       });
 
@@ -146,7 +146,7 @@ export async function speakTTS(
   } else {
     setState("loading");
     try {
-      const resolvedVoice = voice || useTTSStore.getState().getVoice(language);
+      const resolvedVoice = voice ?? useTTSStore.getState().getVoice(language);
       const audioData: number[] = await window.siltflow.tts.speak(text, {
         voice: resolvedVoice,
         rate: config.rate,

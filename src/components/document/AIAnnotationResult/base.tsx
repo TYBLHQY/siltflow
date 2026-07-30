@@ -73,7 +73,7 @@ export function AIAnnotationResultBase({
     "listenCardAudio",
     () => {
       if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
-      else tts.speak(item.text, undefined, sourceLang, item.id);
+      else void tts.speak(item.text, undefined, sourceLang, item.id);
     },
     { enabled: !!item },
   );
@@ -153,7 +153,7 @@ export function AIAnnotationResultBase({
               e.stopPropagation();
               if (tts.speakingId === item.id && tts.state === "playing")
                 tts.stop();
-              else tts.speak(item.text, undefined, sourceLang, item.id);
+              else void tts.speak(item.text, undefined, sourceLang, item.id);
             }}
             title={
               tts.speakingId === item.id && tts.state === "playing"
@@ -177,8 +177,7 @@ export function AIAnnotationResultBase({
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                handleTranslate();
-              }}
+                void handleTranslate();              }}
               title="Translate"
               disabled={isTranslating}
             >

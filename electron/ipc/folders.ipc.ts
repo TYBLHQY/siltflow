@@ -1,7 +1,7 @@
 import { ipcMain } from "electron";
 import { getDb, schema } from "../database";
 import { eq } from "drizzle-orm";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -162,7 +162,7 @@ export function registerFolderHandlers() {
   // ── Bulk update sort_order for folders ──
   ipcMain.handle(
     "folders:updateSortOrder",
-    (_event, items: { id: string; sortOrder: number }[]) => {
+    (_event, items: Array<{ id: string; sortOrder: number }>) => {
       const db = getFullDb();
       const now = new Date().toISOString();
       for (const { id, sortOrder } of items) {
@@ -177,7 +177,7 @@ export function registerFolderHandlers() {
   // ── Bulk update sort_order for documents ──
   ipcMain.handle(
     "documents:updateSortOrder",
-    (_event, items: { id: string; sortOrder: number }[]) => {
+    (_event, items: Array<{ id: string; sortOrder: number }>) => {
       const db = getFullDb();
       const now = new Date().toISOString();
       for (const { id, sortOrder } of items) {

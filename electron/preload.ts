@@ -1,4 +1,5 @@
 import { ipcRenderer, contextBridge } from "electron";
+import type { DocReviewMetrics } from "../src/lib/doc-review";
 
 export interface SiltflowAPI {
   vaultGetPath: () => Promise<string>;
@@ -7,9 +8,9 @@ export interface SiltflowAPI {
   vaultConfigGet: () => Promise<Record<string, unknown>>;
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>;
   openExternal: (url: string) => Promise<void>;
-  selectPdf: () => Promise<{ id: string; title: string }[] | null>;
+  selectPdf: () => Promise<Array<{ id: string; title: string }> | null>;
   importPdfFolder: () => Promise<{
-    docs: { id: string; title: string; folderId: string | null }[];
+    docs: Array<{ id: string; title: string; folderId: string | null }>;
   } | null>;
   loadFile: (filePath: string) => Promise<ArrayBuffer>;
   dbSchemaVersion: () => Promise<number | null>;
@@ -38,7 +39,7 @@ export interface SiltflowAPI {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: () => Promise<any[]>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get: (id: string) => Promise<any | null>;
+    get: (id: string) => Promise<any>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (doc: any) => Promise<any>;
     updateMetadata: (params: {
@@ -62,7 +63,7 @@ export interface SiltflowAPI {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listAll: () => Promise<any[]>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get: (documentId: string) => Promise<any | null>;
+    get: (documentId: string) => Promise<any>;
     save: (summary: {
       documentId: string;
       text: string;
@@ -75,7 +76,7 @@ export interface SiltflowAPI {
     get: (annotationId: string, documentId: string) => Promise<string | null>;
     listByDocument: (
       documentId: string,
-    ) => Promise<{ annotationId: string; data: string }[]>;
+    ) => Promise<Array<{ annotationId: string; data: string }>>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
     delete: (annotationId: string, documentId: string) => Promise<void>;
@@ -87,30 +88,30 @@ export interface SiltflowAPI {
     delete: (annotationId: string, documentId: string) => Promise<void>;
     listByDocument: (
       documentId: string,
-    ) => Promise<{ annotationId: string; data: string }[]>;
+    ) => Promise<Array<{ annotationId: string; data: string }>>;
     listAll: () => Promise<
-      {
+      Array<{
         annotationId: string;
         documentId: string;
         data: string;
         createdAt: string;
         updatedAt: string;
-      }[]
+      }>
     >;
   };
   reviewLogs: {
     listByAnnotation: (
       annotationId: string,
       documentId: string,
-    ) => Promise<Record<string, unknown>[]>;
+    ) => Promise<Array<Record<string, unknown>>>;
     listAll: () => Promise<
-      {
+      Array<{
         id: string;
         annotationId: string;
         documentId: string;
         data: string;
         createdAt: string;
-      }[]
+      }>
     >;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     save: (annotationId: string, documentId: string, data: any) => Promise<any>;
@@ -149,7 +150,7 @@ export interface SiltflowAPI {
   };
   review: {
     getDocMetrics: () => Promise<
-      import("../src/lib/doc-review").DocReviewMetrics[]
+      DocReviewMetrics[]
     >;
   };
 }

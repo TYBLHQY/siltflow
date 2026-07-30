@@ -47,7 +47,7 @@ export function initDatabase(vaultPath: string) {
     runMigrations(sqlite, version);
 
     createTables();
-    sqlite!.pragma(`user_version = ${SCHEMA_VERSION}`);
+    sqlite.pragma(`user_version = ${SCHEMA_VERSION}`);
   } else {
     createTables();
   }

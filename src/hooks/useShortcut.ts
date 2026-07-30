@@ -10,9 +10,8 @@
  */
 
 import { useEffect, useRef } from "react";
-import { useShortcutsStore } from "@/stores/shortcuts.store";
+import { useShortcutsStore, type ShortcutActionId } from "@/stores/shortcuts.store";
 import { parseShortcut, matchShortcut } from "@/lib/keyboard-keys";
-import type { ShortcutActionId } from "@/stores/shortcuts.store";
 
 interface UseShortcutOptions {
   /** When false, the handler won't fire (default: true) */

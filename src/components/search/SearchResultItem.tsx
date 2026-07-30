@@ -11,7 +11,7 @@ import type { SearchEntry } from "@/stores/search.store";
  */
 function highlightText(
   text: string,
-  indices: readonly (readonly [number, number])[] | undefined,
+  indices: ReadonlyArray<readonly [number, number]> | undefined,
 ): Array<{ text: string; highlighted: boolean }> {
   if (!indices || indices.length === 0) return [{ text, highlighted: false }];
 
@@ -37,7 +37,7 @@ function highlightText(
 
 interface SearchResultItemProps {
   entry: SearchEntry;
-  matches?: ReadonlyArray<FuseResultMatch>;
+  matches?: readonly FuseResultMatch[];
   isSelected: boolean;
   onSelect: () => void;
   onJumpTo: () => void;

@@ -72,10 +72,10 @@ export function registerTTSHandlers() {
       },
     ) => {
       const bin = getEdgeTtsBin(options.binaryPath);
-      const voice = options.voice || "en-US-EmmaMultilingualNeural";
-      const rate = options.rate || "+0%";
-      const volume = options.volume || "+0%";
-      const pitch = options.pitch || "+0Hz";
+      const voice = options.voice ?? "en-US-EmmaMultilingualNeural";
+      const rate = options.rate ?? "+0%";
+      const volume = options.volume ?? "+0%";
+      const pitch = options.pitch ?? "+0Hz";
 
       // Check cache first
       const key = cacheKey(text, voice, rate, volume, pitch);
@@ -141,7 +141,7 @@ export function registerTTSHandlers() {
             unlink(tmpDir).catch(() => {});
             resolve(audioData);
           } catch (err) {
-            reject(new Error(`edge-tts: failed to read output: ${err}`));
+            reject(new Error(`edge-tts: failed to read output: ${String(err)}`));
           }
         });
       });

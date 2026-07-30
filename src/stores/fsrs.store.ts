@@ -6,6 +6,7 @@ import {
   type FSRSParameters,
   type Card,
   type Grade,
+  type ReviewLog,
 } from "ts-fsrs";
 import { useAnnotationStore } from "./annotation.store";
 import { useReviewLogStore } from "./review-log.store";
@@ -60,13 +61,12 @@ export const useFSRSStore = create<FSRSStoreState>()((set) => ({
 // Vault persistence
 // ---------------------------------------------------------------------------
 function persistToVault(params: FSRSParameters) {
-  window.siltflow.vaultConfigSet({ [VAULT_KEY]: params });
-}
+  void window.siltflow.vaultConfigSet({ [VAULT_KEY]: params });}
 
 export async function loadFSRSParams(cfg?: Record<string, unknown>) {
   try {
-    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
-    const saved = (cfg as Record<string, unknown>)[VAULT_KEY] as
+    cfg ??= await window.siltflow.vaultConfigGet();
+    const saved = (cfg)[VAULT_KEY] as
       Partial<FSRSParameters> | undefined;
     if (saved) {
       useFSRSStore.setState({
@@ -152,7 +152,7 @@ function persistReviewLog(
   annotationId: string,
   documentId: string,
   grade: Grade,
-  log: import("ts-fsrs").ReviewLog,
+  log: ReviewLog,
   card: Card,
 ) {
   const data = {
@@ -179,8 +179,7 @@ function persistReviewLog(
       state: card.state,
     },
   };
-  useReviewLogStore.getState().add(annotationId, documentId, data);
-}
+  void useReviewLogStore.getState().add(annotationId, documentId, data);}
 
 /** Get the next review date for a card, or undefined if never reviewed. */
 export function getNextReview(card?: Card): Date | undefined {

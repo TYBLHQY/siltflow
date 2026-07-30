@@ -69,15 +69,14 @@ export function SelectionTip() {
 
   const handlePlay = useCallback(() => {
     if (!pendingAnnotation) return;
-    tts.speak(pendingAnnotation.text, undefined, sourceLang);
-  }, [pendingAnnotation, tts, sourceLang]);
+    void tts.speak(pendingAnnotation.text, undefined, sourceLang);  }, [pendingAnnotation, tts, sourceLang]);
 
   if (!pendingAnnotation) return null;
 
   const annoCSSVar =
-    resolveHighlightCSSVar(annotationColor) || "var(--catppuccin-color-yellow)";
+    resolveHighlightCSSVar(annotationColor) ?? "var(--catppuccin-color-yellow)";
   const plainCSSVar =
-    resolveHighlightCSSVar(plainColor) || "var(--catppuccin-color-green)";
+    resolveHighlightCSSVar(plainColor) ?? "var(--catppuccin-color-green)";
 
   return (
     <div

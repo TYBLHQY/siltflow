@@ -85,7 +85,7 @@ export function DocTreeNode({
         <input
           className="flex-1 min-w-0 rounded border border-ctp-mauve bg-ctp-base px-1 py-0 text-xs outline-none"
           defaultValue={data.name}
-          autoFocus
+          
           onBlur={(e) => {
             const val = e.target.value.trim();
             if (val) {
@@ -109,8 +109,7 @@ export function DocTreeNode({
               node.reset();
               // If it's a newly created folder (empty name), delete it
               if (id.startsWith("folder:") && !data.name && data.folder) {
-                handleDeleteFolder(id.slice(7));
-              }
+                void handleDeleteFolder(id.slice(7));              }
             }
           }}
         />

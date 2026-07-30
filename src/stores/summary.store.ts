@@ -68,10 +68,10 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
     set((s) => ({
       summaries: {
         ...s.summaries,
-        [documentId]: Object.assign(
-          { text, isAiGenerated },
-          sourceLang ? { sourceLang } : {},
-        ),
+        [documentId]: {
+          text, isAiGenerated,
+          ...(sourceLang ? { sourceLang } : {}),
+        },
       },
     }));
   },
@@ -84,8 +84,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
       },
     );
     set((s) => {
-      const next = { ...s.summaries };
-      delete next[documentId];
+      const { [documentId]: _, ...next } = s.summaries;
       return { summaries: next };
     });
   },
@@ -121,7 +120,7 @@ export async function loadSummariesFromVault() {
       summaries[s.documentId] = {
         text: s.text,
         isAiGenerated: !!s.isAiGenerated,
-        sourceLang: s.sourceLang || undefined,
+        sourceLang: s.sourceLang ?? undefined,
       };
     }
     useSummaryStore.setState({ summaries });

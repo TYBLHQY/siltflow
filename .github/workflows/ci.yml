@@ -53,6 +53,22 @@ jobs:
           wait $TEST_PID || FAIL=1
           exit $FAIL
 
+      - name: Quick audit (oxlint + knip)
+        run: pnpm check:quick
+
+      - name: Architecture check (dependency-cruiser)
+        run: pnpm check:deps
+
+      - name: Dependency audit (CVE scan)
+        run: pnpm audit:deps
+
+      - name: Secrets scan (gitleaks)
+        run: pnpm audit:secrets
+
+      - name: Electron security scan (electronegativity)
+        continue-on-error: true
+        run: pnpm audit:electron
+
   # ── Release ────────────────────────────────────────────────────────────
   # Only on version tags, and only after check passes.
   release:

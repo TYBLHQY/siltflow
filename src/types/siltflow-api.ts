@@ -24,9 +24,9 @@ export interface SiltflowAPI {
   vaultConfigGet: () => Promise<Record<string, unknown>>;
   vaultConfigSet: (config: Record<string, unknown>) => Promise<void>;
   openExternal: (url: string) => Promise<void>;
-  selectPdf: () => Promise<{ id: string; title: string }[] | null>;
+  selectPdf: () => Promise<Array<{ id: string; title: string }> | null>;
   importPdfFolder: () => Promise<{
-    docs: { id: string; title: string; folderId: string | null }[];
+    docs: Array<{ id: string; title: string; folderId: string | null }>;
   } | null>;
   loadFile: (filePath: string) => Promise<ArrayBuffer>;
   dbSchemaVersion: () => Promise<number | null>;
@@ -77,7 +77,7 @@ export interface SiltflowAPI {
     get: (annotationId: string, documentId: string) => Promise<string | null>;
     listByDocument: (
       documentId: string,
-    ) => Promise<{ annotationId: string; data: string }[]>;
+    ) => Promise<Array<{ annotationId: string; data: string }>>;
     save: (
       annotationId: string,
       documentId: string,
@@ -96,15 +96,15 @@ export interface SiltflowAPI {
     delete: (annotationId: string, documentId: string) => Promise<void>;
     listByDocument: (
       documentId: string,
-    ) => Promise<{ annotationId: string; data: string }[]>;
+    ) => Promise<Array<{ annotationId: string; data: string }>>;
     listAll: () => Promise<
-      {
+      Array<{
         annotationId: string;
         documentId: string;
         data: string;
         createdAt: string;
         updatedAt: string;
-      }[]
+      }>
     >;
   };
   reviewLogs: {
@@ -113,13 +113,13 @@ export interface SiltflowAPI {
       documentId: string,
     ) => Promise<ReviewLogEntryIPC[]>;
     listAll: () => Promise<
-      {
+      Array<{
         id: string;
         annotationId: string;
         documentId: string;
         data: string;
         createdAt: string;
-      }[]
+      }>
     >;
     save: (
       annotationId: string,

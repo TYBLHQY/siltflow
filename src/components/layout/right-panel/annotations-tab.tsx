@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { LearningModal } from "@/components/document/LearningModal";
-import { useAnnotationStore } from "@/stores/annotation.store";
+import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useAIStore } from "@/stores/ai.store";
@@ -28,9 +28,7 @@ import { useShortcut } from "@/hooks/useShortcut";
 import { useNow } from "@/hooks/useNow";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import { cardDueDate } from "@/lib/fsrs-utils";
-import type { Grade } from "ts-fsrs";
 import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
-import type { AnnotationItem } from "@/stores/annotation.store";
 
 interface AnnotationsTabProps {
   onTabChange?: (tab: string) => void;
@@ -115,7 +113,7 @@ export function AnnotationsTab({
   const texts = docId ? pageTexts[docId] : undefined;
   const sourceLang = summary?.sourceLang ?? "en-US";
   const effectiveTargetLang =
-    (docId && targetLangs[docId]) || defaultTargetLang || "zh-CN";
+    ((docId && targetLangs[docId]) ?? defaultTargetLang) || "zh-CN";
 
   // ── Local state ────────────────────────────────────────────────────
   const [studyPanelOpen, setStudyPanelOpen] = useState(false);
@@ -199,7 +197,7 @@ export function AnnotationsTab({
       showToast("All annotations already translated", "info");
       return;
     }
-    if (!summary || !summary.text?.trim()) {
+    if (!summary?.text?.trim()) {
       showToast("Please generate a summary first", "info");
       onTabChange?.("summary");
       return;
@@ -247,7 +245,7 @@ export function AnnotationsTab({
       showToast("All annotations are already V2", "info");
       return;
     }
-    if (!summary || !summary.text?.trim()) {
+    if (!summary?.text?.trim()) {
       showToast("Please generate a summary first", "info");
       onTabChange?.("summary");
       return;
@@ -493,7 +491,7 @@ export function AnnotationsTab({
         onRate={(grade) => {
           const item = sessionItems[studyingIndex];
           if (item) {
-            reviewAnnotation(item.id, grade as Grade);
+            reviewAnnotation(item.id, grade);
           }
           if (studyingIndex + 1 < sessionItems.length) {
             setStudyingIndex((i: number) => i + 1);
@@ -528,7 +526,7 @@ export function AnnotationsTab({
                   handleCreateManual();
                 }
               }}
-              autoFocus
+              
             />
           </div>
           <DialogFooter>

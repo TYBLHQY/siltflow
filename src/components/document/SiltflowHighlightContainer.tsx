@@ -14,9 +14,9 @@ import { Volume2, BookmarkPlus, Highlighter } from "lucide-react";
 import type { SiltflowHighlight } from "./PdfViewer";
 
 interface SiltflowHighlightContainerProps {
-  deleteHighlight(id: string): void;
+  deleteHighlight: (id: string) => void;
   /** Called when user clicks a highlight in the PDF */
-  onHighlightClick?(highlightId: string): void;
+  onHighlightClick?: (highlightId: string) => void;
 }
 
 /**
@@ -53,8 +53,7 @@ export function SiltflowHighlightContainer({
     <button
       onClick={(e) => {
         e.stopPropagation();
-        tts.speak(
-          highlight.content!.text!,
+        void tts.speak(          highlight.content!.text!,
           undefined,
           highlight.sourceLang,
           undefined,
@@ -172,6 +171,8 @@ export function SiltflowHighlightContainer({
         />
       );
 
+    case undefined: { throw new Error('Not implemented yet: undefined case') }
+    case "area": { throw new Error('Not implemented yet: "area" case') }
     default:
       // Area highlight — default fallback
       return (

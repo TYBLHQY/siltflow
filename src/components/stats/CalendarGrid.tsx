@@ -9,13 +9,13 @@ import {
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-export type HeatmapDatum = {
+export interface HeatmapDatum {
   date: string | Date;
   value: number;
   meta?: unknown;
-};
+}
 
-export type HeatmapCell = {
+export interface HeatmapCell {
   date: Date;
   key: string;
   value: number;
@@ -23,9 +23,9 @@ export type HeatmapCell = {
   label: string;
   disabled: boolean;
   meta?: unknown;
-};
+}
 
-export type LegendConfig = {
+export interface LegendConfig {
   show?: boolean;
   /** Default: "Less" */
   lessText?: React.ReactNode;
@@ -44,9 +44,9 @@ export type LegendConfig = {
   /** Default: uses cellGap */
   swatchGap?: number;
   className?: string;
-};
+}
 
-export type AxisLabelsConfig = {
+export interface AxisLabelsConfig {
   /** Default: true */
   show?: boolean;
   /** Show weekday labels on left. Default: true */
@@ -66,9 +66,9 @@ export type AxisLabelsConfig = {
    */
   minWeekSpacing?: number;
   className?: string;
-};
+}
 
-export type CalendarGridProps = {
+export interface CalendarGridProps {
   title?: string;
   data: HeatmapDatum[];
   /** Number of days ending at endDate (default 365) */
@@ -112,7 +112,7 @@ export type CalendarGridProps = {
   renderTooltip?: (cell: HeatmapCell) => React.ReactNode;
 
   className?: string;
-};
+}
 
 /* ---------------- utilities ---------------- */
 
@@ -210,7 +210,7 @@ export function CalendarGrid({
     "bg-ctp-mauve/75",
   ];
 
-  const levelCount = palette?.length ? palette.length : levels.length;
+  const levelCount = palette?.length ?? levels.length;
 
   const legendCfg: LegendConfig =
     legend === true ? {} : legend === false ? { show: false } : legend;
@@ -291,9 +291,9 @@ export function CalendarGrid({
 
   const monthLabels = React.useMemo(() => {
     if (!showAxis || !showMonths)
-      return [] as { colIndex: number; text: string }[];
+      return [] as Array<{ colIndex: number; text: string }>;
 
-    const labels: { colIndex: number; text: string }[] = [];
+    const labels: Array<{ colIndex: number; text: string }> = [];
     let lastLabeledWeek = -999;
 
     for (let i = 0; i < columns.length; i++) {
@@ -362,7 +362,7 @@ export function CalendarGrid({
               style={{
                 width: swatchSize,
                 height: swatchSize,
-                ...(bgStyleForLevel(i, palette) ?? {}),
+                ...bgStyleForLevel(i, palette),
               }}
               aria-hidden="true"
             />
@@ -494,8 +494,7 @@ export function CalendarGrid({
                                 style={{
                                   width: cellSize,
                                   height: cellSize,
-                                  ...(bgStyleForLevel(cell.level, palette) ??
-                                    {}),
+                                  ...bgStyleForLevel(cell.level, palette),
                                 }}
                                 aria-label={
                                   cell.disabled

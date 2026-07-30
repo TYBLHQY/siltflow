@@ -19,8 +19,7 @@ export function TTSConfigContent() {
   // Auto-fetch voice list on first open if not cached
   useEffect(() => {
     if (!hasCachedLists) {
-      refreshVoices();
-    }
+      void refreshVoices();    }
   }, [hasCachedLists, refreshVoices]);
 
   const langMeta = [
@@ -98,9 +97,9 @@ export function TTSConfigContent() {
                   type="range"
                   min="-50"
                   max="50"
-                  value={parseInt(config.rate.replace(/[+%]/g, ""))}
+                  value={Number.parseInt(config.rate.replace(/[+%]/g, ""))}
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
+                    const v = Number.parseInt(e.target.value, 10);
                     const sign = v >= 0 ? "+" : "";
                     setConfig({ rate: `${sign}${v}%` });
                   }}
@@ -115,9 +114,9 @@ export function TTSConfigContent() {
                   type="range"
                   min="-50"
                   max="50"
-                  value={parseInt(config.volume.replace(/[+%]/g, ""))}
+                  value={Number.parseInt(config.volume.replace(/[+%]/g, ""))}
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
+                    const v = Number.parseInt(e.target.value, 10);
                     const sign = v >= 0 ? "+" : "";
                     setConfig({ volume: `${sign}${v}%` });
                   }}
@@ -132,9 +131,9 @@ export function TTSConfigContent() {
                   type="range"
                   min="-50"
                   max="50"
-                  value={parseInt(config.pitch.replace(/[+Hz]/g, ""))}
+                  value={Number.parseInt(config.pitch.replace(/[+Hz]/g, ""))}
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
+                    const v = Number.parseInt(e.target.value, 10);
                     const sign = v >= 0 ? "+" : "";
                     setConfig({ pitch: `${sign}${v}Hz` });
                   }}

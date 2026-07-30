@@ -1,13 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useStyleStore } from "@/stores/style.store";
-import { PdfLoader, PdfHighlighter } from "react-pdf-highlighter-plus";
-import type {
-  Highlight as RPHLHighlight,
-  PdfSelection,
-  GhostHighlight,
-  PdfHighlighterUtils,
-  PdfScaleValue,
-} from "react-pdf-highlighter-plus";
+import { PdfLoader, PdfHighlighter, type Highlight as RPHLHighlight, type PdfSelection, type GhostHighlight, type PdfHighlighterUtils, type PdfScaleValue } from "react-pdf-highlighter-plus";
 import {
   useAnnotationStore,
   type AnnotationItem,
@@ -60,7 +53,7 @@ function annotationToHighlight(
   annotationColor: string,
   plainColor: string,
 ): SiltflowHighlight {
-  const embed = item.embedData as AnnotationItem["embedData"];
+  const embed = item.embedData;
   // Source language: prefer the annotation's own AI result (same as card TTS),
   // fall back to the item's text language if available.
   const ai = item.aiResult as AIAnnotationDataV2 | undefined;
@@ -68,7 +61,7 @@ function annotationToHighlight(
   return {
     id: item.id,
     kind: item.kind || "annotation",
-    type: (item.type as SiltflowHighlight["type"]) || "text",
+    type: (item.type as SiltflowHighlight["type"]) ?? "text",
     content: embed?.content ?? { text: item.text },
     position: embed?.position ?? {
       boundingRect: {
@@ -348,10 +341,8 @@ function PdfHighlighterWrapper({
     // Update local store immediately
     updateDoc(documentId, { totalPages });
 
-    pdfDocument.getMetadata().then((meta) => {
-      const metadata = JSON.stringify(meta);
-      window.siltflow.documents.updateMetadata({
-        id: documentId,
+    void pdfDocument.getMetadata().then((meta) => {      const metadata = JSON.stringify(meta);
+      void window.siltflow.documents.updateMetadata({        id: documentId,
         totalPages,
         metadata,
       });

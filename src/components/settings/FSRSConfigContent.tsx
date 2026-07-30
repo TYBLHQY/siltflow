@@ -28,7 +28,7 @@ export function FSRSConfigContent() {
             className="w-full"
             value={params.request_retention}
             onChange={(e) =>
-              updateParam("request_retention", parseFloat(e.target.value))
+              updateParam("request_retention", Number.parseFloat(e.target.value))
             }
           />
           <p className="text-xs text-ctp-overlay0 mt-0.5">
@@ -49,7 +49,7 @@ export function FSRSConfigContent() {
             className="w-full"
             value={params.maximum_interval}
             onChange={(e) =>
-              updateParam("maximum_interval", parseInt(e.target.value, 10))
+              updateParam("maximum_interval", Number.parseInt(e.target.value, 10))
             }
           />
           <p className="text-xs text-ctp-overlay0 mt-0.5">
@@ -94,7 +94,7 @@ export function FSRSConfigContent() {
             <div className="flex gap-2">
               {[0, 1].map((idx) => {
                 const raw = (params.learning_steps as string[])[idx] ?? "1m";
-                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 1;
+                const val = Number.parseInt(raw.replace(/[^0-9]/g, ""), 10) || 1;
                 return (
                   <div key={idx} className="flex-1 flex items-center gap-1">
                     <input
@@ -103,7 +103,7 @@ export function FSRSConfigContent() {
                       className="w-full rounded-md border bg-ctp-base px-2 py-1.5 text-xs"
                       value={val}
                       onChange={(e) => {
-                        const n = parseInt(e.target.value, 10) || 1;
+                        const n = Number.parseInt(e.target.value, 10) || 1;
                         const arr = [...(params.learning_steps as string[])];
                         arr[idx] = `${n}m`;
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -129,7 +129,7 @@ export function FSRSConfigContent() {
             <div className="flex gap-2">
               {[0].map((idx) => {
                 const raw = (params.relearning_steps as string[])[idx] ?? "10m";
-                const val = parseInt(raw.replace(/[^0-9]/g, ""), 10) || 10;
+                const val = Number.parseInt(raw.replace(/[^0-9]/g, ""), 10) || 10;
                 return (
                   <div key={idx} className="flex-1 flex items-center gap-1">
                     <input
@@ -138,7 +138,7 @@ export function FSRSConfigContent() {
                       className="w-full rounded-md border bg-ctp-base px-2 py-1.5 text-xs"
                       value={val}
                       onChange={(e) => {
-                        const n = parseInt(e.target.value, 10) || 10;
+                        const n = Number.parseInt(e.target.value, 10) || 10;
                         const arr = [`${n}m`];
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         updateParam("relearning_steps" as const, arr as any);

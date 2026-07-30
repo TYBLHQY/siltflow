@@ -60,8 +60,7 @@ export const MIMO_MODELS = [
 ];
 
 function persist(config: TTSConfig) {
-  window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });
-}
+  void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });}
 
 export const useTTSStore = create<TTSStoreState>((set, get) => ({
   config: { ...DEFAULT_CONFIG },
@@ -128,8 +127,8 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
 /** Call once on app boot to restore TTS config from vault. */
 export async function loadTTSConfigFromVault(cfg?: Record<string, unknown>) {
   try {
-    if (!cfg) cfg = await window.siltflow.vaultConfigGet();
-    const saved = (cfg as Record<string, unknown>)[STORAGE_KEY];
+    cfg ??= await window.siltflow.vaultConfigGet();
+    const saved = (cfg)[STORAGE_KEY];
     if (saved && typeof saved === "object") {
       useTTSStore.setState({
         config: { ...DEFAULT_CONFIG, ...(saved as Partial<TTSConfig>) },

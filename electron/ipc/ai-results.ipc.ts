@@ -1,6 +1,5 @@
 import { ipcMain } from "electron";
-import { getSqlite } from "../database";
-import { AI_DATA_VERSION } from "../database";
+import { getSqlite,AI_DATA_VERSION } from "../database";
 
 export function registerAiResultHandlers() {
   ipcMain.handle(
@@ -26,7 +25,7 @@ export function registerAiResultHandlers() {
       .prepare(
         "SELECT annotation_id, data FROM ai_results WHERE document_id = ?",
       )
-      .all(documentId) as Record<string, unknown>[];
+      .all(documentId) as Array<Record<string, unknown>>;
     return rows.map((r) => ({
       annotationId: r.annotation_id as string,
       data: r.data as string,

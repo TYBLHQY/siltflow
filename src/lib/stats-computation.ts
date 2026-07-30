@@ -2,8 +2,7 @@
  * Pure computation functions for the Stats Dashboard.
  * Each function takes raw data (IPC rows) and returns chart-ready arrays.
  */
-import { State } from "ts-fsrs";
-import type { Card } from "ts-fsrs";
+import { State, type Card } from "ts-fsrs";
 import {
   retrievability,
   GRADE_COLOR,
@@ -76,7 +75,7 @@ export interface OverviewStats {
 // ---------------------------------------------------------------------------
 
 export function computeDailyReviews(
-  logs: { createdAt: string; data: string }[],
+  logs: Array<{ createdAt: string; data: string }>,
   days?: number,
 ): DailyReviewCount[] {
   const map = new Map<
@@ -114,7 +113,7 @@ export function computeDailyReviews(
 // ---------------------------------------------------------------------------
 
 export function computeCalendarHeatmap(
-  logs: { createdAt: string }[],
+  logs: Array<{ createdAt: string }>,
 ): Map<string, number> {
   const map = new Map<string, number>();
   for (const entry of logs) {
@@ -129,7 +128,7 @@ export function computeCalendarHeatmap(
 // ---------------------------------------------------------------------------
 
 export function computeGradeDistribution(
-  logs: { data: string }[],
+  logs: Array<{ data: string }>,
 ): GradeDistItem[] {
   const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
   for (const entry of logs) {
@@ -150,7 +149,7 @@ export function computeGradeDistribution(
 // ---------------------------------------------------------------------------
 
 export function computeStabilityHistogram(cards: Card[]): HistogramBin[] {
-  const bins: { label: string; min: number; max: number; count: number }[] = [
+  const bins: Array<{ label: string; min: number; max: number; count: number }> = [
     { label: "<1d", min: 0, max: 1, count: 0 },
     { label: "1–7d", min: 1, max: 7, count: 0 },
     { label: "7–30d", min: 7, max: 30, count: 0 },
@@ -228,7 +227,7 @@ export function computeDifficultyHistogram(cards: Card[]): HistogramBin[] {
 // ---------------------------------------------------------------------------
 
 export function computeIntervalHistogram(cards: Card[]): HistogramBin[] {
-  const bins: { label: string; min: number; max: number; count: number }[] = [
+  const bins: Array<{ label: string; min: number; max: number; count: number }> = [
     { label: "<1d", min: 0, max: 1, count: 0 },
     { label: "1–7d", min: 1, max: 7, count: 0 },
     { label: "7–30d", min: 7, max: 30, count: 0 },
@@ -255,7 +254,7 @@ export function computeIntervalHistogram(cards: Card[]): HistogramBin[] {
 // ---------------------------------------------------------------------------
 
 export function computeKnowledgeGrowth(
-  logs: { createdAt: string; data: string; annotationId: string }[],
+  logs: Array<{ createdAt: string; data: string; annotationId: string }>,
 ): KnowledgePoint[] {
   const sorted = [...logs].sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt),

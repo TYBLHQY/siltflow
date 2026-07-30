@@ -18,7 +18,7 @@ import { AboutContent } from "@/components/settings/AboutContent";
 
 type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "about";
 
-const SETTINGS_TABS: { id: SettingsTab; icon: typeof Bot; label: string }[] = [
+const SETTINGS_TABS: Array<{ id: SettingsTab; icon: typeof Bot; label: string }> = [
   { id: "ai", icon: Bot, label: "AI" },
   { id: "fsrs", icon: BrainCircuit, label: "Spaced Repetition" },
   { id: "style", icon: TextSelect, label: "Style" },

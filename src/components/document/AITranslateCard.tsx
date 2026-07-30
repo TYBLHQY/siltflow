@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import type { AnnotationItem } from "@/stores/annotation.store";
-import { useAnnotationStore } from "@/stores/annotation.store";
+import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
 import { hasDetails } from "@/lib/annotation-helpers";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
 import { FSRSStats } from "@/components/document/FSRSStats";

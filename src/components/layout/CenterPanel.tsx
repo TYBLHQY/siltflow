@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   BookOpen,
   PanelLeftClose,
@@ -37,7 +37,6 @@ import { UnifiedSettingsModal } from "@/components/settings/UnifiedSettingsModal
 
 // Lazy-load PdfViewer and StatsDashboard so their heavy transitive deps
 // (pdfjs-dist ~3MB, recharts ~1.3MB) are not part of the initial bundle.
-import React from "react";
 const PdfViewer = React.lazy(() =>
   import("@/components/document/PdfViewer").then((m) => ({
     default: m.PdfViewer,
@@ -61,8 +60,8 @@ function PageNav() {
   const totalPages = pdfDocument?.numPages ?? 0;
 
   const handleJump = useCallback(() => {
-    const n = parseInt(input, 10);
-    if (isNaN(n) || n < 1 || n > totalPages) {
+    const n = Number.parseInt(input, 10);
+    if (Number.isNaN(n) || n < 1 || n > totalPages) {
       setInput("");
       return;
     }
@@ -284,8 +283,7 @@ export function CenterPanel({
 
     loadedDocRef.current = documentId;
 
-    window.siltflow.annotations.list(documentId).then(async (saved) => {
-      if (loadedDocRef.current !== documentId) return;
+    void window.siltflow.annotations.list(documentId).then(async (saved) => {      if (loadedDocRef.current !== documentId) return;
 
       setItems(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -293,8 +291,8 @@ export function CenterPanel({
           id: a.id,
           documentId: a.document_id,
           type: a.type,
-          kind: a.kind || "annotation",
-          text: a.text || "",
+          kind: a.kind ?? "annotation",
+          text: a.text ?? "",
           pageNumber: a.page_number ?? 1,
           embedData: a.embed_data as AnnotationEmbedData,
           aiResult: a.ai_data ?? undefined,
@@ -343,7 +341,7 @@ export function CenterPanel({
         </Button>
 
         <h1 className="flex-1 truncate text-center text-sm font-medium min-w-0">
-          {docTitle || "Siltflow"}
+          {docTitle ?? "Siltflow"}
         </h1>
 
         <div className="flex items-center gap-2 shrink-0">

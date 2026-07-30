@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Pencil, Volume2, Loader2, Sparkles, Trash2 } from "lucide-react";
 
 import { renderBoldText } from "@/components/ui/render-bold";
-import type { AIAnnotationDataV1 } from "@/types/annotation";
+import type { AIAnnotationDataV1,DefinitionEntry } from "@/types/annotation";
 import {
   getTranslation,
   getDefinitions,
@@ -17,7 +17,6 @@ import {
   getAlternatives,
   inferGranularity,
 } from "@/lib/annotation-helpers";
-import type { DefinitionEntry } from "@/types/annotation";
 
 interface AIAnnotationResultV1Props {
   item: AnnotationItem;
@@ -87,7 +86,7 @@ export function AIAnnotationResultV1({
     "listenCardAudio",
     () => {
       if (tts.speakingId === item.id && tts.state === "playing") tts.stop();
-      else tts.speak(item.text, undefined, ai?.source_lang, item.id);
+      else void tts.speak(item.text, undefined, ai?.source_lang, item.id);
     },
     { enabled: enableShortcut && !!item },
   );
@@ -177,8 +176,7 @@ export function AIAnnotationResultV1({
                   if (tts.speakingId === item.id && tts.state === "playing")
                     tts.stop();
                   else
-                    tts.speak(item.text, undefined, ai?.source_lang, item.id);
-                }}
+                    void tts.speak(item.text, undefined, ai?.source_lang, item.id);                }}
                 title={
                   tts.speakingId === item.id && tts.state === "playing"
                     ? "Stop"
@@ -201,8 +199,7 @@ export function AIAnnotationResultV1({
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleTranslate();
-                  }}
+                    void handleTranslate();                  }}
                   title="Translate"
                   disabled={isTranslating}
                 >
@@ -235,7 +232,7 @@ export function AIAnnotationResultV1({
             </p>
           )}
 
-          {(difficulty || (ipa && isWord) || register) && (
+          {((difficulty ?? (ipa && isWord)) || register) && (
             <div className="flex flex-wrap gap-1">
               {difficulty && (
                 <span className="inline-flex items-center rounded bg-ctp-rosewater/15 px-1.5 py-0.5 text-ctp-rosewater">

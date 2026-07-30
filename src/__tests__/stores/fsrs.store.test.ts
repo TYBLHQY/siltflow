@@ -8,7 +8,7 @@ const mockSiltflow = {
 };
 (globalThis as Record<string, unknown>).window = {
   siltflow: mockSiltflow,
-} as unknown as Window & typeof globalThis;
+};
 
 describe("getFSRSEngine", () => {
   it("should return an fsrs engine instance", () => {

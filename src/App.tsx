@@ -61,17 +61,9 @@ function App() {
   useEffect(() => {
     if (vaultReady && !aiLoaded) {
       // Single vaultConfigGet call, distribute to all loaders (1 IPC instead of 9)
-      window.siltflow.vaultConfigGet().then((cfg) => {
+      void window.siltflow.vaultConfigGet().then((cfg) => {
         loadFromVault(cfg);
-        loadFSRSParams(cfg);
-        loadSummariesFromVault();
-        loadStyleFromVault(cfg);
-        loadTTSConfigFromVault(cfg);
-        loadShortcutsFromVault(cfg);
-        loadLastPages(cfg);
-        loadThemeFromVault(cfg);
-        loadAppSettingsFromVault(cfg);
-      });
+        void loadFSRSParams(cfg);        void loadSummariesFromVault();        void loadStyleFromVault(cfg);        void loadTTSConfigFromVault(cfg);        void loadShortcutsFromVault(cfg);        void loadLastPages(cfg);        void loadThemeFromVault(cfg);        void loadAppSettingsFromVault(cfg);      });
     }
   }, [vaultReady, aiLoaded]);
 
@@ -82,14 +74,15 @@ function App() {
       const anchor = target.closest?.("a");
       if (!anchor?.href || anchor.target !== "_blank") return;
       // Skip blob: and javascript: URLs
+      // eslint-disable-next-line no-script-url -- This is a security filter checking for malicious javascript: URLs, not using them
       if (
         anchor.href.startsWith("blob:") ||
+        // eslint-disable-next-line no-script-url -- security check, not usage
         anchor.href.startsWith("javascript:")
       )
         return;
       e.preventDefault();
-      window.siltflow.openExternal(anchor.href);
-    };
+      void window.siltflow.openExternal(anchor.href);    };
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, []);
@@ -104,7 +97,7 @@ function App() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const unsubAvailable = window.siltflow.update.onAvailable((info: any) => {
-        const tag = info?.version || info?.tag_name || "";
+        const tag = (info?.version ?? info?.tag_name) || "";
         setUpdateDialog({
           latestVersion: tag.startsWith("v") ? tag.slice(1) : tag,
         });
@@ -125,8 +118,7 @@ function App() {
         setUpdateDialog("error");
       });
 
-      window.siltflow.update.check();
-
+      void window.siltflow.update.check();
       return () => {
         unsubAvailable();
         unsubNotAvail();
@@ -350,8 +342,7 @@ function App() {
                   className="flex-1"
                   onClick={() => {
                     setDownloading(true);
-                    window.siltflow.update.download();
-                  }}
+                    void window.siltflow.update.download();                  }}
                 >
                   <Download className="h-4 w-4 inline mr-1" />
                   Download

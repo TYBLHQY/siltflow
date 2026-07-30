@@ -126,8 +126,7 @@ export const useAIStore = create<AIStoreState>()((set, get) => ({
 
   setDefaultTargetLang: (lang) => {
     set({ defaultTargetLang: lang });
-    window.siltflow.vaultConfigSet({ defaultTargetLang: lang });
-  },
+    void window.siltflow.vaultConfigSet({ defaultTargetLang: lang });  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -141,15 +140,14 @@ function persistToVault(
   profiles: AIProfile[],
   taskProfiles: Partial<Record<AITask, string | null>>,
 ) {
-  window.siltflow.vaultConfigSet({
-    [AI_VAULT_KEY]: profiles,
+  void window.siltflow.vaultConfigSet({    [AI_VAULT_KEY]: profiles,
     [TASK_PROFILES_KEY]: taskProfiles,
   });
 }
 
 /** Call once on app boot to restore profiles and settings from vault. */
 export function loadFromVault(cfg?: Record<string, unknown>) {
-  if (cfg) return applyAIConfig(cfg);
+  if (cfg) {  applyAIConfig(cfg);; return; }
   // fallback: loads config independently (e.g. when called directly)
   window.siltflow
     .vaultConfigGet()
@@ -158,7 +156,7 @@ export function loadFromVault(cfg?: Record<string, unknown>) {
 }
 
 function applyAIConfig(cfg: Record<string, unknown>) {
-  const saved = (cfg as Record<string, unknown>)[AI_VAULT_KEY];
+  const saved = (cfg)[AI_VAULT_KEY];
   if (Array.isArray(saved)) {
     // Migrate legacy profiles: strip active/task fields
     const migrated = (saved as Array<Record<string, unknown>>).map(
@@ -167,12 +165,12 @@ function applyAIConfig(cfg: Record<string, unknown>) {
     );
     useAIStore.setState({ profiles: migrated, loaded: true });
   }
-  const taskProfiles = (cfg as Record<string, unknown>)[TASK_PROFILES_KEY] as
+  const taskProfiles = (cfg)[TASK_PROFILES_KEY] as
     Partial<Record<AITask, string | null>> | undefined;
   if (taskProfiles) {
     useAIStore.setState({ taskProfiles });
   }
-  const defaultTargetLang = (cfg as Record<string, unknown>)[
+  const defaultTargetLang = (cfg)[
     "defaultTargetLang"
   ] as string | undefined;
   if (defaultTargetLang) {

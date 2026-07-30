@@ -38,6 +38,7 @@ import {
 } from "@/lib/doc-review";
 import { createNewCardStub } from "@/lib/fsrs-utils";
 import { useNow } from "@/hooks/useNow";
+import type { Card } from "ts-fsrs";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
 import { ReviewTab } from "@/components/layout/left-panel/review-tab";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -240,9 +241,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const currentDoc = useDocumentStore.getState().currentDocument;
 
     if (currentDoc && items.length === 0) {
-      window.siltflow.fsrsCards.listByDocument(currentDoc.id).then((rows) => {
-        const cardAnnIds = new Set<string>();
-        const cards: import("ts-fsrs").Card[] = [];
+      void window.siltflow.fsrsCards.listByDocument(currentDoc.id).then((rows) => {        const cardAnnIds = new Set<string>();
+        const cards: Card[] = [];
         for (const row of rows) {
           cardAnnIds.add(row.annotationId);
           try {
@@ -251,8 +251,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
             /* skip */
           }
         }
-        window.siltflow.annotations.list(currentDoc.id).then((annotations) => {
-          const realAnnotations = annotations.filter(
+        void window.siltflow.annotations.list(currentDoc.id).then((annotations) => {          const realAnnotations = annotations.filter(
             (a) => a.kind !== "highlight",
           );
           for (const ann of realAnnotations) {
@@ -262,7 +261,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           }
           const byDoc: Record<
             string,
-            { title: string; cards: import("ts-fsrs").Card[] }
+            { title: string; cards: Card[] }
           > = {
             [currentDoc.id]: { title: currentDoc.title, cards },
           };
@@ -286,7 +285,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
       const otherDocs = prev.filter((p) => !itemDocIds.has(p.documentId));
       const byDoc: Record<
         string,
-        { title: string; cards: import("ts-fsrs").Card[] }
+        { title: string; cards: Card[] }
       > = {};
       for (const doc of docs) {
         if (itemDocIds.has(doc.id))
@@ -295,7 +294,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
       const cardDocMap = new Map<string, Set<string>>();
       for (const item of annotationItems) {
         if (item.fsrsCard && byDoc[item.documentId]) {
-          byDoc[item.documentId]!.cards.push(item.fsrsCard);
+          byDoc[item.documentId].cards.push(item.fsrsCard);
           if (!cardDocMap.has(item.documentId))
             cardDocMap.set(item.documentId, new Set());
           cardDocMap.get(item.documentId)!.add(item.id);
@@ -305,7 +304,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         if (!item.fsrsCard && byDoc[item.documentId]) {
           const cardIds = cardDocMap.get(item.documentId);
           if (!cardIds?.has(item.id)) {
-            byDoc[item.documentId]!.cards.push({
+            byDoc[item.documentId].cards.push({
               state: 0,
               due: new Date(),
               stability: 0,
@@ -314,7 +313,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
               scheduled_days: 0,
               reps: 0,
               lapses: 0,
-            } as import("ts-fsrs").Card);
+            } as Card);
           }
         }
       }
@@ -351,8 +350,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
   useEffect(() => {
     if (documents.length === 0) return;
-    loadMetricsFull();
-  }, [documents.length, loadMetricsFull]);
+    void loadMetricsFull();  }, [documents.length, loadMetricsFull]);
 
   const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
@@ -366,8 +364,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   }, [annotationItems, computeMetricsFromItems]);
 
   useEffect(() => {
-    loadFromDb();
-  }, [loadFromDb]);
+    void loadFromDb();  }, [loadFromDb]);
 
   const handleImport = async () => {
     try {

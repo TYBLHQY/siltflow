@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import Fuse from "fuse.js";
-import type { IFuseOptions, FuseResult } from "fuse.js";
-import type { AnnotationItem } from "@/stores/annotation.store";
+import Fuse, { type IFuseOptions, type FuseResult } from "fuse.js";
+import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
 
 // ── Search entry (flattened index item for Fuse) ────────────────────
 
@@ -52,7 +51,7 @@ interface SearchState {
   // Search state
   query: string;
   setQuery: (q: string) => void;
-  results: FuseResult<SearchEntry>[];
+  results: Array<FuseResult<SearchEntry>>;
   selectedIndex: number;
   setSelectedIndex: (i: number) => void;
 
@@ -62,7 +61,7 @@ interface SearchState {
 
   // Actions
   buildIndex: () => Promise<void>;
-  search: (query: string) => FuseResult<SearchEntry>[];
+  search: (query: string) => Array<FuseResult<SearchEntry>>;
 }
 
 export const useSearchStore = create<SearchState>()((set, get) => ({
@@ -159,7 +158,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
             aiResult = undefined;
           }
         } else {
-          aiResult = (ann.ai_data ?? undefined) as AnnotationItem["aiResult"];
+          aiResult = (ann.ai_data ?? undefined);
         }
 
         let fsrsCard: AnnotationItem["fsrsCard"];
@@ -170,7 +169,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
             fsrsCard = undefined;
           }
         } else {
-          fsrsCard = (ann.fsrs_data ?? undefined) as AnnotationItem["fsrsCard"];
+          fsrsCard = (ann.fsrs_data ?? undefined);
         }
 
         const item: AnnotationItem = {
@@ -207,7 +206,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
     }
   },
 
-  search: (query: string): FuseResult<SearchEntry>[] => {
+  search: (query: string): Array<FuseResult<SearchEntry>> => {
     if (!query.trim()) {
       return [];
     }
@@ -222,7 +221,6 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
 
 // ── Invalidation: rebuild index when annotations or documents change ──
 
-import { useAnnotationStore } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
 
 // Watch for annotation / document changes and invalidate the search index.

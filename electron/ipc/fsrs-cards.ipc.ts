@@ -26,7 +26,7 @@ export function registerFSRSCardHandlers() {
       .prepare(
         "SELECT annotation_id, data FROM fsrs_cards WHERE document_id = ?",
       )
-      .all(documentId) as Record<string, unknown>[];
+      .all(documentId) as Array<Record<string, unknown>>;
     return rows.map((r) => ({
       annotationId: r.annotation_id as string,
       data: r.data as string,
@@ -41,7 +41,7 @@ export function registerFSRSCardHandlers() {
       .prepare(
         "SELECT annotation_id, document_id, data, created_at, updated_at FROM fsrs_cards",
       )
-      .all() as Record<string, unknown>[];
+      .all() as Array<Record<string, unknown>>;
     return rows.map((r) => ({
       annotationId: r.annotation_id as string,
       documentId: r.document_id as string,
