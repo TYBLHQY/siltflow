@@ -47,6 +47,29 @@ function DocumentOutlinePanel() {
   const [allExpanded, setAllExpanded] = useState(true);
   const toggleAll = useCallback(() => setAllExpanded((v) => !v), []);
 
+  // ── nearest-outline page for highlight fallback ─────────────────────
+  // When a page has no direct outline entry, highlight the nearest ancestor
+  // (the outline item whose pageNumber is ≤ currentPage with the highest pageNumber).
+  const outlineActivePage = useMemo(() => {
+    if (!outline || outline.length === 0) return currentPage;
+    const pages: number[] = [];
+    const walk = (items: typeof outline) => {
+      for (const item of items) {
+        pages.push(item.pageNumber);
+        if (item.children?.length) walk(item.children);
+      }
+    };
+    walk(outline);
+    pages.sort((a, b) => a - b);
+    // find the largest pageNumber ≤ currentPage
+    let nearest = pages[0];
+    for (const p of pages) {
+      if (p <= currentPage) nearest = p;
+      else break;
+    }
+    return nearest;
+  }, [outline, currentPage]);
+
   // ── auto-scroll to current page's outline item ──────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -55,7 +78,7 @@ function DocumentOutlinePanel() {
     if (el) {
       el.scrollIntoView({ block: "nearest" });
     }
-  }, [currentPage, allExpanded]);
+  }, [outlineActivePage, allExpanded]);
 
   if (!pdfDocument || outlineLoading) {
     return (
@@ -110,19 +133,25 @@ function DocumentOutlinePanel() {
             key={allExpanded ? "expanded" : "collapsed"}
             outline={outline}
             isLoading={false}
-            currentPage={currentPage}
+            currentPage={outlineActivePage}
             defaultExpanded={allExpanded}
             onNavigate={(item) => pdfGoToPage(item.pageNumber)}
             classNames={{ container: "py-2" }}
             itemClassNames={{
-              container: "rounded-md px-2 py-1 hover:bg-ctp-surface0 transition-colors cursor-pointer",
+              container: "text-ctp-text rounded-md px-2 py-1 transition-colors cursor-pointer",
               containerActive: "outline-active bg-ctp-surface0",
-              title: "hover:text-ctp-crust",
+              title: "text-ctp-text",
               titleActive: "text-ctp-mauve",
               expandButton: "text-ctp-overlay0",
               expandIcon: "h-3 w-3",
             }}
-            itemStyles={{ title: { fontSize: "0.875rem", whiteSpace: "normal", overflow: "visible", textOverflow: "clip" }, titleActive: { fontWeight: 400 }, activeIndicator: { display: "none" } }}
+            itemStyles={{
+              container: {},
+              containerHover: { backgroundColor: "var(--catppuccin-color-surface0)" },
+              title: { color: "var(--catppuccin-color-text)", fontSize: "0.875rem", whiteSpace: "normal", overflow: "visible", textOverflow: "clip" },
+              titleActive: { color: "var(--catppuccin-color-mauve)", fontWeight: 400 },
+              activeIndicator: { display: "none" },
+            }}
           />
         </div>
       </ScrollArea>
