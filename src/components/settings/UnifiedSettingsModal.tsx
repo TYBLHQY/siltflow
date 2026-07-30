@@ -28,15 +28,16 @@ export function UnifiedSettingsModal({
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<SettingsTab>("ai");
+  const [isCapturingShortcut, setIsCapturingShortcut] = useState(false);
 
-  // Close on Escape key
+  // Close on Escape key (skip when capturing a shortcut binding)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isCapturingShortcut) onClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [onClose, isCapturingShortcut]);
 
   return (
     <Dialog
@@ -47,6 +48,9 @@ export function UnifiedSettingsModal({
     >
       <DialogContent
         hideClose
+        onEscapeKeyDown={(e) => {
+          if (isCapturingShortcut) e.preventDefault();
+        }}
         className="flex w-full max-w-3xl h-[calc(100vh-80px)] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"
       >
         {/* ── Left sidebar ── */}
@@ -94,7 +98,7 @@ export function UnifiedSettingsModal({
             {tab === "fsrs" && <FSRSConfigContent />}
             {tab === "style" && <StyleConfigContent />}
             {tab === "tts" && <TTSConfigContent />}
-            {tab === "shortcuts" && <ShortcutsContent />}
+            {tab === "shortcuts" && <ShortcutsContent isCapturing={isCapturingShortcut} onCapturingChange={setIsCapturingShortcut} />}
             {tab === "about" && <AboutContent />}
           </div>
         </div>

@@ -4,13 +4,18 @@ import { Button } from "@/components/ui/button";
 import { useShortcutsStore } from "@/stores/shortcuts.store";
 import { formatShortcut } from "@/lib/keyboard-keys";
 
-export function ShortcutsContent() {
+export function ShortcutsContent({
+  isCapturing,
+  onCapturingChange,
+}: {
+  isCapturing: boolean;
+  onCapturingChange: (v: boolean) => void;
+}) {
   const shortcuts = useShortcutsStore((s) => s.shortcuts);
   const setShortcutKeys = useShortcutsStore((s) => s.setShortcutKeys);
   const resetShortcut = useShortcutsStore((s) => s.resetShortcut);
   const resetAllShortcuts = useShortcutsStore((s) => s.resetAllShortcuts);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [capturing, setCapturing] = useState(false);
 
   // Group shortcuts by context
   const groups = useMemo(() => {
@@ -32,11 +37,11 @@ export function ShortcutsContent() {
 
   const handleStartCapture = (actionId: string) => {
     setEditingId(actionId);
-    setCapturing(true);
+    onCapturingChange(true);
   };
 
   useEffect(() => {
-    if (!capturing || !editingId) return;
+    if (!isCapturing || !editingId) return;
 
     const handler = (e: KeyboardEvent) => {
       e.preventDefault();
@@ -44,7 +49,7 @@ export function ShortcutsContent() {
 
       if (e.key === "Escape") {
         setEditingId(null);
-        setCapturing(false);
+        onCapturingChange(false);
         return;
       }
 
@@ -94,12 +99,12 @@ export function ShortcutsContent() {
         setShortcutKeys(editingId as any, parts.join("+"));
       }
       setEditingId(null);
-      setCapturing(false);
+      onCapturingChange(false);
     };
 
     document.addEventListener("keydown", handler, true);
     return () => document.removeEventListener("keydown", handler, true);
-  }, [capturing, editingId, setShortcutKeys]);
+  }, [isCapturing, editingId, setShortcutKeys, onCapturingChange]);
 
   return (
     <>
@@ -107,12 +112,6 @@ export function ShortcutsContent() {
         <Keyboard className="h-5 w-5" />
         <h2 className="text-base font-semibold">Keyboard Shortcuts</h2>
       </div>
-
-      {capturing && editingId && (
-        <div className="mb-3 rounded-md border border-ctp-mauve bg-ctp-mauve/5 px-3 py-2 text-xs text-ctp-mauve">
-          Press the key combination for this shortcut (or Escape to cancel)...
-        </div>
-      )}
 
       <div className="space-y-4">
         {Object.entries(groups).map(([context, items]) => {
