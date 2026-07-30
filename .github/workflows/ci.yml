@@ -63,7 +63,10 @@ jobs:
         run: pnpm audit:deps
 
       - name: Secrets scan (gitleaks)
-        run: pnpm audit:secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
+          no-git: true
 
   # ── Release ────────────────────────────────────────────────────────────
   # Only on version tags, and only after check passes.
