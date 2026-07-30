@@ -8,8 +8,8 @@ import { FSRSStats } from "@/components/document/FSRSStats";
 interface AITranslateCardProps {
   id: string;
   item: AnnotationItem;
-  onDelete: (id: string) => void;
-  onTranslate: (id: string) => Promise<void>;
+  onDelete?: (id: string) => void;
+  onTranslate?: (id: string) => Promise<void>;
   onClick?: () => void;
   scrolled?: boolean;
   className?: string;
@@ -74,12 +74,22 @@ export function AITranslateCard({
   const detailAvailable = ai && "translation" in ai ? hasDetails(ai) : false;
   const isV2 = item.aiVersion === 2;
 
-  const actionBarProps = {
+  // Action bar: only expose edit when at least one of delete/translate is
+  // provided (i.e., the caller wants a full-featured bar, not just TTS+Goto).
+  const actionBarProps: {
+    editing: boolean;
+    onEditToggle?: () => void;
+    onTranslate?: () => void | Promise<void>;
+    onDelete?: () => void;
+    onGoToHighlight?: () => void;
+  } = {
     editing,
-    onEditToggle: () => setEditing(!editing),
-    onTranslate: () => onTranslate(id),
-    onDelete: () => onDelete(id),
-    onGoToHighlight,
+    ...(onDelete || onTranslate
+      ? { onEditToggle: () => setEditing(!editing) }
+      : {}),
+    ...(onTranslate ? { onTranslate: () => onTranslate(id) } : {}),
+    ...(onDelete ? { onDelete: () => onDelete(id) } : {}),
+    ...(onGoToHighlight ? { onGoToHighlight } : {}),
   };
 
   // ── Collapsible mode (annotations panel cards) ──

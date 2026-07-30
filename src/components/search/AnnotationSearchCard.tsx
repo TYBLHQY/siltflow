@@ -1,7 +1,6 @@
 import { memo } from "react";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
 import type { SearchEntry } from "@/stores/search.store";
 
 interface AnnotationSearchCardProps {
@@ -49,17 +48,8 @@ export const AnnotationSearchCard = memo(function AnnotationSearchCard({
             expanded
             collapsible={false}
             showFSRS
-            showActionBar={false}
-            // The search index doesn't carry sourceLang; for translated
-            // items V1/V2 already expose it from AI data internally.
+            showActionBar
             onToggleExpand={() => {}}
-            onDelete={() => {}}
-            onTranslate={async () => {}}
-            onGoToHighlight={
-              annotation.kind !== "manual"
-                ? () => pdfScrollToHighlight(annotation.id)
-                : undefined
-            }
           />
         </div>
       </ScrollArea>
