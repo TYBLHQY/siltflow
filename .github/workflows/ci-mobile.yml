@@ -117,7 +117,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#mobile-v}"
           APK_DIR="android/app/build/outputs/apk/release"
-          APK=$(find "$APK_DIR" -name "Siltflow-v${VERSION}-*.apk" | head -1)
+          APK=$(find "$APK_DIR" -maxdepth 1 -name "*.apk" | head -1)
 
           if [ ! -f "$APK" ]; then
             echo "APK not found in $APK_DIR"
