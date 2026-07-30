@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { IconText } from "@/components/ui/icon-text";
 import {
   Dialog,
   DialogContent,
@@ -321,60 +320,55 @@ export function AnnotationsTab({
   return (
     <>
       {docId && (
-        <div className="shrink-0 border-b px-3 py-2 flex flex-col gap-1.5">
+        <div className="shrink-0 flex items-center justify-between border-b px-3 py-1.5">
           <Button
+            variant="ghost"
             size="xs"
-            className="w-full"
+            className="gap-0.5"
             onClick={handleStartLearning}
             disabled={dueCount === 0}
+            title="Start Learning"
           >
-            <IconText icon={CheckSquare} size="xs" className="gap-0">
-              Start Learning ({dueCount})
-            </IconText>
+            <CheckSquare className="h-3.5 w-3.5" />
+            [{dueCount}]
           </Button>
           {untranslatedCount > 0 && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="xs"
-              className="w-full"
+              className="gap-0.5"
               onClick={handleBatchTranslate}
               disabled={batchTranslating}
               title="Translate all untranslated annotations"
             >
-              <IconText icon={Sparkles} size="xs" className="gap-0">
-                {batchTranslating
-                  ? "Translating..."
-                  : `Batch Translate (${untranslatedCount})`}
-              </IconText>
+              <Sparkles className="h-3.5 w-3.5" />
+              [{untranslatedCount}]
             </Button>
           )}
           {v1Count > 0 && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="xs"
-              className="w-full"
+              className="gap-0.5"
               onClick={handleUpgradeV1ToV2}
               disabled={upgrading}
               title="Re-translate V1 annotations with the V2 two-stage pipeline"
             >
-              <IconText icon={ArrowUpCircle} size="xs" className="gap-0">
-                {upgrading ? "Upgrading…" : `Upgrade to V2 (${v1Count})`}
-              </IconText>
+              <ArrowUpCircle className="h-3.5 w-3.5" />
+              [{v1Count}]
             </Button>
           )}
           <Button
-            variant="outline"
+            variant="ghost"
             size="xs"
-            className="w-full"
+            className="gap-0.5"
             onClick={() => {
               setManualText("");
               setManualDialogOpen(true);
             }}
             title="Add manual annotation"
           >
-            <IconText icon={Plus} size="xs" className="gap-0">
-              Add Manual Annotation
-            </IconText>
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}
