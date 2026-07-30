@@ -9,6 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import type { Card } from "ts-fsrs";
 import { Search } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
@@ -57,8 +58,7 @@ export function MemoryStateExplorer() {
       id: string;
       documentId: string;
       text: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- card data is parsed from JSON and its shape depends on ts-fsrs runtime
-      card: any;
+      card: Card;
     }> = [];
     for (const row of rawCards) {
       try {
