@@ -49,6 +49,14 @@ function buildTree(
     }
   }
 
+  // Sort child folders within each parent group: sortOrder asc, then name asc
+  const sortFolders = (a: FolderItem, b: FolderItem) =>
+    (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name);
+  rootFolders.sort(sortFolders);
+  for (const [, group] of childrenByParent) {
+    group.sort(sortFolders);
+  }
+
   // Pre-index: folderId → child documents (O(n))
   const docsByFolder = new Map<string, DocumentItem[]>();
   const rootDocs: DocumentItem[] = [];
@@ -64,6 +72,14 @@ function buildTree(
       }
       list.push(d);
     }
+  }
+
+  // Sort child documents within each group: sortOrder asc, then title asc
+  const sortDocs = (a: DocumentItem, b: DocumentItem) =>
+    (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.title.localeCompare(b.title);
+  rootDocs.sort(sortDocs);
+  for (const [, group] of docsByFolder) {
+    group.sort(sortDocs);
   }
 
   function buildSubTree(folder: FolderItem): NodeData {
