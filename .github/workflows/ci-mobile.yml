@@ -163,6 +163,7 @@ jobs:
           gh release create "$TAG" \
             --title "Mobile $TITLE" \
             --target "${{ github.sha }}" \
+            --latest=false \
             --notes "Mobile Android release $TITLE"
 
           gh release upload "$TAG" "$APK_DIR"/*.apk --clobber

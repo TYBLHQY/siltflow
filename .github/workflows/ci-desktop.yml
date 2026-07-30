@@ -123,7 +123,7 @@ jobs:
               echo ""
               echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG:-$(git tag --sort=-creatordate | head -1)}...${TAG}"
             } > /tmp/release-notes.md
-            gh release create "$TAG" --title "Desktop $TITLE" --target "${{ github.sha }}" --notes-file /tmp/release-notes.md
+            gh release create "$TAG" --title "Desktop $TITLE" --target "${{ github.sha }}" --latest=false --notes-file /tmp/release-notes.md
           else
             echo "Waiting for release $TAG to be created…"
             for i in $(seq 1 30); do

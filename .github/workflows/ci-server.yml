@@ -112,6 +112,7 @@ jobs:
           gh release create "$TAG" \
             --title "Server $TITLE" \
             --target "${{ github.sha }}" \
+            --latest=false \
             --generate-notes
 
           gh release upload "$TAG" dist/server.cjs --clobber
