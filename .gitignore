@@ -25,7 +25,7 @@ dist-ssr
 *.sw?
 
 # Claude Code
-.claude/worktrees/
+.claude/
 
 # Build outputs
 release/
