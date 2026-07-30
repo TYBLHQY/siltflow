@@ -83,13 +83,11 @@ jobs:
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#server-v}"
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
 
           cat > latest-server.json << EOF
           {
             "version": "${VERSION}",
-            "bundleUrl": "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/server.cjs",
+            "bundleUrl": "https://github.com/${GITHUB_REPOSITORY}/releases/download/release/server.cjs",
             "healthEndpoint": "/health"
           }
           EOF
@@ -97,25 +95,27 @@ jobs:
           echo "Generated latest-server.json:"
           cat latest-server.json
 
-      - name: Create release + upload artifacts
+      - name: Create/update unified release + upload artifacts
         shell: bash
         working-directory: apps/sync-server
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          TITLE="${TAG#server-v}"
+          VERSION="${GITHUB_REF_NAME#server-v}"
 
-          # Delete existing release (idempotent re-run)
-          gh release delete "$TAG" --yes 2>/dev/null || true
+          # Create or update the unified release tag
+          if gh release view release --json tagName &>/dev/null; then
+            echo "Updating existing unified release…"
+          else
+            echo "Creating unified release…"
+            gh release create release \
+              --title "Siltflow" \
+              --target "${{ github.sha }}" \
+              --latest \
+              --notes "Combined artifacts for server, desktop, and mobile."
+          fi
 
-          gh release create "$TAG" \
-            --title "Server $TITLE" \
-            --target "${{ github.sha }}" \
-            --latest=false \
-            --generate-notes
-
-          gh release upload "$TAG" dist/server.cjs --clobber
-          gh release upload "$TAG" install.sh --clobber
-          gh release upload "$TAG" dist/dashboard.tar.gz --clobber
-          gh release upload "$TAG" ../../latest-server.json --clobber
+          gh release upload release dist/server.cjs --clobber
+          gh release upload release install.sh --clobber
+          gh release upload release dist/dashboard.tar.gz --clobber
+          gh release upload release ../../latest-server.json --clobber

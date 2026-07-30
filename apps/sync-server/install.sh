@@ -22,7 +22,7 @@ set -euo pipefail
 
 GITHUB_OWNER="TYBLHQY"
 GITHUB_REPO="siltflow"
-RELEASES_API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=10"
+RELEASE_API="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/release"
 
 SERVICE_NAME="siltflow-server"
 NODE_BIN="${NODE_BIN:-/usr/bin/node}"
@@ -171,30 +171,27 @@ CJS_PATH="$INSTALL_DIR/server.cjs"
 if [ -f "$CJS_PATH" ] && [ "$FORCE_DOWNLOAD" != "1" ]; then
   log "server.cjs already exists at $CJS_PATH.  (Set SILTFLOW_FORCE_DOWNLOAD=1 to replace.)"
 else
-  log "Finding latest server release on GitHub…"
+  log "Finding server.cjs from unified release…"
 
-  RELEASES_JSON=$(curl -fsSL "$RELEASES_API" || true)
-  if [ -z "$RELEASES_JSON" ]; then
-    err "Failed to fetch releases from GitHub API."
+  RELEASE_JSON=$(curl -fsSL "$RELEASE_API" || true)
+  if [ -z "$RELEASE_JSON" ]; then
+    err "Failed to fetch release from GitHub API."
     exit 1
   fi
 
-  DOWNLOAD_URL=$(echo "$RELEASES_JSON" | "$NODE_CMD" -e "
+  DOWNLOAD_URL=$(echo "$RELEASE_JSON" | "$NODE_CMD" -e "
     let data = '';
     process.stdin.on('data', c => data += c);
     process.stdin.on('end', () => {
-      const releases = JSON.parse(data);
-      for (const r of releases) {
-        if (!r.tag_name.startsWith('server-v')) continue;
-        const cjs = r.assets.find(a => a.name === 'server.cjs');
-        if (cjs) { console.log(cjs.browser_download_url); process.exit(0); }
-      }
+      const release = JSON.parse(data);
+      const cjs = release.assets.find(a => a.name === 'server.cjs');
+      if (cjs) { console.log(cjs.browser_download_url); process.exit(0); }
       process.exit(1);
     });
   " 2>/dev/null || true)
 
   if [ -z "$DOWNLOAD_URL" ]; then
-    err "No server-v* release with server.cjs found."
+    err "No server.cjs found in the unified release."
     exit 1
   fi
 
@@ -215,20 +212,17 @@ DASHBOARD_DIR="$INSTALL_DIR/dist-dashboard"
 if [ -d "$DASHBOARD_DIR" ] && [ "$FORCE_DOWNLOAD" != "1" ]; then
   log "Dashboard already exists at $DASHBOARD_DIR.  (Set SILTFLOW_FORCE_DOWNLOAD=1 to replace.)"
 else
-  # Fetch releases if not already done by the server.cjs block
-  if [ -z "${RELEASES_JSON:-}" ]; then
-    RELEASES_JSON=$(curl -fsSL "$RELEASES_API" || true)
+  # Fetch the release if not already done by the server.cjs block
+  if [ -z "${RELEASE_JSON:-}" ]; then
+    RELEASE_JSON=$(curl -fsSL "$RELEASE_API" || true)
   fi
-  DASHBOARD_URL=$(echo "${RELEASES_JSON:-}" | "$NODE_CMD" -e "
+  DASHBOARD_URL=$(echo "${RELEASE_JSON:-}" | "$NODE_CMD" -e "
     let data = '';
     process.stdin.on('data', c => data += c);
     process.stdin.on('end', () => {
-      const releases = JSON.parse(data);
-      for (const r of releases) {
-        if (!r.tag_name.startsWith('server-v')) continue;
-        const d = r.assets.find(a => a.name === 'dashboard.tar.gz');
-        if (d) { console.log(d.browser_download_url); process.exit(0); }
-      }
+      const release = JSON.parse(data);
+      const d = release.assets.find(a => a.name === 'dashboard.tar.gz');
+      if (d) { console.log(d.browser_download_url); process.exit(0); }
       process.exit(1);
     });
   " 2>/dev/null || true)
@@ -243,21 +237,15 @@ else
   fi
 fi
 
-# ── Server version (for health endpoint) ────────────────────────────────────
+# ── Server version (from latest-server.json in the unified release) ───────────
 
-TAG_JSON=$(curl -fsSL "$RELEASES_API" || true)
-SERVER_VERSION=$(echo "$TAG_JSON" | "$NODE_CMD" -e "
+LATEST_SERVER_JSON_URL="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/release/latest-server.json"
+SERVER_VERSION=$(curl -fsSL "$LATEST_SERVER_JSON_URL" | "$NODE_CMD" -e "
   let data = '';
   process.stdin.on('data', c => data += c);
   process.stdin.on('end', () => {
-    const releases = JSON.parse(data);
-    for (const r of releases) {
-      if (r.tag_name.startsWith('server-v')) {
-        console.log(r.tag_name.replace('server-v', ''));
-        process.exit(0);
-      }
-    }
-    process.exit(1);
+    const meta = JSON.parse(data);
+    console.log(meta.version || 'unknown');
   });
 " 2>/dev/null || echo "unknown")
 

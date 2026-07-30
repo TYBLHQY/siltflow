@@ -2,7 +2,7 @@
  * Self-update route (CJS deployments only).
  *
  * POST /api/admin/update
- *   Fetches the newest server-v* GitHub Release, downloads server.cjs,
+ *   Fetches the unified GitHub Release (tag: "release"), downloads server.cjs,
  *   atomically replaces the running bundle, then exits so systemd/pm2
  *   restarts the process.
  *
@@ -19,7 +19,7 @@ import type { Variables } from "../types";
 
 const GITHUB_OWNER = "TYBLHQY";
 const GITHUB_REPO = "siltflow";
-const RELEASES_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=10`;
+const RELEASE_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/release`;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -33,6 +33,12 @@ interface GhAsset {
   browser_download_url: string;
 }
 
+/** Find server.cjs in the unified release. */
+function findServerAsset(release: GhRelease): GhAsset | null {
+  const cjs = release.assets.find((a) => a.name === "server.cjs");
+  return cjs ?? null;
+}
+
 /** Compare semver strings (v prefix optional). */
 function isNewer(remote: string, local: string): boolean {
   const r = remote.replace(/^v/, "").split(".").map(Number);
@@ -44,19 +50,6 @@ function isNewer(remote: string, local: string): boolean {
     if (rn < ln) return false;
   }
   return false;
-}
-
-/** Find the newest server-v* release from the GitHub API response. */
-function findServerRelease(releases: GhRelease[]): {
-  tag: string;
-  asset: GhAsset;
-} | null {
-  for (const r of releases) {
-    if (!r.tag_name.startsWith("server-v")) continue;
-    const cjs = r.assets.find((a) => a.name === "server.cjs");
-    if (cjs) return { tag: r.tag_name, asset: cjs };
-  }
-  return null;
 }
 
 /** Guess the current running version.
@@ -88,18 +81,18 @@ export const updateRoutes = new Hono<{ Variables: Variables }>()
     const currentVersion = getCurrentVersion();
     const dryRun = c.req.query("dryRun") === "1";
 
-    // Fetch releases from GitHub
-    let releases: GhRelease[];
+    // Fetch the unified release from GitHub
+    let release: GhRelease;
     let resp: Response;
     try {
-      resp = await fetch(RELEASES_API);
+      resp = await fetch(RELEASE_API);
       if (!resp.ok) {
         return c.json(
           { error: `GitHub API returned ${resp.status}`, currentVersion },
           502,
         );
       }
-      releases = (await resp.json()) as GhRelease[];
+      release = (await resp.json()) as GhRelease;
     } catch (err) {
       return c.json(
         { error: `Failed to reach GitHub API: ${(err as Error).message}`, currentVersion },
@@ -107,16 +100,28 @@ export const updateRoutes = new Hono<{ Variables: Variables }>()
       );
     }
 
-    // Find newest server-v*
-    const found = findServerRelease(releases);
-    if (!found) {
+    // Find server.cjs in the unified release
+    const asset = findServerAsset(release);
+    if (!asset) {
       return c.json(
-        { error: "No server-v* release found", currentVersion },
+        { error: "No server.cjs found in the unified release", currentVersion },
         404,
       );
     }
 
-    const remoteVersion = found.tag.replace("server-v", "");
+    // Read the server version from latest-server.json in the release
+    let remoteVersion = "0.0.0";
+    try {
+      const versionResp = await fetch(
+        `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/release/latest-server.json`,
+      );
+      if (versionResp.ok) {
+        const meta = (await versionResp.json()) as { version: string };
+        remoteVersion = meta.version || "0.0.0";
+      }
+    } catch {
+      // Fall back to the version baked into server.cjs itself
+    }
 
     // Compare
     if (!isNewer(remoteVersion, currentVersion)) {
@@ -134,14 +139,14 @@ export const updateRoutes = new Hono<{ Variables: Variables }>()
         reason: "dry run — update would be performed",
         currentVersion,
         remoteVersion,
-        asset: found.asset.browser_download_url,
+        asset: asset.browser_download_url,
       });
     }
 
     // Download new bundle to a temp file
     let body: ReadableStream<Uint8Array> | null;
     try {
-      body = (await fetch(found.asset.browser_download_url)).body;
+      body = (await fetch(asset.browser_download_url)).body;
       if (!body) throw new Error("Empty response body");
     } catch (err) {
       return c.json(

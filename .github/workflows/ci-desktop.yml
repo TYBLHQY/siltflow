@@ -100,42 +100,51 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm exec electron-builder --publish=never
 
-      - name: Upload artifacts to release
+      - name: Upload artifacts to unified release
         shell: bash
         working-directory: apps/desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF_NAME}"
-          TITLE="${TAG#desktop-v}"
+          VERSION="${TAG#desktop-v}"
 
           if [ "${{ matrix.target }}" = "linux" ]; then
-            PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName' 2>/dev/null || echo "")
-            if [ -n "$PREV_TAG" ]; then
-              CHANGELOG=$(git log --oneline --no-merges "${PREV_TAG}..HEAD" 2>/dev/null || echo "* (recent changes)")
+            # Create or update the unified release (Linux runner owns this)
+            if gh release view release --json tagName &>/dev/null; then
+              echo "Updating existing unified release…"
             else
-              CHANGELOG=$(git log --oneline --no-merges -20)
+              echo "Creating unified release…"
+              PREV_TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName' 2>/dev/null || echo "")
+              if [ -n "$PREV_TAG" ]; then
+                CHANGELOG=$(git log --oneline --no-merges "${PREV_TAG}..HEAD" 2>/dev/null || echo "* (recent changes)")
+              else
+                CHANGELOG=$(git log --oneline --no-merges -20)
+              fi
+              {
+                echo "## Desktop $VERSION"
+                echo ""
+                echo "$CHANGELOG"
+              } > /tmp/release-notes.md
+              gh release create release \
+                --title "Siltflow" \
+                --target "${{ github.sha }}" \
+                --latest \
+                --notes-file /tmp/release-notes.md
             fi
-            {
-              echo "## What's Changed"
-              echo ""
-              echo "$CHANGELOG"
-              echo ""
-              echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV_TAG:-$(git tag --sort=-creatordate | head -1)}...${TAG}"
-            } > /tmp/release-notes.md
-            gh release create "$TAG" --title "Desktop $TITLE" --target "${{ github.sha }}" --latest=false --notes-file /tmp/release-notes.md
           else
-            echo "Waiting for release $TAG to be created…"
+            # mac/win: wait for the unified release to exist
+            echo "Waiting for unified release to be ready…"
             for i in $(seq 1 30); do
-              if gh release view "$TAG" --json tagName &>/dev/null; then
-                echo "Release $TAG found."
+              if gh release view release --json tagName &>/dev/null; then
+                echo "Unified release found."
                 break
               fi
               echo "  attempt $i/30 — not ready yet, sleeping 10s…"
               sleep 10
             done
-            if ! gh release view "$TAG" --json tagName &>/dev/null; then
-              echo "ERROR: Release $TAG was not created after 5 minutes."
+            if ! gh release view release --json tagName &>/dev/null; then
+              echo "ERROR: Unified release was not found after 5 minutes."
               exit 1
             fi
           fi
@@ -143,6 +152,6 @@ jobs:
           for f in release/*/*; do
             if [ -f "$f" ]; then
               echo "Uploading: $f"
-              gh release upload "$TAG" "$f" --clobber
+              gh release upload release "$f" --clobber
             fi
           done
