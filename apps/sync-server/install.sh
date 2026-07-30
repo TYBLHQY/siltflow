@@ -294,6 +294,7 @@ Environment=PORT=$PORT
 Environment=DATA_DIR=$DATA_DIR
 Environment=SERVER_TOKEN=$SERVER_TOKEN
 Environment=SERVER_VERSION=$SERVER_VERSION
+Environment=NODE_PATH=${INSTALL_DIR}/node_modules:\${NODE_PATH:-}
 
 [Install]
 WantedBy=multi-user.target
