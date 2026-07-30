@@ -84,6 +84,7 @@ function App() {
       // Skip blob: and javascript: URLs
       if (
         anchor.href.startsWith("blob:") ||
+        // oxlint-disable-next-line no-script-url -- security filter checking for malicious URLs, not using them
         anchor.href.startsWith("javascript:")
       )
         return;
