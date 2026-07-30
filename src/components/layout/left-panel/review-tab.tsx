@@ -36,7 +36,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
         isActive
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-ctp-yellow"
           : "hover:bg-ctp-surface0"
-      } ${hasTags ? "py-2.5 pr-3" : "py-2 pr-3"}`}
+      } py-2.5 pr-3`}
       onClick={() => setCurrentDocument({ id: metric.documentId, title: metric.documentTitle })}
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -48,22 +48,28 @@ const ReviewTabRow = memo(function ReviewTabRow({
           {metric.documentTitle}
         </span>
       </div>
-      {hasTags && (
-        <div className="flex flex-wrap items-center gap-1 mt-0.5">
-          <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
-            {metric.newCardsCount} new
+      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+        {hasTags ? (
+          <>
+            <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
+              {metric.newCardsCount} new
+            </span>
+            <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
+              {metric.dueNowCount} due
+            </span>
+            <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
+              {metric.dueSoonCount} soon
+            </span>
+            <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
+              {retrievabilityLabel(metric.avgRetrievability)}
+            </span>
+          </>
+        ) : (
+          <span className="rounded bg-ctp-surface1/60 px-1 py-0.5 font-medium text-ctp-overlay0">
+            unstudied
           </span>
-          <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
-            {metric.dueNowCount} due
-          </span>
-          <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
-            {metric.dueSoonCount} soon
-          </span>
-          <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
-            {retrievabilityLabel(metric.avgRetrievability)}
-          </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 });
