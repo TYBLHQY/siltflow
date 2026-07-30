@@ -19,10 +19,9 @@
     "check:knip": "knip || true",
     "check:deps": "dependency-cruiser electron src",
     "check:quick": "pnpm check:oxlint && pnpm check:knip",
-    "audit:electron": "npx @doyensec/electronegativity -i . -o electronegativity-report.sarif -e 43.0.0 || true",
     "audit:deps": "pnpm audit --audit-level=high || true",
     "audit:secrets": "gitleaks detect --source . --no-git --verbose",
-    "audit:all": "pnpm check:oxlint && pnpm check:deps && pnpm audit:secrets && pnpm check:knip && pnpm audit:deps && pnpm audit:electron",
+    "audit:all": "pnpm check:oxlint && pnpm check:deps && pnpm audit:secrets && pnpm check:knip && pnpm audit:deps",
     "ci:check": "pnpm lint && pnpm typecheck && pnpm test",
     "update:latest": "pnpm update --latest",
     "install:deb": "version=$(node -p \"require('./package.json').version\") && deb=\"release/$version/Siltflow-Linux-$version.deb\" && sudo dpkg -i \"$deb\""

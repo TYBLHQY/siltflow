@@ -65,10 +65,6 @@ jobs:
       - name: Secrets scan (gitleaks)
         run: pnpm audit:secrets
 
-      - name: Electron security scan (electronegativity)
-        continue-on-error: true
-        run: pnpm audit:electron
-
   # ── Release ────────────────────────────────────────────────────────────
   # Only on version tags, and only after check passes.
   release:

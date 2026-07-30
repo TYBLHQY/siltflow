@@ -13,7 +13,6 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 | **dependency-cruiser** | `pnpm check:deps` | 架构规则（循环依赖、跨层引用） | ~5s | ✅ |
 | **pnpm audit** | `pnpm audit:deps` | CVE 扫描（high/critical） | ~10s | ✅ |
 | **Gitleaks** | `pnpm audit:secrets` | Secrets 扫描（git 历史） | <2s | ✅ |
-| **Electronegativity** | `pnpm audit:electron` | Electron 安全审计（40+ 检查项） | ~10s | ❌ warning |
 
 ## 常用命令
 
@@ -33,10 +32,9 @@ pnpm ci:check             # lint + typecheck + test
 # 安全审计
 pnpm audit:deps           # CVE 扫描
 pnpm audit:secrets        # secrets 扫描
-pnpm audit:electron       # Electron 安全审计（可能报错，见下方说明）
 
 # 全量审计（发版前跑）
-pnpm audit:all            # quick + deps + audit:deps + audit:secrets + audit:electron
+pnpm audit:all            # oxlint + depcruiser + gitleaks + knip + CVE
 ```
 
 ## 发现问题后的处理原则
@@ -52,9 +50,6 @@ Oxlint 启用了类型感知规则（`--type-aware`），当前项目存在一�
 ### dependency-cruiser 报循环依赖 → 检查是否 type-only
 - `PdfViewer.tsx ↔ SiltflowHighlightContainer.tsx`：反向边是 `import type`，运行时安全。当前 `no-circular` 规则报了 error，需要在 `no-circular` 规则中通过 `allowed` 豁免，或重构类型到单独文件。
 - `no-inter-folder-circular` 是 warn 级别，仅关注即可。
-
-### Electronegativity → 不阻塞
-Electronegativity 功能更新止于 2022 年，对 Electron 43 的 AST 检查可能有问题。脚本末尾有 `|| true`，CI 中设了 `continue-on-error: true`。输出 SARIF 报告供参考。
 
 ## 配置文件位置
 
