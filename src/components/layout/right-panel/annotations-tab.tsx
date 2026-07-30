@@ -320,28 +320,28 @@ export function AnnotationsTab({
   return (
     <>
       {docId && (
-        <div className="shrink-0 flex items-center justify-between border-b px-3 py-1.5">
+        <div className="shrink-0 flex items-center justify-between border-b px-3 py-1">
           <Button
             variant="ghost"
             size="xs"
-            className="gap-0.5"
+            className="h-5 gap-0.5 text-[10px]"
             onClick={handleStartLearning}
             disabled={dueCount === 0}
             title="Start Learning"
           >
-            <CheckSquare className="h-3.5 w-3.5" />
+            <CheckSquare className="h-3 w-3" />
             [{dueCount}]
           </Button>
           {untranslatedCount > 0 && (
             <Button
               variant="ghost"
               size="xs"
-              className="gap-0.5"
+              className="h-5 gap-0.5 text-[10px]"
               onClick={handleBatchTranslate}
               disabled={batchTranslating}
               title="Translate all untranslated annotations"
             >
-              <Sparkles className="h-3.5 w-3.5" />
+              <Sparkles className="h-3 w-3" />
               [{untranslatedCount}]
             </Button>
           )}
@@ -349,26 +349,26 @@ export function AnnotationsTab({
             <Button
               variant="ghost"
               size="xs"
-              className="gap-0.5"
+              className="h-5 gap-0.5 text-[10px]"
               onClick={handleUpgradeV1ToV2}
               disabled={upgrading}
               title="Re-translate V1 annotations with the V2 two-stage pipeline"
             >
-              <ArrowUpCircle className="h-3.5 w-3.5" />
+              <ArrowUpCircle className="h-3 w-3" />
               [{v1Count}]
             </Button>
           )}
           <Button
             variant="ghost"
             size="xs"
-            className="gap-0.5"
+            className="h-5 gap-0.5"
             onClick={() => {
               setManualText("");
               setManualDialogOpen(true);
             }}
             title="Add manual annotation"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3 w-3" />
           </Button>
         </div>
       )}

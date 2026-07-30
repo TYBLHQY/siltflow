@@ -121,9 +121,13 @@ export const ReviewTab = memo(function ReviewTab({
             {(["new", "due", "soon", "urgency"] as SortField[]).map((f) => (
               <Button
                 key={f}
-                variant={sortField === f ? "default" : "ghost"}
+                variant="ghost"
                 size="xs"
-                className="flex-1 h-6 px-1 text-[11px]"
+                className={`flex-1 h-6 px-1 text-[11px] ${
+                  sortField === f
+                    ? "bg-ctp-surface1 text-ctp-text hover:bg-ctp-surface1"
+                    : ""
+                }`}
                 onClick={() => onSortChange(f)}
               >
                 {f === "new"

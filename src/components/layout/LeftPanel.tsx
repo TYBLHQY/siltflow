@@ -67,7 +67,7 @@ function DocumentOutlinePanel() {
 
   if (!hasOutline) {
     return (
-      <div className="flex flex-col items-center gap-2 py-8 text-ctp-overlay0 px-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
         <BookText className="h-8 w-8" />
         <p className="text-xs text-center">No outline available</p>
         <p className="text-xs text-center">
