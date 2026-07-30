@@ -166,32 +166,52 @@ export function sortDocMetrics(
 
   const chain = {
     new: [
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - a.newCardsCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.newCardsCount - a.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueNowCount - a.dueNowCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        a.avgRetrievability - b.avgRetrievability,
     ],
     due: [
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
-      (_a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - b.newCardsCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.avgOverdueRatio - a.avgOverdueRatio,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueNowCount - a.dueNowCount,
+      (_a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.newCardsCount - b.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.avgOverdueRatio - a.avgOverdueRatio,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        a.avgRetrievability - b.avgRetrievability,
     ],
     soon: [
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
-      (_a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - b.newCardsCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.avgOverdueRatio - a.avgOverdueRatio,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueNowCount - a.dueNowCount,
+      (_a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.newCardsCount - b.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.avgOverdueRatio - a.avgOverdueRatio,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        a.avgRetrievability - b.avgRetrievability,
     ],
     urgency: [
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.compositeScore - a.compositeScore,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueNowCount - a.dueNowCount,
-      (_a: DocReviewMetrics, b: DocReviewMetrics) => b.newCardsCount - b.newCardsCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.dueSoonCount - a.dueSoonCount,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => b.avgOverdueRatio - a.avgOverdueRatio,
-      (a: DocReviewMetrics, b: DocReviewMetrics) => a.avgRetrievability - b.avgRetrievability,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.compositeScore - a.compositeScore,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueNowCount - a.dueNowCount,
+      (_a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.newCardsCount - b.newCardsCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.dueSoonCount - a.dueSoonCount,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        b.avgOverdueRatio - a.avgOverdueRatio,
+      (a: DocReviewMetrics, b: DocReviewMetrics) =>
+        a.avgRetrievability - b.avgRetrievability,
     ],
   } as const;
 

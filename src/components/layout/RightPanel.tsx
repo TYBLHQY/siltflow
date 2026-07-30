@@ -36,14 +36,18 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           );
           if (el) {
             el.setAttribute("data-annotation-highlight", "true");
-            setTimeout(() => el.removeAttribute("data-annotation-highlight"), 2000);
+            setTimeout(
+              () => el.removeAttribute("data-annotation-highlight"),
+              2000,
+            );
           }
           el?.scrollIntoView({ block: "center", behavior: "smooth" });
         });
       });
     };
     window.addEventListener("siltflow:annotation-click", handler);
-    return () => window.removeEventListener("siltflow:annotation-click", handler);
+    return () =>
+      window.removeEventListener("siltflow:annotation-click", handler);
   }, [onTabChange]);
 
   const docId = currentDocument?.id;
@@ -60,13 +64,15 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
     if (activeTab !== "summary") return;
 
     const gen = ++extractionGen.current;
-    extractPageTexts(pdfDocument).then((texts) => {
-      if (gen !== extractionGen.current) return;
-      setPageTexts(docId, texts);
-    }).catch((err) => {
-      if (gen !== extractionGen.current) return;
-      console.error("Failed to extract page texts:", err);
-    });
+    extractPageTexts(pdfDocument)
+      .then((texts) => {
+        if (gen !== extractionGen.current) return;
+        setPageTexts(docId, texts);
+      })
+      .catch((err) => {
+        if (gen !== extractionGen.current) return;
+        console.error("Failed to extract page texts:", err);
+      });
   }, [pdfDocument, docId, activeTab, setPageTexts]);
 
   // When page texts are first loaded, select only the first page by default
@@ -89,23 +95,40 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
       >
         <div className="flex h-10 items-center border-b px-3">
           <TabsList className="w-full h-7 text-ctp-text">
-            <TabsTrigger value="annotations" className="flex-1 text-xs px-2 py-0.5 h-6">
-              <IconText icon={Highlighter} size="xs">Annotations</IconText>
+            <TabsTrigger
+              value="annotations"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
+            >
+              <IconText icon={Highlighter} size="xs">
+                Annotations
+              </IconText>
             </TabsTrigger>
-            <TabsTrigger value="summary" className="flex-1 text-xs px-2 py-0.5 h-6" disabled={!docId}>
-              <IconText icon={FileText} size="xs">Summary</IconText>
+            <TabsTrigger
+              value="summary"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
+              disabled={!docId}
+            >
+              <IconText icon={FileText} size="xs">
+                Summary
+              </IconText>
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="annotations" className="flex-1 min-h-0 mt-0 flex flex-col">
+        <TabsContent
+          value="annotations"
+          className="flex-1 min-h-0 mt-0 flex flex-col"
+        >
           <AnnotationsTab
             onTabChange={onTabChange}
             annotationsScrollRef={annotationsScrollRef}
           />
         </TabsContent>
 
-        <TabsContent value="summary" className="flex-1 min-h-0 mt-0 flex flex-col">
+        <TabsContent
+          value="summary"
+          className="flex-1 min-h-0 mt-0 flex flex-col"
+        >
           <SummaryTab />
         </TabsContent>
       </Tabs>

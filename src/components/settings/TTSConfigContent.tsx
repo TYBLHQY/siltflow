@@ -1,6 +1,10 @@
 import { useEffect } from "react";
 import { Volume2, Loader2 } from "lucide-react";
-import { useTTSStore, MIMO_PRESET_VOICES, MIMO_MODELS } from "@/stores/tts.store";
+import {
+  useTTSStore,
+  MIMO_PRESET_VOICES,
+  MIMO_MODELS,
+} from "@/stores/tts.store";
 
 export function TTSConfigContent() {
   const config = useTTSStore((s) => s.config);
@@ -38,7 +42,6 @@ export function TTSConfigContent() {
       </div>
 
       <div className="space-y-4">
-
         {/* Provider selector */}
         <div>
           <label className="block text-xs font-medium mb-1">Provider</label>

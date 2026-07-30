@@ -112,7 +112,8 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
     if (config.provider === "mimo") return config.mimoVoice;
     if (language) {
       // Exact BCP 47 match: "en-US" → "en-US-EmmaMultilingualNeural"
-      if (config.perLanguageVoices[language]) return config.perLanguageVoices[language];
+      if (config.perLanguageVoices[language])
+        return config.perLanguageVoices[language];
       // Prefix match: "en" / "en-GB" → "en-US-EmmaMultilingualNeural"
       const primary = language.split("-")[0];
       const match = Object.keys(config.perLanguageVoices).find((k) =>

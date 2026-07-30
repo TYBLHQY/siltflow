@@ -37,7 +37,12 @@ const ReviewTabRow = memo(function ReviewTabRow({
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-ctp-yellow"
           : "hover:bg-ctp-surface0"
       } py-2.5 pr-3`}
-      onClick={() => setCurrentDocument({ id: metric.documentId, title: metric.documentTitle })}
+      onClick={() =>
+        setCurrentDocument({
+          id: metric.documentId,
+          title: metric.documentTitle,
+        })
+      }
     >
       <div className="flex items-center gap-2 min-w-0">
         <FileText className="h-4 w-4 shrink-0 text-ctp-overlay0" />
@@ -101,9 +106,7 @@ export const ReviewTab = memo(function ReviewTab({
   // Auto-scroll to the current document when switching to review tab
   useEffect(() => {
     if (!scrollToDocId || sortedMetrics.length === 0) return;
-    const idx = sortedMetrics.findIndex(
-      (m) => m.documentId === scrollToDocId,
-    );
+    const idx = sortedMetrics.findIndex((m) => m.documentId === scrollToDocId);
     if (idx >= 0) {
       virtualizer.scrollToIndex(idx, { align: "center" });
     }

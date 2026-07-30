@@ -76,7 +76,9 @@ export const AVAILABLE_COLORS: CatppuccinHighlightColor[] = [
  *
  * @example getHighlightCSSVar("yellow") // "var(--catppuccin-color-yellow)"
  */
-export function getHighlightCSSVar(colorName: CatppuccinHighlightColor): string {
+export function getHighlightCSSVar(
+  colorName: CatppuccinHighlightColor,
+): string {
   return CATPPUCCIN_COLOR_VARS[colorName];
 }
 
@@ -97,7 +99,9 @@ export function resolveHighlightCSSVar(
 /**
  * Check whether a string is a known Catppuccin highlight color.
  */
-export function isHighlightColor(name: string): name is CatppuccinHighlightColor {
+export function isHighlightColor(
+  name: string,
+): name is CatppuccinHighlightColor {
   return name in CATPPUCCIN_COLOR_VARS;
 }
 

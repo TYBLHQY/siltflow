@@ -5,17 +5,17 @@ import { useChartData } from "@/hooks/useChartData";
 import { computeCalendarHeatmap } from "@/lib/stats-computation";
 
 const PANEL_COLORS = [
-  "var(--heatmap-0)", "var(--heatmap-1)", "var(--heatmap-2)",
-  "var(--heatmap-3)", "var(--heatmap-4)",
+  "var(--heatmap-0)",
+  "var(--heatmap-1)",
+  "var(--heatmap-2)",
+  "var(--heatmap-3)",
+  "var(--heatmap-4)",
 ];
 
 export function CalendarHeatmap() {
   const { logs, loading } = useChartData();
 
-  const heatmap = useMemo(
-    () => computeCalendarHeatmap(logs),
-    [logs],
-  );
+  const heatmap = useMemo(() => computeCalendarHeatmap(logs), [logs]);
 
   const { endDate, rangeDays } = useMemo(() => {
     const now = new Date();
@@ -35,12 +35,24 @@ export function CalendarHeatmap() {
   const isEmpty = data.length === 0;
 
   return (
-    <ChartCard title="Calendar Heatmap" loading={loading} isEmpty={isEmpty} emptyMessage="No review activity yet">
+    <ChartCard
+      title="Calendar Heatmap"
+      loading={loading}
+      isEmpty={isEmpty}
+      emptyMessage="No review activity yet"
+    >
       <div className="overflow-x-auto flex justify-center">
         <CalendarGrid
-          title="" data={data} rangeDays={rangeDays} endDate={endDate}
-          cellSize={11} cellGap={3} weekStartsOn={0} palette={PANEL_COLORS}
-          levelClassNames={undefined} legend={{ show: false }}
+          title=""
+          data={data}
+          rangeDays={rangeDays}
+          endDate={endDate}
+          cellSize={11}
+          cellGap={3}
+          weekStartsOn={0}
+          palette={PANEL_COLORS}
+          levelClassNames={undefined}
+          legend={{ show: false }}
           axisLabels={{ weekdayIndices: [1, 3, 5] }}
           className="w-fit shrink-0"
         />

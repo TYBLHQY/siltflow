@@ -46,13 +46,17 @@ export function ReviewHistorySection({
 
   if (loading) {
     return (
-      <div className="text-xs text-ctp-overlay0/50 py-1 text-center">Loading history…</div>
+      <div className="text-xs text-ctp-overlay0/50 py-1 text-center">
+        Loading history…
+      </div>
     );
   }
 
   if (!logs || logs.length === 0) {
     return (
-      <div className="text-xs text-ctp-overlay0/50 py-1 text-center">No review history yet</div>
+      <div className="text-xs text-ctp-overlay0/50 py-1 text-center">
+        No review history yet
+      </div>
     );
   }
 
@@ -76,9 +80,7 @@ export function ReviewHistorySection({
             </span>
 
             {/* Grade badge */}
-            <span className={`shrink-0 font-semibold ${gColor}`}>
-              {gLabel}
-            </span>
+            <span className={`shrink-0 font-semibold ${gColor}`}>{gLabel}</span>
 
             {/* State transition */}
             <span

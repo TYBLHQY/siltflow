@@ -53,7 +53,12 @@ export function SiltflowHighlightContainer({
     <button
       onClick={(e) => {
         e.stopPropagation();
-        tts.speak(highlight.content!.text!, undefined, highlight.sourceLang, undefined);
+        tts.speak(
+          highlight.content!.text!,
+          undefined,
+          highlight.sourceLang,
+          undefined,
+        );
       }}
       title="Read aloud"
       className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
@@ -64,39 +69,42 @@ export function SiltflowHighlightContainer({
   ) : null;
 
   // Convert-to-annotation button (only for plain highlights)
-  const convertToAnnotationButton = highlight.kind === "highlight" ? (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        updateItem(highlight.id, { kind: "annotation" });
-      }}
-      title="Convert to annotation"
-      className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
-      style={{ color: "var(--selection-tip-fg)" }}
-    >
-      <BookmarkPlus className="h-3.5 w-3.5" />
-    </button>
-  ) : null;
+  const convertToAnnotationButton =
+    highlight.kind === "highlight" ? (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          updateItem(highlight.id, { kind: "annotation" });
+        }}
+        title="Convert to annotation"
+        className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
+        style={{ color: "var(--selection-tip-fg)" }}
+      >
+        <BookmarkPlus className="h-3.5 w-3.5" />
+      </button>
+    ) : null;
 
   // Convert-to-highlight button (only for annotation highlights)
-  const convertToHighlightButton = highlight.kind === "annotation" ? (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        updateItem(highlight.id, { kind: "highlight" });
-      }}
-      title="Convert to plain highlight"
-      className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
-      style={{ color: "var(--selection-tip-fg)" }}
-    >
-      <Highlighter className="h-3.5 w-3.5" />
-    </button>
-  ) : null;
+  const convertToHighlightButton =
+    highlight.kind === "annotation" ? (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          updateItem(highlight.id, { kind: "highlight" });
+        }}
+        title="Convert to plain highlight"
+        className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
+        style={{ color: "var(--selection-tip-fg)" }}
+      >
+        <Highlighter className="h-3.5 w-3.5" />
+      </button>
+    ) : null;
 
   // Build the extraButtons array for TextHighlight / AreaHighlight
-  const kindButton = highlight.kind === "highlight"
-    ? convertToAnnotationButton
-    : convertToHighlightButton;
+  const kindButton =
+    highlight.kind === "highlight"
+      ? convertToAnnotationButton
+      : convertToHighlightButton;
 
   const extraButtons = (
     <>

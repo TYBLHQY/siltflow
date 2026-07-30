@@ -16,10 +16,7 @@ export function renderBoldText(
     const m = part.match(/^\*\*([^*]+)\*\*$/);
     if (m) {
       return (
-        <span
-          key={i}
-          className={options?.boldClassName ?? "font-bold"}
-        >
+        <span key={i} className={options?.boldClassName ?? "font-bold"}>
           {m[1]}
         </span>
       );

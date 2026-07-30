@@ -1,7 +1,10 @@
 import { useCallback } from "react";
 import { PenLine, Volume2, Highlighter } from "lucide-react";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
-import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
+import {
+  useAnnotationStore,
+  type AnnotationItem,
+} from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useStyleStore } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
@@ -19,10 +22,12 @@ export function SelectionTip() {
   const addItem = useAnnotationStore((s) => s.addItem);
   const tts = useTTS();
   const documentId = useDocumentStore((s) => s.currentDocument?.id);
-  const sourceLang = useSummaryStore(
-    (s) => (documentId ? s.summaries[documentId]?.sourceLang : undefined),
+  const sourceLang = useSummaryStore((s) =>
+    documentId ? s.summaries[documentId]?.sourceLang : undefined,
   );
-  const annotationColor = useStyleStore((s) => s.style.annotationHighlightColor);
+  const annotationColor = useStyleStore(
+    (s) => s.style.annotationHighlightColor,
+  );
   const plainColor = useStyleStore((s) => s.style.plainHighlightColor);
 
   const buildItem = useCallback(
@@ -69,8 +74,10 @@ export function SelectionTip() {
 
   if (!pendingAnnotation) return null;
 
-  const annoCSSVar = resolveHighlightCSSVar(annotationColor) || "var(--catppuccin-color-yellow)";
-  const plainCSSVar = resolveHighlightCSSVar(plainColor) || "var(--catppuccin-color-green)";
+  const annoCSSVar =
+    resolveHighlightCSSVar(annotationColor) || "var(--catppuccin-color-yellow)";
+  const plainCSSVar =
+    resolveHighlightCSSVar(plainColor) || "var(--catppuccin-color-green)";
 
   return (
     <div
@@ -90,7 +97,9 @@ export function SelectionTip() {
           borderRadius: 8,
           color: "var(--selection-tip-fg)",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.10)")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "rgba(255,255,255,0.10)")
+        }
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         onClick={handlePlay}
         title="Read aloud"

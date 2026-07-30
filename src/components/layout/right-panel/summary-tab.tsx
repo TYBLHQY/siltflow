@@ -23,9 +23,7 @@ import { summarizeSelectedPages } from "@/lib/summarize";
 export function SummaryTab() {
   const style = useStyleStore((s) => s.style);
   const showToast = useToastStore((s) => s.show);
-  const activeProfile = useAIStore(
-    (s) => s.getProfileForTask("summarize"),
-  );
+  const activeProfile = useAIStore((s) => s.getProfileForTask("summarize"));
 
   const currentDocument = useDocumentStore((s) => s.currentDocument);
   const summaries = useSummaryStore((s) => s.summaries);
@@ -100,12 +98,7 @@ export function SummaryTab() {
         texts,
         pagesToSummarize,
       );
-      setSummary(
-        docId,
-        result.summary,
-        true,
-        result.sourceLang,
-      );
+      setSummary(docId, result.summary, true, result.sourceLang);
       showToast("Summary generated", "info");
     } catch (err) {
       const message =

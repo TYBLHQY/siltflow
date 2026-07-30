@@ -17,9 +17,7 @@ export interface SearchEntry {
 // ── Fuse configuration ──────────────────────────────────────────────
 
 const FUSE_OPTIONS: IFuseOptions<SearchEntry> = {
-  keys: [
-    { name: "searchText", weight: 1 },
-  ],
+  keys: [{ name: "searchText", weight: 1 }],
   // ── Fuzzy matching ──
   threshold: 0.4,
   distance: 100,
@@ -71,7 +69,14 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
   // ── Dialog ──
   isOpen: false,
   open: () => set({ isOpen: true }),
-  close: () => set({ isOpen: false, selectedEntry: null, query: "", results: [], selectedIndex: 0 }),
+  close: () =>
+    set({
+      isOpen: false,
+      selectedEntry: null,
+      query: "",
+      results: [],
+      selectedIndex: 0,
+    }),
   toggle: () => {
     const { isOpen, close, open } = get();
     if (isOpen) close();
@@ -132,7 +137,15 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
             ? (ed as AnnotationItem["embedData"])
             : {
                 position: {
-                  boundingRect: { x1: 0, y1: 0, x2: 0, y2: 0, width: 0, height: 0, pageNumber: ann.page_number ?? 1 },
+                  boundingRect: {
+                    x1: 0,
+                    y1: 0,
+                    x2: 0,
+                    y2: 0,
+                    width: 0,
+                    height: 0,
+                    pageNumber: ann.page_number ?? 1,
+                  },
                   rects: [],
                 },
                 content: { text: ann.text ?? "" },
@@ -140,14 +153,22 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
 
         let aiResult: AnnotationItem["aiResult"];
         if (typeof ann.ai_data === "string") {
-          try { aiResult = JSON.parse(ann.ai_data); } catch { aiResult = undefined; }
+          try {
+            aiResult = JSON.parse(ann.ai_data);
+          } catch {
+            aiResult = undefined;
+          }
         } else {
           aiResult = (ann.ai_data ?? undefined) as AnnotationItem["aiResult"];
         }
 
         let fsrsCard: AnnotationItem["fsrsCard"];
         if (typeof ann.fsrs_data === "string") {
-          try { fsrsCard = JSON.parse(ann.fsrs_data); } catch { fsrsCard = undefined; }
+          try {
+            fsrsCard = JSON.parse(ann.fsrs_data);
+          } catch {
+            fsrsCard = undefined;
+          }
         } else {
           fsrsCard = (ann.fsrs_data ?? undefined) as AnnotationItem["fsrsCard"];
         }

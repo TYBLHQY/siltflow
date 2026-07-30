@@ -1,65 +1,55 @@
 // @see - https://www.electron.build/configuration/configuration
 {
-  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "com.myq.siltflow",
-  "asar": true,
-  "asarUnpack": [
+  $schema: "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  appId: "com.myq.siltflow",
+  asar: true,
+  asarUnpack: [
     "**/better-sqlite3/**",
     "**/bindings/**",
     "**/file-uri-to-path/**",
     "**/prebuild-install/**",
-    "**/*.node"
+    "**/*.node",
   ],
-  "productName": "Siltflow",
-  "directories": {
-    "output": "release/${version}"
+  productName: "Siltflow",
+  directories: {
+    output: "release/${version}",
   },
-  "files": [
-    "dist",
-    "dist-electron"
-  ],
+  files: ["dist", "dist-electron"],
   // 为 Electron 的 Node ABI 重新编译原生模块（better-sqlite3 等）
   // pnpm install 针对系统 Node 编译，与 Electron 内嵌的 Node ABI 不兼容
-  "npmRebuild": true,
+  npmRebuild: true,
   // 使用 normal 压缩级别，比 maximum 快 3-5 倍，产物体积差异不到 10%
-  "compression": "normal",
-  "mac": {
-    "icon": "build/icon.icns",
-    "target": [
-      "dmg"
-    ],
-    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+  compression: "normal",
+  mac: {
+    icon: "build/icon.icns",
+    target: ["dmg"],
+    artifactName: "${productName}-Mac-${version}-Installer.${ext}",
   },
-  "win": {
-    "icon": "build/icon.ico",
-    "target": [
+  win: {
+    icon: "build/icon.ico",
+    target: [
       {
-        "target": "nsis",
-        "arch": [
-          "x64"
-        ]
-      }
+        target: "nsis",
+        arch: ["x64"],
+      },
     ],
-    "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
+    artifactName: "${productName}-Windows-${version}-Setup.${ext}",
   },
-  "nsis": {
-    "oneClick": false,
-    "perMachine": false,
-    "allowToChangeInstallationDirectory": true,
-    "deleteAppDataOnUninstall": false
+  nsis: {
+    oneClick: false,
+    perMachine: false,
+    allowToChangeInstallationDirectory: true,
+    deleteAppDataOnUninstall: false,
   },
-  "linux": {
-    "icon": "build/icons",
-    "category": "Utility",
-    "maintainer": "MYQ <myq@localhost>",
-    "syncDesktopName": true,
-    "target": [
-      "deb",
-      "AppImage"
-    ],
-    "artifactName": "${productName}-Linux-${version}.${ext}"
+  linux: {
+    icon: "build/icons",
+    category: "Utility",
+    maintainer: "MYQ <myq@localhost>",
+    syncDesktopName: true,
+    target: ["deb", "AppImage"],
+    artifactName: "${productName}-Linux-${version}.${ext}",
   },
-  "publish": {
-    "provider": "github"
-  }
+  publish: {
+    provider: "github",
+  },
 }

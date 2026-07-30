@@ -7,7 +7,11 @@
 
 import { create } from "zustand";
 import type { ShortcutActionId, ShortcutEntry } from "@/types/shortcuts";
-export type { ShortcutContext, ShortcutActionId, ShortcutEntry } from "@/types/shortcuts";
+export type {
+  ShortcutContext,
+  ShortcutActionId,
+  ShortcutEntry,
+} from "@/types/shortcuts";
 
 // ── Default shortcuts ───────────────────────────────────────────────────────
 

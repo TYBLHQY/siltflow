@@ -148,7 +148,9 @@ html[data-pdf-dark-invert="off"].dark .PdfHighlighter :is(canvas, .textLayer) {
 
 /* PDF dark mode scheme: invert — full invert (default) */
 
-html[data-pdf-dark-invert="invert"].dark .PdfHighlighter :is(canvas, .textLayer) {
+html[data-pdf-dark-invert="invert"].dark
+  .PdfHighlighter
+  :is(canvas, .textLayer) {
   filter: invert(1) hue-rotate(180deg);
 }
 
@@ -156,7 +158,9 @@ html[data-pdf-dark-invert="invert"].dark .PdfHighlighter :is(canvas, .textLayer)
    White bg → invert to black → screen blend → transparent (reveals base)
    Black text → invert to white → screen blend → stays white */
 
-html[data-pdf-dark-invert="themed"].dark .PdfHighlighter :is(canvas, .textLayer) {
+html[data-pdf-dark-invert="themed"].dark
+  .PdfHighlighter
+  :is(canvas, .textLayer) {
   filter: invert(1) hue-rotate(180deg);
   mix-blend-mode: screen;
 }
@@ -196,14 +200,18 @@ html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .page {
   --hl-fill-alpha: 42%;
 }
 
-html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .PdfHighlighter__highlight-layer,
+html[data-pdf-dark-invert="invert"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .TextHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .AreaHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .DrawingHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .ShapeHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .FreetextHighlight,
 html[data-pdf-dark-invert="invert"].dark .PdfHighlighter .ImageHighlight,
-html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .PdfHighlighter__highlight-layer,
+html[data-pdf-dark-invert="themed"].dark
+  .PdfHighlighter
+  .PdfHighlighter__highlight-layer,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .TextHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .AreaHighlight,
 html[data-pdf-dark-invert="themed"].dark .PdfHighlighter .DrawingHighlight,

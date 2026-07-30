@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Bot, BrainCircuit, TextSelect, Volume2, Keyboard, Info } from "lucide-react";
+import {
+  Bot,
+  BrainCircuit,
+  TextSelect,
+  Volume2,
+  Keyboard,
+  Info,
+} from "lucide-react";
 import { IconText } from "@/components/ui/icon-text";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AIConfigContent } from "@/components/settings/AIConfigContent";
@@ -84,7 +91,12 @@ export function UnifiedSettingsModal({
             {tab === "fsrs" && <FSRSConfigContent />}
             {tab === "style" && <StyleConfigContent />}
             {tab === "tts" && <TTSConfigContent />}
-            {tab === "shortcuts" && <ShortcutsContent isCapturing={isCapturingShortcut} onCapturingChange={setIsCapturingShortcut} />}
+            {tab === "shortcuts" && (
+              <ShortcutsContent
+                isCapturing={isCapturingShortcut}
+                onCapturingChange={setIsCapturingShortcut}
+              />
+            )}
             {tab === "about" && <AboutContent />}
           </div>
         </div>

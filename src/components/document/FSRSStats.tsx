@@ -10,7 +10,15 @@ import {
   formatStability,
 } from "@/lib/fsrs-utils";
 
-export function FSRSStats({ card, annotationId, documentId }: { card: Card; annotationId?: string; documentId?: string }) {
+export function FSRSStats({
+  card,
+  annotationId,
+  documentId,
+}: {
+  card: Card;
+  annotationId?: string;
+  documentId?: string;
+}) {
   const state = card.state as 0 | 1 | 2 | 3;
   const canShowHistory = !!annotationId && !!documentId;
   const activeHistoryId = useReviewLogStore((s) => s.activeHistoryId);

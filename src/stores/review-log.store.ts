@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import type { ReviewLogEntry, ReviewLogSaveRequest } from "@/types/review";
-export type { ReviewLogEntry, ReviewLogData, CardSnapshot, ReviewLogSaveRequest } from "@/types/review";
+export type {
+  ReviewLogEntry,
+  ReviewLogData,
+  CardSnapshot,
+  ReviewLogSaveRequest,
+} from "@/types/review";
 
 interface ReviewLogStoreState {
   /** Logs keyed by annotationId, cached after load */

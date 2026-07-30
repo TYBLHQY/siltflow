@@ -12,7 +12,9 @@ export const CHART_TOOLTIP_STYLE = {
 
 // ── Shared `<CartesianGrid />` (identical in 10 charts) ─────────────────
 export function ChartGrid() {
-  return <CartesianGrid strokeDasharray="3 3" className="stroke-ctp-overlay0/50" />;
+  return (
+    <CartesianGrid strokeDasharray="3 3" className="stroke-ctp-overlay0/50" />
+  );
 }
 
 // ── Shared `<ChartCard>` + `<ResponsiveContainer>` wrapper ─────────────

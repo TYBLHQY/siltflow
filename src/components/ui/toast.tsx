@@ -26,7 +26,7 @@ export function Toast() {
       timerRef.current = setTimeout(() => setDisplayed(null), 300);
     }
     return () => clearTimeout(timerRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
   if (!displayed) return null;
@@ -40,8 +40,10 @@ export function Toast() {
 
   const darkColorMap = {
     info: "border-ctp-blue-600 bg-ctp-blue-950/90 text-ctp-base backdrop-blur-sm",
-    success: "border-ctp-green-600 bg-ctp-green-950/90 text-ctp-base backdrop-blur-sm",
-    error: "border-ctp-red-600 bg-ctp-red-950/90 text-ctp-base backdrop-blur-sm",
+    success:
+      "border-ctp-green-600 bg-ctp-green-950/90 text-ctp-base backdrop-blur-sm",
+    error:
+      "border-ctp-red-600 bg-ctp-red-950/90 text-ctp-base backdrop-blur-sm",
   };
 
   return (

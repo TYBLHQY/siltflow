@@ -5,7 +5,11 @@ import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
 import { useDocumentStore } from "@/stores/document.store";
-import { usePdfViewerStore, pdfSetViewerScale, type SelectionMode } from "@/stores/pdf-viewer.store";
+import {
+  usePdfViewerStore,
+  pdfSetViewerScale,
+  type SelectionMode,
+} from "@/stores/pdf-viewer.store";
 import { usePanelLayout } from "@/hooks/usePanelLayout";
 import { useShortcut } from "@/hooks/useShortcut";
 
@@ -57,7 +61,11 @@ export function ThreeColumnLayout() {
 
   const handleToggleQuickAdd = useCallback(() => {
     const pf = usePdfViewerStore.getState();
-    const modes: SelectionMode[] = ["manual", "auto-annotate", "auto-highlight"];
+    const modes: SelectionMode[] = [
+      "manual",
+      "auto-annotate",
+      "auto-highlight",
+    ];
     const idx = modes.indexOf(pf.selectionMode);
     pf.setSelectionMode(modes[(idx + 1) % 3]);
   }, []);

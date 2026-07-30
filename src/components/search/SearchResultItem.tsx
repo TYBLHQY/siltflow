@@ -59,7 +59,12 @@ export const SearchResultItem = memo(function SearchResultItem({
   const displayedText = annotation.text || "(no text)";
   const textSegments = highlightText(displayedText, textMatches?.indices);
 
-  const kindLabel = annotation.kind === "manual" ? "manual" : annotation.kind === "annotation" ? null : "highlight";
+  const kindLabel =
+    annotation.kind === "manual"
+      ? "manual"
+      : annotation.kind === "annotation"
+        ? null
+        : "highlight";
 
   return (
     <div
@@ -74,7 +79,10 @@ export const SearchResultItem = memo(function SearchResultItem({
         <div className="text-sm leading-snug">
           {textSegments.map((seg, i) =>
             seg.highlighted ? (
-              <mark key={i} className="bg-ctp-yellow/30 text-ctp-text rounded-sm">
+              <mark
+                key={i}
+                className="bg-ctp-yellow/30 text-ctp-text rounded-sm"
+              >
                 {seg.text}
               </mark>
             ) : (
@@ -88,7 +96,10 @@ export const SearchResultItem = memo(function SearchResultItem({
             {docMatches ? (
               highlightText(documentTitle, docMatches.indices).map((seg, i) =>
                 seg.highlighted ? (
-                  <mark key={i} className="bg-ctp-yellow/30 text-ctp-text rounded-sm text-xs">
+                  <mark
+                    key={i}
+                    className="bg-ctp-yellow/30 text-ctp-text rounded-sm text-xs"
+                  >
                     {seg.text}
                   </mark>
                 ) : (
@@ -122,8 +133,18 @@ export const SearchResultItem = memo(function SearchResultItem({
             onJumpTo();
           }}
         >
-          <svg className="h-3.5 w-3.5 text-ctp-text" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          <svg
+            className="h-3.5 w-3.5 text-ctp-text"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14 5l7 7m0 0l-7 7m7-7H3"
+            />
           </svg>
         </button>
       </div>

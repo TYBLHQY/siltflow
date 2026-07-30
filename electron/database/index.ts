@@ -1,52 +1,62 @@
-import Database from "better-sqlite3"
-import { drizzle } from "drizzle-orm/better-sqlite3"
-import * as schema from "./schema"
-import { runMigrations } from "./migration"
-import fs from "node:fs"
-import path from "node:path"
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import * as schema from "./schema";
+import { runMigrations } from "./migration";
+import fs from "node:fs";
+import path from "node:path";
 
 // ── Schema version ───────────────────────────────────────────────────
 // Bump this when making backward-incompatible migrations.  The value is
 // stored as PRAGMA user_version so we can detect and migrate existing
 // databases on upgrade.
-const SCHEMA_VERSION = 4
+const SCHEMA_VERSION = 4;
 
 /** Current AI data version written to ai_results.version on save. */
-export const AI_DATA_VERSION = 1
+export const AI_DATA_VERSION = 1;
 
-let db: ReturnType<typeof drizzle<typeof schema>> | null = null
-let sqlite: Database.Database | null = null
+/** PRAGMA table_info row */
+interface ColumnInfo {
+  cid: number;
+  name: string;
+  type: string;
+  notnull: number;
+  dflt_value: string | null;
+  pk: number;
+}
+
+let db: ReturnType<typeof drizzle<typeof schema>> | null = null;
+let sqlite: Database.Database | null = null;
 
 export function initDatabase(vaultPath: string) {
-  const dbDir = path.join(vaultPath, ".siltflow")
+  const dbDir = path.join(vaultPath, ".siltflow");
   if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true })
+    fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  sqlite = new Database(path.join(dbDir, "data.db"))
-  sqlite.pragma("journal_mode = WAL")
-  sqlite.pragma("foreign_keys = ON")
+  sqlite = new Database(path.join(dbDir, "data.db"));
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("foreign_keys = ON");
 
-  db = drizzle(sqlite, { schema })
+  db = drizzle(sqlite, { schema });
 
   // Check / migrate schema version
-  const version = sqlite.pragma("user_version", { simple: true }) as number
+  const version = sqlite.pragma("user_version", { simple: true }) as number;
   if (version < SCHEMA_VERSION) {
     // Run version-gated migrations in order before createTables,
     // so all database interactions see the final schema.
-    runMigrations(sqlite, version)
+    runMigrations(sqlite, version);
 
-    createTables()
-    sqlite!.pragma(`user_version = ${SCHEMA_VERSION}`)
+    createTables();
+    sqlite!.pragma(`user_version = ${SCHEMA_VERSION}`);
   } else {
-    createTables()
+    createTables();
   }
 
-  return db
+  return db;
 }
 
 function createTables() {
-  if (!sqlite) return
+  if (!sqlite) return;
 
   // Create documents table — mirroring drizzle schema.ts
   sqlite.exec(`
@@ -61,15 +71,17 @@ function createTables() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
-  `)
+  `);
 
   // Drop old-style annotations table if it exists with wrong PK
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isOldSchema = cols.length > 0 && cols.filter((c: any) => c.pk > 0).length === 1
+  const cols = sqlite
+    .prepare("PRAGMA table_info('annotations')")
+    .all() as ColumnInfo[];
+
+  const isOldSchema =
+    cols.length > 0 && cols.filter((c: ColumnInfo) => c.pk > 0).length === 1;
   if (isOldSchema) {
-    sqlite.exec("DROP TABLE annotations")
+    sqlite.exec("DROP TABLE annotations");
   }
 
   // Create annotations with composite PK
@@ -86,22 +98,22 @@ function createTables() {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (id, document_id)
     );
-  `)
+  `);
 
   // Migrate: drop old ai_result / fsrs_card columns if present (now in own tables)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const annoCols = sqlite.prepare("PRAGMA table_info('annotations')").all() as any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (annoCols.some((c: any) => c.name === 'ai_result')) {
-    sqlite.exec("ALTER TABLE annotations DROP COLUMN ai_result")
+  const annoCols = sqlite
+    .prepare("PRAGMA table_info('annotations')")
+    .all() as ColumnInfo[];
+  if (annoCols.some((c: ColumnInfo) => c.name === "ai_result")) {
+    sqlite.exec("ALTER TABLE annotations DROP COLUMN ai_result");
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (annoCols.some((c: any) => c.name === 'fsrs_card')) {
-    sqlite.exec("ALTER TABLE annotations DROP COLUMN fsrs_card")
+  if (annoCols.some((c: ColumnInfo) => c.name === "fsrs_card")) {
+    sqlite.exec("ALTER TABLE annotations DROP COLUMN fsrs_card");
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!annoCols.some((c: any) => c.name === 'kind')) {
-    sqlite.exec("ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'")
+  if (!annoCols.some((c: ColumnInfo) => c.name === "kind")) {
+    sqlite.exec(
+      "ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'",
+    );
   }
 
   // Create ai_results table
@@ -115,7 +127,7 @@ function createTables() {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (annotation_id, document_id)
     );
-  `)
+  `);
 
   // Create fsrs_cards table
   sqlite.exec(`
@@ -127,7 +139,7 @@ function createTables() {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (annotation_id, document_id)
     );
-  `)
+  `);
 
   // Create summaries table
   sqlite.exec(`
@@ -140,7 +152,7 @@ function createTables() {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (document_id)
     );
-  `)
+  `);
 
   // Create review_logs table
   sqlite.exec(`
@@ -152,7 +164,7 @@ function createTables() {
       created_at TEXT NOT NULL,
       PRIMARY KEY (id, annotation_id, document_id)
     );
-  `)
+  `);
 
   // Create folders table
   sqlite.exec(`
@@ -164,41 +176,45 @@ function createTables() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
-  `)
+  `);
 
   // Add new columns to documents if missing (for DBs created before v2 schema)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const docCols = sqlite.prepare("PRAGMA table_info('documents')").all() as any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!docCols.some((c: any) => c.name === 'folder_id')) {
-    sqlite.exec("ALTER TABLE documents ADD COLUMN folder_id TEXT")
+  const docCols = sqlite
+    .prepare("PRAGMA table_info('documents')")
+    .all() as ColumnInfo[];
+  if (!docCols.some((c: ColumnInfo) => c.name === "folder_id")) {
+    sqlite.exec("ALTER TABLE documents ADD COLUMN folder_id TEXT");
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!docCols.some((c: any) => c.name === 'sort_order')) {
-    sqlite.exec("ALTER TABLE documents ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+  if (!docCols.some((c: ColumnInfo) => c.name === "sort_order")) {
+    sqlite.exec(
+      "ALTER TABLE documents ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+    );
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!docCols.some((c: any) => c.name === 'original_name')) {
+  if (!docCols.some((c: ColumnInfo) => c.name === "original_name")) {
     try {
-      sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT")
-    } catch { /* already present in CREATE TABLE */ }
+      sqlite.exec("ALTER TABLE documents ADD COLUMN original_name TEXT");
+    } catch {
+      /* already present in CREATE TABLE */
+    }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (docCols.some((c: any) => c.name === 'file_name')) {
-    try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_name") } catch {}
+  if (docCols.some((c: ColumnInfo) => c.name === "file_name")) {
+    try {
+      sqlite.exec("ALTER TABLE documents DROP COLUMN file_name");
+    } catch {}
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (docCols.some((c: any) => c.name === 'file_path')) {
-    try { sqlite.exec("ALTER TABLE documents DROP COLUMN file_path") } catch {}
+  if (docCols.some((c: ColumnInfo) => c.name === "file_path")) {
+    try {
+      sqlite.exec("ALTER TABLE documents DROP COLUMN file_path");
+    } catch {}
   }
 }
 
 export function getDb() {
-  return db
+  return db;
 }
 
 export function getSqlite() {
-  return sqlite
+  return sqlite;
 }
 
-export { schema }
+export { schema };

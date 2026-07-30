@@ -1,4 +1,9 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
+import {
+  sqliteTable,
+  text,
+  integer,
+  primaryKey,
+} from "drizzle-orm/sqlite-core";
 
 export const documents = sqliteTable("documents", {
   id: text("id").primaryKey(),
@@ -10,7 +15,7 @@ export const documents = sqliteTable("documents", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-})
+});
 
 export const folders = sqliteTable("folders", {
   id: text("id").primaryKey(),
@@ -19,7 +24,7 @@ export const folders = sqliteTable("folders", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-})
+});
 
 export const summaries = sqliteTable(
   "summaries",
@@ -37,8 +42,8 @@ export const summaries = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.documentId] }),
-  })
-)
+  }),
+);
 
 export const annotations = sqliteTable(
   "annotations",
@@ -57,8 +62,8 @@ export const annotations = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.id, table.documentId] }),
-  })
-)
+  }),
+);
 
 export const aiResults = sqliteTable(
   "ai_results",
@@ -74,8 +79,8 @@ export const aiResults = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.annotationId, table.documentId] }),
-  })
-)
+  }),
+);
 
 export const reviewLogs = sqliteTable(
   "review_logs",
@@ -89,9 +94,11 @@ export const reviewLogs = sqliteTable(
     createdAt: text("created_at").notNull(),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.id, table.annotationId, table.documentId] }),
-  })
-)
+    pk: primaryKey({
+      columns: [table.id, table.annotationId, table.documentId],
+    }),
+  }),
+);
 
 export const fsrsCards = sqliteTable(
   "fsrs_cards",
@@ -106,5 +113,5 @@ export const fsrsCards = sqliteTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.annotationId, table.documentId] }),
-  })
-)
+  }),
+);

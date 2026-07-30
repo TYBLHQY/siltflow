@@ -1,4 +1,11 @@
-import { useLayoutEffect, useEffect, useState, useRef, useCallback, useMemo } from "react";
+import {
+  useLayoutEffect,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
 import {
@@ -23,7 +30,12 @@ import {
 } from "@/components/ui/tooltip";
 import { usePdfViewerStore, pdfGoToPage } from "@/stores/pdf-viewer.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
-import { computeDocMetrics, sortDocMetrics, type DocReviewMetrics, type SortField } from "@/lib/doc-review";
+import {
+  computeDocMetrics,
+  sortDocMetrics,
+  type DocReviewMetrics,
+  type SortField,
+} from "@/lib/doc-review";
 import { createNewCardStub } from "@/lib/fsrs-utils";
 import { useNow } from "@/hooks/useNow";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
@@ -38,7 +50,11 @@ function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
   const currentPage = usePdfViewerStore((s) => s.currentPage);
 
-  const { outline, isLoading: outlineLoading, hasOutline } = useDocumentOutline({
+  const {
+    outline,
+    isLoading: outlineLoading,
+    hasOutline,
+  } = useDocumentOutline({
     pdfDocument: pdfDocument!,
     goToPage: pdfGoToPage,
   });
@@ -138,7 +154,8 @@ function DocumentOutlinePanel() {
             onNavigate={(item) => pdfGoToPage(item.pageNumber)}
             classNames={{ container: "py-2" }}
             itemClassNames={{
-              container: "text-ctp-text rounded-md px-2 py-1 transition-colors cursor-pointer",
+              container:
+                "text-ctp-text rounded-md px-2 py-1 transition-colors cursor-pointer",
               containerActive: "outline-active bg-ctp-surface0",
               title: "text-ctp-text",
               titleActive: "text-ctp-mauve",
@@ -147,9 +164,20 @@ function DocumentOutlinePanel() {
             }}
             itemStyles={{
               container: {},
-              containerHover: { backgroundColor: "var(--catppuccin-color-surface0)" },
-              title: { color: "var(--catppuccin-color-text)", fontSize: "0.875rem", whiteSpace: "normal", overflow: "visible", textOverflow: "clip" },
-              titleActive: { color: "var(--catppuccin-color-mauve)", fontWeight: 400 },
+              containerHover: {
+                backgroundColor: "var(--catppuccin-color-surface0)",
+              },
+              title: {
+                color: "var(--catppuccin-color-text)",
+                fontSize: "0.875rem",
+                whiteSpace: "normal",
+                overflow: "visible",
+                textOverflow: "clip",
+              },
+              titleActive: {
+                color: "var(--catppuccin-color-mauve)",
+                fontWeight: 400,
+              },
               activeIndicator: { display: "none" },
             }}
           />
@@ -184,7 +212,11 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const prevActiveTabRef = useRef(activeTab);
   useEffect(() => {
     // When switching TO "review" tab, signal the virtual list to scroll
-    if (activeTab === "review" && prevActiveTabRef.current !== "review" && currentDocument) {
+    if (
+      activeTab === "review" &&
+      prevActiveTabRef.current !== "review" &&
+      currentDocument
+    ) {
       setScrollToDocId(currentDocument.id);
     }
     prevActiveTabRef.current = activeTab;
@@ -213,20 +245,33 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         const cards: import("ts-fsrs").Card[] = [];
         for (const row of rows) {
           cardAnnIds.add(row.annotationId);
-          try { cards.push(JSON.parse(row.data)); } catch { /* skip */ }
+          try {
+            cards.push(JSON.parse(row.data));
+          } catch {
+            /* skip */
+          }
         }
         window.siltflow.annotations.list(currentDoc.id).then((annotations) => {
-          const realAnnotations = annotations.filter((a) => a.kind !== "highlight");
+          const realAnnotations = annotations.filter(
+            (a) => a.kind !== "highlight",
+          );
           for (const ann of realAnnotations) {
             if (!cardAnnIds.has(ann.id)) {
               cards.push(createNewCardStub());
             }
           }
-          const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {
+          const byDoc: Record<
+            string,
+            { title: string; cards: import("ts-fsrs").Card[] }
+          > = {
             [currentDoc.id]: { title: currentDoc.title, cards },
           };
           const fresh = computeDocMetrics(byDoc);
-          setDocMetrics((prev) => prev.map((p) => fresh.find((f) => f.documentId === p.documentId) ?? p));
+          setDocMetrics((prev) =>
+            prev.map(
+              (p) => fresh.find((f) => f.documentId === p.documentId) ?? p,
+            ),
+          );
         });
       });
       return;
@@ -239,15 +284,20 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const annotationItems = items.filter((i) => i.kind !== "highlight");
     setDocMetrics((prev) => {
       const otherDocs = prev.filter((p) => !itemDocIds.has(p.documentId));
-      const byDoc: Record<string, { title: string; cards: import("ts-fsrs").Card[] }> = {};
+      const byDoc: Record<
+        string,
+        { title: string; cards: import("ts-fsrs").Card[] }
+      > = {};
       for (const doc of docs) {
-        if (itemDocIds.has(doc.id)) byDoc[doc.id] = { title: doc.title, cards: [] };
+        if (itemDocIds.has(doc.id))
+          byDoc[doc.id] = { title: doc.title, cards: [] };
       }
       const cardDocMap = new Map<string, Set<string>>();
       for (const item of annotationItems) {
         if (item.fsrsCard && byDoc[item.documentId]) {
           byDoc[item.documentId]!.cards.push(item.fsrsCard);
-          if (!cardDocMap.has(item.documentId)) cardDocMap.set(item.documentId, new Set());
+          if (!cardDocMap.has(item.documentId))
+            cardDocMap.set(item.documentId, new Set());
           cardDocMap.get(item.documentId)!.add(item.id);
         }
       }
@@ -255,12 +305,25 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         if (!item.fsrsCard && byDoc[item.documentId]) {
           const cardIds = cardDocMap.get(item.documentId);
           if (!cardIds?.has(item.id)) {
-            byDoc[item.documentId]!.cards.push({ state: 0, due: new Date(), stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, reps: 0, lapses: 0 } as import("ts-fsrs").Card);
+            byDoc[item.documentId]!.cards.push({
+              state: 0,
+              due: new Date(),
+              stability: 0,
+              difficulty: 0,
+              elapsed_days: 0,
+              scheduled_days: 0,
+              reps: 0,
+              lapses: 0,
+            } as import("ts-fsrs").Card);
           }
         }
       }
       const newMetrics = computeDocMetrics(byDoc);
-      return [...otherDocs, ...newMetrics].sort((a, b) => b.compositeScore - a.compositeScore || a.documentTitle.localeCompare(b.documentTitle));
+      return [...otherDocs, ...newMetrics].sort(
+        (a, b) =>
+          b.compositeScore - a.compositeScore ||
+          a.documentTitle.localeCompare(b.documentTitle),
+      );
     });
   }, []);
 
@@ -268,12 +331,18 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const loadMetricsFull = useCallback(async () => {
     setMetricsLoading(true);
     const docs = useDocumentStore.getState().documents;
-    if (docs.length === 0) { setMetricsLoading(false); return; }
+    if (docs.length === 0) {
+      setMetricsLoading(false);
+      return;
+    }
     try {
       const metrics = await window.siltflow.review.getDocMetrics();
       setDocMetrics(metrics);
     } catch (err) {
-      console.error("batch load failed, falling back to incremental metrics", err);
+      console.error(
+        "batch load failed, falling back to incremental metrics",
+        err,
+      );
       computeMetricsFromItems();
     } finally {
       setMetricsLoading(false);
@@ -288,21 +357,32 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current);
-    metricsDebounceRef.current = setTimeout(() => { computeMetricsFromItems(); }, 150);
-    return () => { if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current); };
+    metricsDebounceRef.current = setTimeout(() => {
+      computeMetricsFromItems();
+    }, 150);
+    return () => {
+      if (metricsDebounceRef.current) clearTimeout(metricsDebounceRef.current);
+    };
   }, [annotationItems, computeMetricsFromItems]);
 
-  useEffect(() => { loadFromDb(); }, [loadFromDb]);
+  useEffect(() => {
+    loadFromDb();
+  }, [loadFromDb]);
 
   const handleImport = async () => {
     try {
       const results = await window.siltflow.selectPdf();
       if (!results || results.length === 0) return;
       for (const result of results) {
-        await window.siltflow.documents.save({ id: result.id, title: result.title });
+        await window.siltflow.documents.save({
+          id: result.id,
+          title: result.title,
+        });
         addDocument({ id: result.id, title: result.title });
       }
-    } catch (err) { console.error("Import failed:", err); }
+    } catch (err) {
+      console.error("Import failed:", err);
+    }
   };
 
   const handleImportFolder = async () => {
@@ -314,7 +394,9 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
       const docs = await window.siltflow.documents.list();
       useDocumentStore.getState().setDocuments(docs || []);
       useDocumentStore.getState().setLoading(false);
-    } catch (err) { console.error("Folder import failed:", err); }
+    } catch (err) {
+      console.error("Folder import failed:", err);
+    }
   };
 
   const docsTreeRef = useRef<DocsTreeHandle>(null);
@@ -350,19 +432,38 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
       >
         <div className="flex h-10 items-center border-b px-3">
           <TabsList className="w-full h-7 text-ctp-text">
-            <TabsTrigger value="documents" className="flex-1 text-xs px-2 py-0.5 h-6">
-              <IconText icon={FileText} size="xs">Docs</IconText>
+            <TabsTrigger
+              value="documents"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
+            >
+              <IconText icon={FileText} size="xs">
+                Docs
+              </IconText>
             </TabsTrigger>
-            <TabsTrigger value="review" className="flex-1 text-xs px-2 py-0.5 h-6">
-              <IconText icon={BrainCircuit} size="xs">Review</IconText>
+            <TabsTrigger
+              value="review"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
+            >
+              <IconText icon={BrainCircuit} size="xs">
+                Review
+              </IconText>
             </TabsTrigger>
-            <TabsTrigger value="outline" className="flex-1 text-xs px-2 py-0.5 h-6" disabled={!currentDocument || !pdfDocument}>
-              <IconText icon={BookMarked} size="xs">Outlines</IconText>
+            <TabsTrigger
+              value="outline"
+              className="flex-1 text-xs px-2 py-0.5 h-6"
+              disabled={!currentDocument || !pdfDocument}
+            >
+              <IconText icon={BookMarked} size="xs">
+                Outlines
+              </IconText>
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="documents" className="flex-1 min-h-0 mt-0 flex flex-col">
+        <TabsContent
+          value="documents"
+          className="flex-1 min-h-0 mt-0 flex flex-col"
+        >
           <div className="shrink-0 border-b px-3 py-0.5">
             <div className="flex items-center justify-between">
               <div className="flex gap-1.5">
@@ -415,15 +516,23 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           <DocsTree ref={docsTreeRef} remountKey={treeRemount} />
         </TabsContent>
 
-        <TabsContent value="outline" className="flex-1 min-h-0 mt-0 flex flex-col">
-          {pdfDocument ? <DocumentOutlinePanel /> : (
+        <TabsContent
+          value="outline"
+          className="flex-1 min-h-0 mt-0 flex flex-col"
+        >
+          {pdfDocument ? (
+            <DocumentOutlinePanel />
+          ) : (
             <div className="flex items-center justify-center h-full text-ctp-overlay0 px-4">
               <p className="text-xs text-center">No document selected</p>
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="review" className="flex-1 min-h-0 mt-0 flex flex-col">
+        <TabsContent
+          value="review"
+          className="flex-1 min-h-0 mt-0 flex flex-col"
+        >
           <ReviewTab
             docMetrics={docMetrics}
             metricsLoading={metricsLoading}

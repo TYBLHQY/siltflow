@@ -1,10 +1,23 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
 import { useShortcut } from "@/hooks/useShortcut";
 import { useSummaryStore } from "@/stores/summary.store";
-import { Pencil, Volume2, Loader2, Sparkles, Trash2, ExternalLink } from "lucide-react";
+import {
+  Pencil,
+  Volume2,
+  Loader2,
+  Sparkles,
+  Trash2,
+  ExternalLink,
+} from "lucide-react";
 import type {
   AIAnnotationDataV2,
   WordOutputV2,
@@ -82,7 +95,10 @@ function SelectionTTSButton({
     }
     const range = sel.getRangeAt(0);
     const container = containerRef.current;
-    if (!container) { setBtn(null); return; }
+    if (!container) {
+      setBtn(null);
+      return;
+    }
     // Check selection starts inside this container. Use startContainer
     // (not commonAncestorContainer) so "select all" within a block works
     // even when the common ancestor resolves to the outer layout wrapper.
@@ -305,7 +321,9 @@ function WordView({
           <div className="flex flex-wrap gap-x-3 gap-y-0.5">
             {output.synonyms.map((s, i) => (
               <SelectionTTSButton key={i} language={sourceLang} annId={annId}>
-                <span className="text-ctp-text underline underline-offset-2 leading-relaxed">{s}</span>
+                <span className="text-ctp-text underline underline-offset-2 leading-relaxed">
+                  {s}
+                </span>
               </SelectionTTSButton>
             ))}
           </div>
@@ -401,9 +419,8 @@ export function AIAnnotationResultV2({
   const style = useStyleStore((s) => s.style);
   const ai = item.aiResult as AIAnnotationDataV2 | undefined;
   const tts = useTTS();
-  const targetLang = useSummaryStore(
-    (s) => s.targetLangs[item.documentId],
-  ) ?? "zh-CN";
+  const targetLang =
+    useSummaryStore((s) => s.targetLangs[item.documentId]) ?? "zh-CN";
 
   // ── Translate spinner ──
   const [translating, setTranslating] = useState(false);

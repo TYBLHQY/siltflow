@@ -188,7 +188,9 @@ export function computeRetrievabilityHistogram(cards: Card[]): HistogramBin[] {
     // Use last_review to compute elapsed days since the last review.
     // (card.due is the next scheduled review date, not the "time since" source.)
     const lastReview = card.last_review
-      ? (card.last_review instanceof Date ? card.last_review : new Date(card.last_review))
+      ? card.last_review instanceof Date
+        ? card.last_review
+        : new Date(card.last_review)
       : null;
     const elapsedDays = lastReview
       ? Math.max(0, (now - lastReview.getTime()) / dayMs)
@@ -215,7 +217,7 @@ export function computeDifficultyHistogram(cards: Card[]): HistogramBin[] {
   for (const card of cards) {
     if (card.state === State.New) continue;
     const d = card.difficulty;
-    const idx = Math.min(Math.floor((d - 1) / 9 * 10), 9);
+    const idx = Math.min(Math.floor(((d - 1) / 9) * 10), 9);
     bins[idx].count++;
   }
   return bins;
@@ -471,7 +473,9 @@ export function computeOverviewStats(cards: Card[]): OverviewStats {
       // Use last_review to compute elapsed days since the last review.
       // (card.due is the next scheduled review date, not the "time since" source.)
       const lastReview = card.last_review
-        ? (card.last_review instanceof Date ? card.last_review : new Date(card.last_review))
+        ? card.last_review instanceof Date
+          ? card.last_review
+          : new Date(card.last_review)
         : null;
       const elapsedDays = lastReview
         ? Math.max(0, (now - lastReview.getTime()) / dayMs)

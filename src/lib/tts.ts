@@ -118,7 +118,8 @@ export async function speakTTS(
 
       const binaryStr = atob(base64Audio);
       const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+      for (let i = 0; i < binaryStr.length; i++)
+        bytes[i] = binaryStr.charCodeAt(i);
 
       const blob = new Blob([bytes], { type: "audio/wav" });
       const url = URL.createObjectURL(blob);

@@ -36,8 +36,8 @@ function buildTree(
   const childrenByParent = new Map<string, FolderItem[]>();
   const rootFolders: FolderItem[] = [];
   for (const f of folders) {
-    const key = f.parentId ?? '';
-    if (key === '') {
+    const key = f.parentId ?? "";
+    if (key === "") {
       rootFolders.push(f);
     } else {
       let list = childrenByParent.get(key);
@@ -61,8 +61,8 @@ function buildTree(
   const docsByFolder = new Map<string, DocumentItem[]>();
   const rootDocs: DocumentItem[] = [];
   for (const d of documents) {
-    const key = d.folderId ?? '';
-    if (key === '') {
+    const key = d.folderId ?? "";
+    if (key === "") {
       rootDocs.push(d);
     } else {
       let list = docsByFolder.get(key);
@@ -547,10 +547,7 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirm(null)}
-              >
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
                 Cancel
               </Button>
               <Button

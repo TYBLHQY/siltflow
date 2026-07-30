@@ -204,9 +204,11 @@ export async function loadStyleFromVault(cfg?: Record<string, unknown>) {
           learnPanelHeight:
             (s.learnPanelHeight as number) ?? DEFAULT_STYLE.learnPanelHeight,
           annotationHighlightColor:
-            (s.annotationHighlightColor as string) ?? DEFAULT_STYLE.annotationHighlightColor,
+            (s.annotationHighlightColor as string) ??
+            DEFAULT_STYLE.annotationHighlightColor,
           plainHighlightColor:
-            (s.plainHighlightColor as string) ?? DEFAULT_STYLE.plainHighlightColor,
+            (s.plainHighlightColor as string) ??
+            DEFAULT_STYLE.plainHighlightColor,
         },
       });
     }

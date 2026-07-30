@@ -124,13 +124,12 @@ export function MemoryStateExplorer() {
               const card = data.card;
               return {
                 timestamp: new Date(data.log.review || e.createdAt).getTime(),
-                date: new Date(data.log.review || e.createdAt).toLocaleDateString(
-                  "en-US",
-                  {
-                    month: "short",
-                    day: "numeric",
-                  },
-                ),
+                date: new Date(
+                  data.log.review || e.createdAt,
+                ).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                }),
                 grade: data.grade,
                 stability: card.stability,
                 difficulty: card.difficulty,

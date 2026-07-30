@@ -1,5 +1,12 @@
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { ChartCard } from "../ChartCard";
 import { ChartGrid, CHART_TOOLTIP_STYLE } from "../ChartPresets";
 import { useChartData } from "@/hooks/useChartData";

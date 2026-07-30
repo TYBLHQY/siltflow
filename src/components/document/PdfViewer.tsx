@@ -1,9 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useStyleStore } from "@/stores/style.store";
-import {
-  PdfLoader,
-  PdfHighlighter,
-} from "react-pdf-highlighter-plus";
+import { PdfLoader, PdfHighlighter } from "react-pdf-highlighter-plus";
 import type {
   Highlight as RPHLHighlight,
   PdfSelection,
@@ -15,7 +12,12 @@ import {
   useAnnotationStore,
   type AnnotationItem,
 } from "@/stores/annotation.store";
-import { usePdfViewerStore, registerGoToPage, registerScrollToHighlight, registerSetViewerScale } from "@/stores/pdf-viewer.store";
+import {
+  usePdfViewerStore,
+  registerGoToPage,
+  registerScrollToHighlight,
+  registerSetViewerScale,
+} from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
 import type { PDFDocumentProxy } from "pdfjs-dist";
@@ -153,9 +155,13 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   // Also triggers when store items identity changes (after delete/add).
   useEffect(() => {
     const { annotationColor, plainColor } = getColors();
-    setHighlights(storeItems
-      .filter((item) => item.kind !== "manual")
-      .map((item) => annotationToHighlight(item, annotationColor, plainColor)));
+    setHighlights(
+      storeItems
+        .filter((item) => item.kind !== "manual")
+        .map((item) =>
+          annotationToHighlight(item, annotationColor, plainColor),
+        ),
+    );
   }, [storeItems, getColors]);
 
   /**
@@ -198,12 +204,17 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
       // Auto modes: determine kind and persist
       const kind = mode === "auto-annotate" ? "annotation" : "highlight";
 
-      const item = selectionToAnnotation(id, documentId, {
-        ...ghost,
-        content: ghost.content
-          ? { ...ghost.content, text: cleanedText }
-          : undefined,
-      } as GhostHighlight, kind);
+      const item = selectionToAnnotation(
+        id,
+        documentId,
+        {
+          ...ghost,
+          content: ghost.content
+            ? { ...ghost.content, text: cleanedText }
+            : undefined,
+        } as GhostHighlight,
+        kind,
+      );
 
       // Persist immediately (addItem persists via annotation.store)
       const { annotationColor, plainColor } = getColors();
@@ -271,19 +282,23 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
             onSelection={handleSelection}
             deleteHighlight={deleteHighlight}
             onHighlightClick={(id: string) => {
-                const h = highlightsRef.current.find((hl) => hl.id === id);
-                if (h?.kind === "highlight") {
-                  // Plain highlight click — show conversion tip
-                  window.dispatchEvent(
-                    new CustomEvent("siltflow:highlight-click", { detail: { id } }),
-                  );
-                } else {
-                  // Annotation highlight click — scroll right panel
-                  window.dispatchEvent(
-                    new CustomEvent("siltflow:annotation-click", { detail: { id } }),
-                  );
-                }
-              }}
+              const h = highlightsRef.current.find((hl) => hl.id === id);
+              if (h?.kind === "highlight") {
+                // Plain highlight click — show conversion tip
+                window.dispatchEvent(
+                  new CustomEvent("siltflow:highlight-click", {
+                    detail: { id },
+                  }),
+                );
+              } else {
+                // Annotation highlight click — scroll right panel
+                window.dispatchEvent(
+                  new CustomEvent("siltflow:annotation-click", {
+                    detail: { id },
+                  }),
+                );
+              }
+            }}
           />
         )}
       </PdfLoader>
@@ -361,7 +376,8 @@ function PdfHighlighterWrapper({
   );
 
   /** Render a floating "Add annotation" tip after selection in manual mode. */
-  const selectionTipContent = selectionMode === "manual" ? <SelectionTip /> : undefined;
+  const selectionTipContent =
+    selectionMode === "manual" ? <SelectionTip /> : undefined;
 
   // ── Middle-click pan (non-auto zoom mode) ──
   const wrapperRef = useRef<HTMLDivElement>(null);

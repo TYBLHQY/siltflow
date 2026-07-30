@@ -125,13 +125,25 @@ export function reviewAnnotation(annotationId: string, grade: Grade) {
     };
     const record = engine.next(card, now, grade);
     store.updateItem(annotationId, { fsrsCard: record.card });
-    persistReviewLog(annotationId, item.documentId, grade, record.log, record.card);
+    persistReviewLog(
+      annotationId,
+      item.documentId,
+      grade,
+      record.log,
+      record.card,
+    );
   } else {
     // First review — create a card and run repeat
     const card = createEmptyCard(now);
     const record = engine.next(card, now, grade);
     store.updateItem(annotationId, { fsrsCard: record.card });
-    persistReviewLog(annotationId, item.documentId, grade, record.log, record.card);
+    persistReviewLog(
+      annotationId,
+      item.documentId,
+      grade,
+      record.log,
+      record.card,
+    );
   }
 }
 
@@ -153,7 +165,8 @@ function persistReviewLog(
       difficulty: log.difficulty,
       scheduled_days: log.scheduled_days,
       learning_steps: log.learning_steps,
-      review: typeof log.review === "string" ? log.review : log.review.toISOString(),
+      review:
+        typeof log.review === "string" ? log.review : log.review.toISOString(),
     },
     card: {
       due: typeof card.due === "string" ? card.due : card.due.toISOString(),

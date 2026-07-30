@@ -1,5 +1,5 @@
-import { ipcMain } from "electron"
-import { getSqlite } from "../database"
+import { ipcMain } from "electron";
+import { getSqlite } from "../database";
 
 /**
  * Compute retrievability from FSRS card state (FSRS-5).
@@ -7,32 +7,32 @@ import { getSqlite } from "../database"
  * can't use the @ path alias.
  */
 function retrievability(stability: number, elapsedDays: number): number {
-  if (stability <= 0 || elapsedDays < 0) return 0
-  const w20 = 0.1542
-  const factor = Math.pow(0.9, -1 / w20) - 1
-  return Math.pow(1 + (factor * elapsedDays) / stability, -w20)
+  if (stability <= 0 || elapsedDays < 0) return 0;
+  const w20 = 0.1542;
+  const factor = Math.pow(0.9, -1 / w20) - 1;
+  return Math.pow(1 + (factor * elapsedDays) / stability, -w20);
 }
 
 interface FSRSCard {
-  state: number
-  due: string
-  stability: number
-  difficulty: number
-  elapsed_days: number
-  scheduled_days: number
-  reps: number
-  lapses: number
+  state: number;
+  due: string;
+  stability: number;
+  difficulty: number;
+  elapsed_days: number;
+  scheduled_days: number;
+  reps: number;
+  lapses: number;
 }
 
 // ── In-memory cache for review metrics ─────────────────────────────
 // Invalidated whenever annotations or fsrs_cards are mutated.
-let metricsCache: { data: MetricsRow[]; version: number } | null = null
-let dataVersion = 0
+let metricsCache: { data: MetricsRow[]; version: number } | null = null;
+let dataVersion = 0;
 
 /** Call this from annotation/fsrs-card IPC handlers when data changes. */
 export function invalidateReviewMetricsCache() {
-  dataVersion++
-  metricsCache = null
+  dataVersion++;
+  metricsCache = null;
 }
 // ───────────────────────────────────────────────────────────────────
 
@@ -46,59 +46,63 @@ export function invalidateReviewMetricsCache() {
  */
 export function registerReviewHandlers() {
   ipcMain.handle("review:getDocMetrics", () => {
-    const sql = getSqlite()
-    if (!sql) return []
+    const sql = getSqlite();
+    if (!sql) return [];
 
     // Return cached result if still fresh
     if (metricsCache) {
-      return metricsCache.data
+      return metricsCache.data;
     }
 
     const docs = sql
       .prepare("SELECT id, title FROM documents ORDER BY title")
-      .all() as { id: string; title: string }[]
+      .all() as { id: string; title: string }[];
 
-    if (docs.length === 0) return []
+    if (docs.length === 0) return [];
 
     // Count cards per document (annotation_id → data)
-    const cardsByDoc = new Map<string, string[]>()
+    const cardsByDoc = new Map<string, string[]>();
     const cardRows = sql
       .prepare("SELECT document_id, data FROM fsrs_cards")
-      .all() as { document_id: string; data: string }[]
+      .all() as { document_id: string; data: string }[];
 
     for (const row of cardRows) {
-      let list = cardsByDoc.get(row.document_id)
+      let list = cardsByDoc.get(row.document_id);
       if (!list) {
-        list = []
-        cardsByDoc.set(row.document_id, list)
+        list = [];
+        cardsByDoc.set(row.document_id, list);
       }
-      list.push(row.data)
+      list.push(row.data);
     }
 
     // Count annotations per document (to catch annotations with no card row)
-    const annCountByDoc = new Map<string, number>()
+    const annCountByDoc = new Map<string, number>();
     const annRows = sql
-      .prepare("SELECT document_id, COUNT(*) as cnt FROM annotations WHERE kind IN ('annotation', 'manual') GROUP BY document_id")
-      .all() as { document_id: string; cnt: number }[]
+      .prepare(
+        "SELECT document_id, COUNT(*) as cnt FROM annotations WHERE kind IN ('annotation', 'manual') GROUP BY document_id",
+      )
+      .all() as { document_id: string; cnt: number }[];
 
     for (const row of annRows) {
-      annCountByDoc.set(row.document_id, row.cnt)
+      annCountByDoc.set(row.document_id, row.cnt);
     }
 
     // ── Compute metrics per document ──────────────────────────────
-    const now = Date.now()
-    const dayMs = 86400000
-    const results: MetricsRow[] = []
+    const now = Date.now();
+    const dayMs = 86400000;
+    const results: MetricsRow[] = [];
 
     for (const doc of docs) {
-      const rawCards = cardsByDoc.get(doc.id) ?? []
-      const annCount = annCountByDoc.get(doc.id) ?? 0
-      const cards: FSRSCard[] = []
+      const rawCards = cardsByDoc.get(doc.id) ?? [];
+      const annCount = annCountByDoc.get(doc.id) ?? 0;
+      const cards: FSRSCard[] = [];
 
       for (const raw of rawCards) {
         try {
-          cards.push(JSON.parse(raw))
-        } catch { /* skip corrupt data */ }
+          cards.push(JSON.parse(raw));
+        } catch {
+          /* skip corrupt data */
+        }
       }
 
       // Annotations without an FSRS card → treat as New state
@@ -112,7 +116,7 @@ export function registerReviewHandlers() {
           scheduled_days: 0,
           reps: 0,
           lapses: 0,
-        })
+        });
       }
 
       if (cards.length === 0) {
@@ -126,39 +130,47 @@ export function registerReviewHandlers() {
           avgRetrievability: 0,
           avgOverdueRatio: 0,
           compositeScore: -1,
-        })
-        continue
+        });
+        continue;
       }
 
-      let dueNowCount = 0, dueSoonCount = 0, newCardsCount = 0
-      let nonNewCount = 0, retrievabilitySum = 0, overdueRatioSum = 0, overdueCount = 0
+      let dueNowCount = 0,
+        dueSoonCount = 0,
+        newCardsCount = 0;
+      let nonNewCount = 0,
+        retrievabilitySum = 0,
+        overdueRatioSum = 0,
+        overdueCount = 0;
 
       for (const card of cards) {
-        if (card.state === 0) { // State.New
-          newCardsCount++
-          continue
+        if (card.state === 0) {
+          // State.New
+          newCardsCount++;
+          continue;
         }
-        nonNewCount++
-        const dueMs = new Date(card.due).getTime()
-        const elapsedDays = now > dueMs ? (now - dueMs) / dayMs : 0
+        nonNewCount++;
+        const dueMs = new Date(card.due).getTime();
+        const elapsedDays = now > dueMs ? (now - dueMs) / dayMs : 0;
 
         if (card.stability > 0) {
-          retrievabilitySum += retrievability(card.stability, elapsedDays)
+          retrievabilitySum += retrievability(card.stability, elapsedDays);
         }
         if (dueMs <= now) {
-          dueNowCount++
+          dueNowCount++;
           if (card.scheduled_days > 0 && elapsedDays > 0) {
-            overdueRatioSum += elapsedDays / card.scheduled_days
-            overdueCount++
+            overdueRatioSum += elapsedDays / card.scheduled_days;
+            overdueCount++;
           }
         }
         if (dueMs > now && dueMs <= now + 7 * dayMs) {
-          dueSoonCount++
+          dueSoonCount++;
         }
       }
 
-      const avgRetrievability = nonNewCount > 0 ? retrievabilitySum / nonNewCount : 0
-      const avgOverdueRatio = overdueCount > 0 ? overdueRatioSum / overdueCount : 0
+      const avgRetrievability =
+        nonNewCount > 0 ? retrievabilitySum / nonNewCount : 0;
+      const avgOverdueRatio =
+        overdueCount > 0 ? overdueRatioSum / overdueCount : 0;
 
       results.push({
         documentId: doc.id,
@@ -175,30 +187,31 @@ export function registerReviewHandlers() {
           dueSoonCount * 15 +
           Math.max(0, 0.9 - avgRetrievability) * 30 +
           avgOverdueRatio * 50,
-      })
+      });
     }
 
     // Sort: most urgent first, then by title
-    results.sort((a, b) =>
-      b.compositeScore - a.compositeScore ||
-      a.documentTitle.localeCompare(b.documentTitle),
-    )
+    results.sort(
+      (a, b) =>
+        b.compositeScore - a.compositeScore ||
+        a.documentTitle.localeCompare(b.documentTitle),
+    );
 
     // Cache the result until invalidation
-    metricsCache = { data: results, version: dataVersion }
+    metricsCache = { data: results, version: dataVersion };
 
-    return results
-  })
+    return results;
+  });
 }
 
 interface MetricsRow {
-  documentId: string
-  documentTitle: string
-  totalCards: number
-  newCardsCount: number
-  dueNowCount: number
-  dueSoonCount: number
-  avgRetrievability: number
-  avgOverdueRatio: number
-  compositeScore: number
+  documentId: string;
+  documentTitle: string;
+  totalCards: number;
+  newCardsCount: number;
+  dueNowCount: number;
+  dueSoonCount: number;
+  avgRetrievability: number;
+  avgOverdueRatio: number;
+  compositeScore: number;
 }

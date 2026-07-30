@@ -177,12 +177,7 @@ export function AIAnnotationResultV1({
                   if (tts.speakingId === item.id && tts.state === "playing")
                     tts.stop();
                   else
-                    tts.speak(
-                      item.text,
-                      undefined,
-                      ai?.source_lang,
-                      item.id,
-                    );
+                    tts.speak(item.text, undefined, ai?.source_lang, item.id);
                 }}
                 title={
                   tts.speakingId === item.id && tts.state === "playing"

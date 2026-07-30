@@ -18,7 +18,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { usePdfViewerStore, pdfGoToPage, pdfSetViewerScale, type SelectionMode } from "@/stores/pdf-viewer.store";
+import {
+  usePdfViewerStore,
+  pdfGoToPage,
+  pdfSetViewerScale,
+  type SelectionMode,
+} from "@/stores/pdf-viewer.store";
 import {
   useAnnotationStore,
   type AnnotationEmbedData,
@@ -36,12 +41,12 @@ import React from "react";
 const PdfViewer = React.lazy(() =>
   import("@/components/document/PdfViewer").then((m) => ({
     default: m.PdfViewer,
-  }))
+  })),
 );
 const StatsDashboard = React.lazy(() =>
   import("@/components/stats/StatsDashboard").then((m) => ({
     default: m.StatsDashboard,
-  }))
+  })),
 );
 
 // ---------------------------------------------------------------------------
@@ -134,7 +139,9 @@ const MODES: Array<{
 function QuickAddToggle() {
   const selectionMode = usePdfViewerStore((s) => s.selectionMode);
   const setSelectionMode = usePdfViewerStore((s) => s.setSelectionMode);
-  const annotationColor = useStyleStore((s) => s.style.annotationHighlightColor);
+  const annotationColor = useStyleStore(
+    (s) => s.style.annotationHighlightColor,
+  );
   const plainColor = useStyleStore((s) => s.style.plainHighlightColor);
 
   const currentIndex = MODES.findIndex((m) => m.mode === selectionMode);
@@ -204,7 +211,11 @@ function FitWidthButton() {
       onClick={toggle}
       title="Fit to width"
     >
-      {fitWidth ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+      {fitWidth ? (
+        <Minimize className="h-4 w-4" />
+      ) : (
+        <Maximize className="h-4 w-4" />
+      )}
     </Button>
   );
 }
@@ -397,7 +408,12 @@ export function CenterPanel({
       )}
 
       {/* ── Statistics Dashboard Dialog ── */}
-      <Dialog open={showStats} onOpenChange={(open) => { if (!open) setShowStats(false); }}>
+      <Dialog
+        open={showStats}
+        onOpenChange={(open) => {
+          if (!open) setShowStats(false);
+        }}
+      >
         <DialogContent
           hideClose
           className="flex w-full max-w-5xl h-[calc(100vh-80px)] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"

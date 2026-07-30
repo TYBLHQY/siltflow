@@ -42,16 +42,19 @@ function persistSummary(
   isAiGenerated: boolean,
   sourceLang?: string,
 ) {
-  window.siltflow.summaries.save({
-    documentId,
-    text,
-    isAiGenerated,
-    sourceLang,
-  }).catch(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (err: any) => {
-    console.error("[summary.store] save failed:", err);
-  });
+  window.siltflow.summaries
+    .save({
+      documentId,
+      text,
+      isAiGenerated,
+      sourceLang,
+    })
+    .catch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (err: any) => {
+        console.error("[summary.store] save failed:", err);
+      },
+    );
 }
 
 export const useSummaryStore = create<SummaryState>((set, get) => ({
@@ -60,12 +63,7 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
   pageTexts: {},
   selectedPages: {},
 
-  setSummary: (
-    documentId,
-    text,
-    isAiGenerated = false,
-    sourceLang?,
-  ) => {
+  setSummary: (documentId, text, isAiGenerated = false, sourceLang?) => {
     persistSummary(documentId, text, isAiGenerated, sourceLang);
     set((s) => ({
       summaries: {
@@ -82,8 +80,9 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
     window.siltflow.summaries.delete(documentId).catch(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (err: any) => {
-      console.error("[summary.store] delete failed:", err);
-    });
+        console.error("[summary.store] delete failed:", err);
+      },
+    );
     set((s) => {
       const next = { ...s.summaries };
       delete next[documentId];

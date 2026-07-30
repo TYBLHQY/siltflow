@@ -4,7 +4,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "dist-electron/**", "**/.claude/**", "packages/shared-ui/dist/**"],
+    ignores: ["dist/**", "dist-electron/**", "**/.claude/**"],
   },
   ...tseslint.configs.recommended,
   {
@@ -18,7 +18,14 @@ export default tseslint.config(
       "react-hooks/refs": "off",
       "react-refresh/only-export-components": [
         "warn",
-        { allowConstantExport: true, allowExportNames: ["CHART_TOOLTIP_STYLE", "ChartGrid", "StatChartCard"] },
+        {
+          allowConstantExport: true,
+          allowExportNames: [
+            "CHART_TOOLTIP_STYLE",
+            "ChartGrid",
+            "StatChartCard",
+          ],
+        },
       ],
       "@typescript-eslint/no-unused-vars": [
         "error",

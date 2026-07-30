@@ -329,8 +329,7 @@ export function AnnotationsTab({
             disabled={dueCount === 0}
             title="Start Learning"
           >
-            <CheckSquare className="h-3 w-3" />
-            [{dueCount}]
+            <CheckSquare className="h-3 w-3" />[{dueCount}]
           </Button>
           {untranslatedCount > 0 && (
             <Button
@@ -341,8 +340,7 @@ export function AnnotationsTab({
               disabled={batchTranslating}
               title="Translate all untranslated annotations"
             >
-              <Sparkles className="h-3 w-3" />
-              [{untranslatedCount}]
+              <Sparkles className="h-3 w-3" />[{untranslatedCount}]
             </Button>
           )}
           {v1Count > 0 && (
@@ -354,8 +352,7 @@ export function AnnotationsTab({
               disabled={upgrading}
               title="Re-translate V1 annotations with the V2 two-stage pipeline"
             >
-              <ArrowUpCircle className="h-3 w-3" />
-              [{v1Count}]
+              <ArrowUpCircle className="h-3 w-3" />[{v1Count}]
             </Button>
           )}
           <Button

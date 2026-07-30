@@ -32,9 +32,7 @@ export function registerScrollToHighlight(
 }
 
 /** Register a setViewerScale callback. Called once from PdfViewer on mount. */
-export function registerSetViewerScale(
-  fn: typeof _setViewerScale.current,
-) {
+export function registerSetViewerScale(fn: typeof _setViewerScale.current) {
   _setViewerScale.current = fn;
 }
 
@@ -58,7 +56,11 @@ export function pdfSetViewerScale(value: string) {
 /** Three-way selection mode for PDF text selection. */
 export type SelectionMode = "manual" | "auto-annotate" | "auto-highlight";
 
-const ALL_MODES: SelectionMode[] = ["manual", "auto-annotate", "auto-highlight"];
+const ALL_MODES: SelectionMode[] = [
+  "manual",
+  "auto-annotate",
+  "auto-highlight",
+];
 
 // ── Store ──────────────────────────────────────────────────────────────────
 
@@ -102,9 +104,12 @@ interface PdfViewerState {
     position: any;
   } | null;
   setPendingAnnotation: (
-    ann: { text: string; pageNumber: number;
+    ann: {
+      text: string;
+      pageNumber: number;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      position: any; } | null,
+      position: any;
+    } | null,
   ) => void;
 }
 

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Search, Highlighter, SearchX } from "lucide-react";
 import { useSearchStore } from "@/stores/search.store";
 import { useDocumentStore } from "@/stores/document.store";
-import { usePdfViewerStore, pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
+import {
+  usePdfViewerStore,
+  pdfScrollToHighlight,
+} from "@/stores/pdf-viewer.store";
 import { SearchResultItem } from "./SearchResultItem";
 import { AnnotationSearchCard } from "./AnnotationSearchCard";
 import type { SearchEntry } from "@/stores/search.store";
@@ -128,9 +128,7 @@ export function SearchAnnotations() {
         case "ArrowDown":
           e.preventDefault();
           setSelectedIndex(
-            results.length > 0
-              ? (selectedIndex + 1) % results.length
-              : 0,
+            results.length > 0 ? (selectedIndex + 1) % results.length : 0,
           );
           break;
         case "ArrowUp":
@@ -158,12 +156,9 @@ export function SearchAnnotations() {
   );
 
   // ── Handlers ──
-  const handleJumpTo = useCallback(
-    (entry: SearchEntry) => {
-      navigateToAnnotation(entry);
-    },
-    [],
-  );
+  const handleJumpTo = useCallback((entry: SearchEntry) => {
+    navigateToAnnotation(entry);
+  }, []);
 
   // ── Filter results with highlights ──
   const hasQuery = query.trim().length > 0;
@@ -175,7 +170,12 @@ export function SearchAnnotations() {
   }, [entries]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) close(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) close();
+      }}
+    >
       <DialogContent
         hideClose
         className="flex flex-col w-full max-w-5xl h-200 max-h-[90vh] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0 overflow-hidden"
@@ -214,9 +214,7 @@ export function SearchAnnotations() {
             {indexBuilt && !hasAnnotations && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
                 <Highlighter className="h-8 w-8" />
-                <p className="text-sm text-center">
-                  No annotations yet
-                </p>
+                <p className="text-sm text-center">No annotations yet</p>
                 <p className="text-xs text-center text-ctp-overlay0/70">
                   Highlight text in a document to create annotations
                 </p>
@@ -228,7 +226,8 @@ export function SearchAnnotations() {
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
                 <Search className="h-8 w-8" />
                 <p className="text-sm text-ctp-text text-center">
-                  Search across {entries.length} annotations in {totalDocuments} document{totalDocuments !== 1 ? "s" : ""}
+                  Search across {entries.length} annotations in {totalDocuments}{" "}
+                  document{totalDocuments !== 1 ? "s" : ""}
                 </p>
                 <p className="text-xs text-center text-ctp-text">
                   Type to search by annotation text
@@ -237,17 +236,20 @@ export function SearchAnnotations() {
             )}
 
             {/* no results */}
-            {indexBuilt && hasAnnotations && hasQuery && results.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
-                <SearchX className="h-8 w-8" />
-                <p className="text-sm text-center">
-                  No annotations match &ldquo;{query}&rdquo;
-                </p>
-                <p className="text-xs text-center text-ctp-overlay0/70">
-                  Try a different search term
-                </p>
-              </div>
-            )}
+            {indexBuilt &&
+              hasAnnotations &&
+              hasQuery &&
+              results.length === 0 && (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
+                  <SearchX className="h-8 w-8" />
+                  <p className="text-sm text-center">
+                    No annotations match &ldquo;{query}&rdquo;
+                  </p>
+                  <p className="text-xs text-center text-ctp-overlay0/70">
+                    Try a different search term
+                  </p>
+                </div>
+              )}
 
             {/* results list */}
             {indexBuilt && results.length > 0 && (
@@ -256,12 +258,17 @@ export function SearchAnnotations() {
                   {results.map((r, idx) => (
                     <div
                       key={r.item.id}
-                      data-search-selected={idx === selectedIndex ? "true" : undefined}
+                      data-search-selected={
+                        idx === selectedIndex ? "true" : undefined
+                      }
                     >
                       <SearchResultItem
                         entry={r.item}
                         matches={r.matches}
-                        isSelected={idx === selectedIndex || r.item.id === selectedEntry?.id}
+                        isSelected={
+                          idx === selectedIndex ||
+                          r.item.id === selectedEntry?.id
+                        }
                         onSelect={() => {
                           selectEntry(r.item);
                           setSelectedIndex(idx);
@@ -280,10 +287,7 @@ export function SearchAnnotations() {
           </div>
 
           {/* ── Detail card ── */}
-          <AnnotationSearchCard
-            entry={selectedEntry}
-            isWide={isWide}
-          />
+          <AnnotationSearchCard entry={selectedEntry} isWide={isWide} />
         </div>
       </DialogContent>
     </Dialog>

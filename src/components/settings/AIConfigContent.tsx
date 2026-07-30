@@ -221,20 +221,18 @@ export function AIConfigContent() {
           + Add provider
         </summary>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {BUILTIN_PROVIDERS.map(
-            (provider: { key: string; label: string }) => (
-              <Button
-                key={provider.key}
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  addProfile(provider.key);
-                }}
-              >
-                {provider.label}
-              </Button>
-            ),
-          )}
+          {BUILTIN_PROVIDERS.map((provider: { key: string; label: string }) => (
+            <Button
+              key={provider.key}
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                addProfile(provider.key);
+              }}
+            >
+              {provider.label}
+            </Button>
+          ))}
         </div>
       </details>
 
@@ -260,9 +258,7 @@ export function AIConfigContent() {
                 <select
                   className="w-56 rounded border bg-ctp-base px-2 py-1 text-xs outline-none"
                   value={assignedId}
-                  onChange={(e) =>
-                    setTaskProfile(task, e.target.value || null)
-                  }
+                  onChange={(e) => setTaskProfile(task, e.target.value || null)}
                 >
                   <option value="">Auto (first provider)</option>
                   {profiles.map((p) => (
@@ -290,7 +286,9 @@ export function AIConfigContent() {
           }
         >
           {LANGUAGES.map((l) => (
-            <option key={l.value} value={l.value}>{l.label}</option>
+            <option key={l.value} value={l.value}>
+              {l.label}
+            </option>
           ))}
         </select>
         <p className="text-xs text-ctp-overlay0 mt-0.5">

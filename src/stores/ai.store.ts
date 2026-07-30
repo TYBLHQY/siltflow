@@ -151,7 +151,10 @@ function persistToVault(
 export function loadFromVault(cfg?: Record<string, unknown>) {
   if (cfg) return applyAIConfig(cfg);
   // fallback: loads config independently (e.g. when called directly)
-  window.siltflow.vaultConfigGet().then(applyAIConfig).catch(() => {});
+  window.siltflow
+    .vaultConfigGet()
+    .then(applyAIConfig)
+    .catch(() => {});
 }
 
 function applyAIConfig(cfg: Record<string, unknown>) {
@@ -159,13 +162,13 @@ function applyAIConfig(cfg: Record<string, unknown>) {
   if (Array.isArray(saved)) {
     // Migrate legacy profiles: strip active/task fields
     const migrated = (saved as Array<Record<string, unknown>>).map(
-      ({ active: _active, task: _task, ...rest }) => rest as unknown as AIProfile,
+      ({ active: _active, task: _task, ...rest }) =>
+        rest as unknown as AIProfile,
     );
     useAIStore.setState({ profiles: migrated, loaded: true });
   }
-  const taskProfiles = (cfg as Record<string, unknown>)[
-    TASK_PROFILES_KEY
-  ] as Partial<Record<AITask, string | null>> | undefined;
+  const taskProfiles = (cfg as Record<string, unknown>)[TASK_PROFILES_KEY] as
+    Partial<Record<AITask, string | null>> | undefined;
   if (taskProfiles) {
     useAIStore.setState({ taskProfiles });
   }

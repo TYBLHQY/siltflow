@@ -34,12 +34,8 @@ export interface TranslateOptions {
 // System prompt
 // ===========================================================================
 
-function buildTranslatePrompt(
-  sourceLang: string,
-  targetLang: string,
-): string {
-  const isSameLanguage =
-    sourceLang.split("-")[0] === targetLang.split("-")[0];
+function buildTranslatePrompt(sourceLang: string, targetLang: string): string {
+  const isSameLanguage = sourceLang.split("-")[0] === targetLang.split("-")[0];
 
   const BASE_SCHEMA = `{
   "translation": "<natural translation>",
@@ -126,10 +122,7 @@ export async function translateAnnotation(
   const sourceLang = options.sourceLang ?? "auto";
   const targetLang = options.targetLang ?? "zh-CN";
 
-  let systemContent = buildTranslatePrompt(
-    sourceLang,
-    targetLang,
-  );
+  let systemContent = buildTranslatePrompt(sourceLang, targetLang);
 
   // Append article context to system prompt for disambiguation
   if (options.context) {

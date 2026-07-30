@@ -1,6 +1,11 @@
 "use client";
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
@@ -211,7 +216,11 @@ export function CalendarGrid({
     legend === true ? {} : legend === false ? { show: false } : legend;
 
   const axisCfg: AxisLabelsConfig =
-    axisLabels === true ? {} : axisLabels === false ? { show: false } : axisLabels;
+    axisLabels === true
+      ? {}
+      : axisLabels === false
+        ? { show: false }
+        : axisLabels;
 
   const showAxis = axisCfg.show ?? true;
   const showWeekdays = axisCfg.showWeekdays ?? true;
@@ -237,7 +246,8 @@ export function CalendarGrid({
   }, [data]);
 
   const firstWeek = startOfWeek(start, weekStartsOn);
-  const totalDays = Math.ceil((end.getTime() - firstWeek.getTime()) / 86400000) + 1;
+  const totalDays =
+    Math.ceil((end.getTime() - firstWeek.getTime()) / 86400000) + 1;
   const weeks = Math.ceil(totalDays / 7);
 
   const cells: HeatmapCell[] = React.useMemo(() => {
@@ -280,7 +290,8 @@ export function CalendarGrid({
   }, [cells]);
 
   const monthLabels = React.useMemo(() => {
-    if (!showAxis || !showMonths) return [] as { colIndex: number; text: string }[];
+    if (!showAxis || !showMonths)
+      return [] as { colIndex: number; text: string }[];
 
     const labels: { colIndex: number; text: string }[] = [];
     let lastLabeledWeek = -999;
@@ -290,12 +301,16 @@ export function CalendarGrid({
       const firstInCol = col.find((c) => !c.disabled)?.date ?? col[0].date;
 
       const prevCol = i > 0 ? columns[i - 1] : null;
-      const prevFirst = prevCol?.find((c) => !c.disabled)?.date ?? prevCol?.[0]?.date;
+      const prevFirst =
+        prevCol?.find((c) => !c.disabled)?.date ?? prevCol?.[0]?.date;
 
       const monthChanged = !prevFirst || !sameMonth(firstInCol, prevFirst);
 
       if (monthChanged && i - lastLabeledWeek >= minWeekSpacing) {
-        labels.push({ colIndex: i, text: formatMonth(firstInCol, monthFormat) });
+        labels.push({
+          colIndex: i,
+          text: formatMonth(firstInCol, monthFormat),
+        });
         lastLabeledWeek = i;
       }
     }
@@ -332,7 +347,10 @@ export function CalendarGrid({
       ) : null}
 
       <div
-        className={cn("flex items-center", direction === "row" ? "flex-row" : "flex-col")}
+        className={cn(
+          "flex items-center",
+          direction === "row" ? "flex-row" : "flex-col",
+        )}
         style={{ gap: `${swatchGap}px` }}
       >
         {Array.from({ length: levelCount }).map((_, i) => {
@@ -382,12 +400,20 @@ export function CalendarGrid({
 
       <div>
         <TooltipProvider delayDuration={80}>
-          <div className={cn("flex gap-4 overflow-x-auto", placement === "bottom" && "flex-col")}>
+          <div
+            className={cn(
+              "flex gap-4 overflow-x-auto",
+              placement === "bottom" && "flex-col",
+            )}
+          >
             {/* Labeled calendar area */}
             <div className={cn("min-w-0", axisCfg.className)}>
               {/* Month labels row */}
               {showAxis && showMonths ? (
-                <div className="flex items-end" style={{ paddingLeft: weekdayLabelWidth }}>
+                <div
+                  className="flex items-end"
+                  style={{ paddingLeft: weekdayLabelWidth }}
+                >
                   <div
                     className="relative"
                     style={{
@@ -448,31 +474,40 @@ export function CalendarGrid({
                       role="rowgroup"
                     >
                       {col.map((cell) => {
-                        const cls = levels[clampLevel(cell.level, levels.length)];
+                        const cls =
+                          levels[clampLevel(cell.level, levels.length)];
                         return (
                           <Tooltip key={`${cell.key}-${i}`}>
                             <TooltipTrigger asChild>
                               <button
                                 type="button"
                                 disabled={cell.disabled}
-                                onClick={() => !cell.disabled && onCellClick?.(cell)}
+                                onClick={() =>
+                                  !cell.disabled && onCellClick?.(cell)
+                                }
                                 className={cn(
                                   "rounded-[3px] outline-none ring-offset-ctp-base focus-visible:ring-2 focus-visible:ring-ctp-mauve focus-visible:ring-offset-2",
                                   !palette?.length && cls,
-                                  cell.disabled && "cursor-default opacity-30 pointer-events-none",
+                                  cell.disabled &&
+                                    "cursor-default opacity-30 pointer-events-none",
                                 )}
                                 style={{
                                   width: cellSize,
                                   height: cellSize,
-                                  ...(bgStyleForLevel(cell.level, palette) ?? {}),
+                                  ...(bgStyleForLevel(cell.level, palette) ??
+                                    {}),
                                 }}
                                 aria-label={
-                                  cell.disabled ? "Outside range" : `${cell.label}: ${cell.value}`
+                                  cell.disabled
+                                    ? "Outside range"
+                                    : `${cell.label}: ${cell.value}`
                                 }
                                 role="gridcell"
                               />
                             </TooltipTrigger>
-                            <TooltipContent side="top">{tooltipNode(cell)}</TooltipContent>
+                            <TooltipContent side="top">
+                              {tooltipNode(cell)}
+                            </TooltipContent>
                           </Tooltip>
                         );
                       })}

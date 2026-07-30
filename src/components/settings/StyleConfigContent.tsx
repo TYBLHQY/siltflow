@@ -15,7 +15,9 @@ export function StyleConfigContent() {
   const setGlobalFontSize = useStyleStore((s) => s.setGlobalFontSize);
   const setPdfScrollbar = useStyleStore((s) => s.setPdfScrollbar);
   const setLearnPanelHeight = useStyleStore((s) => s.setLearnPanelHeight);
-  const setAnnotationHighlightColor = useStyleStore((s) => s.setAnnotationHighlightColor);
+  const setAnnotationHighlightColor = useStyleStore(
+    (s) => s.setAnnotationHighlightColor,
+  );
   const setPlainHighlightColor = useStyleStore((s) => s.setPlainHighlightColor);
   const setSystemFontFamilies = useStyleStore((s) => s.setSystemFontFamilies);
   const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily);
@@ -497,7 +499,9 @@ export function StyleConfigContent() {
             }
           >
             <option value="off">Off — original colors</option>
-            <option value="invert">Invert — black background, white text</option>
+            <option value="invert">
+              Invert — black background, white text
+            </option>
             <option value="themed">Themed — matches app background</option>
           </select>
         </div>

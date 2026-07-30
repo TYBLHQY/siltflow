@@ -59,10 +59,7 @@ export function getAlternatives(ai: AIResult) {
 
 // ── Granularity detection ───────────────────────────────────────────
 
-export function inferGranularity(
-  _ai: AIResult,
-  text: string,
-): string {
+export function inferGranularity(_ai: AIResult, text: string): string {
   const t = text.trim();
   if (t.includes("\n") || t.split(" ").length > 30) return "sentence";
   if (t.split(/[.!?;]+/).filter(Boolean).length > 1) return "sentence";
