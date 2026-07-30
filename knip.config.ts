@@ -38,8 +38,6 @@ const config: KnipConfig = {
     "tailwindcss",
     "tailwindcss-animate",
     // shadcn/ui dependencies (used via components.json / npx shadcn)
-    "@radix-ui/react-popover",
-    "@radix-ui/react-separator",
     "@radix-ui/react-slot",
     // Native module loader (used by better-sqlite3 internally)
     "prebuild-install",

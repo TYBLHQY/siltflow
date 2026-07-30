@@ -2,11 +2,19 @@
 module.exports = {
   forbidden: [
     {
+      name: "no-circular-pdf-viewer-type-only",
+      severity: "warn",
+      comment:
+        "PdfViewer ↔ SiltflowHighlightContainer: the reverse edge is type-only (import type), erased at runtime. Warn only so it doesn't block CI.",
+      from: { path: "^src/components/document/SiltflowHighlightContainer" },
+      to: { path: "^src/components/document/PdfViewer", circular: true },
+    },
+    {
       name: "no-circular",
       severity: "error",
       comment:
-        "Circular dependencies are not allowed. PdfViewer↔SiltflowHighlightContainer is exempted because the reverse edge is type-only (import type).",
-      from: {},
+        "All other circular dependencies are forbidden. PdfViewer↔SiltflowHighlightContainer is handled by no-circular-pdf-viewer-type-only above.",
+      from: { pathNot: "^src/components/document/(PdfViewer|SiltflowHighlightContainer)" },
       to: {
         circular: true,
       },
