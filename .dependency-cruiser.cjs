@@ -14,7 +14,10 @@ module.exports = {
       severity: "error",
       comment:
         "All other circular dependencies are forbidden. PdfViewer↔SiltflowHighlightContainer is handled by no-circular-pdf-viewer-type-only above.",
-      from: { pathNot: "^src/components/document/(PdfViewer|SiltflowHighlightContainer)" },
+      from: {
+        pathNot:
+          "^src/components/document/(PdfViewer|SiltflowHighlightContainer)",
+      },
       to: {
         circular: true,
       },

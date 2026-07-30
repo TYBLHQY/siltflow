@@ -63,7 +63,15 @@ function App() {
       // Single vaultConfigGet call, distribute to all loaders (1 IPC instead of 9)
       void window.siltflow.vaultConfigGet().then((cfg) => {
         loadFromVault(cfg);
-        void loadFSRSParams(cfg);        void loadSummariesFromVault();        void loadStyleFromVault(cfg);        void loadTTSConfigFromVault(cfg);        void loadShortcutsFromVault(cfg);        void loadLastPages(cfg);        void loadThemeFromVault(cfg);        void loadAppSettingsFromVault(cfg);      });
+        void loadFSRSParams(cfg);
+        void loadSummariesFromVault();
+        void loadStyleFromVault(cfg);
+        void loadTTSConfigFromVault(cfg);
+        void loadShortcutsFromVault(cfg);
+        void loadLastPages(cfg);
+        void loadThemeFromVault(cfg);
+        void loadAppSettingsFromVault(cfg);
+      });
     }
   }, [vaultReady, aiLoaded]);
 
@@ -80,7 +88,8 @@ function App() {
       )
         return;
       e.preventDefault();
-      void window.siltflow.openExternal(anchor.href);    };
+      void window.siltflow.openExternal(anchor.href);
+    };
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, []);
@@ -340,7 +349,8 @@ function App() {
                   className="flex-1"
                   onClick={() => {
                     setDownloading(true);
-                    void window.siltflow.update.download();                  }}
+                    void window.siltflow.update.download();
+                  }}
                 >
                   <Download className="h-4 w-4 inline mr-1" />
                   Download

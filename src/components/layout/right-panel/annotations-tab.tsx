@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/dialog";
 import { AITranslateCard } from "@/components/document/AITranslateCard";
 import { LearningModal } from "@/components/document/LearningModal";
-import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
+import {
+  useAnnotationStore,
+  type AnnotationItem,
+} from "@/stores/annotation.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
 import { useAIStore } from "@/stores/ai.store";
@@ -526,7 +529,6 @@ export function AnnotationsTab({
                   handleCreateManual();
                 }
               }}
-              
             />
           </div>
           <DialogFooter>

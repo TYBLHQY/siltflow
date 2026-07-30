@@ -19,7 +19,8 @@ export function TTSConfigContent() {
   // Auto-fetch voice list on first open if not cached
   useEffect(() => {
     if (!hasCachedLists) {
-      void refreshVoices();    }
+      void refreshVoices();
+    }
   }, [hasCachedLists, refreshVoices]);
 
   const langMeta = [

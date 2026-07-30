@@ -417,8 +417,11 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
     return folderId;
   }
 
-  const importedDocs: Array<{ id: string; title: string; folderId: string | null }> =
-    [];
+  const importedDocs: Array<{
+    id: string;
+    title: string;
+    folderId: string | null;
+  }> = [];
 
   for (const dirEntry of dirs) {
     const folderId = ensureFolder(dirEntry.relativeDir);
@@ -564,7 +567,9 @@ void app.whenReady().then(async () => {
       const match = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
       if (match) {
         const start = Number.parseInt(match[1], 10);
-        const end = match[2] ? Number.parseInt(match[2], 10) : data.byteLength - 1;
+        const end = match[2]
+          ? Number.parseInt(match[2], 10)
+          : data.byteLength - 1;
         const chunk = data.slice(start, end + 1);
         return new Response(chunk, {
           status: 206,

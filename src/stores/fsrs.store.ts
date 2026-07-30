@@ -61,13 +61,13 @@ export const useFSRSStore = create<FSRSStoreState>()((set) => ({
 // Vault persistence
 // ---------------------------------------------------------------------------
 function persistToVault(params: FSRSParameters) {
-  void window.siltflow.vaultConfigSet({ [VAULT_KEY]: params });}
+  void window.siltflow.vaultConfigSet({ [VAULT_KEY]: params });
+}
 
 export async function loadFSRSParams(cfg?: Record<string, unknown>) {
   try {
     cfg ??= await window.siltflow.vaultConfigGet();
-    const saved = (cfg)[VAULT_KEY] as
-      Partial<FSRSParameters> | undefined;
+    const saved = cfg[VAULT_KEY] as Partial<FSRSParameters> | undefined;
     if (saved) {
       useFSRSStore.setState({
         params: { ...DEFAULT_PARAMS, ...saved },
@@ -179,7 +179,8 @@ function persistReviewLog(
       state: card.state,
     },
   };
-  void useReviewLogStore.getState().add(annotationId, documentId, data);}
+  void useReviewLogStore.getState().add(annotationId, documentId, data);
+}
 
 /** Get the next review date for a card, or undefined if never reviewed. */
 export function getNextReview(card?: Card): Date | undefined {

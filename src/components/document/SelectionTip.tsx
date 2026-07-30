@@ -69,7 +69,8 @@ export function SelectionTip() {
 
   const handlePlay = useCallback(() => {
     if (!pendingAnnotation) return;
-    void tts.speak(pendingAnnotation.text, undefined, sourceLang);  }, [pendingAnnotation, tts, sourceLang]);
+    void tts.speak(pendingAnnotation.text, undefined, sourceLang);
+  }, [pendingAnnotation, tts, sourceLang]);
 
   if (!pendingAnnotation) return null;
 

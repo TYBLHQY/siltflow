@@ -97,7 +97,8 @@ export function SearchAnnotations() {
   // (annotation/document changes invalidate indexBuilt but keep old entries).
   useEffect(() => {
     if (isOpen && !indexBuilt && !isBuilding) {
-      void buildIndex();    }
+      void buildIndex();
+    }
   }, [isOpen, indexBuilt, isBuilding, buildIndex]);
 
   // Focus input on open
@@ -141,7 +142,8 @@ export function SearchAnnotations() {
           e.preventDefault();
           if (results.length > 0) {
             const idx = Math.min(selectedIndex, results.length - 1);
-            void navigateToAnnotation(results[idx].item);          }
+            void navigateToAnnotation(results[idx].item);
+          }
           break;
         case "Escape":
           e.preventDefault();
@@ -154,7 +156,8 @@ export function SearchAnnotations() {
 
   // ── Handlers ──
   const handleJumpTo = useCallback((entry: SearchEntry) => {
-    void navigateToAnnotation(entry);  }, []);
+    void navigateToAnnotation(entry);
+  }, []);
 
   // ── Filter results with highlights ──
   const hasQuery = query.trim().length > 0;

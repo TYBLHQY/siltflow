@@ -53,7 +53,8 @@ export function SiltflowHighlightContainer({
     <button
       onClick={(e) => {
         e.stopPropagation();
-        void tts.speak(          highlight.content!.text!,
+        void tts.speak(
+          highlight.content!.text!,
           undefined,
           highlight.sourceLang,
           undefined,
@@ -171,8 +172,12 @@ export function SiltflowHighlightContainer({
         />
       );
 
-    case undefined: { throw new Error('Not implemented yet: undefined case') }
-    case "area": { throw new Error('Not implemented yet: "area" case') }
+    case undefined: {
+      throw new Error("Not implemented yet: undefined case");
+    }
+    case "area": {
+      throw new Error('Not implemented yet: "area" case');
+    }
     default:
       // Area highlight — default fallback
       return (

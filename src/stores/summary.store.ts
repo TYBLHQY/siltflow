@@ -69,7 +69,8 @@ export const useSummaryStore = create<SummaryState>((set, get) => ({
       summaries: {
         ...s.summaries,
         [documentId]: {
-          text, isAiGenerated,
+          text,
+          isAiGenerated,
           ...(sourceLang ? { sourceLang } : {}),
         },
       },

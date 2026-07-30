@@ -52,7 +52,8 @@ function persist(style: ParagraphStyle) {
 }
 
 const debouncedVaultSet = debounce((style: ParagraphStyle) => {
-  void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: style });}, 300);
+  void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: style });
+}, 300);
 
 export const useStyleStore = create<StyleState>((set) => ({
   style: { ...DEFAULT_STYLE },
@@ -185,7 +186,7 @@ export const useStyleStore = create<StyleState>((set) => ({
 export async function loadStyleFromVault(cfg?: Record<string, unknown>) {
   try {
     cfg ??= await window.siltflow.vaultConfigGet();
-    const saved = (cfg)[STORAGE_KEY];
+    const saved = cfg[STORAGE_KEY];
     if (saved && typeof saved === "object") {
       const s = saved as Record<string, unknown>;
       useStyleStore.setState({

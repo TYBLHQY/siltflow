@@ -210,7 +210,7 @@ export function extractArticleContext(pdfText: string): string {
       }
       if (sentence) {
         const snippet =
-          sentence.length > 500 ? `${sentence.slice(0, 500)  }…` : sentence;
+          sentence.length > 500 ? `${sentence.slice(0, 500)}…` : sentence;
         result.push(snippet);
         remaining -= snippet.length;
       }

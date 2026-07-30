@@ -146,24 +146,25 @@ export const usePdfViewerStore = create<PdfViewerState>((set) => ({
 }));
 
 const debouncedSetLastPages = debounce((lastPages: Record<string, number>) => {
-  void window.siltflow.vaultConfigSet({ lastPages });}, 500);
+  void window.siltflow.vaultConfigSet({ lastPages });
+}, 500);
 
 const debouncedSetSelectionMode = debounce((v: SelectionMode) => {
-  void window.siltflow.vaultConfigSet({ selectionMode: v });}, 500);
+  void window.siltflow.vaultConfigSet({ selectionMode: v });
+}, 500);
 
 /** Load persisted last-page map and selection mode from vault (call once on app boot). */
 export async function loadLastPages(cfg?: Record<string, unknown>) {
   try {
     cfg ??= await window.siltflow.vaultConfigGet();
 
-    const lastPages = (cfg).lastPages as
-      Record<string, number> | undefined;
+    const lastPages = cfg.lastPages as Record<string, number> | undefined;
     if (lastPages && typeof lastPages === "object") {
       usePdfViewerStore.setState({ lastPageByDocId: lastPages });
     }
 
     // Migrate from old quickAddEnabled (boolean) or use new selectionMode (string)
-    const selMode = (cfg).selectionMode;
+    const selMode = cfg.selectionMode;
     if (
       typeof selMode === "string" &&
       ALL_MODES.includes(selMode as SelectionMode)
@@ -171,7 +172,7 @@ export async function loadLastPages(cfg?: Record<string, unknown>) {
       usePdfViewerStore.setState({ selectionMode: selMode as SelectionMode });
     } else {
       // Fallback: migrate old quickAddEnabled boolean
-      const quickAdd = (cfg).quickAddEnabled;
+      const quickAdd = cfg.quickAddEnabled;
       if (typeof quickAdd === "boolean") {
         usePdfViewerStore.setState({
           selectionMode: quickAdd ? "auto-annotate" : "manual",

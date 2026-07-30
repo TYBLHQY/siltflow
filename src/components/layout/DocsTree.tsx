@@ -188,7 +188,8 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
 
     // Load folders
     useEffect(() => {
-      void useFolderStore.getState().loadFolders();    }, []);
+      void useFolderStore.getState().loadFolders();
+    }, []);
 
     // Tree data
     const treeData = useMemo(
@@ -243,7 +244,8 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         const treeNodes = tree?.visibleNodes ?? [];
         for (const n of treeNodes) {
           if (n.id === `folder:${folder.id}`) {
-            void n.edit();            break;
+            void n.edit();
+            break;
           }
         }
       },
@@ -352,7 +354,8 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
         countSubfolders(folder.id);
         // If folder is empty, delete without confirmation
         if (docCount === 0 && subFolderCount === 0) {
-          void deleteFolder(folder.id);        } else {
+          void deleteFolder(folder.id);
+        } else {
           setDeleteConfirm(folder);
         }
       },
@@ -362,7 +365,8 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       (folder: FolderItem) => {
         for (const n of tree?.visibleNodes ?? []) {
           if (n.id === `folder:${folder.id}`) {
-            void n.edit();            break;
+            void n.edit();
+            break;
           }
         }
         setContextMenu(null);
@@ -371,12 +375,14 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
     );
     const handleNewSubfolder = useCallback(
       (folder: FolderItem) => {
-        void createDirectFolder(folder.id);        setContextMenu(null);
+        void createDirectFolder(folder.id);
+        setContextMenu(null);
       },
       [createDirectFolder],
     );
     const handleNewFolder = useCallback(() => {
-      void createDirectFolder(null);      setContextMenu(null);
+      void createDirectFolder(null);
+      setContextMenu(null);
     }, [createDirectFolder]);
 
     // Dismiss context menu
@@ -463,7 +469,8 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
                 // Find the tree node and trigger inline edit
                 for (const n of tree?.visibleNodes ?? []) {
                   if (n.id === `doc:${contextMenu.target.id}`) {
-                    void n.edit();                    break;
+                    void n.edit();
+                    break;
                   }
                 }
                 setContextMenu(null);

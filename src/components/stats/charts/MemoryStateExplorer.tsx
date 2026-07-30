@@ -41,7 +41,8 @@ export function MemoryStateExplorer() {
 
   // Load all annotations for text lookup
   useEffect(() => {
-    void window.siltflow.annotations.listAll().then((rows) => {      const map = new Map<string, string>();
+    void window.siltflow.annotations.listAll().then((rows) => {
+      const map = new Map<string, string>();
       // Only index annotation-kind rows; highlights have no FSRS cards to display
       for (const row of rows) {
         if (row.text && row.kind !== "highlight") map.set(row.id, row.text);
@@ -53,8 +54,12 @@ export function MemoryStateExplorer() {
   // Build annotation list from raw card data
   const annotations = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const list: Array<{ id: string; documentId: string; text: string; card: any }> =
-      [];
+    const list: Array<{
+      id: string;
+      documentId: string;
+      text: string;
+      card: any;
+    }> = [];
     for (const row of rawCards) {
       try {
         const card = JSON.parse(row.data);

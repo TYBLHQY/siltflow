@@ -24,7 +24,7 @@ export function ReviewForecastChart() {
           dataKey="date"
           tick={{ fontSize: 9 }}
           tickFormatter={(d: string) => {
-            const date = new Date(`${d  }T00:00:00`);
+            const date = new Date(`${d}T00:00:00`);
             return date.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -41,7 +41,7 @@ export function ReviewForecastChart() {
           contentStyle={CHART_TOOLTIP_STYLE}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           labelFormatter={(label: any) => {
-            const d = new Date(`${String(label)  }T00:00:00`);
+            const d = new Date(`${String(label)}T00:00:00`);
             return d.toLocaleDateString("en-US", {
               weekday: "short",
               month: "short",

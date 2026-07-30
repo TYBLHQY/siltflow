@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { getSqlite,AI_DATA_VERSION } from "../database";
+import { getSqlite, AI_DATA_VERSION } from "../database";
 
 export function registerAiResultHandlers() {
   ipcMain.handle(

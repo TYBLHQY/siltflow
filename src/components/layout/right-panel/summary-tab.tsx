@@ -249,7 +249,6 @@ export function SummaryTab() {
               }}
               value={summary.text}
               onChange={(e) => handleEditSummary(e.target.value)}
-              
             />
           ) : (
             <div className="h-full overflow-y-auto px-3 py-3">

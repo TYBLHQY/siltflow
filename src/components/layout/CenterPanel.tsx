@@ -283,7 +283,8 @@ export function CenterPanel({
 
     loadedDocRef.current = documentId;
 
-    void window.siltflow.annotations.list(documentId).then(async (saved) => {      if (loadedDocRef.current !== documentId) return;
+    void window.siltflow.annotations.list(documentId).then(async (saved) => {
+      if (loadedDocRef.current !== documentId) return;
 
       setItems(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

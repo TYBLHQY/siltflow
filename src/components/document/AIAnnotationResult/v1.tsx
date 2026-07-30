@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Pencil, Volume2, Loader2, Sparkles, Trash2 } from "lucide-react";
 
 import { renderBoldText } from "@/components/ui/render-bold";
-import type { AIAnnotationDataV1,DefinitionEntry } from "@/types/annotation";
+import type { AIAnnotationDataV1, DefinitionEntry } from "@/types/annotation";
 import {
   getTranslation,
   getDefinitions,
@@ -176,7 +176,13 @@ export function AIAnnotationResultV1({
                   if (tts.speakingId === item.id && tts.state === "playing")
                     tts.stop();
                   else
-                    void tts.speak(item.text, undefined, ai?.source_lang, item.id);                }}
+                    void tts.speak(
+                      item.text,
+                      undefined,
+                      ai?.source_lang,
+                      item.id,
+                    );
+                }}
                 title={
                   tts.speakingId === item.id && tts.state === "playing"
                     ? "Stop"
@@ -199,7 +205,8 @@ export function AIAnnotationResultV1({
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    void handleTranslate();                  }}
+                    void handleTranslate();
+                  }}
                   title="Translate"
                   disabled={isTranslating}
                 >

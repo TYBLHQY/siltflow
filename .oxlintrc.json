@@ -90,7 +90,10 @@
     "typescript/no-dynamic-delete": "error",
     "typescript/no-extra-non-null-assertion": "error",
     "typescript/no-confusing-non-null-assertion": "error",
-    "typescript/no-confusing-void-expression": ["error", { "ignoreArrowShorthand": true }],
+    "typescript/no-confusing-void-expression": [
+      "error",
+      { "ignoreArrowShorthand": true }
+    ],
     "typescript/no-empty-interface": "error",
     "typescript/no-extraneous-class": "error",
     "typescript/no-misused-new": "error",
@@ -111,10 +114,16 @@
     "typescript/switch-exhaustiveness-check": "warn",
     "typescript/triple-slash-reference": "error",
     "typescript/unified-signatures": "error",
-    "typescript/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+    "typescript/consistent-type-imports": [
+      "error",
+      { "prefer": "type-imports" }
+    ],
     "typescript/consistent-type-definitions": ["error", "interface"],
     "typescript/array-type": ["error", { "default": "array-simple" }],
-    "typescript/ban-ts-comment": ["error", { "ts-expect-error": "allow-with-description" }],
+    "typescript/ban-ts-comment": [
+      "error",
+      { "ts-expect-error": "allow-with-description" }
+    ],
     "typescript/method-signature-style": ["error", "property"],
     "typescript/no-import-type-side-effects": "error",
     "typescript/prefer-function-type": "error",

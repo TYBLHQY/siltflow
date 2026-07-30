@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import Fuse, { type IFuseOptions, type FuseResult } from "fuse.js";
-import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
+import {
+  useAnnotationStore,
+  type AnnotationItem,
+} from "@/stores/annotation.store";
 
 // ── Search entry (flattened index item for Fuse) ────────────────────
 
@@ -158,7 +161,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
             aiResult = undefined;
           }
         } else {
-          aiResult = (ann.ai_data ?? undefined);
+          aiResult = ann.ai_data ?? undefined;
         }
 
         let fsrsCard: AnnotationItem["fsrsCard"];
@@ -169,7 +172,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
             fsrsCard = undefined;
           }
         } else {
-          fsrsCard = (ann.fsrs_data ?? undefined);
+          fsrsCard = ann.fsrs_data ?? undefined;
         }
 
         const item: AnnotationItem = {

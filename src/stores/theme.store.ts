@@ -30,7 +30,8 @@ const DEFAULT_CONFIG: ThemeConfig = {
 };
 
 function persist(config: ThemeConfig) {
-  void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });}
+  void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });
+}
 
 export const useThemeStore = create<ThemeStoreState>((set, get) => ({
   config: { ...DEFAULT_CONFIG },
@@ -86,8 +87,7 @@ export const useThemeStore = create<ThemeStoreState>((set, get) => ({
 export async function loadThemeFromVault(cfg?: Record<string, unknown>) {
   try {
     cfg ??= await window.siltflow.vaultConfigGet();
-    const saved = (cfg)[STORAGE_KEY] as
-      Partial<ThemeConfig> | undefined;
+    const saved = cfg[STORAGE_KEY] as Partial<ThemeConfig> | undefined;
     if (saved && typeof saved === "object") {
       // Migrate legacy boolean pdfDarkInvert
       const migrated = { ...saved };

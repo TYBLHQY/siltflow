@@ -1,6 +1,14 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useStyleStore } from "@/stores/style.store";
-import { PdfLoader, PdfHighlighter, type Highlight as RPHLHighlight, type PdfSelection, type GhostHighlight, type PdfHighlighterUtils, type PdfScaleValue } from "react-pdf-highlighter-plus";
+import {
+  PdfLoader,
+  PdfHighlighter,
+  type Highlight as RPHLHighlight,
+  type PdfSelection,
+  type GhostHighlight,
+  type PdfHighlighterUtils,
+  type PdfScaleValue,
+} from "react-pdf-highlighter-plus";
 import {
   useAnnotationStore,
   type AnnotationItem,
@@ -341,8 +349,10 @@ function PdfHighlighterWrapper({
     // Update local store immediately
     updateDoc(documentId, { totalPages });
 
-    void pdfDocument.getMetadata().then((meta) => {      const metadata = JSON.stringify(meta);
-      void window.siltflow.documents.updateMetadata({        id: documentId,
+    void pdfDocument.getMetadata().then((meta) => {
+      const metadata = JSON.stringify(meta);
+      void window.siltflow.documents.updateMetadata({
+        id: documentId,
         totalPages,
         metadata,
       });

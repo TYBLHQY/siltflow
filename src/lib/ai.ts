@@ -82,8 +82,8 @@ export async function chatCompletion(
     const deep =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ((response as any)?.choices?.[0]?.delta?.content ??
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (response as any)?.choices?.[0]?.text) ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (response as any)?.choices?.[0]?.text) ||
       "";
     if (deep) {
       console.warn("[ai] found content at alternate path:", deep.slice(0, 200));

@@ -10,8 +10,9 @@ export function usePanelLayout() {
   // Restore on mount
   useEffect(() => {
     let cancelled = false;
-    void window.siltflow.vaultConfigGet().then((cfg) => {      if (cancelled) return;
-      const saved = (cfg)[CONFIG_KEY];
+    void window.siltflow.vaultConfigGet().then((cfg) => {
+      if (cancelled) return;
+      const saved = cfg[CONFIG_KEY];
       if (Array.isArray(saved) && saved.length === 3) {
         setLayout(saved as number[]);
       }
@@ -24,7 +25,8 @@ export function usePanelLayout() {
 
   const saveLayoutRef = useRef(
     debounce((sizes: number[]) => {
-      void window.siltflow.vaultConfigSet({ [CONFIG_KEY]: sizes });    }, 300),
+      void window.siltflow.vaultConfigSet({ [CONFIG_KEY]: sizes });
+    }, 300),
   );
 
   const saveLayout = (sizes: number[]) => {

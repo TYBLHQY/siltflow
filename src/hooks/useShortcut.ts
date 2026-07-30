@@ -10,7 +10,10 @@
  */
 
 import { useEffect, useRef } from "react";
-import { useShortcutsStore, type ShortcutActionId } from "@/stores/shortcuts.store";
+import {
+  useShortcutsStore,
+  type ShortcutActionId,
+} from "@/stores/shortcuts.store";
 import { parseShortcut, matchShortcut } from "@/lib/keyboard-keys";
 
 interface UseShortcutOptions {

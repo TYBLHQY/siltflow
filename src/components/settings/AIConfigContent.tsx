@@ -44,7 +44,7 @@ export function AIConfigContent() {
                 {renameId === profile.id ? (
                   <input
                     className="w-40 rounded border bg-ctp-base px-2 py-0.5 text-sm"
-                    
+
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={() => {

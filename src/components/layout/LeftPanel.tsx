@@ -241,38 +241,41 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const currentDoc = useDocumentStore.getState().currentDocument;
 
     if (currentDoc && items.length === 0) {
-      void window.siltflow.fsrsCards.listByDocument(currentDoc.id).then((rows) => {        const cardAnnIds = new Set<string>();
-        const cards: Card[] = [];
-        for (const row of rows) {
-          cardAnnIds.add(row.annotationId);
-          try {
-            cards.push(JSON.parse(row.data));
-          } catch {
-            /* skip */
-          }
-        }
-        void window.siltflow.annotations.list(currentDoc.id).then((annotations) => {          const realAnnotations = annotations.filter(
-            (a) => a.kind !== "highlight",
-          );
-          for (const ann of realAnnotations) {
-            if (!cardAnnIds.has(ann.id)) {
-              cards.push(createNewCardStub());
+      void window.siltflow.fsrsCards
+        .listByDocument(currentDoc.id)
+        .then((rows) => {
+          const cardAnnIds = new Set<string>();
+          const cards: Card[] = [];
+          for (const row of rows) {
+            cardAnnIds.add(row.annotationId);
+            try {
+              cards.push(JSON.parse(row.data));
+            } catch {
+              /* skip */
             }
           }
-          const byDoc: Record<
-            string,
-            { title: string; cards: Card[] }
-          > = {
-            [currentDoc.id]: { title: currentDoc.title, cards },
-          };
-          const fresh = computeDocMetrics(byDoc);
-          setDocMetrics((prev) =>
-            prev.map(
-              (p) => fresh.find((f) => f.documentId === p.documentId) ?? p,
-            ),
-          );
+          void window.siltflow.annotations
+            .list(currentDoc.id)
+            .then((annotations) => {
+              const realAnnotations = annotations.filter(
+                (a) => a.kind !== "highlight",
+              );
+              for (const ann of realAnnotations) {
+                if (!cardAnnIds.has(ann.id)) {
+                  cards.push(createNewCardStub());
+                }
+              }
+              const byDoc: Record<string, { title: string; cards: Card[] }> = {
+                [currentDoc.id]: { title: currentDoc.title, cards },
+              };
+              const fresh = computeDocMetrics(byDoc);
+              setDocMetrics((prev) =>
+                prev.map(
+                  (p) => fresh.find((f) => f.documentId === p.documentId) ?? p,
+                ),
+              );
+            });
         });
-      });
       return;
     }
 
@@ -283,10 +286,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const annotationItems = items.filter((i) => i.kind !== "highlight");
     setDocMetrics((prev) => {
       const otherDocs = prev.filter((p) => !itemDocIds.has(p.documentId));
-      const byDoc: Record<
-        string,
-        { title: string; cards: Card[] }
-      > = {};
+      const byDoc: Record<string, { title: string; cards: Card[] }> = {};
       for (const doc of docs) {
         if (itemDocIds.has(doc.id))
           byDoc[doc.id] = { title: doc.title, cards: [] };
@@ -350,7 +350,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
 
   useEffect(() => {
     if (documents.length === 0) return;
-    void loadMetricsFull();  }, [documents.length, loadMetricsFull]);
+    void loadMetricsFull();
+  }, [documents.length, loadMetricsFull]);
 
   const metricsDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
@@ -364,7 +365,8 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   }, [annotationItems, computeMetricsFromItems]);
 
   useEffect(() => {
-    void loadFromDb();  }, [loadFromDb]);
+    void loadFromDb();
+  }, [loadFromDb]);
 
   const handleImport = async () => {
     try {

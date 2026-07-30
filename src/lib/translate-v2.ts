@@ -216,7 +216,7 @@ function buildOutputUserMessage(
   if (context) {
     const truncated =
       context.length > MAX_CONTEXT_LENGTH
-        ? `${context.slice(0, MAX_CONTEXT_LENGTH)  }…`
+        ? `${context.slice(0, MAX_CONTEXT_LENGTH)}…`
         : context;
     lines.push(
       `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncated}`,
@@ -334,7 +334,7 @@ export async function translateAnnotationV2(
     input,
     context: options.context
       ? options.context.length > MAX_CONTEXT_LENGTH
-        ? `${options.context.slice(0, MAX_CONTEXT_LENGTH)  }…`
+        ? `${options.context.slice(0, MAX_CONTEXT_LENGTH)}…`
         : options.context
       : null,
     output,

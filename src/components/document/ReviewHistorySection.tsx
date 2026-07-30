@@ -40,7 +40,8 @@ export function ReviewHistorySection({
   useEffect(() => {
     if (!logs) {
       setLoading(true);
-      void load(annotationId, documentId).finally(() => setLoading(false));    }
+      void load(annotationId, documentId).finally(() => setLoading(false));
+    }
   }, [annotationId, documentId, load, logs]);
 
   if (loading) {

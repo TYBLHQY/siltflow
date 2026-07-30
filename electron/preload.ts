@@ -149,9 +149,7 @@ export interface SiltflowAPI {
     }) => Promise<void>;
   };
   review: {
-    getDocMetrics: () => Promise<
-      DocReviewMetrics[]
-    >;
+    getDocMetrics: () => Promise<DocReviewMetrics[]>;
   };
 }
 

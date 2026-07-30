@@ -149,7 +149,12 @@ export function computeGradeDistribution(
 // ---------------------------------------------------------------------------
 
 export function computeStabilityHistogram(cards: Card[]): HistogramBin[] {
-  const bins: Array<{ label: string; min: number; max: number; count: number }> = [
+  const bins: Array<{
+    label: string;
+    min: number;
+    max: number;
+    count: number;
+  }> = [
     { label: "<1d", min: 0, max: 1, count: 0 },
     { label: "1–7d", min: 1, max: 7, count: 0 },
     { label: "7–30d", min: 7, max: 30, count: 0 },
@@ -227,7 +232,12 @@ export function computeDifficultyHistogram(cards: Card[]): HistogramBin[] {
 // ---------------------------------------------------------------------------
 
 export function computeIntervalHistogram(cards: Card[]): HistogramBin[] {
-  const bins: Array<{ label: string; min: number; max: number; count: number }> = [
+  const bins: Array<{
+    label: string;
+    min: number;
+    max: number;
+    count: number;
+  }> = [
     { label: "<1d", min: 0, max: 1, count: 0 },
     { label: "1–7d", min: 1, max: 7, count: 0 },
     { label: "7–30d", min: 7, max: 30, count: 0 },

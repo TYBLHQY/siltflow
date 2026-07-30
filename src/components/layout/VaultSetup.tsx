@@ -11,7 +11,8 @@ export function VaultSetup({ onReady }: VaultSetupProps) {
   const [, setVaultPath] = useState("");
 
   useEffect(() => {
-    void window.siltflow.vaultGetPath().then((p) => {      if (p) {
+    void window.siltflow.vaultGetPath().then((p) => {
+      if (p) {
         setVaultPath(p);
         onReady();
       } else {

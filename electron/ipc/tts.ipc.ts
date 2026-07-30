@@ -141,7 +141,9 @@ export function registerTTSHandlers() {
             unlink(tmpDir).catch(() => {});
             resolve(audioData);
           } catch (err) {
-            reject(new Error(`edge-tts: failed to read output: ${String(err)}`));
+            reject(
+              new Error(`edge-tts: failed to read output: ${String(err)}`),
+            );
           }
         });
       });

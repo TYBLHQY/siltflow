@@ -177,7 +177,8 @@ export function AIAnnotationResultBase({
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                void handleTranslate();              }}
+                void handleTranslate();
+              }}
               title="Translate"
               disabled={isTranslating}
             >
