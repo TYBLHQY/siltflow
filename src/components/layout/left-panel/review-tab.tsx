@@ -55,18 +55,24 @@ const ReviewTabRow = memo(function ReviewTabRow({
       <div className="flex flex-wrap items-center gap-1 mt-0.5">
         {hasTags ? (
           <>
-            <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
-              {metric.newCardsCount} new
-            </span>
-            <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
-              {metric.dueNowCount} due
-            </span>
-            <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
-              {metric.dueSoonCount} soon
-            </span>
             <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
               {retrievabilityLabel(metric.avgRetrievability)}
             </span>
+            {metric.newCardsCount > 0 && (
+              <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
+                {metric.newCardsCount} new
+              </span>
+            )}
+            {metric.dueNowCount > 0 && (
+              <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
+                {metric.dueNowCount} due
+              </span>
+            )}
+            {metric.dueSoonCount > 0 && (
+              <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
+                {metric.dueSoonCount} soon
+              </span>
+            )}
           </>
         ) : (
           <span className="rounded bg-ctp-surface1/60 px-1 py-0.5 font-medium text-ctp-overlay0">
@@ -120,7 +126,7 @@ export const ReviewTab = memo(function ReviewTab({
       <div className="shrink-0 border-b px-3 py-1">
         {docMetrics.length > 0 && (
           <div className="flex items-center justify-between">
-            {(["new", "due", "soon", "urgency"] as SortField[]).map((f) => (
+            {(["urgency", "new", "due", "soon"] as SortField[]).map((f) => (
               <Button
                 key={f}
                 variant="ghost"
