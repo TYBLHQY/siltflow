@@ -193,17 +193,18 @@ export function SummaryTab() {
 
       {/* Summary toolbar */}
       {summary && (
-        <div className="flex items-center gap-2 border-b px-3 py-1.5 shrink-0">
+        <div className="flex items-center gap-2 border-b px-3 py-1 shrink-0">
           {editingSummary ? (
             <>
               <Button
                 variant="ghost"
                 size="xs"
+                className="h-5 text-[10px]"
                 onClick={() => setEditingSummary(false)}
               >
                 Cancel
               </Button>
-              <Button size="xs" onClick={() => setEditingSummary(false)}>
+              <Button size="xs" className="h-5 text-[10px]" onClick={() => setEditingSummary(false)}>
                 Save
               </Button>
             </>
@@ -212,6 +213,7 @@ export function SummaryTab() {
               <Button
                 variant="ghost"
                 size="xs"
+                className="h-5 text-[10px]"
                 onClick={() => setEditingSummary(true)}
               >
                 <Pencil className="h-3 w-3" />
@@ -226,7 +228,7 @@ export function SummaryTab() {
               <Button
                 variant="ghost"
                 size="xs"
-                className="ml-auto hover:text-ctp-red"
+                className="h-5 ml-auto hover:text-ctp-red text-[10px]"
                 onClick={handleClearSummary}
               >
                 <Trash2 className="h-3 w-3" />

@@ -117,15 +117,15 @@ export const ReviewTab = memo(function ReviewTab({
   return (
     <>
       {/* Sort selector */}
-      <div className="shrink-0 border-b">
+      <div className="shrink-0 border-b px-3 py-1">
         {docMetrics.length > 0 && (
-          <div className="flex items-center gap-0.5 px-2 py-1.5">
+          <div className="flex items-center justify-between">
             {(["new", "due", "soon", "urgency"] as SortField[]).map((f) => (
               <Button
                 key={f}
                 variant="ghost"
                 size="xs"
-                className={`flex-1 h-6 px-1 text-[11px] ${
+                className={`h-5 px-1.5 text-[11px] ${
                   sortField === f
                     ? "bg-ctp-surface1 text-ctp-text hover:bg-ctp-surface1"
                     : ""

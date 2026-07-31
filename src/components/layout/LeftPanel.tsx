@@ -119,19 +119,19 @@ function DocumentOutlinePanel() {
 
   return (
     <>
-      <div className="shrink-0 border-b px-3 py-0.5">
+      <div className="shrink-0 border-b px-3 py-1">
         <div className="flex items-center justify-end">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+                  className="flex size-5 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                   onClick={toggleAll}
                 >
                   {allExpanded ? (
-                    <ChevronsUpDown className="size-4" />
+                    <ChevronsUpDown className="size-3.5" />
                   ) : (
-                    <ChevronsDownUp className="size-4" />
+                    <ChevronsDownUp className="size-3.5" />
                   )}
                 </button>
               </TooltipTrigger>
@@ -463,17 +463,17 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           value="documents"
           className="flex-1 min-h-0 mt-0 flex flex-col"
         >
-          <div className="shrink-0 border-b px-3 py-0.5">
+          <div className="shrink-0 border-b px-3 py-1">
             <div className="flex items-center justify-between">
               <div className="flex gap-1.5">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+                        className="flex size-5 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                         onClick={handleImport}
                       >
-                        <FileUp className="size-4" />
+                        <FileUp className="size-3.5" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={6}>
@@ -483,10 +483,10 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+                        className="flex size-5 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                         onClick={handleImportFolder}
                       >
-                        <FolderUp className="size-4" />
+                        <FolderUp className="size-3.5" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={6}>
@@ -499,10 +499,10 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      className="flex size-7 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
+                      className="flex size-5 items-center justify-center rounded-md text-ctp-overlay0 hover:bg-ctp-surface0 hover:text-ctp-text transition-colors"
                       onClick={() => docsTreeRef.current?.createFolder()}
                     >
-                      <FolderPlus className="size-4" />
+                      <FolderPlus className="size-3.5" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" sideOffset={6}>
