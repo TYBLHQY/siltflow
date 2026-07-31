@@ -10,7 +10,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState, useCallback } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { IconText } from "@/components/ui/icon-text";
 
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
@@ -148,7 +147,7 @@ export function SummaryTab() {
           )}
           {numPages} pages
         </Button>
-        <ScrollArea className="max-h-32">
+        <div className="max-h-32 overflow-y-auto">
           <div className="flex flex-wrap gap-1">
             {Array.from({ length: numPages }, (_, i) => {
               const p = i + 1;
@@ -170,7 +169,7 @@ export function SummaryTab() {
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
 
         <Button
           size="xs"
