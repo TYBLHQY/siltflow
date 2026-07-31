@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Loader2, BrainCircuit, FileText } from "lucide-react";
+import { Loader2, BrainCircuit } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, memo, useEffect } from "react";
 import type { DocReviewMetrics, SortField } from "@/lib/doc-review";
@@ -32,6 +32,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
   return (
     <div
       data-doc-id={metric.documentId}
+      title={metric.documentTitle}
       className={`group relative border-b border-ctp-overlay0/50 pl-3 text-sm transition-colors cursor-pointer ${
         isActive
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-ctp-yellow"
@@ -45,10 +46,8 @@ const ReviewTabRow = memo(function ReviewTabRow({
       }
     >
       <div className="flex items-center gap-2 min-w-0">
-        <FileText className="h-4 w-4 shrink-0 text-ctp-overlay0" />
         <span
           className="truncate min-w-0 flex-1 select-none"
-          title={metric.documentTitle}
         >
           {metric.documentTitle}
         </span>
