@@ -10,6 +10,8 @@ import {
 } from "react-pdf-highlighter-plus";
 import { useTTS } from "@/hooks/useTts";
 import { useAnnotationStore } from "@/stores/annotation.store";
+import { useDocumentStore } from "@/stores/document.store";
+import { useSummaryStore } from "@/stores/summary.store";
 import { Volume2, BookmarkPlus, Highlighter } from "lucide-react";
 import type { SiltflowHighlight } from "./PdfViewer";
 
@@ -36,6 +38,18 @@ export function SiltflowHighlightContainer({
 
   const updateItem = useAnnotationStore((s) => s.updateItem);
 
+  const documentId = useDocumentStore((s) => s.currentDocument?.id);
+  const summarySourceLang = useSummaryStore((s) =>
+    documentId ? s.summaries[documentId]?.sourceLang : undefined,
+  );
+
+  // Resolve the language for TTS voice selection the same way the right-panel
+  // card does: annotation AI language → document summary language → "en-US".
+  // Untranslated annotations have no aiResult, so without the summary fallback
+  // the highlight button would read the source text with the default voice
+  // (e.g. English) while the card uses the summary's language voice.
+  const ttsLang = highlight.sourceLang ?? summarySourceLang ?? "en-US";
+
   const handleDelete = useCallback(
     () => deleteHighlight(highlight.id),
     [deleteHighlight, highlight.id],
@@ -45,20 +59,14 @@ export function SiltflowHighlightContainer({
     onHighlightClick?.(highlight.id);
   }, [onHighlightClick, highlight.id]);
 
-  // TTS button for the highlight toolbar — source language comes from
-  // the annotation's AI result (same as card TTS), not from the doc summary.
+  // TTS button for the highlight toolbar — voice language resolved above.
   const tts = useTTS();
 
   const highlightTTSButton = highlight.content?.text ? (
     <button
       onClick={(e) => {
         e.stopPropagation();
-        void tts.speak(
-          highlight.content!.text!,
-          undefined,
-          highlight.sourceLang,
-          undefined,
-        );
+        void tts.speak(highlight.content!.text!, undefined, ttsLang, undefined);
       }}
       title="Read aloud"
       className="flex items-center justify-center w-6 h-6 hover:opacity-80 transition-opacity"
