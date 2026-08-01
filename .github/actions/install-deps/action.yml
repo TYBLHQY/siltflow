@@ -1,17 +1,8 @@
 name: "Install dependencies"
-description: "Checkout + pnpm setup (cached) + install with frozen lockfile. Shared by all CI jobs so dependency resolution/Electron download happens once and is cached."
-inputs:
-  fetch-depth:
-    description: "Number of commits to fetch. 0 for release (changelog), 1 otherwise."
-    required: false
-    default: "1"
+description: "pnpm setup (cached) + install with frozen lockfile. Shared by all CI jobs so dependency resolution/Electron download happens once and is cached. NOTE: the caller job must run actions/checkout BEFORE using this action (local composite actions are resolved from the working tree)."
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: ${{ inputs.fetch-depth }}
-
     - uses: pnpm/action-setup@v6
       with:
         version: 10
