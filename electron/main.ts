@@ -515,6 +515,13 @@ ipcMain.handle("shell:openExternal", async (_event, url: string) => {
   void shell.openExternal(url);
 });
 
+// Reveal a document's PDF file in the OS file manager (highlight selected)
+ipcMain.handle("shell:showItemInFolder", (_event, docId: string) => {
+  const vault = getVaultPath();
+  if (!vault) return;
+  shell.showItemInFolder(path.join(vault, "documents", `${docId}.pdf`));
+});
+
 // Expose the DB schema version to the renderer so About can display it
 ipcMain.handle("db:schemaVersion", () => {
   const sql = getSqlite();

@@ -12,6 +12,7 @@ import {
   PenLine,
   MousePointer2,
   Highlighter,
+  FolderOpen,
   BarChart3,
   Loader2,
 } from "lucide-react";
@@ -213,6 +214,30 @@ function FitWidthButton() {
 }
 
 // ---------------------------------------------------------------------------
+// Show-in-folder button — reveals the current PDF file in the OS file manager
+// ---------------------------------------------------------------------------
+function ShowInFolderButton() {
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
+
+  const handleClick = () => {
+    if (!currentDocument?.id) return;
+    void window.siltflow.showInFolder(currentDocument.id);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-6 w-6"
+      onClick={handleClick}
+      title="Show in folder"
+    >
+      <FolderOpen className="h-4 w-4" />
+    </Button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Settings button — opens unified settings dialog
 // ---------------------------------------------------------------------------
 function SettingsButton() {
@@ -343,6 +368,7 @@ export function CenterPanel({
           {docTitle && <PageNav />}
           {docTitle && <QuickAddToggle />}
           {docTitle && <FitWidthButton />}
+          {docTitle && <ShowInFolderButton />}
           <SettingsButton />
           <Button
             variant="ghost"
