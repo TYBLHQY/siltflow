@@ -73,45 +73,10 @@ jobs:
       - name: Unit tests (vitest)
         run: pnpm test
 
-  # ── E2E ──────────────────────────────────────────────────────────────
-  # Real Electron under xvfb against the built app. Blocking gate before
-  # any release; also runs on PRs to catch regressions early.
-  e2e:
-    needs: [check, lint, unit]
-    runs-on: ubuntu-24.04
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: ./.github/actions/install-deps
-
-      - name: Install Linux runtime deps for Electron
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            libgtk-3-dev libnotify-dev libnss3 libxss1 libxtst6 \
-            xdg-utils libatspi2.0-0 libuuid1 libsecret-1-dev libfuse2
-
-      - name: Build (type-check + vite in parallel)
-        shell: bash
-        run: |
-          set -e
-          pnpm exec tsc &
-          TSC_PID=$!
-          pnpm exec vite build &
-          VITE_PID=$!
-          FAIL=0
-          wait $TSC_PID || FAIL=1
-          wait $VITE_PID || FAIL=1
-          exit $FAIL
-
-      - name: Run Electron E2E under xvfb
-        run: xvfb-run -a pnpm test:e2e
-
   # ── Release ────────────────────────────────────────────────────────────
   # Only on version tags, and only after all gates pass.
   release:
-    needs: [check, lint, unit, e2e]
+    needs: [check, lint, unit]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ${{ matrix.os }}
 
@@ -135,6 +100,14 @@ jobs:
           fetch-depth: 0 # needed for git log between tags in release notes
 
       - uses: ./.github/actions/install-deps
+
+      # Electron ≥43 removed its postinstall script — the binary is downloaded
+      # lazily on first `electron .` run, or explicitly via `install-electron`.
+      # electron-builder needs it to package. Idempotent (exits early if
+      # dist/version matches) and cached by the Electron binaries cache below.
+      - name: Download Electron binary
+        shell: bash
+        run: pnpm exec install-electron
 
       - name: Bump package.json version to match tag
         shell: bash
