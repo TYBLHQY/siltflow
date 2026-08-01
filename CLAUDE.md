@@ -4,7 +4,7 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 
 ## 审计工具链
 
-所有工具均已配置，本地和 CI 均可运行。写代码后跑 `pnpm check:quick` 获得快速反馈。
+所有工具均已配置，本地均可运行（部分已接入 CI）。写代码后跑 `pnpm check:quick` 获得快速反馈。
 
 | 工具                   | 命令                                | 用途                               | 速度 | CI 阻塞 |
 | ---------------------- | ----------------------------------- | ---------------------------------- | ---- | ------- |
@@ -15,6 +15,7 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 | **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）           | <2s  | ✅      |
 | **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）    | ~5s  | ✅      |
 | **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                         | <2s  | ✅      |
+| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（13 测试，4 worker）| ~13s | —（未接入 CI） |
 
 ## 常用命令
 
@@ -28,6 +29,15 @@ pnpm format               # Prettier 格式化全部文件
 pnpm format:check         # Prettier 检查（CI 用）
 pnpm typecheck            # tsc --noEmit
 pnpm test                 # vitest run
+
+# Electron E2E（Playwright）
+# 先构建再跑：E2E 测的是 dist/ + dist-electron/ 产物，不是 dev server
+pnpm exec vite build && pnpm test:e2e
+
+# E2E 前提：需要显示环境（X11/Wayland），无 headless。headless 机器用
+# xvfb-run pnpm test:e2e。16 核/16GB 用 4 worker（e2e/playwright.config.ts），
+# 资源紧张降到 2。测试每次启动独立 Electron 实例（隔离 vault + profile），
+# 结束后自动清理临时目录。
 
 # 架构检查
 pnpm check:deps           # dependency-cruiser
@@ -69,6 +79,7 @@ Oxlint 启用了类型感知规则（`--type-aware`），当前项目存在一�
 | `.dependency-cruiser.cjs`  | 架构规则（`.cjs` 因为 package.json 有 `"type": "module"`） |
 | `eslint.config.mjs`        | ESLint 扁平配置                                            |
 | `tsconfig.json`            | TypeScript 配置（strict 模式）                             |
+| `e2e/playwright.config.ts` | Playwright Electron 配置（workers: 4，无 headless）         |
 | `.github/workflows/ci.yml` | CI 工作流                                                  |
 | `package.json`             | scripts 定义                                               |
 
