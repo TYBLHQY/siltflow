@@ -62,7 +62,10 @@ export function ShortcutsContent({
 
       // Handle special keys
       const key = e.key.toLowerCase();
-      if (["alt", "ctrl", "shift", "meta"].includes(key)) return; // modifier-only
+      // `e.key` returns "Control" for the Ctrl key (not "ctrl") — match the
+      // spec's canonical names so a bare Ctrl press isn't captured as a
+      // complete shortcut ("ctrl+control").
+      if (["alt", "control", "ctrl", "shift", "meta"].includes(key)) return; // modifier-only
 
       if (key === " ") {
         parts.push("space");
