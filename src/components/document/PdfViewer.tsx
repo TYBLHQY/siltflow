@@ -126,8 +126,8 @@ function selectionToAnnotation(
 // Fix: if the target page isn't rendered yet, first jump close with
 // `utils.goToPage(pageNumber)` (pdf.js's `scrollPageIntoView` computes far-page
 // offsets from viewport math, not live DOM rects). Then wait for the page's
-// text layer to render (`textlayerrendered` event) plus a short beat for the
-// library to build the highlight layer, and finish with the library's precise
+// text layer to render (`textlayerrendered` event) — at which point the
+// highlight layer is built — and finish with the library's precise
 // `scrollToHighlight`.
 // ---------------------------------------------------------------------------
 
@@ -188,29 +188,18 @@ function abortPendingScroll(): void {
   pendingScroll = null;
 }
 
-/** How long after the text layer renders to wait before the precise scroll.
- *  Gives the library a beat to build the highlight layer so the scroll isn't
- *  swallowed by the tail end of the page render. */
-const PRECISE_SCROLL_DELAY_MS = 1000;
-
-/** Phase B: after the target page renders, land exactly on the highlight.
- *  Scheduled with a delay so the highlight layer is in place. Idempotent —
- *  safe to call from both the event listener and the poll. */
+/** Phase B: after the target page's text layer renders, land exactly on the
+ *  highlight. Idempotent — safe to call from both the event listener and the
+ *  poll. */
 function settlePendingPreciseScroll(): void {
   if (!pendingScroll) return;
-  const { highlight, token, viewer, pageNumber, scrollToHighlight, pollId } =
+  const { highlight, token, viewer, pageNumber, scrollToHighlight } =
     pendingScroll;
   if (token !== navigationToken) return; // superseded by a newer navigation
-  // Clear any prior poll/timer so multiple event+poll hits don't stack timers.
-  if (pollId) clearTimeout(pollId);
-  const doScroll = () => {
-    if (!pendingScroll || pendingScroll.token !== token) return;
-    abortPendingScroll();
-    if (isPageRendered(viewer, pageNumber)) {
-      scrollToHighlight(highlight);
-    }
-  };
-  pendingScroll.pollId = setTimeout(doScroll, PRECISE_SCROLL_DELAY_MS);
+  abortPendingScroll();
+  if (isPageRendered(viewer, pageNumber)) {
+    scrollToHighlight(highlight);
+  }
 }
 
 const RENDER_POLL_INTERVAL_MS = 120;
