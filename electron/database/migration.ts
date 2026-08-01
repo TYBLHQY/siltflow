@@ -39,6 +39,10 @@ function migrateV1toV2(sqlite: Database.Database) {
   const aiCols = sqlite
     .prepare("PRAGMA table_info('ai_results')")
     .all() as ColumnInfo[];
+  // Table doesn't exist yet on a fresh DB (migrations run before
+  // createTables()) — skip the ALTER; createTables() creates it with the
+  // version column already present.
+  if (aiCols.length === 0) return;
   if (!aiCols.some((c: ColumnInfo) => c.name === "version")) {
     sqlite.exec(
       "ALTER TABLE ai_results ADD COLUMN version INTEGER NOT NULL DEFAULT 1",
@@ -52,6 +56,10 @@ function migrateV2toV3(sqlite: Database.Database) {
   const annoCols = sqlite
     .prepare("PRAGMA table_info('annotations')")
     .all() as ColumnInfo[];
+  // Table doesn't exist yet on a fresh DB (migrations run before
+  // createTables()) — skip the ALTER; createTables() creates it with the
+  // kind column already present.
+  if (annoCols.length === 0) return;
   if (!annoCols.some((c: ColumnInfo) => c.name === "kind")) {
     sqlite.exec(
       "ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'",
@@ -65,6 +73,8 @@ function migrateV3toV4(sqlite: Database.Database) {
   const annoCols = sqlite
     .prepare("PRAGMA table_info('annotations')")
     .all() as ColumnInfo[];
+  // Table doesn't exist yet on a fresh DB — skip; createTables() will make it.
+  if (annoCols.length === 0) return;
   if (!annoCols.some((c: ColumnInfo) => c.name === "kind")) {
     // Safety net: kind column should already exist from v2→v3
     sqlite.exec(
