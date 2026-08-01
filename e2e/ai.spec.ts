@@ -58,11 +58,9 @@ async function selectFirstLine(window: Page) {
   // onSelection never fires.
   await window.mouse.move(box!.x, box!.y + box!.height / 2);
   await window.mouse.down();
-  await window.mouse.move(
-    box!.x + box!.width * 0.8,
-    box!.y + box!.height / 2,
-    { steps: 10 },
-  );
+  await window.mouse.move(box!.x + box!.width * 0.8, box!.y + box!.height / 2, {
+    steps: 10,
+  });
   await window.mouse.up();
 }
 
