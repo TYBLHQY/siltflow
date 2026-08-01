@@ -6,15 +6,15 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 
 所有工具均已配置，本地均可运行（部分已接入 CI）。写代码后跑 `pnpm check:quick` 获得快速反馈。
 
-| 工具                   | 命令                                | 用途                                 | 速度 | CI 阻塞        |
-| ---------------------- | ----------------------------------- | ------------------------------------ | ---- | -------------- |
-| **Oxlint**             | `pnpm check:oxlint`                 | 类型感知 lint（120+ 规则）           | <2s  | ✅             |
-| **Knip**               | `pnpm check:knip`                   | 死代码检测（未使用导出/文件/依赖）   | ~2s  | ✅             |
-| **dependency-cruiser** | `pnpm check:deps`                   | 架构规则（循环依赖、跨层引用）       | ~5s  | ✅             |
-| **pnpm audit**         | `pnpm audit:deps`                   | CVE 扫描（high/critical）            | ~10s | ✅             |
-| **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）             | <2s  | ✅             |
-| **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）      | ~5s  | ✅             |
-| **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                           | <2s  | ✅             |
+| 工具                   | 命令                                | 用途                                 | 速度 | CI 阻塞              |
+| ---------------------- | ----------------------------------- | ------------------------------------ | ---- | -------------------- |
+| **Oxlint**             | `pnpm check:oxlint`                 | 类型感知 lint（120+ 规则）           | <2s  | ✅                   |
+| **Knip**               | `pnpm check:knip`                   | 死代码检测（未使用导出/文件/依赖）   | ~2s  | ✅                   |
+| **dependency-cruiser** | `pnpm check:deps`                   | 架构规则（循环依赖、跨层引用）       | ~5s  | ✅                   |
+| **pnpm audit**         | `pnpm audit:deps`                   | CVE 扫描（high/critical）            | ~10s | ✅                   |
+| **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）             | <2s  | ✅                   |
+| **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）      | ~5s  | ✅                   |
+| **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                           | <2s  | ✅                   |
 | **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（18 测试，2 worker） | ~24s | ✅（CI 用 xvfb-run） |
 
 > E2E AI 测试（`e2e/ai.spec.ts`）通过本地 mock OpenAI-compatible server（`e2e/mock-ai-server.ts`）运行：测试把 vault 里 AI profile 的 `baseUrl` 指向 mock（`seedAIConfig`，走 CSP 允许的 `http://localhost:*`），完整走通「点按钮 → fetch → 解析 → 渲染 → 持久化」链路，无需真实 API 密钥。mock 绑定双栈 `::`（`localhost` 可能解析为 IPv6 `::1`，单绑 IPv4 会导致请求落空）。
