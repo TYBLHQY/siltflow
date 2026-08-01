@@ -3,8 +3,6 @@ import {
   useAnnotationStore,
   type AnnotationItem,
 } from "@/stores/annotation.store";
-import { hasDetails } from "@/lib/annotation-helpers";
-import type { AIAnnotationDataV2 } from "@/types/annotation";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
 import { FSRSStats } from "@/components/document/FSRSStats";
 
@@ -68,11 +66,12 @@ export function AITranslateCard({
 
   // Save an edited text. V2 cards render `ai.input.normalized` (not item.text),
   // so a bare `{ text }` update wouldn't show up — sync normalized too so the
-  // edit is visible and survives a reload.
+  // edit is visible and survives a reload. Editing only ever runs for V2 cards:
+  // V1 cards are read-only and the edit toggle is gated to aiVersion === 2.
   const handleSaveText = useCallback(() => {
     const nextText = editText;
     if (item.aiVersion === 2) {
-      const ai = item.aiResult as AIAnnotationDataV2 | null | undefined;
+      const ai = item.aiResult;
       if (ai && "input" in ai) {
         updateItem(id, {
           text: nextText,
@@ -81,25 +80,24 @@ export function AITranslateCard({
       } else {
         updateItem(id, { text: nextText });
       }
-    } else {
-      updateItem(id, { text: nextText });
+      setEditing(false);
     }
-    setEditing(false);
   }, [editText, id, item.aiVersion, item.aiResult, updateItem]);
 
   const handleCardClick = () => {
-    if (ai) {
+    if (ai && isV2) {
       onToggleExpand(id);
     }
     onClick?.();
   };
 
-  // hasDetails only applies to V1 data; V2 uses its own type-based layout
-  const detailAvailable = ai && "translation" in ai ? hasDetails(ai) : false;
+  // V2 uses its own type-based layout; V1 cards render through UpgradeCard and
+  // have no details, so there is no legacy detail-availability gate.
   const isV2 = item.aiVersion === 2;
 
   // Action bar: only expose edit when at least one of delete/translate is
-  // provided (i.e., the caller wants a full-featured bar, not just TTS+Goto).
+  // provided (i.e., the caller wants a full-featured bar, not just TTS+Goto),
+  // AND the card is V2 — V1 cards are read-only (no pencil).
   const actionBarProps: {
     editing: boolean;
     onEditToggle?: () => void;
@@ -108,7 +106,7 @@ export function AITranslateCard({
     onGoToHighlight?: () => void;
   } = {
     editing,
-    ...(onDelete || onTranslate
+    ...(item.aiVersion === 2 && (onDelete || onTranslate)
       ? { onEditToggle: () => setEditing(!editing) }
       : {}),
     ...(onTranslate ? { onTranslate: () => onTranslate(id) } : {}),
@@ -147,7 +145,7 @@ export function AITranslateCard({
           /* ── Upper area: clickable to toggle expand ── */
           <div
             onClick={() => {
-              if (ai) onToggleExpand(id);
+              if (ai && isV2) onToggleExpand(id);
             }}
             className="cursor-pointer"
           >
@@ -161,44 +159,24 @@ export function AITranslateCard({
           </div>
         )}
 
-        {/* ── Collapsible details (animated) ── */}
-        {ai && (
+        {/* ── Collapsible details (animated, V2 only) ── */}
+        {ai && isV2 && (
           <div>
-            {/* V1 details */}
-            {detailAvailable && (
-              <div
-                className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-                style={{
-                  gridTemplateRows: expanded ? "1fr" : "0fr",
-                }}
-              >
-                <div className="overflow-hidden">
-                  <AIAnnotationResult
-                    item={item}
-                    showDetails
-                    sourceLang={sourceLang}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* V2 details */}
-            {isV2 && (
-              <div
-                className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-                style={{
-                  gridTemplateRows: expanded ? "1fr" : "0fr",
-                }}
-              >
-                <div className="overflow-hidden">
-                  <AIAnnotationResult
-                    item={item}
-                    showDetails
-                    sourceLang={sourceLang}
-                  />
-                </div>
+            <div
+              className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+              style={{
+                gridTemplateRows: expanded ? "1fr" : "0fr",
+              }}
+            >
+              <div className="overflow-hidden">
+                <AIAnnotationResult
+                  item={item}
+                  showDetails
+                  sourceLang={sourceLang}
+                />
               </div>
-            )}
+            </div>
 
             {showFSRS && item.fsrsCard && (
               <FSRSStats
@@ -213,7 +191,7 @@ export function AITranslateCard({
     );
   }
 
-  // ── Non-collapsible (legacy V1 / other uses) ──
+  // ── Non-collapsible (expanded detail card, e.g. search panel) ──
   return (
     <div
       className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-3 transition-colors cursor-pointer ${
@@ -250,34 +228,15 @@ export function AITranslateCard({
         />
       )}
 
-      {/* ── AI details (animated for V1, static for V2) ── */}
-      {ai && (
+      {/* ── AI details (V2; V1 cards have none) ── */}
+      {ai && isV2 && (
         <div className="mt-1.5">
-          <div
-            className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-            style={{
-              gridTemplateRows: expanded && detailAvailable ? "1fr" : "0fr",
-            }}
-          >
-            <div className="overflow-hidden">
-              {detailAvailable && (
-                <AIAnnotationResult
-                  item={item}
-                  showDetails
-                  sourceLang={sourceLang}
-                />
-              )}
-            </div>
-          </div>
-
           {/* V2 details — always shown in non-collapsible mode */}
-          {isV2 && (
-            <AIAnnotationResult
-              item={item}
-              showDetails
-              sourceLang={sourceLang}
-            />
-          )}
+          <AIAnnotationResult
+            item={item}
+            showDetails
+            sourceLang={sourceLang}
+          />
 
           {showFSRS && item.fsrsCard && (
             <FSRSStats

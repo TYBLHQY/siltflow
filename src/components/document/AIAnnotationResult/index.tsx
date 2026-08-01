@@ -1,6 +1,6 @@
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { AIAnnotationResultBase } from "@/components/document/AIAnnotationResult/base";
-import { AIAnnotationResultV1 } from "@/components/document/AIAnnotationResult/v1";
+import { AIAnnotationResultUpgradeCard } from "@/components/document/AIAnnotationResult/upgrade-card";
 import { AIAnnotationResultV2 } from "@/components/document/AIAnnotationResult/v2";
 
 export interface AIAnnotationResultProps {
@@ -21,20 +21,21 @@ export interface AIAnnotationResultProps {
 /**
  * Entry component for AI annotation rendering.
  *
- * - No aiVersion (untranslated) → AIAnnotationResultBase (blank slate)
- * - aiVersion === 1 → AIAnnotationResultV1
- * - aiVersion === 2 → AIAnnotationResultV2
+ * - aiVersion === 2 → AIAnnotationResultV2 (the only current schema)
+ * - aiVersion === 1 → AIAnnotationResultUpgradeCard (legacy V1 — read-only
+ *   prompt offering a V2 re-translate)
+ * - otherwise (undefined / null / unknown) → AIAnnotationResultBase (blank
+ *   untranslated slate)
  */
 export function AIAnnotationResult(props: AIAnnotationResultProps) {
   const { item } = props;
-
-  if (!item.aiVersion) return <AIAnnotationResultBase {...props} />;
 
   switch (item.aiVersion) {
     case 2:
       return <AIAnnotationResultV2 {...props} />;
     case 1:
+      return <AIAnnotationResultUpgradeCard {...props} />;
     default:
-      return <AIAnnotationResultV1 {...props} />;
+      return <AIAnnotationResultBase {...props} />;
   }
 }

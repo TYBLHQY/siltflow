@@ -11,7 +11,7 @@
 
 import type { AIProfile } from "@/types/ai";
 import { chatCompletion } from "@/lib/ai";
-import { inferGranularity } from "@/lib/annotation-helpers";
+import { inferGranularity } from "@/lib/granularity";
 import type {
   AIAnnotationDataV2,
   AIAnnotationInputV2,
@@ -304,11 +304,7 @@ export async function translateAnnotationV2(
 
   // Step 1: Program infers type
   // inferGranularity returns "word"|"phrase"|"sentence"
-  const typeHint = inferGranularity(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    {} as any,
-    options.text,
-  );
+  const typeHint = inferGranularity(options.text);
 
   // Step 2: Input AI (using inputProfile)
   const input = await callInputAI(

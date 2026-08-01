@@ -3,7 +3,6 @@ import {
   Highlighter,
   CheckSquare,
   Sparkles,
-  ArrowUpCircle,
   Plus,
   ArrowRight,
 } from "lucide-react";
@@ -39,8 +38,8 @@ interface AnnotationsTabProps {
 }
 
 // ── V2 shared translation helper ──────────────────────────────────────
-// V1 translate (single AI call for AIAnnotationDataV1) is no longer active.
-// All new translations use the V2 two-stage pipeline below.
+// All translations use the V2 two-stage pipeline. V1 cards (legacy data)
+// are read-only and surface a "re-translate" prompt via UpgradeCard.
 
 async function translateItemV2(
   item: { id: string; text: string },
@@ -124,7 +123,6 @@ export function AnnotationsTab({
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [batchTranslating, setBatchTranslating] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
   // Manual annotation dialog — visibility lives in the annotation store so
   // the global ctrl+T shortcut can open it even when this tab is unmounted.
   const manualDialogOpen = useAnnotationStore((s) => s.manualDialogOpen);
@@ -155,15 +153,6 @@ export function AnnotationsTab({
 
   const untranslatedCount = useMemo(
     () => items.filter((i) => i.aiResult === undefined).length,
-    [items],
-  );
-
-  const v1Count = useMemo(
-    () =>
-      items.filter(
-        (i) =>
-          i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2,
-      ).length,
     [items],
   );
 
@@ -241,54 +230,6 @@ export function AnnotationsTab({
     sourceLang,
   ]);
 
-  // ── Upgrade V1 → V2 ──────────────────────────────────────────────────
-  const handleUpgradeV1ToV2 = useCallback(async () => {
-    const v1Items = items.filter(
-      (i) =>
-        i.aiResult !== undefined && i.aiResult !== null && i.aiVersion !== 2,
-    );
-    if (v1Items.length === 0) {
-      showToast("All annotations are already V2", "info");
-      return;
-    }
-    if (!summary?.text?.trim()) {
-      showToast("Please generate a summary first", "info");
-      onTabChange?.("summary");
-      return;
-    }
-
-    setUpgrading(true);
-    const results = await Promise.all(
-      v1Items.map((item) =>
-        translateItemV2(
-          item,
-          sourceLang,
-          effectiveTargetLang,
-          summary?.text || undefined,
-          texts,
-          updateItem,
-          showToast,
-        ),
-      ),
-    );
-    setUpgrading(false);
-    const completed = results.filter(Boolean).length;
-    if (completed > 0)
-      showToast(
-        `Upgraded ${completed} annotation${completed > 1 ? "s" : ""} to V2`,
-        "info",
-      );
-  }, [
-    items,
-    summary,
-    texts,
-    updateItem,
-    showToast,
-    onTabChange,
-    effectiveTargetLang,
-    sourceLang,
-  ]);
-
   // ── Manual annotation creation ────────────────────────────────────
   // Clear the draft text each time the dialog opens (covers both the `+`
   // button and the global ctrl+T shortcut; when opened via shortcut the
@@ -353,18 +294,6 @@ export function AnnotationsTab({
                 title="Translate all untranslated annotations"
               >
                 <Sparkles className="h-3 w-3" />[{untranslatedCount}]
-              </Button>
-            )}
-            {v1Count > 0 && (
-              <Button
-                variant="ghost"
-                size="xs"
-                className="h-5 gap-0.5 text-[10px]"
-                onClick={handleUpgradeV1ToV2}
-                disabled={upgrading}
-                title="Re-translate V1 annotations with the V2 two-stage pipeline"
-              >
-                <ArrowUpCircle className="h-3 w-3" />[{v1Count}]
               </Button>
             )}
           </div>

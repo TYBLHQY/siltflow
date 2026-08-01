@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import type { ScaledPosition, Content } from "react-pdf-highlighter-plus";
-import type {
-  AIAnnotationDataV1,
-  AIAnnotationDataV2,
-} from "@/types/annotation";
+import type { AIAnnotationDataV2 } from "@/types/annotation";
 import type { Card } from "ts-fsrs";
 import { useReviewLogStore } from "@/stores/review-log.store";
 
@@ -22,8 +19,8 @@ export interface AnnotationItem {
   /** 1-indexed page number, consistent with react-pdf-highlighter-plus */
   pageNumber: number;
   embedData: AnnotationEmbedData;
-  /** AI analysis result — populated after translation request completes */
-  aiResult?: AIAnnotationDataV1 | AIAnnotationDataV2 | null;
+  /** AI analysis result — populated after translation request completes. */
+  aiResult?: AIAnnotationDataV2 | null;
   /** AI data version from ai_results.version, undefined if not yet translated. */
   aiVersion?: number | null;
   /** FSRS card state — set when first reviewed */
@@ -78,7 +75,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
     persistAnnotation(item);
     if (item.aiResult) {
       window.siltflow.aiResults
-        .save(item.id, item.documentId, item.aiResult, item.aiVersion ?? 1)
+        .save(item.id, item.documentId, item.aiResult, item.aiVersion ?? 2)
         .catch(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (err: any) => {
@@ -125,19 +122,21 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
       .getState()
       .items.find((i) => i.id === id);
     if (current) {
-      // When aiResult is set (not null, not deletion), assign the caller-specified
-      // version, or default to 1 for backward compatibility.
+      // When aiResult is set (not null, not deletion), default the version to 2
+      // (the current schema). V2 callers that only mutate existing V2 data
+      // (e.g. text edits syncing input.normalized) may omit aiVersion — without
+      // this default their patch would stomp a V2 card to an undefined version.
       if (patch.aiResult && patch.aiResult !== null) {
-        // Version is assigned by the caller (translate function knows its version).
-        // Fall back to 1 if no version provided (v1 callers).
-        patch.aiVersion ??= 1;
+        patch.aiVersion ??= 2;
       }
       const merged = { ...current, ...patch };
       // Always persist the annotation core
       persistAnnotation(merged);
       // Persist side tables if changed
       if (patch.aiResult !== undefined) {
-        const saveVersion = patch.aiVersion ?? 1;
+        // Current schema is V2 — fall back to it when the caller omits a version
+        // so V2 data survives app refresh (the IPC previously always wrote version=1).
+        const saveVersion = patch.aiVersion ?? 2;
         // Persist to DB. Use the caller-assigned version so V2 data
         // survives app refresh (the IPC previously always wrote version=1).
         window.siltflow.aiResults

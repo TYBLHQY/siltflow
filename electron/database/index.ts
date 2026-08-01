@@ -12,7 +12,7 @@ import path from "node:path";
 const SCHEMA_VERSION = 4;
 
 /** Current AI data version written to ai_results.version on save. */
-export const AI_DATA_VERSION = 1;
+export const AI_DATA_VERSION = 2;
 
 /** PRAGMA table_info row */
 interface ColumnInfo {
@@ -122,7 +122,7 @@ function createTables() {
       annotation_id TEXT NOT NULL,
       document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
       data TEXT NOT NULL,
-      version INTEGER NOT NULL DEFAULT 1,
+      version INTEGER NOT NULL DEFAULT 2,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (annotation_id, document_id)

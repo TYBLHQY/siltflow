@@ -44,8 +44,10 @@ function migrateV1toV2(sqlite: Database.Database) {
   // version column already present.
   if (aiCols.length === 0) return;
   if (!aiCols.some((c: ColumnInfo) => c.name === "version")) {
+    // New column defaults to the current schema (V2). Only affects columns
+    // created now; pre-existing rows are set by the save path, not here.
     sqlite.exec(
-      "ALTER TABLE ai_results ADD COLUMN version INTEGER NOT NULL DEFAULT 1",
+      "ALTER TABLE ai_results ADD COLUMN version INTEGER NOT NULL DEFAULT 2",
     );
   }
 }
