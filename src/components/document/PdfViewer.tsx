@@ -28,6 +28,7 @@ import "react-pdf-highlighter-plus/style/pdf_viewer.css";
 import { SiltflowHighlightContainer } from "./SiltflowHighlightContainer";
 import { SelectionTip } from "./SelectionTip";
 import { resolveHighlightCSSVar } from "@/lib/colors";
+import { sortItemsForZOrder } from "@/lib/highlight-z-order";
 
 // ---------------------------------------------------------------------------
 // SiltflowHighlight — our application-specific highlight extension
@@ -41,6 +42,8 @@ export interface SiltflowHighlight extends RPHLHighlight {
   highlightColor?: string;
   /** Source language from the annotation's AI result (BCP 47). */
   sourceLang?: string;
+  /** ISO timestamp from the backend (created_at), used for z-order tiebreaks. */
+  createdAt?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +88,7 @@ function annotationToHighlight(
     comment: "",
     highlightColor: resolveHighlightCSSVar(colorName),
     sourceLang: ai?.input?.source_lang,
+    createdAt: item.createdAt,
   };
 }
 
@@ -229,7 +233,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
 
   const [highlights, setHighlights] = useState<SiltflowHighlight[]>(() => {
     const { annotationColor, plainColor } = getColors();
-    return storeItems
+    return sortItemsForZOrder(storeItems)
       .filter((item) => item.kind !== "manual")
       .map((item) => annotationToHighlight(item, annotationColor, plainColor));
   });
@@ -243,7 +247,7 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   useEffect(() => {
     const { annotationColor, plainColor } = getColors();
     setHighlights(
-      storeItems
+      sortItemsForZOrder(storeItems)
         .filter((item) => item.kind !== "manual")
         .map((item) =>
           annotationToHighlight(item, annotationColor, plainColor),
@@ -303,16 +307,13 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
         kind,
       );
 
-      // Persist immediately (addItem persists via annotation.store)
-      const { annotationColor, plainColor } = getColors();
-      setHighlights((prev) => [
-        annotationToHighlight(item, annotationColor, plainColor),
-        ...prev,
-      ]);
+      // Persist via the store — addItem triggers the useEffect above, which
+      // re-sorts by z-order and re-renders the highlights array. No manual
+      // setHighlights here, so ordering stays consistent with reload.
       addItem(item);
       window.getSelection()?.removeAllRanges();
     },
-    [documentId, addItem, setPendingAnnotation, getColors],
+    [documentId, addItem, setPendingAnnotation],
   );
 
   /**

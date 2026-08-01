@@ -281,7 +281,7 @@ export function CenterPanel({
 
       setItems(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (saved || []).reverse().map((a: any) => ({
+        (saved || []).map((a: any) => ({
           id: a.id,
           documentId: a.document_id,
           type: a.type,
@@ -292,6 +292,7 @@ export function CenterPanel({
           aiResult: a.ai_data ?? undefined,
           aiVersion: a.ai_version ?? undefined,
           fsrsCard: a.fsrs_data ?? undefined,
+          createdAt: a.created_at ?? undefined,
         })),
       );
     });

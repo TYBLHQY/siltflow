@@ -35,7 +35,7 @@ interface AnnotationEnrichedValue {
   page_number: number | null;
   embed_data: unknown;
   kind: string;
-  created_at: string;
+  created_at?: string;
   updated_at: string;
   ai_data: unknown;
   ai_version: number | null;
@@ -80,7 +80,9 @@ export function registerAnnotationHandlers() {
     const sql = getSqlite();
     if (!sql) return [];
     const rows = sql
-      .prepare(`${LIST_ALL_SQL} WHERE a.document_id = ?`)
+      .prepare(
+        `${LIST_ALL_SQL} WHERE a.document_id = ? ORDER BY a.created_at ASC`,
+      )
       .all(documentId) as AnnotationJoinedRow[];
     return rows.map(mapEnriched);
   });
@@ -88,7 +90,9 @@ export function registerAnnotationHandlers() {
   ipcMain.handle("annotations:listAll", () => {
     const sql = getSqlite();
     if (!sql) return [];
-    const rows = sql.prepare(LIST_ALL_SQL).all() as AnnotationJoinedRow[];
+    const rows = sql
+      .prepare(`${LIST_ALL_SQL} ORDER BY a.created_at ASC`)
+      .all() as AnnotationJoinedRow[];
     return rows.map(mapEnriched);
   });
 
@@ -98,6 +102,9 @@ export function registerAnnotationHandlers() {
       const sql = getSqlite();
       if (!sql) return null;
       const now = new Date().toISOString();
+      // Preserve an existing created_at so edits don't masquerade as new
+      // annotations (created_at also drives the z-order tiebreak).
+      const createdAt = annotation.created_at ?? now;
       sql
         .prepare(
           `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
@@ -111,7 +118,7 @@ export function registerAnnotationHandlers() {
           annotation.page_number ?? 0,
           annotation.embed_data ?? "",
           annotation.kind || "annotation",
-          now,
+          createdAt,
           now,
         );
       invalidateReviewMetricsCache();

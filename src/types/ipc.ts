@@ -33,6 +33,8 @@ export interface AnnotationSaveRequest {
   page_number: number;
   embed_data: string;
   kind?: string;
+  /** ISO timestamp; preserved on edit so created_at drives z-order stably. */
+  created_at?: string;
 }
 
 export interface AnnotationRowIPC {

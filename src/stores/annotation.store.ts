@@ -28,6 +28,8 @@ export interface AnnotationItem {
   aiVersion?: number | null;
   /** FSRS card state — set when first reviewed */
   fsrsCard?: Card;
+  /** ISO timestamp from the backend (created_at). Used for z-order tiebreaks. */
+  createdAt?: string;
 }
 
 interface AnnotationState {
@@ -50,6 +52,7 @@ function persistAnnotation(item: AnnotationItem) {
       page_number: item.pageNumber,
       embed_data: JSON.stringify(item.embedData),
       kind: item.kind || "annotation",
+      created_at: item.createdAt,
     })
     .catch(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +88,10 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
           },
         );
     }
-    set((s) => ({ items: [item, ...s.items] }));
+    // Append (newest last): PdfViewer re-sorts by z-order before rendering,
+    // so the store order is not what determines DOM stacking. Appending keeps
+    // a freshly-added item at the tail (topmost layer) until the re-sort runs.
+    set((s) => ({ items: [...s.items, item] }));
   },
 
   removeItem: (id) => {
