@@ -6,16 +6,16 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 
 所有工具均已配置，本地均可运行（部分已接入 CI）。写代码后跑 `pnpm check:quick` 获得快速反馈。
 
-| 工具                   | 命令                                | 用途                               | 速度 | CI 阻塞 |
-| ---------------------- | ----------------------------------- | ---------------------------------- | ---- | ------- |
-| **Oxlint**             | `pnpm check:oxlint`                 | 类型感知 lint（120+ 规则）         | <2s  | ✅      |
-| **Knip**               | `pnpm check:knip`                   | 死代码检测（未使用导出/文件/依赖） | ~2s  | ✅      |
-| **dependency-cruiser** | `pnpm check:deps`                   | 架构规则（循环依赖、跨层引用）     | ~5s  | ✅      |
-| **pnpm audit**         | `pnpm audit:deps`                   | CVE 扫描（high/critical）          | ~10s | ✅      |
-| **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）           | <2s  | ✅      |
-| **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）    | ~5s  | ✅      |
-| **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                         | <2s  | ✅      |
-| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（13 测试，4 worker）| ~13s | —（未接入 CI） |
+| 工具                   | 命令                                | 用途                                 | 速度 | CI 阻塞        |
+| ---------------------- | ----------------------------------- | ------------------------------------ | ---- | -------------- |
+| **Oxlint**             | `pnpm check:oxlint`                 | 类型感知 lint（120+ 规则）           | <2s  | ✅             |
+| **Knip**               | `pnpm check:knip`                   | 死代码检测（未使用导出/文件/依赖）   | ~2s  | ✅             |
+| **dependency-cruiser** | `pnpm check:deps`                   | 架构规则（循环依赖、跨层引用）       | ~5s  | ✅             |
+| **pnpm audit**         | `pnpm audit:deps`                   | CVE 扫描（high/critical）            | ~10s | ✅             |
+| **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）             | <2s  | ✅             |
+| **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）      | ~5s  | ✅             |
+| **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                           | <2s  | ✅             |
+| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（14 测试，2 worker） | ~19s | —（未接入 CI） |
 
 ## 常用命令
 
@@ -35,9 +35,9 @@ pnpm test                 # vitest run
 pnpm exec vite build && pnpm test:e2e
 
 # E2E 前提：需要显示环境（X11/Wayland），无 headless。headless 机器用
-# xvfb-run pnpm test:e2e。16 核/16GB 用 4 worker（e2e/playwright.config.ts），
-# 资源紧张降到 2。测试每次启动独立 Electron 实例（隔离 vault + profile），
-# 结束后自动清理临时目录。
+# xvfb-run pnpm test:e2e。默认 2 worker（e2e/playwright.config.ts）——4 worker
+# 会争抢 CPU 导致远页平滑滚动测试偶发超时。测试每次启动独立 Electron 实例
+# （隔离 vault + profile），结束后自动清理临时目录。
 
 # 架构检查
 pnpm check:deps           # dependency-cruiser
@@ -79,7 +79,7 @@ Oxlint 启用了类型感知规则（`--type-aware`），当前项目存在一�
 | `.dependency-cruiser.cjs`  | 架构规则（`.cjs` 因为 package.json 有 `"type": "module"`） |
 | `eslint.config.mjs`        | ESLint 扁平配置                                            |
 | `tsconfig.json`            | TypeScript 配置（strict 模式）                             |
-| `e2e/playwright.config.ts` | Playwright Electron 配置（workers: 4，无 headless）         |
+| `e2e/playwright.config.ts` | Playwright Electron 配置（workers: 2，无 headless）        |
 | `.github/workflows/ci.yml` | CI 工作流                                                  |
 | `package.json`             | scripts 定义                                               |
 

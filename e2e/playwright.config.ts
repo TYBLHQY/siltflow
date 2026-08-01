@@ -10,8 +10,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * The app has no single-instance lock, so tests may run in parallel — each
  * `launchApp` boots an isolated Electron instance with its own `--user-data-dir`
  * and temp vault. `fullyParallel: false` keeps each spec file serial, but
- * Playwright hands different *files* to different workers (16-core / 15GB dev
- * box → up to 4 concurrent Electron instances ≈ 800MB, well within budget).
+ * Playwright hands different *files* to different workers.
+ *
+ * workers: 2 — a good middle ground. 4 concurrent Electron instances rasterizing
+ * a 350-page PDF contends for CPU and makes the far-page smooth-scroll test
+ * time out (~1/3 of runs at 4). 2 workers keep ~1.6× speedup over serial with
+ * far less contention.
  *
  * Tests run against the *built* app (`dist/` + `dist-electron/`), so build
  * before running: `pnpm exec vite build`.
@@ -22,9 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   testDir: __dirname,
   fullyParallel: false,
-  // 6 spec files across 4 workers; the longest file (viewer-interactions,
-  // 4 tests) gets its own worker while the others fan out.
-  workers: 4,
+  workers: 2,
   timeout: 120_000,
   expect: { timeout: 15_000 },
   reporter: [["list"]],

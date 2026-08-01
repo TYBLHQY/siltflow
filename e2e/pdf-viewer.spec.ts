@@ -99,6 +99,8 @@ test("scrolls to a far-page highlight from the annotations card", async () => {
     await goTo.click();
 
     // Wait for the viewer to scroll near the target (page 300 of 350).
+    // Smooth-scrolling 300 pages is frame-rate-bound — under parallel-worker
+    // CPU contention it can take well over 30s, so allow a generous budget.
     await window.waitForFunction(
       () => {
         const container =
@@ -114,7 +116,7 @@ test("scrolls to a far-page highlight from the annotations card", async () => {
         // Page top is at or above container bottom (page entered the viewport).
         return pageRect.top <= containerRect.bottom + 200;
       },
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     );
 
     // Sanity: scroll position is far from the top (we actually moved).

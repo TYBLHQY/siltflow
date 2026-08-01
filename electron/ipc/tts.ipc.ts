@@ -2,7 +2,7 @@ import { ipcMain } from "electron";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync } from "node:fs";
-import { readFile, unlink, writeFile } from "node:fs/promises";
+import { readFile, unlink, rmdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -88,6 +88,14 @@ export function registerTTSHandlers() {
       const tmpDir = mkdtempSync(join(tmpdir(), "siltflow-tts-"));
       const outPath = join(tmpDir, "tts.mp3");
 
+      // Remove the temp file + directory in every exit path (success, non-zero
+      // exit, or spawn failure). `unlink` only works on files — directories
+      // need `rmdir`, and only after their contents are gone.
+      const cleanup = () => {
+        unlink(outPath).catch(() => {});
+        rmdir(tmpDir).catch(() => {});
+      };
+
       const args = [
         "--text",
         text,
@@ -112,11 +120,13 @@ export function registerTTSHandlers() {
         });
 
         proc.on("error", (err) => {
+          cleanup();
           reject(new Error(`edge-tts failed to start: ${err.message}`));
         });
 
         proc.on("exit", async (code) => {
           if (code !== 0) {
+            cleanup();
             reject(new Error(`edge-tts exited with code ${code}: ${stderr}`));
             return;
           }
@@ -137,10 +147,10 @@ export function registerTTSHandlers() {
               }
             }
 
-            unlink(outPath).catch(() => {});
-            unlink(tmpDir).catch(() => {});
+            cleanup();
             resolve(audioData);
           } catch (err) {
+            cleanup();
             reject(
               new Error(`edge-tts: failed to read output: ${String(err)}`),
             );
