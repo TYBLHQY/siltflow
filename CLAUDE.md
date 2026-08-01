@@ -72,6 +72,11 @@ Oxlint 启用了类型感知规则（`--type-aware`），当前项目存在一�
 - `PdfViewer.tsx ↔ SiltflowHighlightContainer.tsx`：反向边是 `import type`，运行时安全。当前 `no-circular` 规则报了 error，需要在 `no-circular` 规则中通过 `allowed` 豁免，或重构类型到单独文件。
 - `no-inter-folder-circular` 是 warn 级别，仅关注即可。
 
+### 两个非显而易见的坑
+
+- **E2E 的 `executablePath` 必须是真实二进制** `node_modules/electron/dist/electron`；`.bin/electron` 是 shell 包装，会挂起 "Waiting for debugger"。
+- **`viewport.rawDims` 字段名陷阱**（PdfViewer.tsx fit-width）：字段是 `pageWidth`/`pageHeight`（PDF 单位），不是 `width`/`height`。用错 → scale 变 NaN，页面撑不满。
+
 ## 配置文件位置
 
 | 文件                       | 用途                                                       |
