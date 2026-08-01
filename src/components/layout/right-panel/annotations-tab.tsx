@@ -321,45 +321,47 @@ export function AnnotationsTab({
   return (
     <>
       {docId && (
-        <div className="shrink-0 flex items-center justify-between border-b px-3 py-1">
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-5 gap-0.5 text-[10px]"
-            onClick={handleStartLearning}
-            disabled={dueCount === 0}
-            title="Start Learning"
-          >
-            <CheckSquare className="h-3 w-3" />[{dueCount}]
-          </Button>
-          {untranslatedCount > 0 && (
+        <div className="shrink-0 flex items-center border-b px-3 py-1">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="xs"
               className="h-5 gap-0.5 text-[10px]"
-              onClick={handleBatchTranslate}
-              disabled={batchTranslating}
-              title="Translate all untranslated annotations"
+              onClick={handleStartLearning}
+              disabled={dueCount === 0}
+              title="Start Learning"
             >
-              <Sparkles className="h-3 w-3" />[{untranslatedCount}]
+              <CheckSquare className="h-3 w-3" />[{dueCount}]
             </Button>
-          )}
-          {v1Count > 0 && (
-            <Button
-              variant="ghost"
-              size="xs"
-              className="h-5 gap-0.5 text-[10px]"
-              onClick={handleUpgradeV1ToV2}
-              disabled={upgrading}
-              title="Re-translate V1 annotations with the V2 two-stage pipeline"
-            >
-              <ArrowUpCircle className="h-3 w-3" />[{v1Count}]
-            </Button>
-          )}
+            {untranslatedCount > 0 && (
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-5 gap-0.5 text-[10px]"
+                onClick={handleBatchTranslate}
+                disabled={batchTranslating}
+                title="Translate all untranslated annotations"
+              >
+                <Sparkles className="h-3 w-3" />[{untranslatedCount}]
+              </Button>
+            )}
+            {v1Count > 0 && (
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-5 gap-0.5 text-[10px]"
+                onClick={handleUpgradeV1ToV2}
+                disabled={upgrading}
+                title="Re-translate V1 annotations with the V2 two-stage pipeline"
+              >
+                <ArrowUpCircle className="h-3 w-3" />[{v1Count}]
+              </Button>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="xs"
-            className="h-5 gap-0.5"
+            className="h-5 gap-0.5 ml-auto"
             onClick={() => {
               setManualText("");
               setManualDialogOpen(true);
