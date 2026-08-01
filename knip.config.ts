@@ -19,7 +19,7 @@ const config: KnipConfig = {
   },
 
   // Files to exclude from analysis
-  ignore: ["scripts/gen-fake-data.mjs"],
+  ignore: ["scripts/*.mjs"],
 
   // Dependencies used in config files / build tools only
   ignoreDependencies: [
