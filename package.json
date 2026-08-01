@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "typecheck": "tsc",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -56,6 +57,7 @@
   },
   "devDependencies": {
     "@catppuccin/tailwindcss": "^1.0.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
