@@ -46,18 +46,13 @@ const ReviewTabRow = memo(function ReviewTabRow({
       }
     >
       <div className="flex items-center gap-2 min-w-0">
-        <span
-          className="truncate min-w-0 flex-1 select-none"
-        >
+        <span className="truncate min-w-0 flex-1 select-none">
           {metric.documentTitle}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+      <div className="flex flex-wrap items-center justify-end gap-1 mt-0.5">
         {hasTags ? (
           <>
-            <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
-              {retrievabilityLabel(metric.avgRetrievability)}
-            </span>
             {metric.newCardsCount > 0 && (
               <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
                 {metric.newCardsCount} new
@@ -73,6 +68,9 @@ const ReviewTabRow = memo(function ReviewTabRow({
                 {metric.dueSoonCount} soon
               </span>
             )}
+            <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
+              {retrievabilityLabel(metric.avgRetrievability)}
+            </span>
           </>
         ) : (
           <span className="rounded bg-ctp-surface1/60 px-1 py-0.5 font-medium text-ctp-overlay0">
@@ -125,7 +123,7 @@ export const ReviewTab = memo(function ReviewTab({
       {/* Sort selector */}
       <div className="shrink-0 border-b px-3 py-1">
         {docMetrics.length > 0 && (
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
             {(["urgency", "new", "due", "soon"] as SortField[]).map((f) => (
               <Button
                 key={f}
