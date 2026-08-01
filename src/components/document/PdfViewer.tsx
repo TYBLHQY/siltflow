@@ -126,15 +126,16 @@ function selectionToAnnotation(
 // Fix: if the target page isn't rendered yet, first jump close with
 // `utils.goToPage(pageNumber)` (pdf.js's `scrollPageIntoView` computes far-page
 // offsets from viewport math, not live DOM rects). Then wait for the page's
-// canvas to draw (`pagerendered` event / `data-loaded` attribute) and finish
-// with the library's precise `scrollToHighlight`.
+// text layer to render (`textlayerrendered` event) plus a short beat for the
+// library to build the highlight layer, and finish with the library's precise
+// `scrollToHighlight`.
 // ---------------------------------------------------------------------------
 
 /** Minimal structural type for the pdf.js event bus. `utils.getEventBus()` is
  *  typed `unknown | null`; the real object exposes on/off(eventName, listener). */
 interface PdfEventBus {
-  on(eventName: string, listener: (evt: unknown) => void): void;
-  off(eventName: string, listener: (evt: unknown) => void): void;
+  on: (eventName: string, listener: (evt: unknown) => void) => void;
+  off: (eventName: string, listener: (evt: unknown) => void) => void;
 }
 
 /** Immutable snapshot of a pending two-phase scroll, captured at click time. */
@@ -147,10 +148,8 @@ interface PendingScroll {
   /** The library's precise scroll, captured with its `utils` instance. */
   scrollToHighlight: (h: SiltflowHighlight) => void;
   eventBus?: PdfEventBus;
-  /** Bound `pagerendered` listener (kept for removal on abort/settle). */
+  /** Bound `textlayerrendered` listener (kept for removal on abort/settle). */
   onRendered?: (evt: unknown) => void;
-  /** Bound container scroll listener (kept for removal on abort/settle). */
-  onUserScrolled?: () => void;
   pollId?: ReturnType<typeof setTimeout>;
   pollTries?: number;
 }
@@ -164,43 +163,54 @@ function getTypedEventBus(utils: PdfHighlighterUtils): PdfEventBus | null {
   return bus ? (bus as PdfEventBus) : null;
 }
 
-/** True when the target page's canvas has been drawn. pdf.js sets the
- *  `data-loaded` attribute on the `.page` div when the canvas commits and
- *  removes it on eviction (`reset()`), so it's a public render signal. */
+/** True when the target page's text layer has been rendered — i.e. the page
+ *  has finished loading. pdf.js dispatches `textlayerrendered` after the text
+ *  layer DOM is ready, which is strictly after the canvas (`pagerendered`);
+ *  waiting for it avoids the highlight scroll being swallowed by the page's
+ *  remaining render work (the highlight layer is only built once the text
+ *  layer exists). */
 function isPageRendered(
   viewer: NonNullable<ReturnType<PdfHighlighterUtils["getViewer"]>>,
   pageNumber: number,
 ): boolean {
   const pageView = viewer.getPageView(pageNumber - 1);
-  const div = pageView?.div as HTMLElement | undefined;
-  return Boolean(div && div.hasAttribute("data-loaded"));
+  const textLayer = pageView?.textLayer;
+  return Boolean(textLayer?.div && textLayer.div.childElementCount > 0);
 }
 
-/** Cancel any pending navigation: clear the poll, unsubscribe the event, drop
- *  the scroll-abort listener, and null out the pending state. */
+/** Cancel any pending navigation: clear the poll, unsubscribe the event, and
+ *  null out the pending state. */
 function abortPendingScroll(): void {
   if (!pendingScroll) return;
-  const { pollId, eventBus, onRendered, onUserScrolled, viewer } =
-    pendingScroll;
+  const { pollId, eventBus, onRendered } = pendingScroll;
   if (pollId) clearTimeout(pollId);
-  if (eventBus && onRendered) eventBus.off("pagerendered", onRendered);
-  if (viewer && onUserScrolled) {
-    viewer.container.removeEventListener("scroll", onUserScrolled);
-  }
+  if (eventBus && onRendered) eventBus.off("textlayerrendered", onRendered);
   pendingScroll = null;
 }
 
-/** Phase B: once the target page renders, land exactly on the highlight.
- *  Idempotent — safe to call from both the event listener and the poll. */
+/** How long after the text layer renders to wait before the precise scroll.
+ *  Gives the library a beat to build the highlight layer so the scroll isn't
+ *  swallowed by the tail end of the page render. */
+const PRECISE_SCROLL_DELAY_MS = 1000;
+
+/** Phase B: after the target page renders, land exactly on the highlight.
+ *  Scheduled with a delay so the highlight layer is in place. Idempotent —
+ *  safe to call from both the event listener and the poll. */
 function settlePendingPreciseScroll(): void {
   if (!pendingScroll) return;
-  const { highlight, pageNumber, token, viewer, scrollToHighlight } =
+  const { highlight, token, viewer, pageNumber, scrollToHighlight, pollId } =
     pendingScroll;
-  abortPendingScroll();
   if (token !== navigationToken) return; // superseded by a newer navigation
-  if (isPageRendered(viewer, pageNumber)) {
-    scrollToHighlight(highlight);
-  }
+  // Clear any prior poll/timer so multiple event+poll hits don't stack timers.
+  if (pollId) clearTimeout(pollId);
+  const doScroll = () => {
+    if (!pendingScroll || pendingScroll.token !== token) return;
+    abortPendingScroll();
+    if (isPageRendered(viewer, pageNumber)) {
+      scrollToHighlight(highlight);
+    }
+  };
+  pendingScroll.pollId = setTimeout(doScroll, PRECISE_SCROLL_DELAY_MS);
 }
 
 const RENDER_POLL_INTERVAL_MS = 120;
@@ -229,10 +239,6 @@ function startTwoPhaseScrollToHighlight(
   // Phase A — coarse, instant jump using pdf.js's far-page offset math.
   utils.goToPage(pageNumber);
 
-  // Abort the pending precise jump if the user scrolls away mid-render.
-  const onUserScrolled = () => abortPendingScroll();
-  viewer.container.addEventListener("scroll", onUserScrolled);
-
   const eventBus = getTypedEventBus(utils);
   const onRendered = (evt: unknown) => {
     const { pageNumber: renderedPage } = (evt ?? {}) as { pageNumber?: number };
@@ -247,14 +253,16 @@ function startTwoPhaseScrollToHighlight(
     scrollToHighlight: (h) => utils.scrollToHighlight(h),
     eventBus: eventBus ?? undefined,
     onRendered,
-    onUserScrolled,
   };
 
   if (eventBus) {
-    eventBus.on("pagerendered", onRendered);
+    // Wait for the text layer, not the canvas: the highlight layer is only
+    // built once the text layer exists, so this avoids the remaining page
+    // render swallowing the precise scroll.
+    eventBus.on("textlayerrendered", onRendered);
   }
 
-  // Poll fallback — covers the case where `pagerendered` fires before we
+  // Poll fallback — covers the case where `textlayerrendered` fires before we
   // subscribe (extremely fast render) or the page re-renders after a zoom.
   const poll = () => {
     if (!pendingScroll || pendingScroll.token !== token) return;
