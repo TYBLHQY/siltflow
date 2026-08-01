@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   useAnnotationStore,
   type AnnotationItem,
 } from "@/stores/annotation.store";
 import { hasDetails } from "@/lib/annotation-helpers";
+import type { AIAnnotationDataV2 } from "@/types/annotation";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
 import { FSRSStats } from "@/components/document/FSRSStats";
 
@@ -65,6 +66,27 @@ export function AITranslateCard({
     }
   }, [editing]);
 
+  // Save an edited text. V2 cards render `ai.input.normalized` (not item.text),
+  // so a bare `{ text }` update wouldn't show up — sync normalized too so the
+  // edit is visible and survives a reload.
+  const handleSaveText = useCallback(() => {
+    const nextText = editText;
+    if (item.aiVersion === 2) {
+      const ai = item.aiResult as AIAnnotationDataV2 | null | undefined;
+      if (ai && "input" in ai) {
+        updateItem(id, {
+          text: nextText,
+          aiResult: { ...ai, input: { ...ai.input, normalized: nextText } },
+        });
+      } else {
+        updateItem(id, { text: nextText });
+      }
+    } else {
+      updateItem(id, { text: nextText });
+    }
+    setEditing(false);
+  }, [editText, id, item.aiVersion, item.aiResult, updateItem]);
+
   const handleCardClick = () => {
     if (ai) {
       onToggleExpand(id);
@@ -112,8 +134,7 @@ export function AITranslateCard({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                updateItem(id, { text: editText });
-                setEditing(false);
+                handleSaveText();
               }
               if (e.key === "Escape") {
                 setEditText(item.text);
@@ -210,8 +231,7 @@ export function AITranslateCard({
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              updateItem(id, { text: editText });
-              setEditing(false);
+              handleSaveText();
             }
             if (e.key === "Escape") {
               setEditText(item.text);
