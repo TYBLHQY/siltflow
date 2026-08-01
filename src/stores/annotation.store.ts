@@ -39,6 +39,10 @@ interface AnnotationState {
   removeItem: (id: string) => void;
   updateItem: (id: string, patch: Partial<AnnotationItem>) => void;
   clear: () => void;
+  /** Manual-annotation dialog visibility (store-owned so a global shortcut can open it even when the panel is collapsed / tab is unmounted). */
+  manualDialogOpen: boolean;
+  openManualDialog: () => void;
+  closeManualDialog: () => void;
 }
 
 /** Persist the full annotation to the Electron backend. */
@@ -64,6 +68,10 @@ function persistAnnotation(item: AnnotationItem) {
 
 export const useAnnotationStore = create<AnnotationState>((set) => ({
   items: [],
+
+  manualDialogOpen: false,
+  openManualDialog: () => set({ manualDialogOpen: true }),
+  closeManualDialog: () => set({ manualDialogOpen: false }),
 
   setItems: (items) => set({ items }),
   addItem: (item) => {

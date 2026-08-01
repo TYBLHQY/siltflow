@@ -5,6 +5,7 @@ import { LeftPanel } from "./LeftPanel";
 import { CenterPanel } from "./CenterPanel";
 import { RightPanel } from "./RightPanel";
 import { useDocumentStore } from "@/stores/document.store";
+import { useAnnotationStore } from "@/stores/annotation.store";
 import {
   usePdfViewerStore,
   type SelectionMode,
@@ -66,6 +67,16 @@ export function ThreeColumnLayout() {
     pf.setSelectionMode(modes[(idx + 1) % 3]);
   }, []);
 
+  // Add-manual-annotation: reveal the annotations tab and open the dialog.
+  // The dialog visibility lives in the annotation store, so this works even
+  // when the right panel is collapsed or the Annotations tab is unmounted
+  // (the dialog opens as soon as the tab mounts and reads the store state).
+  const handleAddManualAnnotation = useCallback(() => {
+    setRightTab("annotations");
+    setRightCollapsed(false);
+    useAnnotationStore.getState().openManualDialog();
+  }, []);
+
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
   const hasPdf = !!currentDocument?.id;
 
@@ -101,6 +112,9 @@ export function ThreeColumnLayout() {
   useShortcut("openSettings", handleSettingsOpen);
   useShortcut("toggleFitWidth", handleToggleFitWidth, { enabled: hasPdf });
   useShortcut("toggleQuickAdd", handleToggleQuickAdd, { enabled: hasPdf });
+  useShortcut("addManualAnnotation", handleAddManualAnnotation, {
+    enabled: hasPdf,
+  });
   // ──────────────────────────────────────────────────────────────────────────
 
   // Wait for layout to restore before rendering

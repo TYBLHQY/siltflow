@@ -97,6 +97,13 @@ export const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
     defaultKeys: "ctrl+e",
     keys: "ctrl+e",
   },
+  {
+    actionId: "addManualAnnotation",
+    label: "Add manual annotation",
+    context: "pdf-open",
+    defaultKeys: "ctrl+t",
+    keys: "ctrl+t",
+  },
   // Annotations tab
   {
     actionId: "searchAnnotations",

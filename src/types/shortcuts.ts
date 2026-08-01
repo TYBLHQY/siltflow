@@ -18,6 +18,7 @@ export type ShortcutActionId =
   | "toggleQuickAdd"
   // PDF open
   | "toggleFitWidth"
+  | "addManualAnnotation"
   // Annotations tab
   | "searchAnnotations"
   | "startLearning"

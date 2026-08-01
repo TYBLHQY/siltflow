@@ -125,8 +125,11 @@ export function AnnotationsTab({
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [batchTranslating, setBatchTranslating] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
-  // Manual annotation dialog
-  const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  // Manual annotation dialog — visibility lives in the annotation store so
+  // the global ctrl+T shortcut can open it even when this tab is unmounted.
+  const manualDialogOpen = useAnnotationStore((s) => s.manualDialogOpen);
+  const openManualDialog = useAnnotationStore((s) => s.openManualDialog);
+  const closeManualDialog = useAnnotationStore((s) => s.closeManualDialog);
   const [manualText, setManualText] = useState("");
   // Snapshot of dueItems taken when the learning session starts.
   // This is stable throughout the session so rating items (which
@@ -287,6 +290,13 @@ export function AnnotationsTab({
   ]);
 
   // ── Manual annotation creation ────────────────────────────────────
+  // Clear the draft text each time the dialog opens (covers both the `+`
+  // button and the global ctrl+T shortcut; when opened via shortcut the
+  // dialog may mount with manualDialogOpen already true).
+  useEffect(() => {
+    if (manualDialogOpen) setManualText("");
+  }, [manualDialogOpen, setManualText]);
+
   const handleCreateManual = useCallback(() => {
     const trimmed = manualText.trim();
     if (!trimmed || !docId) return;
@@ -315,8 +325,8 @@ export function AnnotationsTab({
     };
     addItem(item);
     setManualText("");
-    setManualDialogOpen(false);
-  }, [manualText, docId, addItem]);
+    closeManualDialog();
+  }, [manualText, docId, addItem, closeManualDialog]);
 
   return (
     <>
@@ -362,11 +372,8 @@ export function AnnotationsTab({
             variant="ghost"
             size="xs"
             className="h-5 gap-0.5 ml-auto"
-            onClick={() => {
-              setManualText("");
-              setManualDialogOpen(true);
-            }}
             title="Add manual annotation"
+            onClick={openManualDialog}
           >
             <Plus className="h-3 w-3" />
           </Button>
@@ -514,7 +521,12 @@ export function AnnotationsTab({
       />
 
       {/* Manual annotation creation dialog */}
-      <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+      <Dialog
+        open={manualDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeManualDialog();
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Manual Annotation</DialogTitle>
@@ -537,7 +549,7 @@ export function AnnotationsTab({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setManualDialogOpen(false)}
+              onClick={closeManualDialog}
             >
               Cancel
             </Button>
