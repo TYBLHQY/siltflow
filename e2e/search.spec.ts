@@ -7,6 +7,7 @@ import {
   makePosition,
   openDocument,
   waitForPdf,
+  waitForPageInViewport,
 } from "./helpers";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,21 +59,7 @@ test("search finds an annotation and jumping navigates + scrolls", async () => {
     await expect(window.getByPlaceholder("Search annotations…")).toHaveCount(0);
 
     // Viewer scrolled near page 7.
-    await window.waitForFunction(
-      () => {
-        const container =
-          document.querySelector<HTMLElement>(".PdfHighlighter");
-        if (!container) return false;
-        const target = container.querySelector<HTMLElement>(
-          '.page[data-page-number="7"]',
-        );
-        if (!target) return false;
-        const rect = target.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        return rect.top <= containerRect.bottom + 200;
-      },
-      { timeout: 30_000 },
-    );
+    await waitForPageInViewport(window, 7);
 
     // The matching annotation card is shown (annotation-click event expanded it).
     await expect(

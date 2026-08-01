@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { launchApp, seedDocument, openDocument, waitForPdf } from "./helpers";
+import {
+  launchApp,
+  seedDocument,
+  openDocument,
+  waitForPdf,
+  waitForPageInViewport,
+} from "./helpers";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
@@ -78,21 +84,7 @@ test("page-number input jumps to a far page", async () => {
     await pageInput.press("Enter");
 
     // Wait for the viewer to scroll to page 300 (page entered the viewport).
-    await window.waitForFunction(
-      () => {
-        const container =
-          document.querySelector<HTMLElement>(".PdfHighlighter");
-        if (!container) return false;
-        const target = container.querySelector<HTMLElement>(
-          '.page[data-page-number="300"]',
-        );
-        if (!target) return false;
-        const rect = target.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        return rect.top <= containerRect.bottom + 200;
-      },
-      { timeout: 30_000 },
-    );
+    await waitForPageInViewport(window, 300);
 
     // The nav input stays focused after Enter; its placeholder now reads the
     // jumped-to page (300), proving currentPage updated.

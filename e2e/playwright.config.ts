@@ -7,7 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Playwright config for Electron E2E tests.
  *
- * Electron apps are single-instance per launch, so we use a single worker.
+ * The app has no single-instance lock, so tests may run in parallel — each
+ * `launchApp` boots an isolated Electron instance with its own `--user-data-dir`
+ * and temp vault. `fullyParallel: false` keeps each spec file serial, but
+ * Playwright hands different *files* to different workers (16-core / 15GB dev
+ * box → up to 4 concurrent Electron instances ≈ 800MB, well within budget).
+ *
  * Tests run against the *built* app (`dist/` + `dist-electron/`), so build
  * before running: `pnpm exec vite build`.
  *
@@ -16,9 +21,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  */
 export default defineConfig({
   testDir: __dirname,
-  // Electron is not a browser we download; keep the default reporter/workers.
-  workers: 1,
   fullyParallel: false,
+  // 6 spec files across 4 workers; the longest file (viewer-interactions,
+  // 4 tests) gets its own worker while the others fan out.
+  workers: 4,
   timeout: 120_000,
   expect: { timeout: 15_000 },
   reporter: [["list"]],

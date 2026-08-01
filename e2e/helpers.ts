@@ -10,6 +10,7 @@ import {
   copyFileSync,
   existsSync,
   readFileSync,
+  rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -33,6 +34,8 @@ export interface LaunchedApp {
   window: Awaited<ReturnType<ElectronApplication["firstWindow"]>>;
   vault: string;
   profile: string;
+  /** Remove the temp vault + profile dirs. Call in `finally` after `app.close()`. */
+  cleanup: () => void;
 }
 
 /** Open the vault DB, creating the app's tables if they don't exist yet. */
@@ -286,7 +289,22 @@ export async function launchApp(
   // Wait for the main 3-pane UI (past VaultSetup).
   await window.waitForSelector(".split-view", { timeout: 30_000 });
 
-  return { app, window, vault, profile };
+  // Auto-clean the temp vault + profile dirs when the app closes, so repeated
+  // runs (especially with parallel workers) don't accumulate hundreds of
+  // scratch dirs in /tmp. Playwright emits 'close' after the process exits,
+  // so removing open files is safe.
+  const cleanup = () => {
+    for (const dir of [vault, profile]) {
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        /* already gone — nothing to clean */
+      }
+    }
+  };
+  app.once("close", cleanup);
+
+  return { app, window, vault, profile, cleanup };
 }
 
 /**
@@ -312,4 +330,34 @@ export async function waitForPdf(
 ) {
   await window.waitForSelector(".PdfHighlighter", { timeout: 30_000 });
   await window.waitForSelector(".pdfViewer .page", { timeout: 30_000 });
+}
+
+/**
+ * Wait until the given page number's div has entered the viewer viewport
+ * (its top is at or above the container's bottom edge, plus a small
+ * tolerance). Mirrors how the app's own scroll helpers verify a jump landed.
+ */
+export function waitForPageInViewport(
+  window: Awaited<ReturnType<ElectronApplication["firstWindow"]>>,
+  pageNumber: number,
+  {
+    tolerance = 200,
+    timeout = 30_000,
+  }: { tolerance?: number; timeout?: number } = {},
+) {
+  return window.waitForFunction(
+    ([page, tol]) => {
+      const container = document.querySelector<HTMLElement>(".PdfHighlighter");
+      if (!container) return false;
+      const target = container.querySelector<HTMLElement>(
+        `.page[data-page-number="${page}"]`,
+      );
+      if (!target) return false;
+      const rect = target.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      return rect.top <= containerRect.bottom + tol;
+    },
+    [pageNumber, tolerance],
+    { timeout },
+  );
 }

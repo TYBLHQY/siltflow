@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { launchApp, seedDocument, openDocument, waitForPdf } from "./helpers";
+import {
+  launchApp,
+  seedDocument,
+  openDocument,
+  waitForPdf,
+  waitForPageInViewport,
+} from "./helpers";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
@@ -30,22 +36,7 @@ test("document reopens on the last-read page", async () => {
 
     // The viewer should have opened on page 120 (initialPage), so page 120 is
     // near the top of the viewport and we're nowhere near page 1.
-    await window.waitForFunction(
-      () => {
-        const container =
-          document.querySelector<HTMLElement>(".PdfHighlighter");
-        if (!container) return false;
-        const target = container.querySelector<HTMLElement>(
-          '.page[data-page-number="120"]',
-        );
-        if (!target) return false;
-        const rect = target.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        // Page 120 is above the container's bottom edge (i.e. in/near viewport).
-        return rect.top <= containerRect.bottom + 200;
-      },
-      { timeout: 30_000 },
-    );
+    await waitForPageInViewport(window, 120);
 
     // And page 1 is NOT in the viewport (we did not start at the beginning).
     const page1Visible = await window.evaluate(() => {
@@ -82,13 +73,31 @@ test("scrolling persists lastPages to vault config", async () => {
       if (container) container.scrollTop = container.scrollHeight * 0.9;
     });
 
-    // The debounced write is 500ms — wait comfortably past it.
-    await window.waitForTimeout(2000);
+    // The debounced write is 500ms — poll the config file until the app's
+    // lastPages write lands instead of sleeping a fixed 2s (which can be too
+    // short on a loaded CI box or waste time when idle).
+    const cfgPath = path.join(vault, SILTFLOW_DIR, "config.json");
+    await expect
+      .poll(
+        () => {
+          try {
+            const cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
+            return (
+              (cfg as { lastPages?: Record<string, number> }).lastPages ?? null
+            );
+          } catch {
+            return null; // config not written yet
+          }
+        },
+        {
+          timeout: 15_000,
+          message: "lastPages never persisted to config.json",
+        },
+      )
+      .not.toBeNull();
 
     // Read the config the app wrote.
-    const cfg = JSON.parse(
-      readFileSync(path.join(vault, SILTFLOW_DIR, "config.json"), "utf-8"),
-    );
+    const cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
     const lastPages = (cfg as { lastPages?: Record<string, number> }).lastPages;
     expect(lastPages).toBeTruthy();
     const docId = Object.keys(lastPages!)[0];
