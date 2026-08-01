@@ -50,14 +50,19 @@ async function selectFirstLine(window: Page) {
   await expect(line).toBeVisible();
   const box = await line.boundingBox();
   expect(box).not.toBeNull();
-  // Keep the drag endpoint inside the page — extending past the page's right
-  // edge bleeds the selection onto the next page, moving the selection's
-  // commonAncestorContainer outside .PdfHighlighter so onSelection never fires.
+  // Drag across a fraction of the span's own width — proportional, so it works
+  // at any window size / fit-width scale (xvfb renders the page ~2× wider than
+  // a typical display). A fixed pixel delta can undershoot the span on wide
+  // windows, and overshooting the page's right edge bleeds the selection onto
+  // the next page, pushing commonAncestorContainer outside .PdfHighlighter so
+  // onSelection never fires.
   await window.mouse.move(box!.x, box!.y + box!.height / 2);
   await window.mouse.down();
-  await window.mouse.move(box!.x + 100, box!.y + box!.height / 2, {
-    steps: 10,
-  });
+  await window.mouse.move(
+    box!.x + box!.width * 0.8,
+    box!.y + box!.height / 2,
+    { steps: 10 },
+  );
   await window.mouse.up();
 }
 
