@@ -3,19 +3,16 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import { debounce } from "@/lib/utils";
 
 /**
- * Module-level refs for PDF viewer callbacks (goToPage, scrollToHighlight,
- * setViewerScale). These are not Zustand state — they're impure functions
- * registered by the PdfViewer component on mount and consumed by layout/
- * document panels. Using refs avoids serialization issues, devtools noise,
- * and the anti-pattern of storing functions in Zustand state.
+ * Module-level refs for PDF viewer callbacks (goToPage, scrollToHighlight).
+ * These are not Zustand state — they're impure functions registered by the
+ * PdfViewer component on mount and consumed by layout/document panels. Using
+ * refs avoids serialization issues, devtools noise, and the anti-pattern of
+ * storing functions in Zustand state.
  */
 const _goToPage: { current: ((pageNumber: number) => void) | null } = {
   current: null,
 };
 const _scrollToHighlight: { current: ((id: string) => void) | null } = {
-  current: null,
-};
-const _setViewerScale: { current: ((value: string) => void) | null } = {
   current: null,
 };
 
@@ -31,11 +28,6 @@ export function registerScrollToHighlight(
   _scrollToHighlight.current = fn;
 }
 
-/** Register a setViewerScale callback. Called once from PdfViewer on mount. */
-export function registerSetViewerScale(fn: typeof _setViewerScale.current) {
-  _setViewerScale.current = fn;
-}
-
 /** Go to a specific PDF page (may be no-op if viewer not yet mounted). */
 export function pdfGoToPage(pageNumber: number) {
   _goToPage.current?.(pageNumber);
@@ -44,11 +36,6 @@ export function pdfGoToPage(pageNumber: number) {
 /** Scroll to a highlight by annotation id (may be no-op if viewer not yet mounted). */
 export function pdfScrollToHighlight(id: string) {
   _scrollToHighlight.current?.(id);
-}
-
-/** Set viewer scale (e.g. "auto", "page-width"). */
-export function pdfSetViewerScale(value: string) {
-  _setViewerScale.current?.(value);
 }
 
 // ── SelectionMode ─────────────────────────────────────────────────────────

@@ -7,7 +7,6 @@ import { RightPanel } from "./RightPanel";
 import { useDocumentStore } from "@/stores/document.store";
 import {
   usePdfViewerStore,
-  pdfSetViewerScale,
   type SelectionMode,
 } from "@/stores/pdf-viewer.store";
 import { usePanelLayout } from "@/hooks/usePanelLayout";
@@ -49,14 +48,11 @@ export function ThreeColumnLayout() {
 
   const handleToggleFitWidth = useCallback(() => {
     const pf = usePdfViewerStore.getState();
-    if (pf.fitWidth) {
-      pdfSetViewerScale("auto");
-      pf.setFitWidth(false);
-      pf.setPdfScale(0);
-    } else {
-      pdfSetViewerScale("page-width");
-      pf.setFitWidth(true);
-    }
+    // Fit-width is implemented as a numeric scale that tracks the container
+    // width (see the ResizeObserver in PdfHighlighterWrapper), so toggling
+    // just flips the flag — opening it applies a fit-width numeric scale on
+    // the next observer tick, closing it keeps whatever zoom is currently set.
+    pf.setFitWidth(!pf.fitWidth);
   }, []);
 
   const handleToggleQuickAdd = useCallback(() => {

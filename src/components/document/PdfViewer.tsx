@@ -17,7 +17,6 @@ import {
   usePdfViewerStore,
   registerGoToPage,
   registerScrollToHighlight,
-  registerSetViewerScale,
 } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
@@ -115,158 +114,90 @@ function selectionToAnnotation(
 }
 
 // ---------------------------------------------------------------------------
-// Two-phase scroll-to-highlight
+// Scroll-to-highlight (ready-and-scroll)
 //
-// react-pdf-highlighter-plus's `scrollToHighlight` computes the target scroll
-// offset from `pageView.div.getBoundingClientRect()`. For a page far from the
-// current viewport, pdf.js virtualizes the page DOM (the `.page` div keeps its
-// dimensions but has no canvas yet), so `getBoundingClientRect()` returns all
-// zeros and the view gets stuck near the current position.
+// react-pdf-highlighter-plus's `scrollToHighlight` already handles far pages
+// correctly: pdf.js keeps every `.page` div in the DOM (vertical scroll mode)
+// with real geometry set from viewport math at construction, so the library's
+// target computation is accurate even before a page is rasterised (verified by
+// Playwright: a single call smooth-scrolls from page 1 to page 296 of a long
+// PDF even when the target highlight layer isn't rendered yet).
 //
-// Fix: if the target page isn't rendered yet, first jump close with
-// `utils.goToPage(pageNumber)` (pdf.js's `scrollPageIntoView` computes far-page
-// offsets from viewport math, not live DOM rects). Then wait for the page's
-// text layer to render (`textlayerrendered` event) — at which point the
-// highlight layer is built — and finish with the library's precise
-// `scrollToHighlight`.
+// The real failure modes are *timing*:
+//  - the target highlight may not be loaded yet (annotations load async from
+//    Electron after a document switch), and
+//  - the viewer may not be mounted yet.
+// Both are silent no-ops if we scroll immediately. So we defer the scroll until
+// the highlight exists in the ref AND the viewer is ready, polling briefly.
 // ---------------------------------------------------------------------------
 
-/** Minimal structural type for the pdf.js event bus. `utils.getEventBus()` is
- *  typed `unknown | null`; the real object exposes on/off(eventName, listener). */
-interface PdfEventBus {
-  on: (eventName: string, listener: (evt: unknown) => void) => void;
-  off: (eventName: string, listener: (evt: unknown) => void) => void;
-}
-
-/** Immutable snapshot of a pending two-phase scroll, captured at click time. */
-interface PendingScroll {
-  highlight: SiltflowHighlight;
-  pageNumber: number;
+/** A deferred scroll-to-highlight waiting for the viewer and the highlight. */
+interface QueuedScroll {
+  highlightId: string;
+  /** Captured with the utils instance so it always refers to the live viewer. */
+  utils: PdfHighlighterUtils;
   /** Abort token — bumped on every navigation so superseded scrolls bail out. */
   token: number;
-  viewer: NonNullable<ReturnType<PdfHighlighterUtils["getViewer"]>>;
-  /** The library's precise scroll, captured with its `utils` instance. */
-  scrollToHighlight: (h: SiltflowHighlight) => void;
-  eventBus?: PdfEventBus;
-  /** Bound `textlayerrendered` listener (kept for removal on abort/settle). */
-  onRendered?: (evt: unknown) => void;
   pollId?: ReturnType<typeof setTimeout>;
-  pollTries?: number;
+  tries?: number;
 }
 
-let pendingScroll: PendingScroll | null = null;
-let navigationToken = 0;
+let queuedScroll: QueuedScroll | null = null;
+let scrollToken = 0;
 
-/** Type the pdf.js event bus exposed by `utils.getEventBus()` (typed `unknown`). */
-function getTypedEventBus(utils: PdfHighlighterUtils): PdfEventBus | null {
-  const bus = utils.getEventBus();
-  return bus ? (bus as PdfEventBus) : null;
+const VIEWER_READY_POLL_INTERVAL_MS = 80;
+const VIEWER_READY_MAX_TRIES = 40; // ~3.2s cap; drop the scroll rather than spin
+
+/** Cancel any deferred scroll and its poll. */
+function clearQueuedScroll(): void {
+  if (!queuedScroll) return;
+  if (queuedScroll.pollId) clearTimeout(queuedScroll.pollId);
+  queuedScroll = null;
 }
 
-/** True when the target page's text layer has been rendered — i.e. the page
- *  has finished loading. pdf.js dispatches `textlayerrendered` after the text
- *  layer DOM is ready, which is strictly after the canvas (`pagerendered`);
- *  waiting for it avoids the highlight scroll being swallowed by the page's
- *  remaining render work (the highlight layer is only built once the text
- *  layer exists). */
-function isPageRendered(
-  viewer: NonNullable<ReturnType<PdfHighlighterUtils["getViewer"]>>,
-  pageNumber: number,
-): boolean {
-  const pageView = viewer.getPageView(pageNumber - 1);
-  const textLayer = pageView?.textLayer;
-  return Boolean(textLayer?.div && textLayer.div.childElementCount > 0);
-}
-
-/** Cancel any pending navigation: clear the poll, unsubscribe the event, and
- *  null out the pending state. */
-function abortPendingScroll(): void {
-  if (!pendingScroll) return;
-  const { pollId, eventBus, onRendered } = pendingScroll;
-  if (pollId) clearTimeout(pollId);
-  if (eventBus && onRendered) eventBus.off("textlayerrendered", onRendered);
-  pendingScroll = null;
-}
-
-/** Phase B: after the target page's text layer renders, land exactly on the
- *  highlight. Idempotent — safe to call from both the event listener and the
- *  poll. */
-function settlePendingPreciseScroll(): void {
-  if (!pendingScroll) return;
-  const { highlight, token, viewer, pageNumber, scrollToHighlight } =
-    pendingScroll;
-  if (token !== navigationToken) return; // superseded by a newer navigation
-  abortPendingScroll();
-  if (isPageRendered(viewer, pageNumber)) {
-    scrollToHighlight(highlight);
-  }
-}
-
-const RENDER_POLL_INTERVAL_MS = 120;
-const RENDER_POLL_MAX_TRIES = 25; // ~3s cap; stop on failure rather than spin
-
-/** Navigate to a highlight's page, handling far/unrendered pages in two phases:
- *  coarse `goToPage` jump, then precise `scrollToHighlight` once rendered. */
-function startTwoPhaseScrollToHighlight(
-  highlight: SiltflowHighlight,
-  pageNumber: number,
+/**
+ * Scroll to a highlight once it's loaded AND the viewer is ready — no jumps.
+ * `highlightsRef` stays current, so we re-find the highlight each poll (it may
+ * arrive after the annotation store finishes loading on a document switch).
+ */
+function scrollToHighlightWhenReady(
+  highlightId: string,
   utils: PdfHighlighterUtils,
+  highlightsRef: React.MutableRefObject<SiltflowHighlight[]>,
 ): void {
-  const viewer = utils.getViewer();
-  if (!viewer) return; // viewer not mounted — no-op
+  scrollToken++;
+  const token = scrollToken;
+  clearQueuedScroll(); // rapid clicks don't stack
 
-  navigationToken++;
-  const token = navigationToken;
-  abortPendingScroll(); // rapid clicks don't stack
-
-  // Target page already on screen — preserve the existing single-scroll path.
-  if (isPageRendered(viewer, pageNumber)) {
-    utils.scrollToHighlight(highlight);
-    return;
-  }
-
-  // Phase A — coarse, instant jump using pdf.js's far-page offset math.
-  utils.goToPage(pageNumber);
-
-  const eventBus = getTypedEventBus(utils);
-  const onRendered = (evt: unknown) => {
-    const { pageNumber: renderedPage } = (evt ?? {}) as { pageNumber?: number };
-    if (renderedPage === pageNumber) settlePendingPreciseScroll();
+  const tryScroll = (): boolean => {
+    const h = highlightsRef.current.find((hl) => hl.id === highlightId);
+    if (!h) return false; // highlight not loaded yet
+    if (!utils.getViewer()) return false; // viewer not mounted yet
+    // The library's single call lands on the exact highlight (smooth) and sets
+    // the accent-ring visual; it computes far-page targets from real geometry.
+    utils.scrollToHighlight(h);
+    return true;
   };
 
-  pendingScroll = {
-    highlight,
-    pageNumber,
-    token,
-    viewer,
-    scrollToHighlight: (h) => utils.scrollToHighlight(h),
-    eventBus: eventBus ?? undefined,
-    onRendered,
-  };
+  // Already ready — scroll immediately (the common case: same-document jump).
+  if (tryScroll()) return;
 
-  if (eventBus) {
-    // Wait for the text layer, not the canvas: the highlight layer is only
-    // built once the text layer exists, so this avoids the remaining page
-    // render swallowing the precise scroll.
-    eventBus.on("textlayerrendered", onRendered);
-  }
-
-  // Poll fallback — covers the case where `textlayerrendered` fires before we
-  // subscribe (extremely fast render) or the page re-renders after a zoom.
+  // Highlight or viewer not ready (e.g. mid document switch / annotation load).
+  queuedScroll = { highlightId, utils, token };
   const poll = () => {
-    if (!pendingScroll || pendingScroll.token !== token) return;
-    if (isPageRendered(viewer, pageNumber)) {
-      settlePendingPreciseScroll();
+    if (!queuedScroll || queuedScroll.token !== token) return;
+    if (tryScroll()) {
+      clearQueuedScroll();
       return;
     }
-    pendingScroll.pollTries = (pendingScroll.pollTries ?? 0) + 1;
-    if (pendingScroll.pollTries >= RENDER_POLL_MAX_TRIES) {
-      abortPendingScroll(); // leave view at the coarse-jumped page
+    queuedScroll.tries = (queuedScroll.tries ?? 0) + 1;
+    if (queuedScroll.tries >= VIEWER_READY_MAX_TRIES) {
+      clearQueuedScroll(); // never became ready — drop the deferred scroll
       return;
     }
-    pendingScroll.pollId = setTimeout(poll, RENDER_POLL_INTERVAL_MS);
+    queuedScroll.pollId = setTimeout(poll, VIEWER_READY_POLL_INTERVAL_MS);
   };
-  pendingScroll.pollId = setTimeout(poll, RENDER_POLL_INTERVAL_MS);
+  queuedScroll.pollId = setTimeout(poll, VIEWER_READY_POLL_INTERVAL_MS);
 }
 
 // ---------------------------------------------------------------------------
@@ -405,9 +336,9 @@ export function PdfViewer({ src, documentId, className }: PdfViewerProps) {
   useEffect(() => {
     return () => {
       registerScrollToHighlight(null);
-      // Drop any pending two-phase navigation so its eventBus listener and
-      // scroll-abort listener never outlive the viewer (also StrictMode-safe).
-      abortPendingScroll();
+      // Drop any deferred scroll so its poll never outlives the viewer
+      // (also StrictMode-safe).
+      clearQueuedScroll();
     };
   }, [documentId]);
 
@@ -486,6 +417,7 @@ function PdfHighlighterWrapper({
   const setPdfDocument = usePdfViewerStore((s) => s.setPdfDocument);
   const setCurrentPage = usePdfViewerStore((s) => s.setCurrentPage);
   const setPdfScale = usePdfViewerStore((s) => s.setPdfScale);
+  const setFitWidth = usePdfViewerStore((s) => s.setFitWidth);
   const pdfScale = usePdfViewerStore((s) => s.pdfScale);
   const fitWidth = usePdfViewerStore((s) => s.fitWidth);
   const lastPage = usePdfViewerStore((s) => s.lastPageByDocId[documentId]);
@@ -517,21 +449,21 @@ function PdfHighlighterWrapper({
     });
   }, [pdfDocument, documentId, updateDoc]);
 
-  // Example pattern: pdfScaleValue is always numeric (or undefined = auto).
-
-  // When fitWidth is active, pass "page-width" so the built-in ResizeObserver
-  // keeps applying it (otherwise undefined → "auto" overrides).
-  const numScale = pdfScale > 0 ? pdfScale : undefined;
-  const pdfScaleValue: PdfScaleValue | undefined = fitWidth
-    ? "page-width"
-    : numScale;
+  // Numeric scale is used for both fit-width and manual zoom. Using a fixed
+  // number (not the "page-width" preset) keeps page geometry static, so the
+  // library's scrollToHighlight target stays correct while smooth-scrolling —
+  // the dynamic page-width preset rescales on page change and drifts the target.
+  const pdfScaleValue: PdfScaleValue | undefined =
+    pdfScale > 0 ? pdfScale : undefined;
 
   const handleZoomChange = useCallback(
     (scale: number) => {
-      if (fitWidth) return;
+      // User manually zoomed (ctrl+wheel / pinch) — exit fit-width and adopt
+      // the chosen numeric scale.
       setPdfScale(Math.round(scale * 100) / 100);
+      setFitWidth(false);
     },
-    [fitWidth, setPdfScale],
+    [setPdfScale, setFitWidth],
   );
 
   /** Render a floating "Add annotation" tip after selection in manual mode. */
@@ -596,6 +528,45 @@ function PdfHighlighterWrapper({
     return () => el.removeEventListener("mousedown", onDragStart);
   }, []);
 
+  // ── Fit-to-width: keep a numeric scale that tracks container width ──────
+  // Unlike pdf.js's "page-width" preset (which rescales on page change and
+  // drifts the library's scrollToHighlight target mid-smooth-scroll), we
+  // compute a fixed numeric scale from the container width and the page's
+  // un-scaled PDF dimensions. The scale stays static while scrolling, so jump
+  // targets remain exact. Toggling fit-width off preserves the current zoom.
+  const viewerRef = useRef<ReturnType<PdfHighlighterUtils["getViewer"]>>(null);
+  const fitWidthRef = useRef(fitWidth);
+  fitWidthRef.current = fitWidth;
+  const applyFitWidthScale = useCallback(() => {
+    const viewer = viewerRef.current;
+    const container =
+      wrapperRef.current?.querySelector<HTMLElement>(".PdfHighlighter");
+    if (!viewer || !container) return;
+    // rawDims.pageWidth is the page's PDF-unit width (viewBox span); convert to
+    // CSS pixels (96/72). scale = container width / page CSS width, matching
+    // pdf.js's own "page-width" computation exactly.
+    const rawDims = viewer.getPageView(0)?.viewport?.rawDims as
+      { pageWidth: number } | undefined;
+    if (!rawDims?.pageWidth) return;
+    const cssWidth = rawDims.pageWidth * (96 / 72);
+    const scale = container.clientWidth / cssWidth;
+    setPdfScale(Math.round(scale * 1000) / 1000);
+    // Apply directly; the library's handleScaleValue keeps it (0.5% tolerance).
+    viewer.currentScale = Math.round(scale * 1000) / 1000;
+  }, [setPdfScale]);
+
+  useEffect(() => {
+    if (!fitWidth) return;
+    const container =
+      wrapperRef.current?.querySelector<HTMLElement>(".PdfHighlighter");
+    if (!container) return;
+    // Compute once now (viewer may already be ready), then on every resize.
+    applyFitWidthScale();
+    const observer = new ResizeObserver(applyFitWidthScale);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [fitWidth, applyFitWidthScale]);
+
   return (
     <div
       ref={wrapperRef}
@@ -614,28 +585,20 @@ function PdfHighlighterWrapper({
           // Unlock canvas resolution cap so page-width and zoomed views
           // render at full device resolution instead of CSS-only zoom.
           const viewer = utils.getViewer();
+          viewerRef.current = viewer;
           if (viewer) viewer.maxCanvasPixels = -1;
-
-          // Capture a raw scale setter so FitWidthButton/Settings can call
-          // viewer.currentScaleValue = "page-width" directly.
-          registerSetViewerScale((value: string) => {
-            if (viewer) viewer.currentScaleValue = value;
-          });
+          // If fit-width is active, apply the numeric scale now that the viewer
+          // is ready (the mount-time ResizeObserver tick may have run too early).
+          if (fitWidthRef.current) applyFitWidthScale();
 
           // Expose scrollToHighlight so RightPanel can call it
           // Use a ref so the closure always sees the latest highlights array.
           registerScrollToHighlight((id: string) => {
-            const h = highlightsRef.current.find((h) => h.id === id);
-            if (!h) return;
-            const pageNumber = h.position.boundingRect.pageNumber;
-            if (typeof pageNumber === "number" && pageNumber > 0) {
-              // Two-phase navigation handles far/unrendered target pages that
-              // the library's single scrollToHighlight would get stuck on.
-              startTwoPhaseScrollToHighlight(h, pageNumber, utils);
-            } else {
-              // Page-less highlights (e.g. manual annotations) — old path.
-              utils.scrollToHighlight(h);
-            }
+            // The library's scrollToHighlight computes far-page targets from
+            // real page geometry, so a single call suffices — defer only if the
+            // highlight isn't loaded yet or the viewer isn't mounted (both
+            // happen on a document switch, when annotations load async).
+            scrollToHighlightWhenReady(id, utils, highlightsRef);
           });
         }}
         onPageChange={(page: number) => {

@@ -21,7 +21,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   usePdfViewerStore,
   pdfGoToPage,
-  pdfSetViewerScale,
   type SelectionMode,
 } from "@/stores/pdf-viewer.store";
 import {
@@ -182,25 +181,19 @@ function QuickAddToggle() {
 }
 
 // ---------------------------------------------------------------------------
-// Fit-to-width toggle button.  Uses setViewerScale directly so it can pass
-// "page-width" / "auto" to viewer.currentScaleValue without going through the
-// numeric pdfScaleValue prop (which must stay a number for proximity-check).
+// Fit-to-width toggle button.  Fit-width is implemented as a numeric scale
+// that tracks the container width (see the ResizeObserver in
+// PdfHighlighterWrapper), so toggling just flips the flag — opening it applies
+// a fit-width numeric scale on the next observer tick, closing it keeps the
+// current zoom.
 // ---------------------------------------------------------------------------
 function FitWidthButton() {
   const fitWidth = usePdfViewerStore((s) => s.fitWidth);
   const setFitWidth = usePdfViewerStore((s) => s.setFitWidth);
-  const setPdfScale = usePdfViewerStore((s) => s.setPdfScale);
 
   const toggle = useCallback(() => {
-    if (fitWidth) {
-      pdfSetViewerScale("auto");
-      setPdfScale(undefined as unknown as number);
-    } else {
-      pdfSetViewerScale("page-width");
-      setPdfScale(undefined as unknown as number);
-    }
     setFitWidth(!fitWidth);
-  }, [fitWidth, setFitWidth, setPdfScale]);
+  }, [fitWidth, setFitWidth]);
 
   return (
     <Button
