@@ -25,7 +25,8 @@ const FIXTURE_PDF = path.resolve(__dirname, "fixtures", "test-350.pdf");
 // word must open.
 test("contained word highlight is clickable after reload (z-order)", async () => {
   const WORD = "easiest";
-  const SENT = "When symmetry permits, it affords by far the quickest and easiest way of computing electric fields.";
+  const SENT =
+    "When symmetry permits, it affords by far the quickest and easiest way of computing electric fields.";
 
   const { app, window } = await launchApp((vault) => {
     const docId = seedDocument(vault, FIXTURE_PDF, "E2E Test PDF");
@@ -50,14 +51,13 @@ test("contained word highlight is clickable after reload (z-order)", async () =>
     // Capture the annotation-click events dispatched by the renderer.
     await window.evaluate(() => {
       (window as unknown as { __zclicks: string[] }).__zclicks = [];
-      window.addEventListener(
-        "siltflow:annotation-click",
-        ((e: CustomEvent) => {
-          (window as unknown as { __zclicks: string[] }).__zclicks.push(
-            e.detail?.id,
-          );
-        }) as EventListener,
-      );
+      window.addEventListener("siltflow:annotation-click", ((
+        e: CustomEvent,
+      ) => {
+        (window as unknown as { __zclicks: string[] }).__zclicks.push(
+          e.detail?.id,
+        );
+      }) as EventListener);
     });
 
     // Wait for the highlight layer to render both parts.
@@ -90,9 +90,9 @@ test("contained word highlight is clickable after reload (z-order)", async () =>
     );
 
     // Right panel expands the word's card (the click feedback chain).
-    await expect(
-      window.locator('[data-annotation-id="word-ann"]'),
-    ).toBeVisible({ timeout: 20_000 });
+    await expect(window.locator('[data-annotation-id="word-ann"]')).toBeVisible(
+      { timeout: 20_000 },
+    );
   } finally {
     await app.close();
   }

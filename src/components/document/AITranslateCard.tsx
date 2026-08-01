@@ -232,11 +232,7 @@ export function AITranslateCard({
       {ai && isV2 && (
         <div className="mt-1.5">
           {/* V2 details — always shown in non-collapsible mode */}
-          <AIAnnotationResult
-            item={item}
-            showDetails
-            sourceLang={sourceLang}
-          />
+          <AIAnnotationResult item={item} showDetails sourceLang={sourceLang} />
 
           {showFSRS && item.fsrsCard && (
             <FSRSStats

@@ -203,7 +203,11 @@ export function SummaryTab() {
               >
                 Cancel
               </Button>
-              <Button size="xs" className="h-5 text-[10px]" onClick={() => setEditingSummary(false)}>
+              <Button
+                size="xs"
+                className="h-5 text-[10px]"
+                onClick={() => setEditingSummary(false)}
+              >
                 Save
               </Button>
             </>

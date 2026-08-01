@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useAnnotationStore, type AnnotationItem } from "@/stores/annotation.store";
+import {
+  useAnnotationStore,
+  type AnnotationItem,
+} from "@/stores/annotation.store";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
 
 // Mock the Electron preload bridge so the store's persistence side-effects
@@ -90,21 +93,17 @@ describe("annotation.store version handling", () => {
 
   it("keeps aiVersion === 2 when an edit patch omits aiVersion", () => {
     useAnnotationStore.setState({
-      items: [
-        makeItem({ aiResult: v2Result, aiVersion: 2 }),
-      ],
+      items: [makeItem({ aiResult: v2Result, aiVersion: 2 })],
     });
 
     // handleSaveText for a V2 card syncs input.normalized but passes no aiVersion.
-    useAnnotationStore
-      .getState()
-      .updateItem("a1", {
-        text: "GROK",
-        aiResult: {
-          ...v2Result,
-          input: { ...v2Result.input, normalized: "GROK" },
-        },
-      });
+    useAnnotationStore.getState().updateItem("a1", {
+      text: "GROK",
+      aiResult: {
+        ...v2Result,
+        input: { ...v2Result.input, normalized: "GROK" },
+      },
+    });
 
     const updated = useAnnotationStore.getState().items[0];
     expect(updated.aiVersion).toBe(2);
@@ -112,20 +111,16 @@ describe("annotation.store version handling", () => {
 
   it("persists the V2 version to aiResults when an edit patch omits aiVersion", () => {
     useAnnotationStore.setState({
-      items: [
-        makeItem({ aiResult: v2Result, aiVersion: 2 }),
-      ],
+      items: [makeItem({ aiResult: v2Result, aiVersion: 2 })],
     });
 
-    useAnnotationStore
-      .getState()
-      .updateItem("a1", {
-        text: "GROK",
-        aiResult: {
-          ...v2Result,
-          input: { ...v2Result.input, normalized: "GROK" },
-        },
-      });
+    useAnnotationStore.getState().updateItem("a1", {
+      text: "GROK",
+      aiResult: {
+        ...v2Result,
+        input: { ...v2Result.input, normalized: "GROK" },
+      },
+    });
 
     expect(savedVersions).toContain(2);
   });

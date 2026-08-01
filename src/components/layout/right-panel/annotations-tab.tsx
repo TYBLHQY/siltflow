@@ -475,11 +475,7 @@ export function AnnotationsTab({
             />
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={closeManualDialog}
-            >
+            <Button variant="outline" size="sm" onClick={closeManualDialog}>
               Cancel
             </Button>
             <Button

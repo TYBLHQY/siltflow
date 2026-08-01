@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { AnnotationItem } from "@/stores/annotation.store";
-import {
-  highlightArea,
-  sortItemsForZOrder,
-} from "@/lib/highlight-z-order";
+import { highlightArea, sortItemsForZOrder } from "@/lib/highlight-z-order";
 
 /** Minimal AnnotationItem with a position built from corner points. */
 function makeItem(
@@ -26,7 +23,15 @@ function makeItem(
     pageNumber: 1,
     embedData: {
       position: {
-        boundingRect: { x1, y1, x2, y2, width: 612, height: 792, pageNumber: 1 },
+        boundingRect: {
+          x1,
+          y1,
+          x2,
+          y2,
+          width: 612,
+          height: 792,
+          pageNumber: 1,
+        },
         rects: [{ x1, y1, x2, y2, width: 612, height: 792, pageNumber: 1 }],
         usePdfCoordinates: false,
       },
@@ -50,10 +55,34 @@ describe("highlightArea", () => {
       ...makeItem("m", { x1: 0, y1: 0, x2: 10, y2: 10 }),
       embedData: {
         position: {
-          boundingRect: { x1: 0, y1: 0, x2: 10, y2: 10, width: 612, height: 792, pageNumber: 1 },
+          boundingRect: {
+            x1: 0,
+            y1: 0,
+            x2: 10,
+            y2: 10,
+            width: 612,
+            height: 792,
+            pageNumber: 1,
+          },
           rects: [
-            { x1: 0, y1: 0, x2: 5, y2: 5, width: 612, height: 792, pageNumber: 1 },
-            { x1: 0, y1: 0, x2: 20, y2: 20, width: 612, height: 792, pageNumber: 2 },
+            {
+              x1: 0,
+              y1: 0,
+              x2: 5,
+              y2: 5,
+              width: 612,
+              height: 792,
+              pageNumber: 1,
+            },
+            {
+              x1: 0,
+              y1: 0,
+              x2: 20,
+              y2: 20,
+              width: 612,
+              height: 792,
+              pageNumber: 2,
+            },
           ],
           usePdfCoordinates: false,
         },
@@ -86,8 +115,20 @@ describe("sortItemsForZOrder", () => {
   });
 
   it("tie-breaks equal areas by createdAt, then id (deterministic)", () => {
-    const a = makeItem("a", { x1: 0, y1: 0, x2: 10, y2: 10, createdAt: "2026-01-01T00:00:00.000Z" });
-    const b = makeItem("b", { x1: 0, y1: 0, x2: 10, y2: 10, createdAt: "2026-01-02T00:00:00.000Z" });
+    const a = makeItem("a", {
+      x1: 0,
+      y1: 0,
+      x2: 10,
+      y2: 10,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    const b = makeItem("b", {
+      x1: 0,
+      y1: 0,
+      x2: 10,
+      y2: 10,
+      createdAt: "2026-01-02T00:00:00.000Z",
+    });
     expect(sortItemsForZOrder([b, a]).map((i) => i.id)).toEqual(["a", "b"]);
 
     // No createdAt → falls back to id order, still deterministic.
