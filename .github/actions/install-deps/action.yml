@@ -15,11 +15,3 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
-
-    # Electron ≥43 removed its postinstall script — the binary is downloaded
-    # lazily on first `electron .` run, or explicitly via the `install-electron`
-    # bin. Playwright E2E spawns the binary directly, so ensure it's present.
-    # Idempotent: install.js exits early when dist/version matches.
-    - name: Download Electron binary
-      shell: bash
-      run: pnpm exec install-electron
