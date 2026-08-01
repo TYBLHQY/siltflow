@@ -15,7 +15,7 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 | **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）             | <2s  | ✅             |
 | **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）      | ~5s  | ✅             |
 | **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                           | <2s  | ✅             |
-| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（18 测试，2 worker） | ~24s | —（未接入 CI） |
+| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（18 测试，2 worker） | ~24s | ✅（CI 用 xvfb-run） |
 
 > E2E AI 测试（`e2e/ai.spec.ts`）通过本地 mock OpenAI-compatible server（`e2e/mock-ai-server.ts`）运行：测试把 vault 里 AI profile 的 `baseUrl` 指向 mock（`seedAIConfig`，走 CSP 允许的 `http://localhost:*`），完整走通「点按钮 → fetch → 解析 → 渲染 → 持久化」链路，无需真实 API 密钥。mock 绑定双栈 `::`（`localhost` 可能解析为 IPv6 `::1`，单绑 IPv4 会导致请求落空）。
 
@@ -36,7 +36,7 @@ pnpm test                 # vitest run
 # 先构建再跑：E2E 测的是 dist/ + dist-electron/ 产物，不是 dev server
 pnpm exec vite build && pnpm test:e2e
 
-# E2E 前提：需要显示环境（X11/Wayland），无 headless。headless 机器用
+# E2E 前提：需要显示环境（X11/Wayland），无 headless。headless 机器（含 CI）用
 # xvfb-run pnpm test:e2e。默认 2 worker（e2e/playwright.config.ts）——4 worker
 # 会争抢 CPU 导致远页平滑滚动测试偶发超时。测试每次启动独立 Electron 实例
 # （隔离 vault + profile），结束后自动清理临时目录。
@@ -84,7 +84,7 @@ git push origin vX.Y.Z
 gh run list --repo TYBLHQY/siltflow --limit 3
 ```
 
-> 注意：CI 工作流（`.github/workflows/ci.yml`）只监听 `tags: ["v*"]` 和 PR 到 master 的事件，对 tag push 会先跑 `check`，通过后 Linux/macOS/Windows 三平台并行构建并创建 GitHub Release（Linux job 负责建 release，其余平台等待其就绪后上传产物）。
+> 注意：CI 工作流（`.github/workflows/ci.yml`）只监听 `tags: ["v*"]` 和 PR 到 master 的事件。check/lint/unit 三个 job 并行（快检查与慢检查互不阻塞），e2e 依赖它们先绿，release 依赖 e2e。对 tag push 全部通过后 Linux/macOS/Windows 三平台并行构建并创建 GitHub Release（Linux job 负责建 release，其余平台等待其就绪后上传产物）。依赖安装通过 `.github/actions/install-deps` 复合 action 共享，`setup-node` 的 pnpm cache 让各 job 秒装。
 
 ## 发现问题后的处理原则
 
