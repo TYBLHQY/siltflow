@@ -4,8 +4,6 @@ export interface TTSConfig {
   /** Active TTS provider */
   provider: TTSProvider;
   // ── edge-tts settings ──
-  /** Absolute path to edge-tts binary, or "" to search via PATH. */
-  binaryPath: string;
   /** Speech rate string, e.g. "+0%", "-10%", "+50%". */
   rate: string;
   /** Volume string, e.g. "+0%", "-20%", "+30%". */
@@ -16,7 +14,7 @@ export interface TTSConfig {
   defaultVoice: string;
   /** Per-language voice overrides: { "zh": "zh-CN-XiaoxiaoNeural", ... } */
   perLanguageVoices: Record<string, string>;
-  /** Cached voice lists from edge-tts --list-voices, keyed by language id. */
+  /** Cached voice lists from the Edge TTS voice list, keyed by language id. */
   voiceLists: Record<string, string[]>;
   // ── MiMo settings ──
   /** MiMo API key */

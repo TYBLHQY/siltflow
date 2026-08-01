@@ -124,10 +124,9 @@ export interface SiltflowAPI {
         rate?: string;
         volume?: string;
         pitch?: string;
-        binaryPath?: string;
       },
     ) => Promise<number[]>;
-    listVoices: (binaryPath?: string) => Promise<string[]>;
+    listVoices: () => Promise<Array<{ shortName: string; locale: string }>>;
   };
   folders: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -289,8 +288,7 @@ const api: SiltflowAPI = {
   tts: {
     speak: (text, options) =>
       ipcRenderer.invoke("tts:speak", text, options ?? {}),
-    listVoices: (binaryPath?: string) =>
-      ipcRenderer.invoke("tts:listVoices", binaryPath),
+    listVoices: () => ipcRenderer.invoke("tts:listVoices"),
   },
 };
 

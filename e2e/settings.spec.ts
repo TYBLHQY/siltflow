@@ -16,9 +16,9 @@ type Window = Awaited<ReturnType<ElectronApplication["firstWindow"]>>;
 //   2. Persistence — poll config.json until the app's async write lands
 //      (same pattern as last-page.spec.ts).
 //
-// TTS tab note: opening it auto-triggers `refreshVoices()` (spawns
-// `edge-tts --list-voices`) unless `voiceLists` is already cached. Tests that
-// open the TTS tab seed a voiceLists entry so no external process is needed.
+// TTS tab note: opening it auto-triggers `refreshVoices()` (calls the Edge TTS
+// voice list over the network) unless `voiceLists` is already cached. Tests
+// that open the TTS tab seed a voiceLists entry so no external call is needed.
 // ---------------------------------------------------------------------------
 
 /** Merge a config patch into the vault's config.json BEFORE the app boots. */
@@ -70,7 +70,7 @@ async function openSettings(window: Window) {
 // ---------------------------------------------------------------------------
 test("settings dialog renders all tabs and About update toggle persists", async () => {
   const { app, window, vault } = await launchApp((vaultDir) => {
-    // Pre-cache TTS voices so opening the TTS tab doesn't spawn edge-tts.
+    // Pre-cache TTS voices so opening the TTS tab doesn't hit the network.
     writeConfig(vaultDir, {
       ttsConfig: {
         provider: "edge-tts",
@@ -255,7 +255,7 @@ test("FSRS retention slider changes and reset restores defaults", async () => {
 // ---------------------------------------------------------------------------
 test("TTS provider switch from Edge-TTS to MiMo persists", async () => {
   const { app, window, vault } = await launchApp((vaultDir) => {
-    // Pre-cache voices so the TTS tab doesn't spawn edge-tts --list-voices.
+    // Pre-cache voices so the TTS tab doesn't fetch the voice list.
     writeConfig(vaultDir, {
       ttsConfig: {
         provider: "edge-tts",

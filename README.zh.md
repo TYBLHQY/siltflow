@@ -46,5 +46,5 @@
 
 支持两个引擎：
 
-- **Edge-TTS** — 本地运行，需 `pip install edge-tts`。可为每种语言独立配置语音、语速、音量、音高和二进制路径。
+- **Edge-TTS** — 内置 `edge-tts-universal`（无需 Python）。可为每种语言独立配置语音、语速、音量、音高。
 - **MiMo** — 小米云端 API。需要 API Key，支持预设语音模型以及语音设计/克隆。

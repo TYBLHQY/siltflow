@@ -135,10 +135,9 @@ export interface SiltflowAPI {
         rate?: string;
         volume?: string;
         pitch?: string;
-        binaryPath?: string;
       },
     ) => Promise<number[]>;
-    listVoices: (binaryPath?: string) => Promise<string[]>;
+    listVoices: () => Promise<Array<{ shortName: string; locale: string }>>;
   };
   folders: {
     list: () => Promise<FolderRowIPC[]>;

@@ -47,7 +47,7 @@ export default defineConfig({
         vite: {
           build: {
             rolldownOptions: {
-              external: ["better-sqlite3"],
+              external: ["better-sqlite3", "edge-tts-universal"],
             },
             minify: "esbuild",
           },

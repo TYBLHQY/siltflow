@@ -72,22 +72,6 @@ export function TTSConfigContent() {
         {/* ── Edge-TTS settings ── */}
         {config.provider === "edge-tts" && (
           <>
-            {/* Binary path */}
-            <div>
-              <label className="block text-xs font-medium mb-1">
-                Binary path
-              </label>
-              <input
-                className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
-                value={config.binaryPath}
-                onChange={(e) => setConfig({ binaryPath: e.target.value })}
-                placeholder="edge-tts (via PATH)"
-              />
-              <p className="text-xs text-ctp-overlay0 mt-0.5">
-                Absolute path or leave empty to search via PATH.
-              </p>
-            </div>
-
             {/* Rate / Volume / Pitch */}
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -153,7 +137,7 @@ export function TTSConfigContent() {
                   className="flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-text disabled:opacity-50"
                   onClick={() => refreshVoices()}
                   disabled={loadingVoices}
-                  title="Refresh voice list from edge-tts --list-voices"
+                  title="Refresh voice list from Edge TTS"
                 >
                   {loadingVoices ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -224,8 +208,8 @@ export function TTSConfigContent() {
             </div>
 
             <p className="text-xs text-ctp-overlay0">
-              Requires <code>pip install edge-tts</code> · Voices provided by
-              Microsoft Edge online TTS.
+              Powered by edge-tts-universal (bundled, no Python required) ·
+              Voices provided by Microsoft Edge online TTS.
             </p>
           </>
         )}

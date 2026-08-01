@@ -1,19 +1,14 @@
 import { ipcMain } from "electron";
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync } from "node:fs";
-import { readFile, unlink, rmdir, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync } from "node:fs";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { UniversalEdgeTTS, listVoices } from "edge-tts-universal";
 
 let vaultCacheDir = "";
 
 export function setTtsCacheDir(dir: string) {
   vaultCacheDir = dir;
-}
-
-function getEdgeTtsBin(customPath?: string): string {
-  return customPath && customPath.length > 0 ? customPath : "edge-tts";
 }
 
 /** Build a stable cache key from (text, voice, rate, volume, pitch). */
@@ -68,10 +63,8 @@ export function registerTTSHandlers() {
         rate?: string;
         volume?: string;
         pitch?: string;
-        binaryPath?: string;
       },
     ) => {
-      const bin = getEdgeTtsBin(options.binaryPath);
       const voice = options.voice ?? "en-US-EmmaMultilingualNeural";
       const rate = options.rate ?? "+0%";
       const volume = options.volume ?? "+0%";
@@ -85,124 +78,30 @@ export function registerTTSHandlers() {
         return Array.from(new Uint8Array(buf));
       }
 
-      const tmpDir = mkdtempSync(join(tmpdir(), "siltflow-tts-"));
-      const outPath = join(tmpDir, "tts.mp3");
+      // Synthesize in memory via edge-tts-universal (no temp files). Throws
+      // EdgeTTSException subclasses on network/protocol failure.
+      const tts = new UniversalEdgeTTS(text, voice, { rate, volume, pitch });
+      const result = await tts.synthesize();
+      const buf = Buffer.from(await result.audio.arrayBuffer());
 
-      // Remove the temp file + directory in every exit path (success, non-zero
-      // exit, or spawn failure). `unlink` only works on files — directories
-      // need `rmdir`, and only after their contents are gone.
-      const cleanup = () => {
-        unlink(outPath).catch(() => {});
-        rmdir(tmpDir).catch(() => {});
-      };
+      // Cache the result
+      if (cachePath) {
+        try {
+          if (!existsSync(vaultCacheDir))
+            mkdirSync(vaultCacheDir, { recursive: true });
+          await writeFile(cachePath, buf);
+          trimCache().catch(() => {});
+        } catch {
+          /* cache write best effort */
+        }
+      }
 
-      const args = [
-        "--text",
-        text,
-        "--voice",
-        voice,
-        "--rate",
-        rate,
-        "--volume",
-        volume,
-        "--pitch",
-        pitch,
-        "--write-media",
-        outPath,
-      ];
-
-      return new Promise<number[]>((resolve, reject) => {
-        const proc = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
-
-        let stderr = "";
-        proc.stderr?.on("data", (chunk: Buffer) => {
-          stderr += chunk.toString();
-        });
-
-        proc.on("error", (err) => {
-          cleanup();
-          reject(new Error(`edge-tts failed to start: ${err.message}`));
-        });
-
-        proc.on("exit", async (code) => {
-          if (code !== 0) {
-            cleanup();
-            reject(new Error(`edge-tts exited with code ${code}: ${stderr}`));
-            return;
-          }
-
-          try {
-            const buf = await readFile(outPath);
-            const audioData = Array.from(new Uint8Array(buf));
-
-            // Cache the result
-            if (cachePath) {
-              try {
-                if (!existsSync(vaultCacheDir))
-                  mkdirSync(vaultCacheDir, { recursive: true });
-                await writeFile(cachePath, buf);
-                trimCache().catch(() => {});
-              } catch {
-                /* cache write best effort */
-              }
-            }
-
-            cleanup();
-            resolve(audioData);
-          } catch (err) {
-            cleanup();
-            reject(
-              new Error(`edge-tts: failed to read output: ${String(err)}`),
-            );
-          }
-        });
-      });
+      return Array.from(new Uint8Array(buf));
     },
   );
 
-  ipcMain.handle("tts:listVoices", async (_event, binaryPath?: string) => {
-    const bin = getEdgeTtsBin(binaryPath);
-
-    return new Promise<string[]>((resolve, reject) => {
-      const proc = spawn(bin, ["--list-voices"], {
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-
-      let stdout = "";
-      let stderr = "";
-
-      proc.stdout?.on("data", (chunk: Buffer) => {
-        stdout += chunk.toString();
-      });
-      proc.stderr?.on("data", (chunk: Buffer) => {
-        stderr += chunk.toString();
-      });
-
-      proc.on("error", (err) => {
-        reject(new Error(`edge-tts failed to start: ${err.message}`));
-      });
-
-      proc.on("exit", (code) => {
-        if (code !== 0) {
-          reject(
-            new Error(
-              `edge-tts --list-voices exited with code ${code}: ${stderr}`,
-            ),
-          );
-          return;
-        }
-
-        // Parse: first column is the voice name
-        const voices: string[] = [];
-        for (const line of stdout.split("\n")) {
-          const parts = line.trim().split(/\s+/);
-          const name = parts[0];
-          if (name && name !== "Name" && name.includes("-")) {
-            voices.push(name);
-          }
-        }
-        resolve(voices);
-      });
-    });
+  ipcMain.handle("tts:listVoices", async () => {
+    const voices = await listVoices();
+    return voices.map((v) => ({ shortName: v.ShortName, locale: v.Locale }));
   });
 }

@@ -15,7 +15,6 @@ const STORAGE_KEY = "ttsConfig";
 
 const DEFAULT_CONFIG: TTSConfig = {
   provider: "edge-tts",
-  binaryPath: "",
   rate: "+0%",
   volume: "+0%",
   pitch: "+0Hz",
@@ -78,23 +77,23 @@ export const useTTSStore = create<TTSStoreState>((set, get) => ({
   refreshVoices: async () => {
     set({ loadingVoices: true });
     try {
-      const config = get().config;
-      const allVoices = await window.siltflow.tts.listVoices(
-        config.binaryPath || undefined,
-      );
+      const allVoices = await window.siltflow.tts.listVoices();
 
-      // Group by BCP 47 primary subtag prefix
+      // Group by BCP 47 primary subtag (from the voice's locale field),
+      // so e.g. "en" covers en-US, en-GB, en-AU.
       const prefixMap: Record<string, string> = {
-        "zh-CN": "zh-",
-        "en-US": "en-",
-        "de-DE": "de-",
-        "ja-JP": "ja-",
-        "fr-FR": "fr-",
-        "es-ES": "es-",
+        "zh-CN": "zh",
+        "en-US": "en",
+        "de-DE": "de",
+        "ja-JP": "ja",
+        "fr-FR": "fr",
+        "es-ES": "es",
       };
       const lists: Record<string, string[]> = {};
-      for (const [langId, prefix] of Object.entries(prefixMap)) {
-        const filtered = allVoices.filter((v) => v.startsWith(prefix));
+      for (const [langId, primary] of Object.entries(prefixMap)) {
+        const filtered = allVoices
+          .filter((v) => v.locale.toLowerCase().startsWith(primary))
+          .map((v) => v.shortName);
         if (filtered.length > 0) lists[langId] = filtered;
       }
 
@@ -131,8 +130,11 @@ export async function loadTTSConfigFromVault(cfg?: Record<string, unknown>) {
     cfg ??= await window.siltflow.vaultConfigGet();
     const saved = cfg[STORAGE_KEY];
     if (saved && typeof saved === "object") {
+      const savedCfg = { ...(saved as Record<string, unknown>) };
+      // Drop the obsolete binaryPath field left behind by older vaults.
+      delete savedCfg.binaryPath;
       useTTSStore.setState({
-        config: { ...DEFAULT_CONFIG, ...(saved as Partial<TTSConfig>) },
+        config: { ...DEFAULT_CONFIG, ...(savedCfg as Partial<TTSConfig>) },
         loaded: true,
       });
       return;

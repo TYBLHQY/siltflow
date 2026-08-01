@@ -48,5 +48,5 @@ Available shortcuts can be customized in **Settings → Shortcuts**.
 
 Supports two providers:
 
-- **Edge-TTS** — local, via `pip install edge-tts`. Configurable voice per language, rate, volume, pitch, and binary path.
+- **Edge-TTS** — built-in via `edge-tts-universal` (no Python required). Configurable voice per language, rate, volume, and pitch.
 - **MiMo** — cloud API from XiaoMi. Requires an API key and supports preset voice models as well as voice design/cloning.
