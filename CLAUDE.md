@@ -15,7 +15,9 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 | **Gitleaks**           | `pnpm audit:secrets`                | Secrets 扫描（git 历史）             | <2s  | ✅             |
 | **ESLint**             | `pnpm lint`                         | 传统 lint（React hooks 规则等）      | ~5s  | ✅             |
 | **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                           | <2s  | ✅             |
-| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（14 测试，2 worker） | ~19s | —（未接入 CI） |
+| **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（18 测试，2 worker） | ~24s | —（未接入 CI） |
+
+> E2E AI 测试（`e2e/ai.spec.ts`）通过本地 mock OpenAI-compatible server（`e2e/mock-ai-server.ts`）运行：测试把 vault 里 AI profile 的 `baseUrl` 指向 mock（`seedAIConfig`，走 CSP 允许的 `http://localhost:*`），完整走通「点按钮 → fetch → 解析 → 渲染 → 持久化」链路，无需真实 API 密钥。mock 绑定双栈 `::`（`localhost` 可能解析为 IPv6 `::1`，单绑 IPv4 会导致请求落空）。
 
 ## 常用命令
 

@@ -74,6 +74,15 @@ function openVaultDb(vault: string): Database.Database {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS ai_results (
+      annotation_id TEXT NOT NULL,
+      document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      data TEXT NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (annotation_id, document_id)
+    );
   `);
   return db;
 }
@@ -227,6 +236,119 @@ export function seedAnnotation(
     now,
     now,
   );
+  db.close();
+}
+
+/**
+ * Seed the vault's `.siltflow/config.json` with an AI profile pointed at a
+ * local mock OpenAI-compatible server, plus task assignments. Runs BEFORE the
+ * app boots so `loadFromVault` (ai.store.ts) picks up the profile on startup.
+ *
+ * `selectionMode: "manual"` is seeded too so a test can select PDF text and
+ * get the SelectionTip without cycling the toolbar mode toggle.
+ *
+ * NOTE: launchApp() later merges `appSettings.checkUpdateOnStartup` into the
+ * same file (helpers.ts launchApp), so callers must not clobber appSettings.
+ */
+export function seedAIConfig(
+  vault: string,
+  opts: { port: number; profileId?: string },
+) {
+  const profileId = opts.profileId ?? "mock-ai";
+  const cfgPath = path.join(vault, ".siltflow", "config.json");
+  let cfg: Record<string, unknown> = {};
+  try {
+    cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
+  } catch {
+    /* fresh vault — no config yet */
+  }
+  cfg.aiStore = [
+    {
+      id: profileId,
+      name: "Mock AI",
+      providerKey: "custom",
+      baseUrl: `http://localhost:${opts.port}/v1`,
+      apiKey: "test-key",
+      model: "mock-model",
+      temperature: 0.3,
+      maxTokens: 512,
+      topP: 1,
+    },
+  ];
+  cfg.taskProfiles = {
+    summarize: profileId,
+    "translate-input": profileId,
+    "translate-output": profileId,
+  };
+  cfg.defaultTargetLang = "zh-CN";
+  cfg.selectionMode = "manual";
+  writeFileSync(cfgPath, JSON.stringify(cfg));
+}
+
+/**
+ * Seed an annotation that already carries a V2 AI result, so the app renders
+ * it as a translated card (v2 badge, meanings/definitions…) on boot. Writes
+ * both the `annotations` row and its `ai_results` row (version 2) — the
+ * annotations list IPC LEFT-JOINs ai_results to hydrate `aiVersion`/`aiResult`.
+ */
+export function seedAIV2Annotation(
+  vault: string,
+  documentId: string,
+  opts: {
+    id: string;
+    pageNumber: number;
+    text: string;
+    aiResult: unknown;
+    position?: unknown;
+  },
+) {
+  const db = openVaultDb(vault);
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT OR REPLACE INTO annotations
+       (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    opts.id,
+    documentId,
+    "text",
+    opts.text,
+    opts.pageNumber,
+    JSON.stringify({
+      position: opts.position ?? {
+        boundingRect: {
+          x1: 50,
+          y1: 100,
+          x2: 300,
+          y2: 120,
+          width: 612,
+          height: 792,
+          pageNumber: opts.pageNumber,
+        },
+        rects: [
+          {
+            x1: 50,
+            y1: 100,
+            x2: 300,
+            y2: 120,
+            width: 612,
+            height: 792,
+            pageNumber: opts.pageNumber,
+          },
+        ],
+        usePdfCoordinates: false,
+      },
+      content: { text: opts.text },
+    }),
+    "annotation",
+    now,
+    now,
+  );
+  db.prepare(
+    `INSERT OR REPLACE INTO ai_results
+       (annotation_id, document_id, data, version, created_at, updated_at)
+     VALUES (?, ?, ?, 2, ?, ?)`,
+  ).run(opts.id, documentId, JSON.stringify(opts.aiResult), now, now);
   db.close();
 }
 
