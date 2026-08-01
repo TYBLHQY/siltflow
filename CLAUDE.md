@@ -55,6 +55,37 @@ pnpm audit:secrets        # secrets 扫描
 pnpm audit:all            # oxlint + depcruiser + gitleaks + knip + CVE
 ```
 
+## 发布流程（commit/tag 策略）
+
+发版遵循固定流程，统一用 **小版本 bump**（除非有破坏性变更才升大版本）。
+
+### 版本号选择
+
+- 功能/修复 → 小版本递增（`3.0.1` → `3.1.0`）
+- 破坏性变更（如 schema 不兼容、数据迁移）→ 大版本递增（`3.x` → `4.0.0`）
+- 参考 CI：`release` job 会用 **tag 名**（去掉 `v` 前缀）改写 `package.json` 再构建三平台产物，所以 **tag 才是版本真相**，本地 bump commit 只是 git 历史惯例。
+
+### 操作步骤
+
+```bash
+# 1. 改版本号（只需改 package.json，"version" 字段；pnpm-lock.yaml 不记录项目自身版本，无需动）
+#    用 sed 或编辑器把 "version": "X.Y.Z" 改成新版本号
+
+# 2. bump 提交 + 轻量 tag（先提交、后打 tag，tag 指向 bump 提交）
+git add package.json
+git commit -m "chore: bump version to X.Y.Z"
+git tag vX.Y.Z
+
+# 3. 先推 master、再推 tag（tag 触发 release，release 依赖 check，先推 master 让 check 先跑）
+git push origin master
+git push origin vX.Y.Z
+
+# 4. 验证（可选）：确认 tag 触发的 CI 正常启动
+gh run list --repo TYBLHQY/siltflow --limit 3
+```
+
+> 注意：CI 工作流（`.github/workflows/ci.yml`）只监听 `tags: ["v*"]` 和 PR 到 master 的事件，对 tag push 会先跑 `check`，通过后 Linux/macOS/Windows 三平台并行构建并创建 GitHub Release（Linux job 负责建 release，其余平台等待其就绪后上传产物）。
+
 ## 发现问题后的处理原则
 
 ### Oxlint 报错 → 需要修复
