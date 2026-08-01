@@ -50,9 +50,12 @@ async function selectFirstLine(window: Page) {
   await expect(line).toBeVisible();
   const box = await line.boundingBox();
   expect(box).not.toBeNull();
+  // Keep the drag endpoint inside the page — extending past the page's right
+  // edge bleeds the selection onto the next page, moving the selection's
+  // commonAncestorContainer outside .PdfHighlighter so onSelection never fires.
   await window.mouse.move(box!.x, box!.y + box!.height / 2);
   await window.mouse.down();
-  await window.mouse.move(box!.x + 400, box!.y + box!.height / 2, {
+  await window.mouse.move(box!.x + 100, box!.y + box!.height / 2, {
     steps: 10,
   });
   await window.mouse.up();
@@ -148,7 +151,9 @@ test("translate uses the V2 two-stage pipeline and persists ai_results", async (
 
     // selectionMode was seeded as "manual" → SelectionTip appears after select.
     await selectFirstLine(window);
-    await window.getByTitle("Add as annotation").click();
+    const addAnno = window.getByTitle("Add as annotation");
+    await expect(addAnno).toBeVisible({ timeout: 20_000 });
+    await addAnno.click();
 
     // The annotation card appears untranslated (Base view) in the panel.
     await window.getByRole("tab", { name: "Annotations" }).click();

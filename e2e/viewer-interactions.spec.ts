@@ -119,10 +119,14 @@ test("text selection in auto-annotate mode creates an annotation card", async ()
     const box = await line.boundingBox();
     expect(box).not.toBeNull();
     // The span is a single word; drag across the whole line by starting left
-    // of the text node and ending well to the right, spanning sibling words.
+    // of the text node and ending to the right, spanning sibling words. Keep
+    // the endpoint inside the page — dragging past the page's right edge
+    // extends the selection onto the next page, which moves the selection's
+    // commonAncestorContainer outside .PdfHighlighter and the library's
+    // onSelection is never fired.
     await window.mouse.move(box!.x, box!.y + box!.height / 2);
     await window.mouse.down();
-    await window.mouse.move(box!.x + 400, box!.y + box!.height / 2, {
+    await window.mouse.move(box!.x + 100, box!.y + box!.height / 2, {
       steps: 10,
     });
     await window.mouse.up();

@@ -12,10 +12,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * and temp vault. `fullyParallel: false` keeps each spec file serial, but
  * Playwright hands different *files* to different workers.
  *
- * workers: 2 — a good middle ground. 4 concurrent Electron instances rasterizing
- * a 350-page PDF contends for CPU and makes the far-page smooth-scroll test
- * time out (~1/3 of runs at 4). 2 workers keep ~1.6× speedup over serial with
- * far less contention.
+ * workers: 1 — serial. Concurrent Electron instances rasterizing a 350-page PDF
+ * contend for CPU; under contention the text-selection tests become flaky
+ * (the selection's commonAncestorContainer lands outside .PdfHighlighter and
+ * onSelection never fires). Serial costs ~1.5–2× wall-clock but is reliable,
+ * which matters more for a blocking CI gate.
  *
  * Tests run against the *built* app (`dist/` + `dist-electron/`), so build
  * before running: `pnpm exec vite build`.
@@ -26,7 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   testDir: __dirname,
   fullyParallel: false,
-  workers: 2,
+  workers: 1,
   timeout: 120_000,
   expect: { timeout: 15_000 },
   reporter: [["list"]],
