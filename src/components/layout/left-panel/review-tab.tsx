@@ -28,7 +28,23 @@ const ReviewTabRow = memo(function ReviewTabRow({
   isActive: boolean;
 }) {
   const setCurrentDocument = useDocumentStore((s) => s.setCurrentDocument);
+  // Resolve the full document row (incl. totalPages) instead of a
+  // hand-built {id, title} — the progress bar reads totalPages from
+  // currentDocument, and PdfViewer only re-syncs it when the PDF reloads.
+  const documents = useDocumentStore((s) => s.documents);
   const hasTags = metric.totalCards > 0;
+
+  const handleOpen = () => {
+    const doc = documents.find((d) => d.id === metric.documentId);
+    if (doc) {
+      setCurrentDocument(doc);
+    } else {
+      setCurrentDocument({
+        id: metric.documentId,
+        title: metric.documentTitle,
+      });
+    }
+  };
   return (
     <div
       data-doc-id={metric.documentId}
@@ -38,12 +54,7 @@ const ReviewTabRow = memo(function ReviewTabRow({
           ? "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:bg-ctp-yellow"
           : "hover:bg-ctp-surface0"
       } py-2.5 pr-3`}
-      onClick={() =>
-        setCurrentDocument({
-          id: metric.documentId,
-          title: metric.documentTitle,
-        })
-      }
+      onClick={handleOpen}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="truncate min-w-0 flex-1 select-none">
