@@ -538,7 +538,18 @@ function PdfHighlighterWrapper({
   const viewerRef = useRef<ReturnType<PdfHighlighterUtils["getViewer"]>>(null);
   const fitWidthRef = useRef(fitWidth);
   fitWidthRef.current = fitWidth;
-  const applyFitWidthScale = useCallback(() => {
+  // 首次打开的重试定时器：pdf.js 的 page view（含 rawDims）在 pagesinit 之后
+  // 才初始化，而 ResizeObserver 只在容器尺寸变化时触发——mount 时若页面尚未
+  // 初始化，fit-width 会被静默跳过，直到用户调整窗口才生效。拿不到页面尺寸时
+  // 定时重试，直到 page view 就绪。生命周期由 fitWidthRef 与 effect cleanup
+  // 管理：fit-width 关闭或组件卸载即停止。
+  const fitWidthRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fitWidthRetriesRef = useRef(0);
+  // Stable apply function (created once — same idiom as the store's
+  // saveLayoutRef). The retry timer re-invokes it via the ref at runtime, so
+  // there's no self-reference at definition time. setPdfScale is read through
+  // the store to avoid a hook-derived value leaking into the closure.
+  const applyFitWidthScaleRef = useRef(function applyFitWidthScale() {
     const viewer = viewerRef.current;
     const container =
       wrapperRef.current?.querySelector<HTMLElement>(".PdfHighlighter");
@@ -548,13 +559,27 @@ function PdfHighlighterWrapper({
     // pdf.js's own "page-width" computation exactly.
     const rawDims = viewer.getPageView(0)?.viewport?.rawDims as
       { pageWidth: number } | undefined;
-    if (!rawDims?.pageWidth) return;
+    if (!rawDims?.pageWidth) {
+      // page view 未初始化（pagesinit 未触发）——定时重试，不要静默放弃。
+      if (!fitWidthRef.current) return;
+      // 上限保护：约 8s 内页面仍未就绪则放弃（此时 PDF 大概率加载失败）。
+      if (fitWidthRetriesRef.current >= 100) return;
+      fitWidthRetriesRef.current += 1;
+      if (fitWidthRetryRef.current) clearTimeout(fitWidthRetryRef.current);
+      fitWidthRetryRef.current = setTimeout(() => {
+        fitWidthRetryRef.current = null;
+        applyFitWidthScaleRef.current();
+      }, 80);
+      return;
+    }
+    fitWidthRetriesRef.current = 0;
     const cssWidth = rawDims.pageWidth * (96 / 72);
     const scale = container.clientWidth / cssWidth;
-    setPdfScale(Math.round(scale * 1000) / 1000);
+    if (!Number.isFinite(scale) || scale <= 0) return;
+    usePdfViewerStore.getState().setPdfScale(Math.round(scale * 1000) / 1000);
     // Apply directly; the library's handleScaleValue keeps it (0.5% tolerance).
     viewer.currentScale = Math.round(scale * 1000) / 1000;
-  }, [setPdfScale]);
+  });
 
   useEffect(() => {
     if (!fitWidth) return;
@@ -562,11 +587,23 @@ function PdfHighlighterWrapper({
       wrapperRef.current?.querySelector<HTMLElement>(".PdfHighlighter");
     if (!container) return;
     // Compute once now (viewer may already be ready), then on every resize.
-    applyFitWidthScale();
-    const observer = new ResizeObserver(applyFitWidthScale);
+    fitWidthRetriesRef.current = 0;
+    applyFitWidthScaleRef.current();
+    const observer = new ResizeObserver(() => {
+      // 每次尺寸变化都是新的一轮：重置重试计数（首个 observe tick 也会触发）。
+      fitWidthRetriesRef.current = 0;
+      applyFitWidthScaleRef.current();
+    });
     observer.observe(container);
-    return () => observer.disconnect();
-  }, [fitWidth, applyFitWidthScale]);
+    return () => {
+      observer.disconnect();
+      // fit-width 关闭/卸载时停掉首次打开的 retry 定时器
+      if (fitWidthRetryRef.current) {
+        clearTimeout(fitWidthRetryRef.current);
+        fitWidthRetryRef.current = null;
+      }
+    };
+  }, [fitWidth]);
 
   return (
     <div
@@ -590,7 +627,7 @@ function PdfHighlighterWrapper({
           if (viewer) viewer.maxCanvasPixels = -1;
           // If fit-width is active, apply the numeric scale now that the viewer
           // is ready (the mount-time ResizeObserver tick may have run too early).
-          if (fitWidthRef.current) applyFitWidthScale();
+          if (fitWidthRef.current) applyFitWidthScaleRef.current();
 
           // Expose scrollToHighlight so RightPanel can call it
           // Use a ref so the closure always sees the latest highlights array.
