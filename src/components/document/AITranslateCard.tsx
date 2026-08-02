@@ -82,8 +82,10 @@ export function AITranslateCard({
 
   // Save an edited text. V2 cards render `ai.input.normalized` (not item.text),
   // so a bare `{ text }` update wouldn't show up — sync normalized too so the
-  // edit is visible and survives a reload. Editing only ever runs for V2 cards:
-  // V1 cards are read-only and the edit toggle is gated to aiVersion === 2.
+  // edit is visible and survives a reload. Untranslated (undefined) cards have
+  // no aiResult, so a bare `{ text }` update is what persists. V1 cards are
+  // read-only: the edit toggle is gated to aiVersion !== 1, so this only ever
+  // runs for V2 or untranslated cards.
   const handleSaveText = useCallback(() => {
     const nextText = editText;
     if (item.aiVersion === 2) {
@@ -96,6 +98,11 @@ export function AITranslateCard({
       } else {
         updateItem(id, { text: nextText });
       }
+      setEditing(false);
+    } else if (item.aiVersion !== 1) {
+      // Untranslated card — no aiResult to sync; a bare text update keeps the
+      // card in its blank-slate state.
+      updateItem(id, { text: nextText });
       setEditing(false);
     }
   }, [editText, id, item.aiVersion, item.aiResult, updateItem]);
@@ -127,7 +134,8 @@ export function AITranslateCard({
 
   // Action bar: only expose edit when at least one of delete/translate is
   // provided (i.e., the caller wants a full-featured bar, not just TTS+Goto),
-  // AND the card is V2 — V1 cards are read-only (no pencil).
+  // AND the card is editable — V1 cards are read-only (no pencil); both V2
+  // and untranslated (undefined/null version) cards get one.
   const actionBarProps: {
     editing: boolean;
     onEditToggle?: () => void;
@@ -136,7 +144,7 @@ export function AITranslateCard({
     onGoToHighlight?: () => void;
   } = {
     editing,
-    ...(item.aiVersion === 2 && (onDelete || onTranslate)
+    ...(item.aiVersion !== 1 && (onDelete || onTranslate)
       ? { onEditToggle: () => setEditing(!editing) }
       : {}),
     ...(onTranslate ? { onTranslate: () => onTranslate(id) } : {}),
