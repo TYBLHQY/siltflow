@@ -213,9 +213,9 @@ describe("annotation.store version handling", () => {
   });
 
   it("persists context when a new item is added", () => {
-    useAnnotationStore.getState().addItem(
-      makeItem({ context: "context before translate" }),
-    );
+    useAnnotationStore
+      .getState()
+      .addItem(makeItem({ context: "context before translate" }));
 
     expect(savedAnnotations[savedAnnotations.length - 1]?.context).toBe(
       "context before translate",

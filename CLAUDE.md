@@ -17,6 +17,8 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 | **Prettier**           | `pnpm format` / `pnpm format:check` | 代码格式化                           | <2s  | ✅             |
 | **Playwright E2E**     | `pnpm test:e2e`                     | Electron 端到端（29 测试，1 worker） | ~1m  | —（未接入 CI） |
 
+> 注意：`check:quick`（oxlint + knip）不含 Prettier。**每次改动代码后都要跑 `pnpm format`（或至少对改过的文件 `prettier --write`）**——Prettier 是 CI 阻塞项，漏跑会导致 `format:check` 在 CI 上失败（历史上因此卡过 release）。
+
 > E2E AI 测试（`e2e/ai.spec.ts`）通过本地 mock OpenAI-compatible server（`e2e/mock-ai-server.ts`）运行：测试把 vault 里 AI profile 的 `baseUrl` 指向 mock（`seedAIConfig`，走 CSP 允许的 `http://localhost:*`），完整走通「点按钮 → fetch → 解析 → 渲染 → 持久化」链路，无需真实 API 密钥。mock 绑定双栈 `::`（`localhost` 可能解析为 IPv6 `::1`，单绑 IPv4 会导致请求落空）。
 
 ## 常用命令

@@ -41,7 +41,12 @@ describe("highlightText", () => {
   });
 
   it("emits no gap text between adjacent non-overlapping ranges", () => {
-    expect(highlightText("a b c", [[0, 2], [4, 4]])).toEqual([
+    expect(
+      highlightText("a b c", [
+        [0, 2],
+        [4, 4],
+      ]),
+    ).toEqual([
       { text: "a b", highlighted: true },
       { text: " ", highlighted: false },
       { text: "c", highlighted: true },
@@ -51,7 +56,12 @@ describe("highlightText", () => {
   it("keeps the running end monotonic across multiple ranges", () => {
     // The second range starts exactly where the first ended (end is inclusive,
     // so lastEnd = end + 1) — no gap slice is emitted and no negative slice.
-    expect(highlightText("ab", [[0, 0], [1, 1]])).toEqual([
+    expect(
+      highlightText("ab", [
+        [0, 0],
+        [1, 1],
+      ]),
+    ).toEqual([
       { text: "a", highlighted: true },
       { text: "b", highlighted: true },
     ]);
@@ -70,7 +80,9 @@ describe("highlightText", () => {
       [0, 3],
       [13, 16],
     ];
-    const joined = highlightText(text, indices).map((s) => s.text).join("");
+    const joined = highlightText(text, indices)
+      .map((s) => s.text)
+      .join("");
     expect(joined).toBe(text);
   });
 
@@ -79,7 +91,12 @@ describe("highlightText", () => {
     // a range starting before lastEnd emits no gap segment but still appends
     // its own highlighted slice (characters can render twice). Fuse.js does
     // not normally produce overlapping ranges — this documents the behavior.
-    expect(highlightText("abcd", [[0, 2], [1, 3]])).toEqual([
+    expect(
+      highlightText("abcd", [
+        [0, 2],
+        [1, 3],
+      ]),
+    ).toEqual([
       { text: "abc", highlighted: true },
       { text: "bcd", highlighted: true },
     ]);
@@ -92,11 +109,7 @@ describe("highlightText segment shape (helper for rendering)", () => {
       [0, 3],
       [13, 16],
     ]);
-    expect(segments.map((s) => s.highlighted)).toEqual([
-      true,
-      false,
-      true,
-    ]);
+    expect(segments.map((s) => s.highlighted)).toEqual([true, false, true]);
     expect(segments.map((s) => s.text)).toEqual(["Grok", "king the ", "Grok"]);
   });
 });

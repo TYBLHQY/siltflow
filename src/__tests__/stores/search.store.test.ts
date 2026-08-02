@@ -3,10 +3,7 @@ import Fuse, { type IFuseOptions } from "fuse.js";
 import { useSearchStore, type SearchEntry } from "@/stores/search.store";
 import { useAnnotationStore } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
-import type {
-  AnnotationEnrichedIPC,
-  DocumentIPCItem,
-} from "@/types/ipc";
+import type { AnnotationEnrichedIPC, DocumentIPCItem } from "@/types/ipc";
 
 // ── Mock the Electron preload bridge ────────────────────────────────────
 // buildIndex calls window.siltflow.documents.list + annotations.listAll.
@@ -338,9 +335,7 @@ describe("buildIndex", () => {
 
   it("defaults a falsy kind to annotation", async () => {
     documentsList.mockResolvedValue([]);
-    annotationsListAll.mockResolvedValue([
-      makeAnnRow({ id: "a1", kind: "" }),
-    ]);
+    annotationsListAll.mockResolvedValue([makeAnnRow({ id: "a1", kind: "" })]);
 
     await useSearchStore.getState().buildIndex();
 
@@ -353,7 +348,9 @@ describe("buildIndex", () => {
     documentsList.mockResolvedValue([]);
     annotationsListAll.mockRejectedValue(new Error("db down"));
 
-    await expect(useSearchStore.getState().buildIndex()).resolves.toBeUndefined();
+    await expect(
+      useSearchStore.getState().buildIndex(),
+    ).resolves.toBeUndefined();
 
     const st = useSearchStore.getState();
     expect(st.isBuilding).toBe(false);

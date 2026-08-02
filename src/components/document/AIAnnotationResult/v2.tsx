@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";

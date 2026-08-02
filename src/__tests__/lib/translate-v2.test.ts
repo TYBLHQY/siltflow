@@ -11,14 +11,15 @@ import {
 // The mock returns input-stage JSON on the first call and output-stage JSON
 // on the second, and captures every message array it receives.
 vi.mock("@/lib/ai", () => ({
-  chatCompletion: vi.fn<
-    (
-      profile: AIProfile,
-      messages: Array<{ role: "system" | "user"; content: string }>,
-      onChunk: (chunk: { content: string; done?: boolean }) => void,
-      signal?: AbortSignal,
-    ) => Promise<void>
-  >(),
+  chatCompletion:
+    vi.fn<
+      (
+        profile: AIProfile,
+        messages: Array<{ role: "system" | "user"; content: string }>,
+        onChunk: (chunk: { content: string; done?: boolean }) => void,
+        signal?: AbortSignal,
+      ) => Promise<void>
+    >(),
 }));
 
 const mockedChat = vi.mocked(chatCompletion);

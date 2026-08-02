@@ -221,10 +221,7 @@ export function computeDifficultyHistogram(cards: Card[]): HistogramBin[] {
   for (const card of cards) {
     if (card.state === State.New) continue;
     const d = card.difficulty;
-    const idx = Math.min(
-      Math.max(0, Math.floor(((d - 1) / 9) * 10)),
-      9,
-    );
+    const idx = Math.min(Math.max(0, Math.floor(((d - 1) / 9) * 10)), 9);
     bins[idx].count++;
   }
   return bins;

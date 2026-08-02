@@ -25,12 +25,14 @@ function makeCard(overrides: Partial<Card> = {}): Card {
 }
 
 /** Serialized review_log `data` JSON matching parseReviewLogData's shape. */
-function reviewLogData(opts: {
-  grade?: number;
-  state?: number;
-  stability?: number;
-  scheduledDays?: number;
-} = {}): string {
+function reviewLogData(
+  opts: {
+    grade?: number;
+    state?: number;
+    stability?: number;
+    scheduledDays?: number;
+  } = {},
+): string {
   const { grade = 3, state = 2, stability = 30, scheduledDays = 10 } = opts;
   const parsed: ReviewLogData = {
     grade,
@@ -64,11 +66,7 @@ function log(createdAt: string, data: string) {
 }
 
 /** Like log, but with a required annotationId for computeKnowledgeGrowth. */
-function growthLog(
-  createdAt: string,
-  data: string,
-  annotationId: string,
-) {
+function growthLog(createdAt: string, data: string, annotationId: string) {
   return { createdAt, data, annotationId };
 }
 
@@ -366,9 +364,21 @@ describe("computeKnowledgeGrowth", () => {
 
   it("buckets review cards by stability (young / mature / longTerm)", () => {
     const result = computeKnowledgeGrowth([
-      growthLog("2026-06-01T10:00:00.000Z", reviewLogData({ state: 2, stability: 5 }), "a1"), // young
-      growthLog("2026-06-01T11:00:00.000Z", reviewLogData({ state: 2, stability: 100 }), "a2"), // mature
-      growthLog("2026-06-01T12:00:00.000Z", reviewLogData({ state: 2, stability: 500 }), "a3"), // longTerm
+      growthLog(
+        "2026-06-01T10:00:00.000Z",
+        reviewLogData({ state: 2, stability: 5 }),
+        "a1",
+      ), // young
+      growthLog(
+        "2026-06-01T11:00:00.000Z",
+        reviewLogData({ state: 2, stability: 100 }),
+        "a2",
+      ), // mature
+      growthLog(
+        "2026-06-01T12:00:00.000Z",
+        reviewLogData({ state: 2, stability: 500 }),
+        "a3",
+      ), // longTerm
     ]);
     expect(result).toEqual([
       { date: "2026-06-01", learning: 0, young: 1, mature: 1, longTerm: 1 },
@@ -378,7 +388,11 @@ describe("computeKnowledgeGrowth", () => {
   it("migrates a card between buckets across dates", () => {
     const result = computeKnowledgeGrowth([
       growthLog("2026-06-01T10:00:00.000Z", reviewLogData({ state: 1 }), "a1"),
-      growthLog("2026-06-02T10:00:00.000Z", reviewLogData({ state: 2, stability: 5 }), "a1"),
+      growthLog(
+        "2026-06-02T10:00:00.000Z",
+        reviewLogData({ state: 2, stability: 5 }),
+        "a1",
+      ),
     ]);
     expect(result).toEqual([
       { date: "2026-06-01", learning: 1, young: 0, mature: 0, longTerm: 0 },
