@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { usePdfViewerStore } from "./pdf-viewer.store";
 
 export interface DocumentItem {
   id: string;
@@ -48,7 +49,19 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
           : state.currentDocument,
     })),
 
-  setCurrentDocument: (doc) => set({ currentDocument: doc }),
+  // Switching documents must reset pdfScale BEFORE any viewer render reads it.
+  // The library's handleScaleValue effect applies pdfScaleValue to the viewer
+  // as soon as it's ready (isViewerReady), but pdf.js hasn't built `_pages`
+  // yet — so a numeric scale left over from the previous document hits
+  // `scrollPageIntoView({pageNumber: 1})` on an empty array and logs
+  // "not a valid pageNumber". Reset here (synchronous, on the event path that
+  // triggers the switch, before the new keyed PdfHighlighter mounts and its
+  // effects run) so the new viewer falls back to "auto" until pages exist;
+  // applyFitWidthScale then recomputes the fit-width scale once they do.
+  setCurrentDocument: (doc) => {
+    usePdfViewerStore.getState().setPdfScale(0);
+    set({ currentDocument: doc });
+  },
 
   removeDocument: (id) =>
     set((state) => ({
