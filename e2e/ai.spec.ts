@@ -56,10 +56,14 @@ async function selectFirstLine(window: Page) {
   // windows, and overshooting the page's right edge bleeds the selection onto
   // the next page, pushing commonAncestorContainer outside .PdfHighlighter so
   // onSelection never fires.
+  // Use many steps: pdf.js text layers are transparent absolute-positioned
+  // spans, and the browser extends the native selection only as mousemove
+  // events are hit-tested. 10 steps land too fast — mouseup fires while the
+  // selection is still collapsed. 50 steps reliably extends it.
   await window.mouse.move(box!.x, box!.y + box!.height / 2);
   await window.mouse.down();
   await window.mouse.move(box!.x + box!.width * 0.8, box!.y + box!.height / 2, {
-    steps: 10,
+    steps: 50,
   });
   await window.mouse.up();
 }
