@@ -468,6 +468,21 @@ export function AIAnnotationResultV2({
           {/* Header: granularity + page + version */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 min-w-0">
+              {/* Goto highlight — inline, no chrome, at the head of the row.
+                  Always rendered (invisible on manual cards with no callback)
+                  so the granularity label stays aligned across cards. */}
+              <button
+                className={`inline-flex items-center rounded p-0.5 align-baseline transition-colors cursor-pointer text-ctp-overlay1 hover:text-ctp-text ${
+                  onGoToHighlight ? "" : "invisible"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onGoToHighlight?.();
+                }}
+                title="Go to highlight in PDF"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </button>
               <span className="font-medium text-ctp-maroon uppercase tracking-wider">
                 {granularity}
               </span>
@@ -485,7 +500,9 @@ export function AIAnnotationResultV2({
           </div>
 
           {/* Source text — with TTS selection. Edit toggle is an inline element
-              at the head of the text flow (no chrome unless editing). */}
+              at the head of the text flow (no chrome unless editing). Only the
+              text glyphs stop propagation (so clicking/dragging the words does
+              not toggle expand); the row's whitespace still toggles. */}
           {textEditorSlot ? (
             textEditorSlot
           ) : (
@@ -495,7 +512,7 @@ export function AIAnnotationResultV2({
             >
               {onEditToggle && (
                 <button
-                  className={`inline-flex items-center rounded p-0.5 align-baseline transition-colors cursor-pointer ${
+                  className={`inline-flex items-center rounded p-0.5 mr-2 align-baseline transition-colors cursor-pointer ${
                     editing
                       ? "text-ctp-mauve"
                       : "text-ctp-overlay1 hover:text-ctp-text"
@@ -509,7 +526,10 @@ export function AIAnnotationResultV2({
                   <Pencil className="h-3 w-3" />
                 </button>
               )}
-              <span className="whitespace-pre-wrap wrap-break-word leading-relaxed font-semibold">
+              <span
+                className="whitespace-pre-wrap wrap-break-word leading-relaxed font-semibold"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {ai?.input?.normalized ?? item.text}
               </span>
             </SelectionTTSButton>
@@ -521,19 +541,6 @@ export function AIAnnotationResultV2({
           {/* ── Action bar ── */}
           {showActionBar && (
             <div className="flex flex-wrap items-center gap-1 mt-0.5">
-              {onGoToHighlight && (
-                <button
-                  className="inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 transition-colors cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onGoToHighlight();
-                  }}
-                  title="Go to highlight in PDF"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </button>
-              )}
-
               <button
                 className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors cursor-pointer ${
                   tts.speakingId === item.id && tts.state === "playing"

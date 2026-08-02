@@ -121,11 +121,6 @@ export function AITranslateCard({
     setEditingContext(false);
   }, [editContext, id, updateItem]);
 
-  const handleCancelContext = useCallback(() => {
-    setEditContext(item.context ?? "");
-    setEditingContext(false);
-  }, [item.context]);
-
   // V2 uses its own type-based layout; V1 cards render through UpgradeCard and
   // have no details, so there is no legacy detail-availability gate.
   const isV2 = item.aiVersion === 2;
@@ -157,16 +152,24 @@ export function AITranslateCard({
   // block is the edit affordance.
   const contextNoteEditor = (
     // -mt-1 cancels the parent showCore block's space-y-1 so the note hugs
-    // the source text; edit mode keeps its own textarea chrome.
-    <div className="-mt-1" onClick={(e) => e.stopPropagation()}>
+    // the source text; edit mode keeps its own textarea chrome. Only the
+    // interactive children stop propagation — the row's empty area still
+    // toggles expand/collapse.
+    <div className="-mt-1">
       {editingContext ? (
-        <div className="space-y-1">
+        <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
           <textarea
             ref={contextInputRef}
             className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-16 text-xs whitespace-pre-wrap wrap-break-word"
             value={editContext}
             onChange={(e) => setEditContext(e.target.value)}
             onKeyDown={(e) => {
+              // Enter (no shift) saves, Shift+Enter inserts a newline,
+              // Escape cancels — same keyboard contract as the text editor.
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSaveContext();
+              }
               if (e.key === "Escape") {
                 setEditContext(item.context ?? "");
                 setEditingContext(false);
@@ -174,25 +177,14 @@ export function AITranslateCard({
             }}
             placeholder="Add a context note to guide translation…"
           />
-          <div className="flex items-center gap-1">
-            <button
-              className="rounded bg-ctp-mauve/20 px-2 py-0.5 text-xs font-medium text-ctp-mauve hover:bg-ctp-mauve/30"
-              onClick={handleSaveContext}
-            >
-              Save
-            </button>
-            <button
-              className="rounded bg-ctp-surface1 px-2 py-0.5 text-xs text-ctp-overlay1 hover:bg-ctp-surface1/70"
-              onClick={handleCancelContext}
-            >
-              Cancel
-            </button>
-          </div>
         </div>
       ) : (
         <button
-          className="inline-flex items-center gap-1 rounded text-[11px] text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0/50 px-1 py-0.5 cursor-pointer"
-          onClick={() => setEditingContext(true)}
+          className="inline-flex items-center rounded p-0.5 align-baseline cursor-pointer text-[11px] text-ctp-overlay1 hover:text-ctp-text"
+          onClick={(e) => {
+            e.stopPropagation();
+            setEditingContext(true);
+          }}
           title={
             item.context?.trim()
               ? "Edit context note"
@@ -201,14 +193,12 @@ export function AITranslateCard({
         >
           {item.context?.trim() ? (
             <>
-              <Pencil className="h-3 w-3" />
-              <span className="max-w-60 truncate text-ctp-overlay1">
-                {item.context}
-              </span>
+              <Pencil className="h-3 w-3 mr-2" />
+              <span className="max-w-60 truncate">{item.context}</span>
             </>
           ) : (
             <>
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3 mr-2" />
               Add context
             </>
           )}
