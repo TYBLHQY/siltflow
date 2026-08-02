@@ -25,6 +25,13 @@ import type {
 /** Maximum context length in characters for the output AI prompt. */
 const MAX_CONTEXT_LENGTH = 5000;
 
+/** Truncate a context block to MAX_CONTEXT_LENGTH with an ellipsis suffix. */
+function truncateContext(s: string): string {
+  return s.length > MAX_CONTEXT_LENGTH
+    ? `${s.slice(0, MAX_CONTEXT_LENGTH)}…`
+    : s;
+}
+
 // ===========================================================================
 // Input AI
 // ===========================================================================
@@ -206,23 +213,33 @@ function getTypeSchema(type: AIAnnotationInputV2["type"]): string {
   }
 }
 
-function buildOutputUserMessage(
+/**
+ * Build the output-stage user message.
+ *
+ * Order matters for prompt caching: the auto document `context` (stable per
+ * document) and the target-language line form the shared prefix across cards,
+ * while the user-authored `userContext` (card-local, same cache weight as the
+ * card text) sits immediately before `Input` in the varying tail.
+ */
+export function buildOutputUserMessage(
   input: AIAnnotationInputV2,
   targetLang: string,
   context: string | undefined,
+  userContext: string | undefined,
 ): string {
   const inputJson = JSON.stringify(input);
   const lines: string[] = [];
   if (context) {
-    const truncated =
-      context.length > MAX_CONTEXT_LENGTH
-        ? `${context.slice(0, MAX_CONTEXT_LENGTH)}…`
-        : context;
     lines.push(
-      `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncated}`,
+      `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncateContext(context)}`,
     );
   }
   lines.push(`IMPORTANT: All translations must be in ${targetLang}.`);
+  if (userContext) {
+    lines.push(
+      `USER CONTEXT (user-authored note for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncateContext(userContext)}`,
+    );
+  }
   lines.push(`Input: ${inputJson}`);
   return lines.join("\n");
 }
@@ -236,13 +253,19 @@ async function callOutputAI(
   input: AIAnnotationInputV2,
   targetLang: string,
   context: string | undefined,
+  userContext: string | undefined,
   signal?: AbortSignal,
 ): Promise<AIAnnotationOutputV2> {
   const typeSchema = getTypeSchema(input.type);
 
   // system = [static preamble] + [static type schema] (both fully cacheable)
   const systemContent = `${OUTPUT_SYSTEM_PREAMBLE}\n\n${typeSchema}`;
-  const userContent = buildOutputUserMessage(input, targetLang, context);
+  const userContent = buildOutputUserMessage(
+    input,
+    targetLang,
+    context,
+    userContext,
+  );
 
   let raw = "";
   await chatCompletion(
@@ -283,6 +306,9 @@ export interface TranslateV2Options {
   targetLang: string;
   /** Document summary / article context for disambiguation. */
   context?: string;
+  /** User-authored per-card context note — injected ONLY in the output stage,
+   *  in the card-local tail (same prompt-cache weight as the card text). */
+  userContext?: string;
   /** AbortSignal for cancellation. */
   signal?: AbortSignal;
 }
@@ -322,17 +348,16 @@ export async function translateAnnotationV2(
     input,
     targetLang,
     options.context,
+    options.userContext,
     options.signal,
   );
 
   // Step 4: Assemble result
+  // The `context` echo keeps the AUTO document context (backward compatible);
+  // the user-authored note lives on the annotation row, not in the blob.
   return {
     input,
-    context: options.context
-      ? options.context.length > MAX_CONTEXT_LENGTH
-        ? `${options.context.slice(0, MAX_CONTEXT_LENGTH)}…`
-        : options.context
-      : null,
+    context: options.context ? truncateContext(options.context) : null,
     output,
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { useStyleStore, buildFontStack } from "@/stores/style.store";
 import { useTTS } from "@/hooks/useTts";
@@ -28,6 +28,10 @@ interface AIAnnotationResultBaseProps {
   onGoToHighlight?: () => void;
   /** Source language for TTS voice selection. */
   sourceLang?: string;
+  /** Slot rendered between the source text and the action bar. */
+  contextSlot?: ReactNode;
+  /** When set, replaces the source text with this editor. */
+  textEditorSlot?: ReactNode;
 }
 
 /**
@@ -47,6 +51,8 @@ export function AIAnnotationResultBase({
   onDelete,
   onGoToHighlight,
   sourceLang,
+  contextSlot,
+  textEditorSlot,
 }: AIAnnotationResultBaseProps) {
   const style = useStyleStore((s) => s.style);
   const tts = useTTS();
@@ -104,17 +110,42 @@ export function AIAnnotationResultBase({
         </div>
       </div>
 
-      {/* Source text */}
-      <p className="mb-1 whitespace-pre-wrap wrap-break-word leading-relaxed">
-        {item.text}
-      </p>
+      {/* Source text — edit toggle is an inline element at the head of the
+          text flow (no chrome unless editing). When editing, the card passes
+          a textarea via textEditorSlot and only the text swaps. */}
+      {textEditorSlot ? (
+        textEditorSlot
+      ) : (
+        <p className="whitespace-pre-wrap wrap-break-word leading-relaxed">
+          {onEditToggle && (
+            <button
+              className={`inline-flex items-center rounded p-0.5 align-baseline transition-colors cursor-pointer ${
+                editing
+                  ? "text-ctp-mauve"
+                  : "text-ctp-overlay1 hover:text-ctp-text"
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditToggle();
+              }}
+              title={editing ? "Save" : "Edit"}
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          )}
+          {item.text}
+        </p>
+      )}
+
+      {/* Context note editor — above the action bar */}
+      {contextSlot}
 
       {/* ── Action bar ── */}
       {showActionBar && (
         <div className="flex flex-wrap items-center gap-1 mt-1.5">
           {onGoToHighlight && (
             <button
-              className="inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 transition-colors"
+              className="inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 transition-colors cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 onGoToHighlight();
@@ -125,26 +156,9 @@ export function AIAnnotationResultBase({
             </button>
           )}
 
-          {onEditToggle && (
-            <button
-              className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
-                editing
-                  ? "text-ctp-mauve"
-                  : "text-ctp-maroon hover:bg-ctp-surface0"
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEditToggle();
-              }}
-              title={editing ? "Save" : "Edit"}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          )}
-
           {/* TTS */}
           <button
-            className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
+            className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors cursor-pointer ${
               tts.speakingId === item.id && tts.state === "playing"
                 ? "text-ctp-mauve"
                 : "text-ctp-maroon hover:bg-ctp-surface0"
@@ -170,7 +184,7 @@ export function AIAnnotationResultBase({
 
           {onTranslate && (
             <button
-              className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors ${
+              className={`inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 transition-colors cursor-pointer ${
                 isTranslating
                   ? "text-ctp-maroon/60"
                   : "text-ctp-maroon hover:bg-ctp-surface0"
@@ -192,7 +206,7 @@ export function AIAnnotationResultBase({
 
           {onDelete && (
             <button
-              className="ml-auto inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 hover:text-ctp-red transition-colors"
+              className="ml-auto inline-flex items-center justify-center rounded border border-ctp-overlay0/50 bg-ctp-surface0/40 p-1 text-ctp-maroon hover:bg-ctp-surface0 hover:text-ctp-red transition-colors cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();

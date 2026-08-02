@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Pencil, Plus } from "lucide-react";
 import {
   useAnnotationStore,
   type AnnotationItem,
@@ -50,7 +51,11 @@ export function AITranslateCard({
   const ai = item.aiResult;
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
+  // User-authored context note editor (independent from the text editor).
+  const [editingContext, setEditingContext] = useState(false);
+  const [editContext, setEditContext] = useState(item.context ?? "");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const contextInputRef = useRef<HTMLTextAreaElement>(null);
   const updateItem = useAnnotationStore((s) => s.updateItem);
 
   useEffect(() => {
@@ -58,11 +63,22 @@ export function AITranslateCard({
   }, [item.text]);
 
   useEffect(() => {
+    setEditContext(item.context ?? "");
+  }, [item.context]);
+
+  useEffect(() => {
     if (editing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, [editing]);
+
+  // Auto-focus the context note editor when it opens.
+  useEffect(() => {
+    if (editingContext && contextInputRef.current) {
+      contextInputRef.current.focus();
+    }
+  }, [editingContext]);
 
   // Save an edited text. V2 cards render `ai.input.normalized` (not item.text),
   // so a bare `{ text }` update wouldn't show up — sync normalized too so the
@@ -91,6 +107,25 @@ export function AITranslateCard({
     onClick?.();
   };
 
+  // ── Context note handlers ──────────────────────────────────────────────
+  // Editing context only persists the note (no aiResult / aiVersion change,
+  // no auto re-translate). The new note takes effect on the next manual
+  // translate. Gate: V2 or untranslated cards with an action bar; V1 cards
+  // (read-only) and the search panel (no callbacks) are excluded.
+  const contextEditAllowed =
+    item.aiVersion !== 1 && !!(onDelete || onTranslate);
+
+  const handleSaveContext = useCallback(() => {
+    const next = editContext.trim();
+    updateItem(id, { context: next ? next : undefined });
+    setEditingContext(false);
+  }, [editContext, id, updateItem]);
+
+  const handleCancelContext = useCallback(() => {
+    setEditContext(item.context ?? "");
+    setEditingContext(false);
+  }, [item.context]);
+
   // V2 uses its own type-based layout; V1 cards render through UpgradeCard and
   // have no details, so there is no legacy detail-availability gate.
   const isV2 = item.aiVersion === 2;
@@ -114,6 +149,74 @@ export function AITranslateCard({
     ...(onGoToHighlight ? { onGoToHighlight } : {}),
   };
 
+  // ── Context note editor block ─────────────────────────────────────────
+  // Injected as `contextSlot` into AIAnnotationResult so it renders between
+  // the source text and the action bar (i.e. ABOVE the buttons), in both
+  // collapsible and non-collapsible layouts. Hidden while the text editor is
+  // active. Read-only display lives in AIAnnotationResult v2 details; this
+  // block is the edit affordance.
+  const contextNoteEditor = (
+    // -mt-1 cancels the parent showCore block's space-y-1 so the note hugs
+    // the source text; edit mode keeps its own textarea chrome.
+    <div className="-mt-1" onClick={(e) => e.stopPropagation()}>
+      {editingContext ? (
+        <div className="space-y-1">
+          <textarea
+            ref={contextInputRef}
+            className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-16 text-xs whitespace-pre-wrap wrap-break-word"
+            value={editContext}
+            onChange={(e) => setEditContext(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setEditContext(item.context ?? "");
+                setEditingContext(false);
+              }
+            }}
+            placeholder="Add a context note to guide translation…"
+          />
+          <div className="flex items-center gap-1">
+            <button
+              className="rounded bg-ctp-mauve/20 px-2 py-0.5 text-xs font-medium text-ctp-mauve hover:bg-ctp-mauve/30"
+              onClick={handleSaveContext}
+            >
+              Save
+            </button>
+            <button
+              className="rounded bg-ctp-surface1 px-2 py-0.5 text-xs text-ctp-overlay1 hover:bg-ctp-surface1/70"
+              onClick={handleCancelContext}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          className="inline-flex items-center gap-1 rounded text-[11px] text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0/50 px-1 py-0.5 cursor-pointer"
+          onClick={() => setEditingContext(true)}
+          title={
+            item.context?.trim()
+              ? "Edit context note"
+              : "Add a context note to guide translation"
+          }
+        >
+          {item.context?.trim() ? (
+            <>
+              <Pencil className="h-3 w-3" />
+              <span className="max-w-60 truncate text-ctp-overlay1">
+                {item.context}
+              </span>
+            </>
+          ) : (
+            <>
+              <Plus className="h-3 w-3" />
+              Add context
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+
   // ── Collapsible mode (annotations panel cards) ──
   if (collapsible) {
     return (
@@ -122,42 +225,45 @@ export function AITranslateCard({
           scrolled ? "bg-ctp-surface0/40 border-accent" : "hover:border-accent"
         } ${className}`}
       >
-        {/* ── Edit mode: full-card textarea ── */}
-        {editing ? (
-          <textarea
-            ref={inputRef}
-            className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-15"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSaveText();
-              }
-              if (e.key === "Escape") {
-                setEditText(item.text);
-                setEditing(false);
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
+        {/* ── Card core: header + source text + context + action bar ──
+            Clicking the core toggles expand (skipped while text-editing;
+            interactive children stopPropagation). */}
+        <div
+          onClick={() => {
+            if (editing) return;
+            if (ai && isV2) onToggleExpand(id);
+          }}
+        >
+          <AIAnnotationResult
+            item={item}
+            showCore
+            showActionBar={showActionBar}
+            sourceLang={sourceLang}
+            contextSlot={contextEditAllowed ? contextNoteEditor : undefined}
+            textEditorSlot={
+              editing ? (
+                <textarea
+                  ref={inputRef}
+                  className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-15"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSaveText();
+                    }
+                    if (e.key === "Escape") {
+                      setEditText(item.text);
+                      setEditing(false);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : undefined
+            }
+            {...actionBarProps}
           />
-        ) : (
-          /* ── Upper area: clickable to toggle expand ── */
-          <div
-            onClick={() => {
-              if (ai && isV2) onToggleExpand(id);
-            }}
-            className="cursor-pointer"
-          >
-            <AIAnnotationResult
-              item={item}
-              showCore
-              showActionBar={showActionBar}
-              sourceLang={sourceLang}
-              {...actionBarProps}
-            />
-          </div>
-        )}
+        </div>
 
         {/* ── Collapsible details (animated, V2 only) ── */}
         {ai && isV2 && (
@@ -194,39 +300,41 @@ export function AITranslateCard({
   // ── Non-collapsible (expanded detail card, e.g. search panel) ──
   return (
     <div
-      className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-3 transition-colors cursor-pointer ${
+      className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-3 transition-colors ${
         scrolled ? "bg-ctp-surface0/40 border-accent" : "hover:border-accent"
       } ${className}`}
       onClick={handleCardClick}
     >
-      {/* ── Edit mode: header + textarea ── */}
-      {editing ? (
-        <textarea
-          ref={inputRef}
-          className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-15"
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSaveText();
-            }
-            if (e.key === "Escape") {
-              setEditText(item.text);
-              setEditing(false);
-            }
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
-      ) : (
-        <AIAnnotationResult
-          item={item}
-          showCore
-          showActionBar={showActionBar}
-          sourceLang={sourceLang}
-          {...actionBarProps}
-        />
-      )}
+      {/* ── Card core: header + source text + context + action bar ── */}
+      <AIAnnotationResult
+        item={item}
+        showCore
+        showActionBar={showActionBar}
+        sourceLang={sourceLang}
+        contextSlot={contextEditAllowed ? contextNoteEditor : undefined}
+        textEditorSlot={
+          editing ? (
+            <textarea
+              ref={inputRef}
+              className="w-full rounded border bg-ctp-base px-2 py-1 resize-none min-h-15"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSaveText();
+                }
+                if (e.key === "Escape") {
+                  setEditText(item.text);
+                  setEditing(false);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : undefined
+        }
+        {...actionBarProps}
+      />
 
       {/* ── AI details (V2; V1 cards have none) ── */}
       {ai && isV2 && (

@@ -316,6 +316,7 @@ export function CenterPanel({
           embedData: a.embed_data as AnnotationEmbedData,
           aiResult: a.ai_data ?? undefined,
           aiVersion: a.ai_version ?? undefined,
+          context: a.context ?? undefined,
           fsrsCard: a.fsrs_data ?? undefined,
           createdAt: a.created_at ?? undefined,
         })),

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { AIAnnotationResultBase } from "@/components/document/AIAnnotationResult/base";
 import { AIAnnotationResultUpgradeCard } from "@/components/document/AIAnnotationResult/upgrade-card";
@@ -16,6 +17,16 @@ export interface AIAnnotationResultProps {
   onGoToHighlight?: () => void;
   /** Source language for TTS voice selection. */
   sourceLang?: string;
+  /**
+   * Slot rendered between the source text and the action bar. Used by
+   * AITranslateCard to place the user-context note editor above the buttons.
+   */
+  contextSlot?: ReactNode;
+  /**
+   * When set, replaces the source text with this editor (inline text editing
+   * without swapping the whole card). AITranslateCard passes its textarea here.
+   */
+  textEditorSlot?: ReactNode;
 }
 
 /**

@@ -8,11 +8,17 @@ import type { AIAnnotationDataV2 } from "@/types/annotation";
 // Mock the Electron preload bridge so the store's persistence side-effects
 // (annotations.save / aiResults.save / fsrsCards.save) resolve without IPC.
 const savedVersions: Array<number | undefined> = [];
+// Captures the payload passed to annotations.save so tests can assert the
+// persisted annotation row (incl. the context note).
+const savedAnnotations: Array<Record<string, unknown>> = [];
 const mockSiltflow = {
   annotations: {
     list: () => Promise.resolve([]),
     listAll: () => Promise.resolve([]),
-    save: () => Promise.resolve({ id: "" }),
+    save: (payload: Record<string, unknown>) => {
+      savedAnnotations.push(payload);
+      return Promise.resolve({ id: "" });
+    },
     delete: () => Promise.resolve(),
   },
   aiResults: {
@@ -89,6 +95,7 @@ describe("annotation.store version handling", () => {
   beforeEach(() => {
     useAnnotationStore.setState({ items: [] });
     savedVersions.length = 0;
+    savedAnnotations.length = 0;
   });
 
   it("keeps aiVersion === 2 when an edit patch omits aiVersion", () => {
@@ -171,5 +178,47 @@ describe("annotation.store version handling", () => {
     expect(updated.aiVersion).toBe(1);
     expect(updated.text).toBe("GROK");
     expect(savedVersions).toHaveLength(0);
+  });
+
+  // ── User-authored context note ────────────────────────────────────────
+
+  it("persists a context note to the annotation row and does not touch ai_results", () => {
+    useAnnotationStore.setState({ items: [makeItem()] });
+
+    useAnnotationStore.getState().updateItem("a1", {
+      context: "this is my note",
+    });
+
+    const updated = useAnnotationStore.getState().items[0];
+    expect(updated.context).toBe("this is my note");
+    // persistAnnotation wrote the context into the annotation save payload…
+    expect(savedAnnotations[savedAnnotations.length - 1]?.context).toBe(
+      "this is my note",
+    );
+    // …but no aiResults.save fired (no aiResult in the patch).
+    expect(savedVersions).toHaveLength(0);
+  });
+
+  it("persists a cleared context as null", () => {
+    useAnnotationStore.setState({
+      items: [makeItem({ context: "old note" })],
+    });
+
+    useAnnotationStore.getState().updateItem("a1", { context: undefined });
+
+    const updated = useAnnotationStore.getState().items[0];
+    expect(updated.context).toBeUndefined();
+    expect(savedAnnotations[savedAnnotations.length - 1]?.context).toBeNull();
+    expect(savedVersions).toHaveLength(0);
+  });
+
+  it("persists context when a new item is added", () => {
+    useAnnotationStore.getState().addItem(
+      makeItem({ context: "context before translate" }),
+    );
+
+    expect(savedAnnotations[savedAnnotations.length - 1]?.context).toBe(
+      "context before translate",
+    );
   });
 });

@@ -20,6 +20,7 @@ interface AnnotationJoinedRow {
   page_number: number | null;
   embed_data: string;
   kind: string;
+  context: string | null;
   created_at: string;
   updated_at: string;
   ai_data: string | null;
@@ -35,6 +36,7 @@ interface AnnotationEnrichedValue {
   page_number: number | null;
   embed_data: unknown;
   kind: string;
+  context: string | null;
   created_at?: string;
   updated_at: string;
   ai_data: unknown;
@@ -54,6 +56,7 @@ function mapEnriched(row: AnnotationJoinedRow): AnnotationEnrichedValue {
     page_number: row.page_number,
     embed_data: tryParseJson(row.embed_data, {}),
     kind: row.kind || "annotation",
+    context: row.context ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     ai_data: row.ai_data ? tryParseJson(row.ai_data, null) : null,
@@ -65,7 +68,7 @@ function mapEnriched(row: AnnotationJoinedRow): AnnotationEnrichedValue {
 const LIST_ALL_SQL = `
   SELECT
     a.id, a.document_id, a.type, a.text, a.page_number, a.embed_data,
-    a.kind, a.created_at, a.updated_at,
+    a.kind, a.context, a.created_at, a.updated_at,
     ar.data AS ai_data, ar.version AS ai_version,
     fc.data AS fsrs_data
   FROM annotations a
@@ -107,8 +110,8 @@ export function registerAnnotationHandlers() {
       const createdAt = annotation.created_at ?? now;
       sql
         .prepare(
-          `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, kind, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT OR REPLACE INTO annotations (id, document_id, type, text, page_number, embed_data, kind, context, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           annotation.id,
@@ -118,6 +121,7 @@ export function registerAnnotationHandlers() {
           annotation.page_number ?? 0,
           annotation.embed_data ?? "",
           annotation.kind || "annotation",
+          annotation.context ?? null,
           createdAt,
           now,
         );

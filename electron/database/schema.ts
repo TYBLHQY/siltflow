@@ -57,6 +57,7 @@ export const annotations = sqliteTable(
     pageNumber: integer("page_number"),
     embedData: text("embed_data").notNull(),
     kind: text("kind").notNull().default("annotation"),
+    context: text("context"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },

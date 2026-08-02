@@ -11,8 +11,8 @@ import type {
 // ── Mock the Electron preload bridge ────────────────────────────────────
 // buildIndex calls window.siltflow.documents.list + annotations.listAll.
 // vi.fn lets each test set return values and assert call counts.
-const documentsList = vi.fn();
-const annotationsListAll = vi.fn();
+const documentsList = vi.fn<() => Promise<DocumentIPCItem[]>>();
+const annotationsListAll = vi.fn<() => Promise<AnnotationEnrichedIPC[]>>();
 (globalThis as Record<string, unknown>).window = {
   siltflow: {
     documents: { list: documentsList },
@@ -106,6 +106,7 @@ function makeAnnRow(
       },
     } as unknown as AnnotationEnrichedIPC["embed_data"],
     kind: "annotation",
+    context: null,
     created_at: "2026-06-01T00:00:00.000Z",
     updated_at: "2026-06-01T00:00:00.000Z",
     ai_data: null,

@@ -31,6 +31,9 @@ export function runMigrations(
   if (currentVersion < 4) {
     migrateV3toV4(sqlite);
   }
+  if (currentVersion < 5) {
+    migrateV4toV5(sqlite);
+  }
 }
 
 // ── Migration 1→2: add version column to ai_results ────────────────
@@ -82,5 +85,20 @@ function migrateV3toV4(sqlite: Database.Database) {
     sqlite.exec(
       "ALTER TABLE annotations ADD COLUMN kind TEXT NOT NULL DEFAULT 'annotation'",
     );
+  }
+}
+
+// ── Migration 4→5: add context column to annotations ────────────────
+// User-authored per-card context note. Additive nullable column — no backfill.
+
+function migrateV4toV5(sqlite: Database.Database) {
+  const annoCols = sqlite
+    .prepare("PRAGMA table_info('annotations')")
+    .all() as ColumnInfo[];
+  // Table doesn't exist yet on a fresh DB — skip; createTables() makes it
+  // with the context column already present.
+  if (annoCols.length === 0) return;
+  if (!annoCols.some((c: ColumnInfo) => c.name === "context")) {
+    sqlite.exec("ALTER TABLE annotations ADD COLUMN context TEXT");
   }
 }

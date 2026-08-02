@@ -23,6 +23,11 @@ export interface AnnotationItem {
   aiResult?: AIAnnotationDataV2 | null;
   /** AI data version from ai_results.version, undefined if not yet translated. */
   aiVersion?: number | null;
+  /**
+   * User-authored context note for this annotation. Renders on the card and
+   * is injected into the output AI stage only (never the input stage).
+   */
+  context?: string;
   /** FSRS card state — set when first reviewed */
   fsrsCard?: Card;
   /** ISO timestamp from the backend (created_at). Used for z-order tiebreaks. */
@@ -53,6 +58,7 @@ function persistAnnotation(item: AnnotationItem) {
       page_number: item.pageNumber,
       embed_data: JSON.stringify(item.embedData),
       kind: item.kind || "annotation",
+      context: item.context ?? null,
       created_at: item.createdAt,
     })
     .catch(

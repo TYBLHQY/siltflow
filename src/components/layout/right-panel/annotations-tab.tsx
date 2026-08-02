@@ -42,7 +42,7 @@ interface AnnotationsTabProps {
 // are read-only and surface a "re-translate" prompt via UpgradeCard.
 
 async function translateItemV2(
-  item: { id: string; text: string },
+  item: { id: string; text: string; context?: string },
   sourceLang: string,
   targetLang: string,
   summary: string | undefined,
@@ -73,6 +73,7 @@ async function translateItemV2(
       sourceLang,
       targetLang,
       context,
+      userContext: item.context,
     });
     updateItem(item.id, {
       aiResult: result,

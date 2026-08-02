@@ -185,6 +185,7 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
           embedData,
           aiResult,
           aiVersion: ann.ai_version ?? undefined,
+          context: ann.context ?? undefined,
           fsrsCard,
         };
 

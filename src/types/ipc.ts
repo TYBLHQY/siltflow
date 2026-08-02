@@ -33,6 +33,8 @@ export interface AnnotationSaveRequest {
   page_number: number;
   embed_data: string;
   kind?: string;
+  /** User-authored context note (optional). */
+  context?: string | null;
   /** ISO timestamp; preserved on edit so created_at drives z-order stably. */
   created_at?: string;
 }
@@ -45,6 +47,7 @@ export interface AnnotationRowIPC {
   page_number: number | null;
   embed_data: string;
   kind: string;
+  context: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +61,7 @@ export interface AnnotationEnrichedIPC {
   page_number: number | null;
   embed_data: string;
   kind: string;
+  context: string | null;
   created_at: string;
   updated_at: string;
   ai_data: string | null;
