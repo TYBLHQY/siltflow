@@ -621,20 +621,6 @@ export function AIAnnotationResultV2({
       {/* ── Details: AI output (Word / Phrase / Sentence) ── */}
       {showDetails && (
         <div className="space-y-1">
-          {/* User-authored context note (card-local, read-only here) */}
-          {item.context?.trim() && (
-            <div>
-              <SectionHeader>Context</SectionHeader>
-              <SelectionTTSButton
-                language={ai?.input?.source_lang}
-                annId={item.id}
-              >
-                <p className="whitespace-pre-wrap wrap-break-word leading-relaxed">
-                  {item.context}
-                </p>
-              </SelectionTTSButton>
-            </div>
-          )}
           {output && isWordOutput(output) && (
             <WordView
               output={output}
