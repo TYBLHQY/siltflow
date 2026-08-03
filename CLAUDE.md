@@ -110,6 +110,17 @@ Oxlint 启用了类型感知规则（`--type-aware`），当前项目存在一�
 - **E2E 的 `executablePath` 必须是真实二进制** `node_modules/electron/dist/electron`；`.bin/electron` 是 shell 包装，会挂起 "Waiting for debugger"。
 - **`viewport.rawDims` 字段名陷阱**（PdfViewer.tsx fit-width）：字段是 `pageWidth`/`pageHeight`（PDF 单位），不是 `width`/`height`。用错 → scale 变 NaN，页面撑不满。
 
+### AI 数据 schema 变更 → 必须同步 Obsidian importer
+
+`src/types/annotation.ts` 的 AI 数据结构（`AIAnnotationDataV2` 等）被下游 **Obsidian importer** 消费（`/data/workspace/code-repo/obsidian-plugin-proj/obsidian-siltflow-importer`，读 `data.db` 渲染卡片）。改 AI 字段名/结构时：
+
+1. **同步 importer 的 `src/types.ts`** 的 `ParsedAIResult`（如本次 `context` → `documentContext`），保留旧键作为 `Legacy alias` 兼容迁移前的库。
+2. **决定是否走数据库迁移**：blob 字段（`ai_results.data` 内嵌 JSON）改名 → 加 `migrateV5toV6` 式迁移改写旧数据；列名变更才需动 `electron/database/schema.ts`。
+3. **`AI_DATA_VERSION` 与 `SCHEMA_VERSION` 是两回事**：
+   - `SCHEMA_VERSION`（`electron/database/index.ts`）= 库结构版本，加迁移时必须 bump。
+   - `AI_DATA_VERSION`（写进 `ai_results.version`）= AI 数据 schema 版本，渲染器 `AIAnnotationResult/index.tsx` 靠它 `switch` 选组件。**blob 字段改名不需要 bump 它**——V2 渲染器不读被改的字段时，bump 反而会让存量卡落入 default 空白分支。
+   - 只有 AI 数据结构变化、渲染逻辑需要区分新旧时才 bump `AI_DATA_VERSION`。
+
 ## 配置文件位置
 
 | 文件                       | 用途                                                       |
