@@ -52,7 +52,7 @@ const v2Result: AIAnnotationDataV2 = {
     source_lang: "en-US",
     type: "word",
   },
-  context: null,
+  documentContext: null,
   output: {
     translation: "领会",
     meanings: [],

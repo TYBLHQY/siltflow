@@ -34,6 +34,9 @@ export function runMigrations(
   if (currentVersion < 5) {
     migrateV4toV5(sqlite);
   }
+  if (currentVersion < 6) {
+    migrateV5toV6(sqlite);
+  }
 }
 
 // ── Migration 1→2: add version column to ai_results ────────────────
@@ -100,5 +103,58 @@ function migrateV4toV5(sqlite: Database.Database) {
   if (annoCols.length === 0) return;
   if (!annoCols.some((c: ColumnInfo) => c.name === "context")) {
     sqlite.exec("ALTER TABLE annotations ADD COLUMN context TEXT");
+  }
+}
+
+// ── Migration 5→6: rename V2 blob field context → documentContext ──────────
+// The auto document context in AIAnnotationDataV2 was renamed from `context`
+// to `documentContext` to disambiguate it from the per-card user-authored
+// note (which lives on the annotations.context column and is untouched).
+// Rewrite the JSON blobs in ai_results.data in place — old field name is
+// dropped, rows without the field are left as-is.
+
+interface AiResultsRow {
+  annotation_id: string;
+  document_id: string;
+  data: string;
+}
+
+function migrateV5toV6(sqlite: Database.Database) {
+  const aiCols = sqlite
+    .prepare("PRAGMA table_info('ai_results')")
+    .all() as ColumnInfo[];
+  // Table doesn't exist yet on a fresh DB — skip; createTables() makes it
+  // empty and the new writer emits documentContext directly.
+  if (aiCols.length === 0) return;
+
+  const rows = sqlite
+    .prepare("SELECT annotation_id, document_id, data FROM ai_results")
+    .all() as AiResultsRow[];
+
+  for (const row of rows) {
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(row.data) as Record<string, unknown>;
+    } catch {
+      // Corrupt / non-object data — nothing we can safely rewrite.
+      continue;
+    }
+    if (typeof parsed !== "object" || parsed === null) continue;
+    if (!("context" in parsed)) continue;
+
+    const { context, ...rest } = parsed;
+    if (context === undefined) continue; // nothing meaningful to move
+
+    const updated = { ...rest, documentContext: context };
+    sqlite
+      .prepare(
+        "UPDATE ai_results SET data = ?, updated_at = ? WHERE annotation_id = ? AND document_id = ?",
+      )
+      .run(
+        JSON.stringify(updated),
+        new Date().toISOString(),
+        row.annotation_id,
+        row.document_id,
+      );
   }
 }

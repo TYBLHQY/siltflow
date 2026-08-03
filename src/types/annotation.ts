@@ -150,7 +150,7 @@ export interface AIAnnotationDataV2 {
   /** Input fields (produced by input AI). */
   input: AIAnnotationInputV2;
   /** Document context (up to 5000 chars). */
-  context: string | null;
+  documentContext: string | null;
   /** Type-specific output (produced by output AI). */
   output: AIAnnotationOutputV2;
 }

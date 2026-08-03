@@ -72,7 +72,7 @@ async function translateItemV2(
       text: item.text,
       sourceLang,
       targetLang,
-      context,
+      documentContext: context,
       userContext: item.context,
     });
     updateItem(item.id, {

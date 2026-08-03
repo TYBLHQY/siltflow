@@ -105,7 +105,7 @@ describe("translateAnnotationV2", () => {
       text: "grok",
       sourceLang: "en-US",
       targetLang: "zh-CN",
-      context: "DOC_CTX",
+      documentContext: "DOC_CTX",
       userContext: "MY_NOTE",
     });
 
@@ -133,12 +133,12 @@ describe("translateAnnotationV2", () => {
       text: "grok",
       sourceLang: "en-US",
       targetLang: "zh-CN",
-      context: "DOC_CTX",
+      documentContext: "DOC_CTX",
       userContext: "MY_NOTE",
     });
 
-    expect(result.context).toBe("DOC_CTX");
-    expect(result.context).not.toContain("MY_NOTE");
+    expect(result.documentContext).toBe("DOC_CTX");
+    expect(result.documentContext).not.toContain("MY_NOTE");
   });
 
   it("stores null context when no auto context is given", async () => {
@@ -153,6 +153,6 @@ describe("translateAnnotationV2", () => {
       userContext: "MY_NOTE",
     });
 
-    expect(result.context).toBeNull();
+    expect(result.documentContext).toBeNull();
   });
 });

@@ -9,7 +9,7 @@ import path from "node:path";
 // Bump this when making backward-incompatible migrations.  The value is
 // stored as PRAGMA user_version so we can detect and migrate existing
 // databases on upgrade.
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 /** Current AI data version written to ai_results.version on save. */
 export const AI_DATA_VERSION = 2;

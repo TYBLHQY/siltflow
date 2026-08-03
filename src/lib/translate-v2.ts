@@ -216,22 +216,22 @@ function getTypeSchema(type: AIAnnotationInputV2["type"]): string {
 /**
  * Build the output-stage user message.
  *
- * Order matters for prompt caching: the auto document `context` (stable per
- * document) and the target-language line form the shared prefix across cards,
- * while the user-authored `userContext` (card-local, same cache weight as the
- * card text) sits immediately before `Input` in the varying tail.
+ * Order matters for prompt caching: the auto document `documentContext` (stable
+ * per document) and the target-language line form the shared prefix across
+ * cards, while the user-authored `userContext` (card-local, same cache weight
+ * as the card text) sits immediately before `Input` in the varying tail.
  */
 export function buildOutputUserMessage(
   input: AIAnnotationInputV2,
   targetLang: string,
-  context: string | undefined,
+  documentContext: string | undefined,
   userContext: string | undefined,
 ): string {
   const inputJson = JSON.stringify(input);
   const lines: string[] = [];
-  if (context) {
+  if (documentContext) {
     lines.push(
-      `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncateContext(context)}`,
+      `CONTEXT (document excerpt for disambiguation, max ${MAX_CONTEXT_LENGTH} chars):\n${truncateContext(documentContext)}`,
     );
   }
   lines.push(`IMPORTANT: All translations must be in ${targetLang}.`);
@@ -252,7 +252,7 @@ async function callOutputAI(
   profile: AIProfile,
   input: AIAnnotationInputV2,
   targetLang: string,
-  context: string | undefined,
+  documentContext: string | undefined,
   userContext: string | undefined,
   signal?: AbortSignal,
 ): Promise<AIAnnotationOutputV2> {
@@ -263,7 +263,7 @@ async function callOutputAI(
   const userContent = buildOutputUserMessage(
     input,
     targetLang,
-    context,
+    documentContext,
     userContext,
   );
 
@@ -305,7 +305,7 @@ export interface TranslateV2Options {
   /** Target language for translation (BCP 47). */
   targetLang: string;
   /** Document summary / article context for disambiguation. */
-  context?: string;
+  documentContext?: string;
   /** User-authored per-card context note — injected ONLY in the output stage,
    *  in the card-local tail (same prompt-cache weight as the card text). */
   userContext?: string;
@@ -347,17 +347,20 @@ export async function translateAnnotationV2(
     options.outputProfile,
     input,
     targetLang,
-    options.context,
+    options.documentContext,
     options.userContext,
     options.signal,
   );
 
   // Step 4: Assemble result
-  // The `context` echo keeps the AUTO document context (backward compatible);
-  // the user-authored note lives on the annotation row, not in the blob.
+  // The `documentContext` echo keeps the AUTO document context (backward
+  // compatible); the user-authored note lives on the annotation row, not in
+  // the blob.
   return {
     input,
-    context: options.context ? truncateContext(options.context) : null,
+    documentContext: options.documentContext
+      ? truncateContext(options.documentContext)
+      : null,
     output,
   };
 }
