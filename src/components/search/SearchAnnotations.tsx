@@ -142,7 +142,14 @@ export function SearchAnnotations() {
           e.preventDefault();
           if (results.length > 0) {
             const idx = Math.min(selectedIndex, results.length - 1);
-            void navigateToAnnotation(results[idx].item);
+            const entry = results[idx].item;
+            if (e.ctrlKey || e.metaKey) {
+              // Ctrl+Enter (Cmd+Enter on macOS) → jump to the PDF highlight
+              void navigateToAnnotation(entry);
+            } else {
+              // Enter → show the card in the right detail panel
+              selectEntry(entry);
+            }
           }
           break;
         case "Escape":
@@ -151,7 +158,7 @@ export function SearchAnnotations() {
           break;
       }
     },
-    [results, selectedIndex, setSelectedIndex, close],
+    [results, selectedIndex, setSelectedIndex, selectEntry, close],
   );
 
   // ── Handlers ──
