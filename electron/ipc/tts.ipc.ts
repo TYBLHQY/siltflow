@@ -1,8 +1,7 @@
 import { ipcMain } from "electron";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync } from "node:fs";
-import { readFile, unlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile, unlink, writeFile, mkdir } from "node:fs/promises";
+import { join, dirname } from "node:path";
 import { UniversalEdgeTTS, listVoices } from "edge-tts-universal";
 
 let vaultCacheDir = "";
@@ -10,6 +9,12 @@ let vaultCacheDir = "";
 export function setTtsCacheDir(dir: string) {
   vaultCacheDir = dir;
 }
+
+// In-flight dedup keyed by the cache key: if two tts:speak calls arrive for
+// the same (text, voice, rate, volume, pitch) while the first is still
+// synthesizing, the second awaits the same promise instead of issuing a
+// duplicate network synthesize + cache write.
+const inFlightSynthesis = new Map<string, Promise<number[]>>();
 
 /** Build a stable cache key from (text, voice, rate, volume, pitch). */
 function cacheKey(
@@ -70,33 +75,57 @@ export function registerTTSHandlers() {
       const volume = options.volume ?? "+0%";
       const pitch = options.pitch ?? "+0Hz";
 
-      // Check cache first
+      // Check cache first — async read (no blocking existsSync+readFile pair).
       const key = cacheKey(text, voice, rate, volume, pitch);
       const cachePath = vaultCacheDir ? join(vaultCacheDir, `${key}.mp3`) : "";
-      if (cachePath && existsSync(cachePath)) {
-        const buf = await readFile(cachePath);
-        return Array.from(new Uint8Array(buf));
+      if (cachePath) {
+        try {
+          const buf = await readFile(cachePath);
+          return Array.from(new Uint8Array(buf));
+        } catch {
+          /* cache miss → synthesize */
+        }
       }
 
-      // Synthesize in memory via edge-tts-universal (no temp files). Throws
-      // EdgeTTSException subclasses on network/protocol failure.
-      const tts = new UniversalEdgeTTS(text, voice, { rate, volume, pitch });
-      const result = await tts.synthesize();
-      const buf = Buffer.from(await result.audio.arrayBuffer());
+      // In-flight dedup: share the synthesis promise for identical requests
+      // instead of synthesizing the same text twice concurrently. The
+      // synchronous section between the first await and this check is atomic
+      // on the event loop, so concurrent arrivals can't double-synthesize.
+      let promise = cachePath ? inFlightSynthesis.get(key) : undefined;
+      if (!promise) {
+        // Synthesize in memory via edge-tts-universal (no temp files). Throws
+        // EdgeTTSException subclasses on network/protocol failure.
+        promise = (async (): Promise<number[]> => {
+          const tts = new UniversalEdgeTTS(text, voice, {
+            rate,
+            volume,
+            pitch,
+          });
+          const result = await tts.synthesize();
+          const buf = Buffer.from(await result.audio.arrayBuffer());
+          return Array.from(new Uint8Array(buf));
+        })();
+        if (cachePath) {
+          inFlightSynthesis.set(key, promise);
+          void promise
+            .finally(() => inFlightSynthesis.delete(key))
+            .catch(() => {});
+        }
+      }
+      const audioData = await promise;
 
       // Cache the result
       if (cachePath) {
         try {
-          if (!existsSync(vaultCacheDir))
-            mkdirSync(vaultCacheDir, { recursive: true });
-          await writeFile(cachePath, buf);
+          await mkdir(dirname(cachePath), { recursive: true });
+          await writeFile(cachePath, Buffer.from(audioData));
           trimCache().catch(() => {});
         } catch {
           /* cache write best effort */
         }
       }
 
-      return Array.from(new Uint8Array(buf));
+      return audioData;
     },
   );
 

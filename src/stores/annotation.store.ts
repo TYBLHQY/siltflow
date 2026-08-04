@@ -3,6 +3,43 @@ import type { ScaledPosition, Content } from "react-pdf-highlighter-plus";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
 import type { Card } from "ts-fsrs";
 import { useReviewLogStore } from "@/stores/review-log.store";
+import type { AnnotationEnrichedIPC } from "@/types/ipc";
+
+// ── Shared full-list fetch (deduped + cached) ─────────────────────────
+// search.store, stats.store and MemoryStateExplorer all call
+// annotations.listAll to build indexes. Previously each entry point issued
+// its own full-table IPC (three copies of the same query / JSON.parse work).
+// A single module-level entry point makes concurrent callers share the same
+// in-flight promise, and repeated callers within the freshness window get a
+// cached result with zero IPC.
+let allAnnotationsInFlight: Promise<AnnotationEnrichedIPC[]> | null = null;
+let allAnnotationsCache: AnnotationEnrichedIPC[] | null = null;
+
+/**
+ * Fetch all annotations exactly once per data change, sharing the result
+ * across concurrent callers. Returns a shallow snapshot — callers that hold
+ * onto rows across a mutation should re-fetch rather than mutate in place.
+ */
+export async function fetchAllAnnotations(): Promise<AnnotationEnrichedIPC[]> {
+  if (allAnnotationsCache) return allAnnotationsCache;
+  if (!allAnnotationsInFlight) {
+    allAnnotationsInFlight = window.siltflow.annotations
+      .listAll()
+      .then((rows) => {
+        allAnnotationsCache = rows;
+        return rows;
+      })
+      .finally(() => {
+        allAnnotationsInFlight = null;
+      });
+  }
+  return allAnnotationsInFlight;
+}
+
+/** Drop the cached full-list so the next fetchAllAnnotations hits the DB. */
+export function invalidateAllAnnotationsCache() {
+  allAnnotationsCache = null;
+}
 
 export interface AnnotationEmbedData {
   position: ScaledPosition;
@@ -39,7 +76,11 @@ interface AnnotationState {
   setItems: (items: AnnotationItem[]) => void;
   addItem: (item: AnnotationItem) => void;
   removeItem: (id: string) => void;
-  updateItem: (id: string, patch: Partial<AnnotationItem>) => void;
+  updateItem: (
+    id: string,
+    patch: Partial<AnnotationItem>,
+    options?: { persist?: boolean },
+  ) => void;
   clear: () => void;
   /** Manual-annotation dialog visibility (store-owned so a global shortcut can open it even when the panel is collapsed / tab is unmounted). */
   manualDialogOpen: boolean;
@@ -76,8 +117,12 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   openManualDialog: () => set({ manualDialogOpen: true }),
   closeManualDialog: () => set({ manualDialogOpen: false }),
 
-  setItems: (items) => set({ items }),
+  setItems: (items) => {
+    invalidateAllAnnotationsCache();
+    set({ items });
+  },
   addItem: (item) => {
+    invalidateAllAnnotationsCache();
     persistAnnotation(item);
     if (item.aiResult) {
       window.siltflow.aiResults
@@ -106,6 +151,7 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   },
 
   removeItem: (id) => {
+    invalidateAllAnnotationsCache();
     const current = useAnnotationStore
       .getState()
       .items.find((i) => i.id === id);
@@ -123,7 +169,8 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
     set((s) => ({ items: s.items.filter((i) => i.id !== id) }));
   },
 
-  updateItem: (id, patch) => {
+  updateItem: (id, patch, options) => {
+    invalidateAllAnnotationsCache();
     const current = useAnnotationStore
       .getState()
       .items.find((i) => i.id === id);
@@ -136,33 +183,42 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
         patch.aiVersion ??= 2;
       }
       const merged = { ...current, ...patch };
-      // Always persist the annotation core
-      persistAnnotation(merged);
-      // Persist side tables if changed
-      if (patch.aiResult !== undefined) {
-        // Current schema is V2 — fall back to it when the caller omits a version
-        // so V2 data survives app refresh (the IPC previously always wrote version=1).
-        const saveVersion = patch.aiVersion ?? 2;
-        // Persist to DB. Use the caller-assigned version so V2 data
-        // survives app refresh (the IPC previously always wrote version=1).
-        window.siltflow.aiResults
-          .save(id, current.documentId, patch.aiResult, saveVersion)
-          .catch(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (err: any) => {
-              console.error("[annotation.store] aiResults.save failed:", err);
-            },
-          );
-      }
-      if (patch.fsrsCard !== undefined) {
-        window.siltflow.fsrsCards
-          .save(id, current.documentId, patch.fsrsCard)
-          .catch(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (err: any) => {
-              console.error("[annotation.store] fsrsCards.save failed:", err);
-            },
-          );
+      const skipPersist =
+        options?.persist === false ||
+        // aiResult: null is the in-flight "translating" transition, not user
+        // data — persisting it would first null the ai_results row and then
+        // immediately rewrite it, doubling the write. Only the final result
+        // (aiResult: <data>) should reach the DB.
+        patch.aiResult === null;
+      if (!skipPersist) {
+        // Persist the annotation core
+        persistAnnotation(merged);
+        // Persist side tables if changed
+        if (patch.aiResult !== undefined) {
+          // Current schema is V2 — fall back to it when the caller omits a version
+          // so V2 data survives app refresh (the IPC previously always wrote version=1).
+          const saveVersion = patch.aiVersion ?? 2;
+          // Persist to DB. Use the caller-assigned version so V2 data
+          // survives app refresh (the IPC previously always wrote version=1).
+          window.siltflow.aiResults
+            .save(id, current.documentId, patch.aiResult, saveVersion)
+            .catch(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (err: any) => {
+                console.error("[annotation.store] aiResults.save failed:", err);
+              },
+            );
+        }
+        if (patch.fsrsCard !== undefined) {
+          window.siltflow.fsrsCards
+            .save(id, current.documentId, patch.fsrsCard)
+            .catch(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (err: any) => {
+                console.error("[annotation.store] fsrsCards.save failed:", err);
+              },
+            );
+        }
       }
     }
     set((s) => ({
@@ -170,5 +226,8 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
     }));
   },
 
-  clear: () => set({ items: [] }),
+  clear: () => {
+    invalidateAllAnnotationsCache();
+    set({ items: [] });
+  },
 }));

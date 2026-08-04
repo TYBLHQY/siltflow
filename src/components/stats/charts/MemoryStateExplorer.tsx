@@ -15,6 +15,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useStatsStore } from "@/stores/stats.store";
+import { fetchAllAnnotations } from "@/stores/annotation.store";
 import { GRADE_COLOR, GRADE_LABEL } from "@/lib/fsrs-utils";
 
 const ROW_HEIGHT = 32;
@@ -40,9 +41,10 @@ export function MemoryStateExplorer() {
     new Map(),
   );
 
-  // Load all annotations for text lookup
+  // Load all annotations for text lookup (shared deduped fetch — stats/search
+  // populate the same cache, so no duplicate full-table IPC here).
   useEffect(() => {
-    void window.siltflow.annotations.listAll().then((rows) => {
+    void fetchAllAnnotations().then((rows) => {
       const map = new Map<string, string>();
       // Only index annotation-kind rows; highlights have no FSRS cards to display
       for (const row of rows) {

@@ -156,5 +156,11 @@ export interface SiltflowAPI {
   };
   review: {
     getDocMetrics: () => Promise<DocReviewMetrics[]>;
+    record: (params: {
+      annotationId: string;
+      documentId: string;
+      card: unknown;
+      log: { grade: number; log: unknown; card: unknown };
+    }) => Promise<{ id: string; createdAt: string } | null>;
   };
 }

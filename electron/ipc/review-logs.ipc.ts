@@ -66,17 +66,4 @@ export function registerReviewLogHandlers() {
       return { id, createdAt: now };
     },
   );
-
-  ipcMain.handle(
-    "reviewLogs:deleteByAnnotation",
-    (_event, annotationId: string, documentId: string) => {
-      const sql = getSqlite();
-      if (!sql) return;
-      sql
-        .prepare(
-          "DELETE FROM review_logs WHERE annotation_id = ? AND document_id = ?",
-        )
-        .run(annotationId, documentId);
-    },
-  );
 }

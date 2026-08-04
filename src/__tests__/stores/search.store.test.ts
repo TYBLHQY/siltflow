@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Fuse, { type IFuseOptions } from "fuse.js";
 import { useSearchStore, type SearchEntry } from "@/stores/search.store";
-import { useAnnotationStore } from "@/stores/annotation.store";
+import {
+  useAnnotationStore,
+  invalidateAllAnnotationsCache,
+} from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
 import type { AnnotationEnrichedIPC, DocumentIPCItem } from "@/types/ipc";
 
@@ -141,6 +144,9 @@ beforeEach(() => {
   documentsList.mockReset();
   annotationsListAll.mockReset();
   resetSearchStore();
+  // buildIndex goes through fetchAllAnnotations (module-level shared cache);
+  // reset it so each test starts from a cold cache and drives the IPC mock.
+  invalidateAllAnnotationsCache();
 });
 
 afterEach(() => {

@@ -10,6 +10,7 @@ import {
 } from "ts-fsrs";
 import { useAnnotationStore } from "./annotation.store";
 import { useReviewLogStore } from "./review-log.store";
+import type { ReviewLogSaveRequest } from "@/types/review";
 
 const VAULT_KEY = "fsrsParams";
 
@@ -103,6 +104,13 @@ export function initAnnotationCard(annotationId: string) {
 
 /**
  * Submit a review for an annotation.
+ *
+ * The card update and its review log are persisted together in a single
+ * atomic IPC (`review:record`) so the two tables can never drift apart.
+ * The in-memory annotation store is updated with `persist: false` — the DB
+ * write is owned by review:record, so a second fsrs_cards write (and the
+ * ordering hazard between two independent INSERTs) is avoided entirely.
+ *
  * @param annotationId the annotation's id
  * @param grade 1=Again 2=Hard 3=Good 4=Easy
  */
@@ -114,6 +122,10 @@ export function reviewAnnotation(annotationId: string, grade: Grade) {
   const engine = getFSRSEngine();
   const now = new Date();
 
+  // TS infers record.card / record.log from the concrete engine.next(card,
+  // now, grade) call — the ts-fsrs overload is generic, so a `ReturnType`
+  // annotation would collapse to unknown.
+  let record: { card: Card; log: ReviewLog };
   if (item.fsrsCard) {
     // Existing card — repeat and schedule
     const card: Card = {
@@ -123,39 +135,36 @@ export function reviewAnnotation(annotationId: string, grade: Grade) {
         ? new Date(item.fsrsCard.last_review)
         : undefined,
     };
-    const record = engine.next(card, now, grade);
-    store.updateItem(annotationId, { fsrsCard: record.card });
-    persistReviewLog(
-      annotationId,
-      item.documentId,
-      grade,
-      record.log,
-      record.card,
-    );
+    record = engine.next(card, now, grade);
   } else {
     // First review — create a card and run repeat
     const card = createEmptyCard(now);
-    const record = engine.next(card, now, grade);
-    store.updateItem(annotationId, { fsrsCard: record.card });
-    persistReviewLog(
-      annotationId,
-      item.documentId,
-      grade,
-      record.log,
-      record.card,
-    );
+    record = engine.next(card, now, grade);
   }
+
+  // Update in-memory state (no DB write here — review:record owns persistence).
+  store.updateItem(annotationId, { fsrsCard: record.card }, { persist: false });
+
+  const logData = serializeReviewLog(grade, record.log, record.card);
+  void window.siltflow.review.record({
+    annotationId,
+    documentId: item.documentId,
+    card: record.card,
+    log: logData,
+  });
+  // Optimistically prepend to the in-memory review-log cache. If the IPC write
+  // later fails, the entry stays cached until the next reload — acceptable
+  // (matches the previous fire-and-forget reviewLogs.save behavior).
+  void useReviewLogStore.getState().add(annotationId, item.documentId, logData);
 }
 
-/** Persist a single ReviewLog along with a card snapshot to the review_logs table. */
-function persistReviewLog(
-  annotationId: string,
-  documentId: string,
+/** Serialize a ts-fsrs ReviewLog + Card snapshot to the IPC shape (Dates → ISO). */
+function serializeReviewLog(
   grade: Grade,
   log: ReviewLog,
   card: Card,
-) {
-  const data = {
+): ReviewLogSaveRequest {
+  return {
     grade,
     log: {
       rating: log.rating,
@@ -179,7 +188,6 @@ function persistReviewLog(
       state: card.state,
     },
   };
-  void useReviewLogStore.getState().add(annotationId, documentId, data);
 }
 
 /** Get the next review date for a card, or undefined if never reviewed. */

@@ -36,7 +36,6 @@ import {
   type DocReviewMetrics,
   type SortField,
 } from "@/lib/doc-review";
-import { createNewCardStub } from "@/lib/fsrs-utils";
 import { useNow } from "@/hooks/useNow";
 import type { Card } from "ts-fsrs";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
@@ -241,40 +240,31 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     const currentDoc = useDocumentStore.getState().currentDocument;
 
     if (currentDoc && items.length === 0) {
+      // CenterPanel is (re)loading annotations for this document into the
+      // store — issuing another `annotations.list` here would duplicate that
+      // IPC. Only fetch the FSRS card rows (the store has no card data yet
+      // during the switch window) so metrics don't flash to zero; once the
+      // store populates, the incremental recompute below takes over.
       void window.siltflow.fsrsCards
         .listByDocument(currentDoc.id)
         .then((rows) => {
-          const cardAnnIds = new Set<string>();
           const cards: Card[] = [];
           for (const row of rows) {
-            cardAnnIds.add(row.annotationId);
             try {
               cards.push(JSON.parse(row.data));
             } catch {
               /* skip */
             }
           }
-          void window.siltflow.annotations
-            .list(currentDoc.id)
-            .then((annotations) => {
-              const realAnnotations = annotations.filter(
-                (a) => a.kind !== "highlight",
-              );
-              for (const ann of realAnnotations) {
-                if (!cardAnnIds.has(ann.id)) {
-                  cards.push(createNewCardStub());
-                }
-              }
-              const byDoc: Record<string, { title: string; cards: Card[] }> = {
-                [currentDoc.id]: { title: currentDoc.title, cards },
-              };
-              const fresh = computeDocMetrics(byDoc);
-              setDocMetrics((prev) =>
-                prev.map(
-                  (p) => fresh.find((f) => f.documentId === p.documentId) ?? p,
-                ),
-              );
-            });
+          const byDoc: Record<string, { title: string; cards: Card[] }> = {
+            [currentDoc.id]: { title: currentDoc.title, cards },
+          };
+          const fresh = computeDocMetrics(byDoc);
+          setDocMetrics((prev) =>
+            prev.map(
+              (p) => fresh.find((f) => f.documentId === p.documentId) ?? p,
+            ),
+          );
         });
       return;
     }

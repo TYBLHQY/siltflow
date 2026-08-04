@@ -385,11 +385,19 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
   }
   walk(rootDir, "");
 
-  // Build folder path → folderId map, creating DB folders parent-first
+  // Build folder path → folderId map. Folder rows are NOT written here —
+  // they're deferred into the Phase 2 transaction so the whole import is
+  // atomic (a failure before COMMIT leaves no orphan folder rows).
   const sql = getSqlite();
   if (!sql) return null;
 
   const folderPathToId = new Map<string, string>();
+  // Collect (relativeDir, name, parentId) in parent-first order for Phase 2.
+  const folderRows: Array<{
+    id: string;
+    name: string;
+    parentId: string | null;
+  }> = [];
   const insertFolder = sql.prepare(
     `INSERT INTO folders (id, name, parent_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)`,
   );
@@ -399,7 +407,7 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
 
   // Create root folder named after the imported directory
   const rootFolderId = crypto.randomUUID();
-  insertFolder.run(rootFolderId, rootName, null, now, now);
+  folderRows.push({ id: rootFolderId, name: rootName, parentId: null });
   folderPathToId.set("", rootFolderId);
 
   function ensureFolder(relativeDir: string): string | null {
@@ -412,7 +420,7 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
     const folderId = crypto.randomUUID();
     const folderName = path.basename(relativeDir);
 
-    insertFolder.run(folderId, folderName, parentId, now, now);
+    folderRows.push({ id: folderId, name: folderName, parentId });
     folderPathToId.set(relativeDir, folderId);
     return folderId;
   }
@@ -423,35 +431,76 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
     folderId: string | null;
   }> = [];
 
+  // Phase 1 — copy all PDF files off the event loop (async, parallel).
+  // Each entry carries its own docId + folderId so the DB phase never has to
+  // re-derive ids (folder-relative names can repeat across directories).
+  const fileCopies: Array<{
+    srcPath: string;
+    dest: string;
+    docId: string;
+    folderId: string | null;
+    originalName: string;
+  }> = [];
   for (const dirEntry of dirs) {
     const folderId = ensureFolder(dirEntry.relativeDir);
-
     for (const srcPath of dirEntry.pdfFiles) {
-      const originalName = path.basename(srcPath);
       const docId = crypto.randomUUID();
       const dest = path.join(vaultPath, "documents", `${docId}.pdf`);
-
-      try {
-        fs.copyFileSync(srcPath, dest);
-
-        insertDoc.run(
-          docId,
-          originalName.replace(/\.pdf$/i, ""),
-          originalName,
-          folderId,
-          now,
-          now,
-        );
-
-        importedDocs.push({
-          id: docId,
-          title: originalName.replace(/\.pdf$/i, ""),
-          folderId,
-        });
-      } catch (err) {
-        console.error(`Failed to import ${srcPath}:`, err);
-      }
+      const originalName = path.basename(srcPath);
+      fileCopies.push({ srcPath, dest, docId, folderId, originalName });
+      importedDocs.push({
+        id: docId,
+        title: originalName.replace(/\.pdf$/i, ""),
+        folderId,
+      });
     }
+  }
+
+  // Best-effort removal of already-copied files on failure.
+  const cleanupCopied = () =>
+    Promise.all(
+      fileCopies.map(({ dest }) => fs.promises.unlink(dest).catch(() => {})),
+    );
+
+  try {
+    // Copy files concurrently (async, non-blocking). bail on first failure.
+    await Promise.all(
+      fileCopies.map(async ({ srcPath, dest }) => {
+        await fs.promises.copyFile(srcPath, dest);
+      }),
+    );
+  } catch (err) {
+    // Roll back any files already copied so we don't leave orphans on disk.
+    await cleanupCopied();
+    console.error("Failed to import PDFs:", err);
+    return { docs: [] };
+  }
+
+  // Phase 2 — write all folder/document rows in a single transaction so a
+  // failure mid-write leaves no partially-imported library behind.
+  sql.exec("BEGIN IMMEDIATE");
+  try {
+    // Folders parent-first (folderRows was pushed in that order).
+    for (const f of folderRows) {
+      insertFolder.run(f.id, f.name, f.parentId, now, now);
+    }
+    for (const file of fileCopies) {
+      insertDoc.run(
+        file.docId,
+        file.originalName.replace(/\.pdf$/i, ""),
+        file.originalName,
+        file.folderId,
+        now,
+        now,
+      );
+    }
+    sql.exec("COMMIT");
+  } catch (err) {
+    sql.exec("ROLLBACK");
+    // Best-effort cleanup of copied files (DB rows were rolled back).
+    await cleanupCopied();
+    console.error("Failed to import PDF folder:", err);
+    return { docs: [] };
   }
 
   return { docs: importedDocs };
@@ -459,7 +508,8 @@ ipcMain.handle("dialog:importPdfFolder", async () => {
 
 // Custom protocol → serve files from vault
 ipcMain.handle("file:load", async (_event, filePath: string) => {
-  return fs.readFileSync(filePath).buffer;
+  const buf = await fs.promises.readFile(filePath);
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 });
 
 // ── Auto-update ────────────────────────────────────────────────────
@@ -539,7 +589,7 @@ void app.whenReady().then(async () => {
 
   // Register siltflow:// protocol → vault path
   // Direct file read with proper Range header support (avoids net.fetch(file://) round-trip)
-  protocol.handle("siltflow", (request) => {
+  protocol.handle("siltflow", async (request) => {
     let relativePath = decodeURIComponent(
       request.url.slice("siltflow://".length),
     );
@@ -548,49 +598,86 @@ void app.whenReady().then(async () => {
     if (!vault) return new Response("Vault not set", { status: 404 });
     const fullPath = path.resolve(vault, relativePath);
 
-    let raw: Buffer;
+    // Open the file once and read only the requested byte span, instead of
+    // slurping the whole PDF into memory on every request. pdfjs-dist issues
+    // one partial Range request per page — a full synchronous readFileSync
+    // here would re-read the whole file (O(fileSize)) for every rendered page
+    // and block the main-process event loop.
+    let handle: Awaited<ReturnType<typeof fs.promises.open>>;
     try {
-      raw = fs.readFileSync(fullPath);
+      handle = await fs.promises.open(fullPath, "r");
     } catch {
       return new Response("File not found", { status: 404 });
     }
-
-    const data = raw.buffer.slice(
-      raw.byteOffset,
-      raw.byteOffset + raw.byteLength,
-    ) as ArrayBuffer;
 
     // Common CORS + PDF headers for all responses
     const baseHeaders: Record<string, string> = {
       "Access-Control-Allow-Origin": "*",
       "Content-Type": "application/pdf",
       "Accept-Ranges": "bytes",
-      "Content-Length": String(data.byteLength),
     };
 
-    // Handle HTTP Range requests (pdfjs-dist uses partial range requests per page)
+    let size: number;
+    try {
+      size = (await handle.stat()).size;
+    } catch {
+      await handle.close();
+      return new Response("File not found", { status: 404 });
+    }
+    if (size <= 0) {
+      await handle.close();
+      return new Response("Empty file", { status: 404 });
+    }
+
+    // Handle HTTP Range requests (pdfjs-dist uses partial range requests per
+    // page): seek-read only the requested span from disk rather than reading
+    // the entire file and slicing the buffer in memory.
     const rangeHeader = request.headers.get("Range");
     if (rangeHeader) {
       const match = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
       if (match) {
         const start = Number.parseInt(match[1], 10);
-        const end = match[2]
-          ? Number.parseInt(match[2], 10)
-          : data.byteLength - 1;
-        const chunk = data.slice(start, end + 1);
-        return new Response(chunk, {
-          status: 206,
-          headers: {
-            ...baseHeaders,
-            "Content-Range": `bytes ${start}-${end}/${data.byteLength}`,
-            "Content-Length": String(chunk.byteLength),
-          },
-        });
+        const end = match[2] ? Number.parseInt(match[2], 10) : size - 1;
+        if (start < 0 || start > size - 1 || end < start) {
+          await handle.close();
+          return new Response("Range Not Satisfiable", {
+            status: 416,
+            headers: { "Content-Range": `bytes */${size}` },
+          });
+        }
+        const len = Math.min(end, size - 1) - start + 1;
+        const buf = Buffer.allocUnsafe(len);
+        try {
+          const { bytesRead } = await handle.read(buf, 0, len, start);
+          const chunk = new Uint8Array(buf.subarray(0, bytesRead));
+          return new Response(chunk, {
+            status: 206,
+            headers: {
+              ...baseHeaders,
+              "Content-Range": `bytes ${start}-${start + bytesRead - 1}/${size}`,
+              "Content-Length": String(bytesRead),
+            },
+          });
+        } finally {
+          await handle.close();
+        }
       }
+      // Malformed Range header → fall through to full-file response.
     }
 
+    // No Range header: async read of the whole file. Rare after the initial
+    // load (pdfjs switches to per-page Range requests once the document opens).
+    const buf = await handle.readFile();
+    await handle.close();
+    const data = buf.buffer.slice(
+      buf.byteOffset,
+      buf.byteOffset + buf.byteLength,
+    );
     return new Response(data, {
-      headers: baseHeaders,
+      headers: {
+        ...baseHeaders,
+        "Content-Length": String(data.byteLength),
+      },
     });
   });
 

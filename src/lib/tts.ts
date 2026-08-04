@@ -24,6 +24,12 @@ let speakingId: string | null = null;
 let audioRef: HTMLAudioElement | null = null;
 const listeners = new Set<(s: TTSStatus) => void>();
 
+// In-flight dedup: keyed by (text, voice). Rapid double-clicks on the same
+// word/sentence fire multiple tts:speak calls; a click while a synthesis for
+// that exact key is already in flight is a repeat intent, so we swallow it
+// rather than queue an identical network synthesize + IPC.
+const inFlightSpeaks = new Set<string>();
+
 // Cache the last TTSStatus so useSyncExternalStore gets a stable reference.
 let cachedStatus: TTSStatus = { state: "idle", speakingId: null };
 
@@ -144,9 +150,17 @@ export async function speakTTS(
       setState("error");
     }
   } else {
+    const resolvedVoice = voice ?? useTTSStore.getState().getVoice(language);
+    // Dedup: a click on the same (text, voice) while a synthesis is already in
+    // flight is a repeat — skip the duplicate IPC/network call.
+    const dedupKey = `${resolvedVoice}||${text}`;
+    if (inFlightSpeaks.has(dedupKey)) {
+      return;
+    }
+    inFlightSpeaks.add(dedupKey);
+
     setState("loading");
     try {
-      const resolvedVoice = voice ?? useTTSStore.getState().getVoice(language);
       const audioData: number[] = await window.siltflow.tts.speak(text, {
         voice: resolvedVoice,
         rate: config.rate,
@@ -182,6 +196,8 @@ export async function speakTTS(
     } catch (err) {
       console.error("[Edge TTS] failed:", err);
       setState("error");
+    } finally {
+      inFlightSpeaks.delete(dedupKey);
     }
   }
 }

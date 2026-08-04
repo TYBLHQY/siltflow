@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { getDb, schema } from "../database";
+import { getDb, getSqlite, schema } from "../database";
 import { eq } from "drizzle-orm";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -68,6 +68,7 @@ export function registerFolderHandlers() {
   // ── Delete a folder (recursive — deletes all descendant docs + folders) ──
   ipcMain.handle("folders:delete", (_event, id: string) => {
     const db = getFullDb();
+    const sql = getSqlite();
 
     // Collect all descendant folder IDs recursively
     function collectIds(parentId: string): string[] {
@@ -109,14 +110,27 @@ export function registerFolderHandlers() {
       }
     }
 
-    // Delete documents from DB (cascade deletes annotations, summaries, etc.)
-    for (const docId of docIds) {
-      db.delete(schema.documents).where(eq(schema.documents.id, docId)).run();
-    }
-
-    // Delete folders (deepest first)
-    for (const fid of allIds) {
-      db.delete(schema.folders).where(eq(schema.folders.id, fid)).run();
+    // DB writes in a single transaction: a failure part-way must not leave a
+    // half-deleted folder tree behind. (The disk file deletions above are
+    // best-effort and can't be rolled back, but they never block the DB.)
+    if (sql) {
+      sql.exec("BEGIN IMMEDIATE");
+      try {
+        // Delete documents from DB (cascade deletes annotations, summaries, etc.)
+        for (const docId of docIds) {
+          db.delete(schema.documents)
+            .where(eq(schema.documents.id, docId))
+            .run();
+        }
+        // Delete folders (deepest first)
+        for (const fid of allIds) {
+          db.delete(schema.folders).where(eq(schema.folders.id, fid)).run();
+        }
+        sql.exec("COMMIT");
+      } catch (err) {
+        sql.exec("ROLLBACK");
+        throw err;
+      }
     }
   });
 
@@ -131,12 +145,29 @@ export function registerFolderHandlers() {
       }: { docIds: string[]; targetFolderId: string | null },
     ) => {
       const db = getFullDb();
+      const sql = getSqlite();
       const now = new Date().toISOString();
-      for (const docId of docIds) {
-        db.update(schema.documents)
-          .set({ folderId: targetFolderId, updatedAt: now })
-          .where(eq(schema.documents.id, docId))
-          .run();
+      if (sql && docIds.length > 0) {
+        sql.exec("BEGIN IMMEDIATE");
+        try {
+          for (const docId of docIds) {
+            db.update(schema.documents)
+              .set({ folderId: targetFolderId, updatedAt: now })
+              .where(eq(schema.documents.id, docId))
+              .run();
+          }
+          sql.exec("COMMIT");
+        } catch (err) {
+          sql.exec("ROLLBACK");
+          throw err;
+        }
+      } else {
+        for (const docId of docIds) {
+          db.update(schema.documents)
+            .set({ folderId: targetFolderId, updatedAt: now })
+            .where(eq(schema.documents.id, docId))
+            .run();
+        }
       }
     },
   );
@@ -164,12 +195,22 @@ export function registerFolderHandlers() {
     "folders:updateSortOrder",
     (_event, items: Array<{ id: string; sortOrder: number }>) => {
       const db = getFullDb();
+      const sql = getSqlite();
       const now = new Date().toISOString();
-      for (const { id, sortOrder } of items) {
-        db.update(schema.folders)
-          .set({ sortOrder, updatedAt: now })
-          .where(eq(schema.folders.id, id))
-          .run();
+      if (sql && items.length > 0) {
+        sql.exec("BEGIN IMMEDIATE");
+        try {
+          for (const { id, sortOrder } of items) {
+            db.update(schema.folders)
+              .set({ sortOrder, updatedAt: now })
+              .where(eq(schema.folders.id, id))
+              .run();
+          }
+          sql.exec("COMMIT");
+        } catch (err) {
+          sql.exec("ROLLBACK");
+          throw err;
+        }
       }
     },
   );
@@ -179,12 +220,22 @@ export function registerFolderHandlers() {
     "documents:updateSortOrder",
     (_event, items: Array<{ id: string; sortOrder: number }>) => {
       const db = getFullDb();
+      const sql = getSqlite();
       const now = new Date().toISOString();
-      for (const { id, sortOrder } of items) {
-        db.update(schema.documents)
-          .set({ sortOrder, updatedAt: now })
-          .where(eq(schema.documents.id, id))
-          .run();
+      if (sql && items.length > 0) {
+        sql.exec("BEGIN IMMEDIATE");
+        try {
+          for (const { id, sortOrder } of items) {
+            db.update(schema.documents)
+              .set({ sortOrder, updatedAt: now })
+              .where(eq(schema.documents.id, id))
+              .run();
+          }
+          sql.exec("COMMIT");
+        } catch (err) {
+          sql.exec("ROLLBACK");
+          throw err;
+        }
       }
     },
   );

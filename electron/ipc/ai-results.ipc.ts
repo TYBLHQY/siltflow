@@ -66,7 +66,7 @@ export function registerAiResultHandlers() {
   );
 
   ipcMain.handle(
-    "aiResults:deleteByAnnotation",
+    "aiResults:delete",
     (_event, annotationId: string, documentId: string) => {
       const sql = getSqlite();
       if (!sql) return;

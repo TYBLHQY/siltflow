@@ -6,6 +6,10 @@
  */
 import { create } from "zustand";
 import type { Card } from "ts-fsrs";
+import {
+  fetchAllAnnotations,
+  useAnnotationStore,
+} from "@/stores/annotation.store";
 
 interface FSRSCardRow {
   annotationId: string;
@@ -57,7 +61,7 @@ export const useStatsStore = create<StatsStoreState>((set) => ({
       const [cards, logs, allAnnotations] = await Promise.all([
         window.siltflow.fsrsCards.listAll(),
         window.siltflow.reviewLogs.listAll(),
-        window.siltflow.annotations.listAll(),
+        fetchAllAnnotations(),
       ]);
 
       // Parse cards into a Map keyed by annotationId for efficient lookups
@@ -97,3 +101,17 @@ export const useStatsStore = create<StatsStoreState>((set) => ({
     }
   },
 }));
+
+// ── Invalidation ──────────────────────────────────────────────────────
+// Statistics are a snapshot loaded on first open. Any annotation or FSRS
+// change (new reviews, new cards, edits) makes that snapshot stale — mark it
+// dirty so the next time the dashboard opens it refetches instead of showing
+// frozen numbers. Debounced to collapse bursts (e.g. batch translate writing
+// dozens of annotations in a few seconds).
+let statsInvalidateTimer: ReturnType<typeof setTimeout> | null = null;
+useAnnotationStore.subscribe(() => {
+  if (statsInvalidateTimer) clearTimeout(statsInvalidateTimer);
+  statsInvalidateTimer = setTimeout(() => {
+    useStatsStore.setState({ loaded: false });
+  }, 1000);
+});

@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 import { getSqlite } from "../database";
+import crypto from "node:crypto";
 
 /**
  * Compute retrievability from FSRS card state (FSRS-5).
@@ -45,6 +46,63 @@ export function invalidateReviewMetricsCache() {
  * Now:        O(1) IPC call, all work in the main process.
  */
 export function registerReviewHandlers() {
+  // Record a single review atomically: the updated FSRS card + its review log
+  // are written in one transaction. Previously the renderer issued two
+  // separate IPC calls (fsrsCards:save + reviewLogs:save), each an independent
+  // auto-committed write — a crash in between left card/log out of sync.
+  ipcMain.handle(
+    "review:record",
+    (
+      _event,
+      record: {
+        annotationId: string;
+        documentId: string;
+        card: unknown;
+        log: { grade: number; log: unknown; card: unknown };
+      },
+    ) => {
+      const sql = getSqlite();
+      if (!sql) return null;
+      const now = new Date().toISOString();
+      const logId = crypto.randomUUID();
+
+      sql.exec("BEGIN IMMEDIATE");
+      try {
+        sql
+          .prepare(
+            `INSERT OR REPLACE INTO fsrs_cards (annotation_id, document_id, data, created_at, updated_at)
+           VALUES (?, ?, ?, COALESCE((SELECT created_at FROM fsrs_cards WHERE annotation_id = ? AND document_id = ?), ?), ?)`,
+          )
+          .run(
+            record.annotationId,
+            record.documentId,
+            JSON.stringify(record.card),
+            record.annotationId,
+            record.documentId,
+            now,
+            now,
+          );
+        sql
+          .prepare(
+            `INSERT INTO review_logs (id, annotation_id, document_id, data, created_at) VALUES (?, ?, ?, ?, ?)`,
+          )
+          .run(
+            logId,
+            record.annotationId,
+            record.documentId,
+            JSON.stringify(record.log),
+            now,
+          );
+        sql.exec("COMMIT");
+      } catch (err) {
+        sql.exec("ROLLBACK");
+        throw err;
+      }
+      invalidateReviewMetricsCache();
+      return { id: logId, createdAt: now };
+    },
+  );
+
   ipcMain.handle("review:getDocMetrics", () => {
     const sql = getSqlite();
     if (!sql) return [];

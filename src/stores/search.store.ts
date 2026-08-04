@@ -2,6 +2,7 @@ import { create } from "zustand";
 import Fuse, { type IFuseOptions, type FuseResult } from "fuse.js";
 import {
   useAnnotationStore,
+  fetchAllAnnotations,
   type AnnotationItem,
 } from "@/stores/annotation.store";
 
@@ -114,10 +115,12 @@ export const useSearchStore = create<SearchState>()((set, get) => ({
 
     try {
       // Fetch documents and ALL annotations in parallel — 2 IPC calls instead
-      // of 1+D sequential calls (where D = number of documents).
+      // of 1+D sequential calls (where D = number of documents). The
+      // annotations listAll goes through the shared fetchAllAnnotations cache,
+      // so search, stats and MemoryStateExplorer never issue duplicate queries.
       const [docs, allAnnotations] = await Promise.all([
         window.siltflow.documents.list(),
-        window.siltflow.annotations.listAll(),
+        fetchAllAnnotations(),
       ]);
 
       const docMap = new Map<string, string>();
