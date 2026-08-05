@@ -31,6 +31,7 @@ export interface SiltflowAPI {
   } | null>;
   loadFile: (filePath: string) => Promise<ArrayBuffer>;
   dbSchemaVersion: () => Promise<number | null>;
+  clipboardReadText: () => Promise<string>;
 
   update: {
     check: () => Promise<void>;

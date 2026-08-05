@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, ClipboardPaste } from "lucide-react";
 import {
   useAnnotationStore,
   type AnnotationItem,
@@ -128,6 +128,20 @@ export function AITranslateCard({
     setEditingContext(false);
   }, [editContext, id, updateItem]);
 
+  // Paste from the system clipboard and save immediately — one click, no
+  // need to Ctrl+V then press Enter. Empty clipboard clears the context.
+  const handlePasteContext = useCallback(async () => {
+    try {
+      const text = await window.siltflow.clipboardReadText();
+      const next = text.trim();
+      updateItem(id, { context: next ? next : undefined });
+      setEditContext(next ? next : "");
+      setEditingContext(false);
+    } catch {
+      // Clipboard read failed — stay in edit mode; the user can paste manually.
+    }
+  }, [id, updateItem]);
+
   // V2 uses its own type-based layout; V1 cards render through UpgradeCard and
   // have no details, so there is no legacy detail-availability gate.
   const isV2 = item.aiVersion === 2;
@@ -187,30 +201,44 @@ export function AITranslateCard({
           />
         </div>
       ) : (
-        <button
-          className="inline-flex items-center rounded p-0.5 align-baseline cursor-pointer text-[11px] text-ctp-overlay1 hover:text-ctp-text"
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditingContext(true);
-          }}
-          title={
-            item.context?.trim()
-              ? "Edit context note"
-              : "Add a context note to guide translation"
-          }
+        <div
+          className="flex w-full items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
         >
-          {item.context?.trim() ? (
-            <>
-              <Pencil className="h-3 w-3 mr-2" />
-              <span className="max-w-60 truncate">{item.context}</span>
-            </>
-          ) : (
-            <>
-              <Plus className="h-3 w-3 mr-2" />
-              Add context
-            </>
-          )}
-        </button>
+          {/* Edit / add context note — takes the full remaining width, the
+              note text truncates to one line with an ellipsis. */}
+          <button
+            type="button"
+            className="flex flex-1 min-w-0 items-center rounded p-0.5 align-baseline cursor-pointer text-[11px] text-ctp-overlay1 hover:text-ctp-text"
+            onClick={() => setEditingContext(true)}
+            title={
+              item.context?.trim()
+                ? "Edit context note"
+                : "Add a context note to guide translation"
+            }
+          >
+            {item.context?.trim() ? (
+              <>
+                <Pencil className="h-3 w-3 mr-2 shrink-0" />
+                <span className="flex-1 min-w-0 truncate">{item.context}</span>
+              </>
+            ) : (
+              <>
+                <Plus className="h-3 w-3 mr-2 shrink-0" />
+                Add context
+              </>
+            )}
+          </button>
+          {/* One-click paste: read clipboard, save as context, no editor flow. */}
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center rounded p-0.5 align-baseline cursor-pointer text-ctp-overlay1 hover:text-ctp-text"
+            onClick={() => void handlePasteContext()}
+            title="Paste from clipboard as context"
+          >
+            <ClipboardPaste className="h-3 w-3" />
+          </button>
+        </div>
       )}
     </div>
   );

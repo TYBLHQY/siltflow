@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   Menu,
   protocol,
   dialog,
@@ -571,6 +572,9 @@ ipcMain.handle("shell:showItemInFolder", (_event, docId: string) => {
   if (!vault) return;
   shell.showItemInFolder(path.join(vault, "documents", `${docId}.pdf`));
 });
+
+// Read text from the system clipboard (used by the context-note paste button)
+ipcMain.handle("clipboard:readText", () => clipboard.readText());
 
 // Expose the DB schema version to the renderer so About can display it
 ipcMain.handle("db:schemaVersion", () => {
