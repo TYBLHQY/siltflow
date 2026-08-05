@@ -34,14 +34,62 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           const el = annotationsScrollRef.current?.querySelector(
             `[data-annotation-id="${id}"]`,
           );
-          if (el) {
-            el.setAttribute("data-annotation-highlight", "true");
-            setTimeout(
-              () => el.removeAttribute("data-annotation-highlight"),
-              2000,
-            );
+          if (!el) return;
+          el.setAttribute("data-annotation-highlight", "true");
+          setTimeout(
+            () => el.removeAttribute("data-annotation-highlight"),
+            2000,
+          );
+
+          // The card starts a 200ms grid-template-rows expand/collapse in the
+          // same tick (annotations-tab expands it via annotation-click). scrollIntoView
+          // computes its target from the geometry at call time, so scrolling mid-animation
+          // lands off-center. Wait for the transition to settle, then scroll based on the
+          // final geometry. A timeout backstops lost transitionend events (reduced motion,
+          // display:none, property reset).
+          const scrollWhenStable = () =>
+            el.scrollIntoView({ block: "center", behavior: "smooth" });
+
+          const grid = el.querySelector<HTMLElement>("[data-collapsible-grid]");
+          if (!grid) {
+            // Not a collapsible card — no height animation to wait for.
+            scrollWhenStable();
+            return;
           }
-          el?.scrollIntoView({ block: "center", behavior: "smooth" });
+          // Does this card have a running grid-rows transition right now? The
+          // click toggles expand/collapse via the same event, so if it changed
+          // state a transition is in flight. If the card was already in the
+          // target state (e.g. annotation-click re-selecting the same id) there
+          // is no animation and the geometry is already stable. Reading the
+          // computed gridTemplateRows mid-transition returns an interpolation
+          // (neither "0px" nor the final px), so it can't distinguish these —
+          // getAnimations() can.
+          const hasRunningTransition = grid
+            .getAnimations()
+            .some(
+              (a) => a instanceof CSSTransition && a.playState === "running",
+            );
+          if (!hasRunningTransition) {
+            scrollWhenStable();
+            return;
+          }
+
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            grid.removeEventListener("transitionend", onEnd);
+            scrollWhenStable();
+          };
+          const onEnd = (te: TransitionEvent) => {
+            // Only this card's height transition matters. Collapse (0fr) and
+            // expand (1fr) endings are both stable-geometry points.
+            if (te.propertyName !== "grid-template-rows") return;
+            finish();
+          };
+          const timer = window.setTimeout(finish, 350); // duration-200 + margin
+          grid.addEventListener("transitionend", onEnd);
         });
       });
     };

@@ -268,6 +268,7 @@ export function AITranslateCard({
           <div>
             {/* V2 details */}
             <div
+              data-collapsible-grid
               className="grid transition-[grid-template-rows] duration-200 ease-in-out"
               style={{
                 gridTemplateRows: expanded ? "1fr" : "0fr",
