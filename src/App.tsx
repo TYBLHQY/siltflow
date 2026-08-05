@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { VaultSetup } from "@/components/layout/VaultSetup";
 import { ThreeColumnLayout } from "@/components/layout/ThreeColumnLayout";
+import { PanelResizeStateProvider } from "@/components/layout/PanelResizeStateProvider";
 import { loadFromVault, useAIStore } from "@/stores/ai.store";
 import { loadFSRSParams } from "@/stores/fsrs.store";
 import { loadSummariesFromVault } from "@/stores/summary.store";
@@ -241,7 +242,9 @@ function App() {
     <>
       <Toast />
       <SearchAnnotations />
-      <ThreeColumnLayout />
+      <PanelResizeStateProvider>
+        <ThreeColumnLayout />
+      </PanelResizeStateProvider>
 
       {/* ── Update dialog (startup check) ── */}
       <Dialog

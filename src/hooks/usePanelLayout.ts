@@ -29,8 +29,11 @@ export function usePanelLayout() {
     }, 300),
   );
 
+  // Persist layout changes to the vault (debounced). Note: no setLayout here —
+  // `layout` state is only used on mount to compute Allotment's defaultSizes
+  // (which only applies at mount), so updating it during a drag would just
+  // re-render the whole layout tree every pointermove for no visible effect.
   const saveLayout = (sizes: number[]) => {
-    setLayout(sizes);
     saveLayoutRef.current(sizes);
   };
 

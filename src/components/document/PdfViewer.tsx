@@ -19,6 +19,7 @@ import {
   registerScrollToHighlight,
 } from "@/stores/pdf-viewer.store";
 import { useDocumentStore } from "@/stores/document.store";
+import { usePanelResizeState } from "@/hooks/usePanelResizeState";
 import type { AIAnnotationDataV2 } from "@/types/annotation";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -426,6 +427,12 @@ function PdfHighlighterWrapper({
   const setLastPage = usePdfViewerStore((s) => s.setLastPage);
   const selectionMode = usePdfViewerStore((s) => s.selectionMode);
   const updateDoc = useDocumentStore((s) => s.updateDocument);
+  const resizing = usePanelResizeState();
+  // Mirror into a ref: the ResizeObserver callback and applyFitWidthScaleRef
+  // are stable closures, so they must read the live value through the ref
+  // instead of capturing `resizing` directly.
+  const resizingRef = useRef(resizing);
+  resizingRef.current = resizing;
 
   // Sync pdfDocument to store via effect
   useEffect(() => {
@@ -550,6 +557,11 @@ function PdfHighlighterWrapper({
   // there's no self-reference at definition time. setPdfScale is read through
   // the store to avoid a hook-derived value leaking into the closure.
   const applyFitWidthScaleRef = useRef(function applyFitWidthScale() {
+    // Freeze during panel drag: skip re-layout while a sash is being dragged so
+    // each pointermove tick doesn't trigger a full-resolution pdf.js re-render
+    // (maxCanvasPixels is -1, so pdf.js has no CSS-zoom fast path). The
+    // onDragEnd effect below re-applies once with the final width.
+    if (resizingRef.current) return;
     const viewer = viewerRef.current;
     const container =
       wrapperRef.current?.querySelector<HTMLElement>(".PdfHighlighter");
@@ -591,6 +603,8 @@ function PdfHighlighterWrapper({
     applyFitWidthScaleRef.current();
     const observer = new ResizeObserver(() => {
       // 每次尺寸变化都是新的一轮：重置重试计数（首个 observe tick 也会触发）。
+      // 拖拽中冻结：resizingRef 为 true 时跳过，松手后由下方 effect 补排一次。
+      if (resizingRef.current) return;
       fitWidthRetriesRef.current = 0;
       applyFitWidthScaleRef.current();
     });
@@ -604,6 +618,23 @@ function PdfHighlighterWrapper({
       }
     };
   }, [fitWidth]);
+
+  // Re-apply fit-width once after a panel drag ends. During the drag the
+  // ResizeObserver was frozen (resizingRef guard), so the final width never
+  // produced a re-layout; this effect catches the true→false transition and
+  // runs the last resize with the final container width.
+  const wasResizingRef = useRef(false);
+  useEffect(() => {
+    if (!fitWidth) return;
+    if (resizing) {
+      wasResizingRef.current = true;
+      return;
+    }
+    if (wasResizingRef.current) {
+      wasResizingRef.current = false;
+      if (fitWidthRef.current) applyFitWidthScaleRef.current();
+    }
+  }, [resizing, fitWidth]);
 
   return (
     <div
