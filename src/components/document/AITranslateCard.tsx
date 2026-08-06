@@ -202,7 +202,7 @@ export function AITranslateCard({
         </div>
       ) : (
         <div
-          className="flex w-full items-center gap-1"
+          className="flex max-w-[120px] items-center gap-1"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Edit / add context note — takes the full remaining width, the
