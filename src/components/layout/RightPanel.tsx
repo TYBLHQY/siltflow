@@ -50,46 +50,54 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           const scrollWhenStable = () =>
             el.scrollIntoView({ block: "center", behavior: "smooth" });
 
-          const grid = el.querySelector<HTMLElement>("[data-collapsible-grid]");
-          if (!grid) {
-            // Not a collapsible card — no height animation to wait for.
-            scrollWhenStable();
-            return;
-          }
-          // Does this card have a running grid-rows transition right now? The
-          // click toggles expand/collapse via the same event, so if it changed
-          // state a transition is in flight. If the card was already in the
-          // target state (e.g. annotation-click re-selecting the same id) there
-          // is no animation and the geometry is already stable. Reading the
-          // computed gridTemplateRows mid-transition returns an interpolation
-          // (neither "0px" nor the final px), so it can't distinguish these —
-          // getAnimations() can.
-          const hasRunningTransition = grid
-            .getAnimations()
-            .some(
-              (a) => a instanceof CSSTransition && a.playState === "running",
-            );
-          if (!hasRunningTransition) {
+          // The height animation is not limited to the target card. Reassigning
+          // expandedCardId collapses the previously-expanded card in the same
+          // tick that the target (if V2) expands — and an UNTRANSLATED target
+          // has no collapsible grid of its own at all, yet the collapsing card
+          // above it still shifts the whole list. So the stability check must
+          // scan every collapsible grid in the list, not just the target's.
+          const runningGrids = [
+            ...(annotationsScrollRef.current?.querySelectorAll<HTMLElement>(
+              "[data-collapsible-grid]",
+            ) ?? []),
+          ].filter((g) =>
+            g
+              .getAnimations()
+              .some(
+                (a) => a instanceof CSSTransition && a.playState === "running",
+              ),
+          );
+          // Reading the computed gridTemplateRows mid-transition returns an
+          // interpolation (neither "0px" nor the final px), so it can't tell a
+          // running transition from a settled one — getAnimations() can. A card
+          // already in its target state (e.g. annotation-click re-selecting the
+          // same id) has no running transition either.
+          if (runningGrids.length === 0) {
+            // No list card is mid-animation — geometry is already stable.
             scrollWhenStable();
             return;
           }
 
           let settled = false;
+          let remaining = runningGrids.length;
           const finish = () => {
             if (settled) return;
             settled = true;
             window.clearTimeout(timer);
-            grid.removeEventListener("transitionend", onEnd);
+            for (const g of runningGrids)
+              g.removeEventListener("transitionend", onEnd);
             scrollWhenStable();
           };
           const onEnd = (te: TransitionEvent) => {
-            // Only this card's height transition matters. Collapse (0fr) and
-            // expand (1fr) endings are both stable-geometry points.
+            // Only height transitions matter. Collapse (0fr) and expand (1fr)
+            // endings are both stable-geometry points. Count every running grid
+            // down; when the slowest settles, the whole list is stable.
             if (te.propertyName !== "grid-template-rows") return;
-            finish();
+            if (--remaining === 0) finish();
           };
           const timer = window.setTimeout(finish, 350); // duration-200 + margin
-          grid.addEventListener("transitionend", onEnd);
+          for (const g of runningGrids)
+            g.addEventListener("transitionend", onEnd);
         });
       });
     };
