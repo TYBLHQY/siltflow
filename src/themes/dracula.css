@@ -39,3 +39,39 @@
   --catppuccin-color-blue-600: #4e8ff0;
   --catppuccin-color-blue-950: #2a4e8f;
 }
+
+/* ── 变体（由 iterm2-color-schemes 生成，见 /tmp/gen_themes.py）── */
+.dracula-plus {
+  --catppuccin-color-base: #212121;
+  --catppuccin-color-mantle: #202020;
+  --catppuccin-color-crust: #1e1e1e;
+  --catppuccin-color-surface0: #3d3d3c;
+  --catppuccin-color-surface1: #595957;
+  --catppuccin-color-surface2: #757573;
+  --catppuccin-color-overlay0: #8c8c8a;
+  --catppuccin-color-overlay1: #a6a6a3;
+  --catppuccin-color-overlay2: #c2c2be;
+  --catppuccin-color-text: #f8f8f2;
+  --catppuccin-color-subtext0: #dadad5;
+  --catppuccin-color-subtext1: #edede8;
+  --catppuccin-color-rosewater: #ff5555;
+  --catppuccin-color-flamingo: #ff5555;
+  --catppuccin-color-pink: #c792ea;
+  --catppuccin-color-mauve: #c792ea;
+  --catppuccin-color-red: #ff5555;
+  --catppuccin-color-maroon: #ff5555;
+  --catppuccin-color-peach: #ff9661;
+  --catppuccin-color-yellow: #ffcb6b;
+  --catppuccin-color-green: #50fa7b;
+  --catppuccin-color-teal: #8be9fd;
+  --catppuccin-color-sky: #8be9fd;
+  --catppuccin-color-sapphire: #82aaff;
+  --catppuccin-color-blue: #82aaff;
+  --catppuccin-color-lavender: #c792ea;
+  --catppuccin-color-red-600: #e04b4b;
+  --catppuccin-color-red-950: #993333;
+  --catppuccin-color-green-600: #46dc6c;
+  --catppuccin-color-green-950: #30964a;
+  --catppuccin-color-blue-600: #7296e0;
+  --catppuccin-color-blue-950: #4e6699;
+}

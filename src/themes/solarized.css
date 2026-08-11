@@ -79,3 +79,144 @@
   --catppuccin-color-blue-600: #2071a8;
   --catppuccin-color-blue-950: #103a58;
 }
+
+/* ── 变体（由 iterm2-color-schemes 生成，见 /tmp/gen_themes.py）── */
+.solarized-dark-higher-contrast {
+  --catppuccin-color-base: #001e27;
+  --catppuccin-color-mantle: #001d25;
+  --catppuccin-color-crust: #001c24;
+  --catppuccin-color-surface0: #14333b;
+  --catppuccin-color-surface1: #294950;
+  --catppuccin-color-surface2: #3d5e64;
+  --catppuccin-color-overlay0: #4e7075;
+  --catppuccin-color-overlay1: #618488;
+  --catppuccin-color-overlay2: #75999c;
+  --catppuccin-color-text: #9cc2c3;
+  --catppuccin-color-subtext0: #86abad;
+  --catppuccin-color-subtext1: #94babb;
+  --catppuccin-color-rosewater: #d11c24;
+  --catppuccin-color-flamingo: #d11c24;
+  --catppuccin-color-pink: #c61c6f;
+  --catppuccin-color-mauve: #c61c6f;
+  --catppuccin-color-red: #d11c24;
+  --catppuccin-color-maroon: #d11c24;
+  --catppuccin-color-peach: #b94e14;
+  --catppuccin-color-yellow: #a57706;
+  --catppuccin-color-green: #6cbe6c;
+  --catppuccin-color-teal: #259286;
+  --catppuccin-color-sky: #259286;
+  --catppuccin-color-sapphire: #2176c7;
+  --catppuccin-color-blue: #2176c7;
+  --catppuccin-color-lavender: #c61c6f;
+  --catppuccin-color-red-600: #b81920;
+  --catppuccin-color-red-950: #7d1116;
+  --catppuccin-color-green-600: #5fa75f;
+  --catppuccin-color-green-950: #417241;
+  --catppuccin-color-blue-600: #1d68af;
+  --catppuccin-color-blue-950: #144777;
+}
+
+.solarized-dark-patched {
+  --catppuccin-color-base: #001e27;
+  --catppuccin-color-mantle: #001d25;
+  --catppuccin-color-crust: #001c24;
+  --catppuccin-color-surface0: #0f2b33;
+  --catppuccin-color-surface1: #1d383f;
+  --catppuccin-color-surface2: #2c454b;
+  --catppuccin-color-overlay0: #385056;
+  --catppuccin-color-overlay1: #455c61;
+  --catppuccin-color-overlay2: #54696d;
+  --catppuccin-color-text: #708284;
+  --catppuccin-color-subtext0: #607477;
+  --catppuccin-color-subtext1: #6a7d7f;
+  --catppuccin-color-rosewater: #d11c24;
+  --catppuccin-color-flamingo: #d11c24;
+  --catppuccin-color-pink: #c61c6f;
+  --catppuccin-color-mauve: #c61c6f;
+  --catppuccin-color-red: #d11c24;
+  --catppuccin-color-maroon: #d11c24;
+  --catppuccin-color-peach: #b94e14;
+  --catppuccin-color-yellow: #a57706;
+  --catppuccin-color-green: #738a05;
+  --catppuccin-color-teal: #259286;
+  --catppuccin-color-sky: #259286;
+  --catppuccin-color-sapphire: #2176c7;
+  --catppuccin-color-blue: #2176c7;
+  --catppuccin-color-lavender: #c61c6f;
+  --catppuccin-color-red-600: #b81920;
+  --catppuccin-color-red-950: #7d1116;
+  --catppuccin-color-green-600: #657904;
+  --catppuccin-color-green-950: #455303;
+  --catppuccin-color-blue-600: #1d68af;
+  --catppuccin-color-blue-950: #144777;
+}
+
+.solarized-darcula {
+  --catppuccin-color-base: #3d3f41;
+  --catppuccin-color-mantle: #3b3c3e;
+  --catppuccin-color-crust: #383a3c;
+  --catppuccin-color-surface0: #505355;
+  --catppuccin-color-surface1: #646769;
+  --catppuccin-color-surface2: #777b7c;
+  --catppuccin-color-overlay0: #888c8d;
+  --catppuccin-color-overlay1: #999e9f;
+  --catppuccin-color-overlay2: #adb2b3;
+  --catppuccin-color-text: #d2d8d9;
+  --catppuccin-color-subtext0: #bdc3c4;
+  --catppuccin-color-subtext1: #cbd0d1;
+  --catppuccin-color-rosewater: #f24840;
+  --catppuccin-color-flamingo: #f24840;
+  --catppuccin-color-pink: #797fd4;
+  --catppuccin-color-mauve: #797fd4;
+  --catppuccin-color-red: #f24840;
+  --catppuccin-color-maroon: #f24840;
+  --catppuccin-color-peach: #d16b1d;
+  --catppuccin-color-yellow: #b68800;
+  --catppuccin-color-green: #629655;
+  --catppuccin-color-teal: #15968d;
+  --catppuccin-color-sky: #15968d;
+  --catppuccin-color-sapphire: #2075c7;
+  --catppuccin-color-blue: #2075c7;
+  --catppuccin-color-lavender: #797fd4;
+  --catppuccin-color-red-600: #d53f38;
+  --catppuccin-color-red-950: #912b26;
+  --catppuccin-color-green-600: #56844b;
+  --catppuccin-color-green-950: #3b5a33;
+  --catppuccin-color-blue-600: #1c67af;
+  --catppuccin-color-blue-950: #134677;
+}
+
+.solarized-osaka-night {
+  --catppuccin-color-base: #1a1b25;
+  --catppuccin-color-mantle: #191a24;
+  --catppuccin-color-crust: #181922;
+  --catppuccin-color-surface0: #303240;
+  --catppuccin-color-surface1: #46485a;
+  --catppuccin-color-surface2: #5c5f75;
+  --catppuccin-color-overlay0: #6e728b;
+  --catppuccin-color-overlay1: #8288a3;
+  --catppuccin-color-overlay2: #989ebe;
+  --catppuccin-color-text: #c2caf1;
+  --catppuccin-color-subtext0: #aab2d4;
+  --catppuccin-color-subtext1: #bac1e7;
+  --catppuccin-color-rosewater: #e77d8f;
+  --catppuccin-color-flamingo: #e77d8f;
+  --catppuccin-color-pink: #b69bf1;
+  --catppuccin-color-mauve: #b69bf1;
+  --catppuccin-color-red: #e77d8f;
+  --catppuccin-color-maroon: #e77d8f;
+  --catppuccin-color-peach: #df9a7f;
+  --catppuccin-color-yellow: #d8b172;
+  --catppuccin-color-green: #a8cd76;
+  --catppuccin-color-teal: #90cdfa;
+  --catppuccin-color-sky: #90cdfa;
+  --catppuccin-color-sapphire: #82a1f1;
+  --catppuccin-color-blue: #82a1f1;
+  --catppuccin-color-lavender: #b69bf1;
+  --catppuccin-color-red-600: #cb6e7e;
+  --catppuccin-color-red-950: #8b4b56;
+  --catppuccin-color-green-600: #94b468;
+  --catppuccin-color-green-950: #657b47;
+  --catppuccin-color-blue-600: #728ed4;
+  --catppuccin-color-blue-950: #4e6191;
+}

@@ -79,3 +79,39 @@
   --catppuccin-color-blue-600: #41788f;
   --catppuccin-color-blue-950: #213c49;
 }
+
+/* ── 变体（由 iterm2-color-schemes 生成，见 /tmp/gen_themes.py）── */
+.rose-pine-moon {
+  --catppuccin-color-base: #232136;
+  --catppuccin-color-mantle: #222034;
+  --catppuccin-color-crust: #201e32;
+  --catppuccin-color-surface0: #3c3a4f;
+  --catppuccin-color-surface1: #545267;
+  --catppuccin-color-surface2: #6d6b80;
+  --catppuccin-color-overlay0: #828095;
+  --catppuccin-color-overlay1: #9896ac;
+  --catppuccin-color-overlay2: #b1afc4;
+  --catppuccin-color-text: #e0def4;
+  --catppuccin-color-subtext0: #c6c4d9;
+  --catppuccin-color-subtext1: #d7d5ea;
+  --catppuccin-color-rosewater: #eb6f92;
+  --catppuccin-color-flamingo: #eb6f92;
+  --catppuccin-color-pink: #c4a7e7;
+  --catppuccin-color-mauve: #c4a7e7;
+  --catppuccin-color-red: #eb6f92;
+  --catppuccin-color-maroon: #eb6f92;
+  --catppuccin-color-peach: #f19c83;
+  --catppuccin-color-yellow: #f6c177;
+  --catppuccin-color-green: #3e8fb0;
+  --catppuccin-color-teal: #ea9a97;
+  --catppuccin-color-sky: #ea9a97;
+  --catppuccin-color-sapphire: #9ccfd8;
+  --catppuccin-color-blue: #9ccfd8;
+  --catppuccin-color-lavender: #c4a7e7;
+  --catppuccin-color-red-600: #cf6280;
+  --catppuccin-color-red-950: #8d4358;
+  --catppuccin-color-green-600: #377e9b;
+  --catppuccin-color-green-950: #25566a;
+  --catppuccin-color-blue-600: #89b6be;
+  --catppuccin-color-blue-950: #5e7c82;
+}

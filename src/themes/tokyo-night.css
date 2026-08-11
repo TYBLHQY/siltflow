@@ -79,3 +79,74 @@
   --catppuccin-color-blue-600: #2366c8;
   --catppuccin-color-blue-950: #123368;
 }
+
+/* ── 变体（由 iterm2-color-schemes 生成，见 /tmp/gen_themes.py）── */
+.tokyo-night-moon {
+  --catppuccin-color-base: #222436;
+  --catppuccin-color-mantle: #212334;
+  --catppuccin-color-crust: #1f2132;
+  --catppuccin-color-surface0: #383b4f;
+  --catppuccin-color-surface1: #4d5268;
+  --catppuccin-color-surface2: #636880;
+  --catppuccin-color-overlay0: #757c96;
+  --catppuccin-color-overlay1: #8990ac;
+  --catppuccin-color-overlay2: #9ea7c5;
+  --catppuccin-color-text: #c8d3f5;
+  --catppuccin-color-subtext0: #b1bada;
+  --catppuccin-color-subtext1: #c0caeb;
+  --catppuccin-color-rosewater: #ff757f;
+  --catppuccin-color-flamingo: #ff757f;
+  --catppuccin-color-pink: #c099ff;
+  --catppuccin-color-mauve: #c099ff;
+  --catppuccin-color-red: #ff757f;
+  --catppuccin-color-maroon: #ff757f;
+  --catppuccin-color-peach: #ffa27b;
+  --catppuccin-color-yellow: #ffc777;
+  --catppuccin-color-green: #c3e88d;
+  --catppuccin-color-teal: #86e1fc;
+  --catppuccin-color-sky: #86e1fc;
+  --catppuccin-color-sapphire: #82aaff;
+  --catppuccin-color-blue: #82aaff;
+  --catppuccin-color-lavender: #c099ff;
+  --catppuccin-color-red-600: #e06770;
+  --catppuccin-color-red-950: #99464c;
+  --catppuccin-color-green-600: #accc7c;
+  --catppuccin-color-green-950: #758b55;
+  --catppuccin-color-blue-600: #7296e0;
+  --catppuccin-color-blue-950: #4e6699;
+}
+
+.tokyo-night-storm {
+  --catppuccin-color-base: #24283b;
+  --catppuccin-color-mantle: #232639;
+  --catppuccin-color-crust: #212536;
+  --catppuccin-color-surface0: #383d53;
+  --catppuccin-color-surface1: #4d526b;
+  --catppuccin-color-surface2: #616784;
+  --catppuccin-color-overlay0: #727998;
+  --catppuccin-color-overlay1: #858cae;
+  --catppuccin-color-overlay2: #99a2c6;
+  --catppuccin-color-text: #c0caf5;
+  --catppuccin-color-subtext0: #aab3db;
+  --catppuccin-color-subtext1: #b8c2ec;
+  --catppuccin-color-rosewater: #f7768e;
+  --catppuccin-color-flamingo: #f7768e;
+  --catppuccin-color-pink: #bb9af7;
+  --catppuccin-color-mauve: #bb9af7;
+  --catppuccin-color-red: #f7768e;
+  --catppuccin-color-maroon: #f7768e;
+  --catppuccin-color-peach: #ea9579;
+  --catppuccin-color-yellow: #e0af68;
+  --catppuccin-color-green: #9ece6a;
+  --catppuccin-color-teal: #7dcfff;
+  --catppuccin-color-sky: #7dcfff;
+  --catppuccin-color-sapphire: #7aa2f7;
+  --catppuccin-color-blue: #7aa2f7;
+  --catppuccin-color-lavender: #bb9af7;
+  --catppuccin-color-red-600: #d9687d;
+  --catppuccin-color-red-950: #944755;
+  --catppuccin-color-green-600: #8bb55d;
+  --catppuccin-color-green-950: #5f7c40;
+  --catppuccin-color-blue-600: #6b8fd9;
+  --catppuccin-color-blue-950: #496194;
+}
