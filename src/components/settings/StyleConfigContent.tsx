@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Search, TextSelect } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStyleStore } from "@/stores/style.store";
-import { useThemeStore } from "@/stores/theme.store";
 import { useSystemFonts } from "@/hooks/useSystemFonts";
 import { AVAILABLE_COLORS, getHighlightCSSVar } from "@/lib/colors";
-import { DARK_THEMES, LIGHT_THEMES, type ThemeFlavor } from "@/themes/registry";
 
 export function StyleConfigContent() {
   const style = useStyleStore((s) => s.style);
@@ -24,11 +22,6 @@ export function StyleConfigContent() {
   const addSystemFontFamily = useStyleStore((s) => s.addSystemFontFamily);
   const removeSystemFontFamily = useStyleStore((s) => s.removeSystemFontFamily);
   const reset = useStyleStore((s) => s.reset);
-  const themeConfig = useThemeStore((s) => s.config);
-  const setLightTheme = useThemeStore((s) => s.setLightTheme);
-  const setDarkTheme = useThemeStore((s) => s.setDarkTheme);
-  const setThemeMode = useThemeStore((s) => s.setThemeMode);
-  const setPdfDarkInvert = useThemeStore((s) => s.setPdfDarkInvert);
   const systemFonts = useSystemFonts();
   const [search, setSearch] = useState("");
   const [showFontList, setShowFontList] = useState(false);
@@ -428,85 +421,6 @@ export function StyleConfigContent() {
               );
             })}
           </div>
-        </div>
-      </div>
-
-      {/* ── Theme settings ── */}
-      <div className="border-t pt-4 mt-4">
-        <h3 className="text-xs font-semibold mb-3">Theme</h3>
-
-        {/* Theme mode */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium mb-1.5">
-            Light/Dark mode
-          </label>
-          <div className="flex gap-2">
-            {(["auto", "light", "dark"] as const).map((mode) => (
-              <button
-                key={mode}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  themeConfig.themeMode === mode
-                    ? "bg-ctp-mauve text-ctp-crust"
-                    : "border border-ctp-overlay0/50 text-ctp-overlay0 hover:bg-ctp-surface0"
-                }`}
-                onClick={() => setThemeMode(mode)}
-              >
-                {mode === "auto" ? "Auto" : mode === "light" ? "Light" : "Dark"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Light theme — 只列 light 类型主题 */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium mb-1">Light theme</label>
-          <select
-            className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
-            value={themeConfig.lightTheme}
-            onChange={(e) => setLightTheme(e.target.value as ThemeFlavor)}
-          >
-            {LIGHT_THEMES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Dark theme — 只列 dark 类型主题 */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium mb-1">Dark theme</label>
-          <select
-            className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
-            value={themeConfig.darkTheme}
-            onChange={(e) => setDarkTheme(e.target.value as ThemeFlavor)}
-          >
-            {DARK_THEMES.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* PDF dark mode scheme */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium mb-1">
-            PDF dark mode
-          </label>
-          <select
-            className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
-            value={themeConfig.pdfDarkInvert}
-            onChange={(e) =>
-              setPdfDarkInvert(e.target.value as "off" | "invert" | "themed")
-            }
-          >
-            <option value="off">Off — original colors</option>
-            <option value="invert">
-              Invert — black background, white text
-            </option>
-            <option value="themed">Themed — matches app background</option>
-          </select>
         </div>
       </div>
 

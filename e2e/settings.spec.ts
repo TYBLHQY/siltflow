@@ -123,15 +123,16 @@ test("theme mode toggle applies light/dark classes and persists", async () => {
   const { app, window, vault } = await launchApp();
   try {
     const dialog = await openSettings(window);
-    await dialog.getByRole("button", { name: "Style" }).click();
+    await dialog.getByRole("button", { name: "Theme" }).click();
 
     // Light: html gets the latte flavor and loses the shadcn .dark class.
-    await dialog.getByRole("button", { name: "Light" }).click();
+    // exact:true — the theme list buttons (e.g. "Nord Light") also contain "Light".
+    await dialog.getByRole("button", { name: "Light", exact: true }).click();
     await expect(window.locator("html")).toHaveClass(/latte/);
     await expect(window.locator("html")).not.toHaveClass(/dark/);
 
     // Dark: mocha flavor + .dark, persisted to vault config.
-    await dialog.getByRole("button", { name: "Dark" }).click();
+    await dialog.getByRole("button", { name: "Dark", exact: true }).click();
     await expect(window.locator("html")).toHaveClass(/dark/);
     await expect(window.locator("html")).toHaveClass(/mocha/);
 

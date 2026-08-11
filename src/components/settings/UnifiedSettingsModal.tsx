@@ -3,6 +3,7 @@ import {
   Bot,
   BrainCircuit,
   TextSelect,
+  Palette,
   Volume2,
   Keyboard,
   Info,
@@ -12,11 +13,13 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AIConfigContent } from "@/components/settings/AIConfigContent";
 import { FSRSConfigContent } from "@/components/settings/FSRSConfigContent";
 import { StyleConfigContent } from "@/components/settings/StyleConfigContent";
+import { ThemeConfigContent } from "@/components/settings/ThemeConfigContent";
 import { TTSConfigContent } from "@/components/settings/TTSConfigContent";
 import { ShortcutsContent } from "@/components/settings/ShortcutsContent";
 import { AboutContent } from "@/components/settings/AboutContent";
 
-type SettingsTab = "ai" | "fsrs" | "style" | "tts" | "shortcuts" | "about";
+type SettingsTab =
+  "ai" | "fsrs" | "style" | "theme" | "tts" | "shortcuts" | "about";
 
 const SETTINGS_TABS: Array<{
   id: SettingsTab;
@@ -26,6 +29,7 @@ const SETTINGS_TABS: Array<{
   { id: "ai", icon: Bot, label: "AI" },
   { id: "fsrs", icon: BrainCircuit, label: "Spaced Repetition" },
   { id: "style", icon: TextSelect, label: "Style" },
+  { id: "theme", icon: Palette, label: "Theme" },
   { id: "tts", icon: Volume2, label: "TTS" },
   { id: "shortcuts", icon: Keyboard, label: "Shortcuts" },
   { id: "about", icon: Info, label: "About" },
@@ -94,6 +98,7 @@ export function UnifiedSettingsModal({
             {tab === "ai" && <AIConfigContent />}
             {tab === "fsrs" && <FSRSConfigContent />}
             {tab === "style" && <StyleConfigContent />}
+            {tab === "theme" && <ThemeConfigContent />}
             {tab === "tts" && <TTSConfigContent />}
             {tab === "shortcuts" && (
               <ShortcutsContent
