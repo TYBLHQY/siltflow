@@ -1,0 +1,36 @@
+/* Obsidian —— Obsidian 笔记应用配色。 */
+
+.obsidian {
+  --catppuccin-color-base: #283033;
+  --catppuccin-color-mantle: #262e31;
+  --catppuccin-color-crust: #252c2f;
+  --catppuccin-color-surface0: #3d4447;
+  --catppuccin-color-surface1: #53595b;
+  --catppuccin-color-surface2: #686d6f;
+  --catppuccin-color-overlay0: #7a7e80;
+  --catppuccin-color-overlay1: #8e9192;
+  --catppuccin-color-overlay2: #a4a6a6;
+  --catppuccin-color-text: #cdcdcd;
+  --catppuccin-color-subtext0: #b6b7b7;
+  --catppuccin-color-subtext1: #c5c5c5;
+  --catppuccin-color-rosewater: #a60001;
+  --catppuccin-color-flamingo: #a60001;
+  --catppuccin-color-pink: #bb00bb;
+  --catppuccin-color-mauve: #bb00bb;
+  --catppuccin-color-red: #a60001;
+  --catppuccin-color-maroon: #a60001;
+  --catppuccin-color-peach: #d67113;
+  --catppuccin-color-yellow: #fecd22;
+  --catppuccin-color-green: #00bb00;
+  --catppuccin-color-teal: #00bbbb;
+  --catppuccin-color-sky: #00bbbb;
+  --catppuccin-color-sapphire: #3a9bdb;
+  --catppuccin-color-blue: #3a9bdb;
+  --catppuccin-color-lavender: #bb00bb;
+  --catppuccin-color-red-600: #920001;
+  --catppuccin-color-red-950: #640001;
+  --catppuccin-color-green-600: #00a500;
+  --catppuccin-color-green-950: #007000;
+  --catppuccin-color-blue-600: #3388c1;
+  --catppuccin-color-blue-950: #235d83;
+}

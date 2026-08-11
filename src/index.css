@@ -13,6 +13,9 @@
 @import "./themes/one-dark.css";
 @import "./themes/monokai.css";
 @import "./themes/github.css";
+@import "./themes/material.css";
+@import "./themes/jetbrains.css";
+@import "./themes/obsidian.css";
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));

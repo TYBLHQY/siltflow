@@ -320,6 +320,50 @@ const THEMES = [
     kind: "light",
     group: "GitHub",
   },
+  { id: "material", label: "Material", kind: "light", group: "Material" },
+  {
+    id: "material-dark",
+    label: "Material Dark",
+    kind: "dark",
+    group: "Material",
+  },
+  {
+    id: "material-darker",
+    label: "Material Darker",
+    kind: "dark",
+    group: "Material",
+  },
+  {
+    id: "material-ocean",
+    label: "Material Ocean",
+    kind: "dark",
+    group: "Material",
+  },
+  {
+    id: "material-design-colors",
+    label: "Material Design Colors",
+    kind: "dark",
+    group: "Material",
+  },
+  {
+    id: "oceanic-material",
+    label: "Oceanic Material",
+    kind: "dark",
+    group: "Material",
+  },
+  {
+    id: "jetbrains-darcula",
+    label: "JetBrains Darcula",
+    kind: "dark",
+    group: "JetBrains",
+  },
+  {
+    id: "jetbrains-islands-dark",
+    label: "JetBrains Islands Dark",
+    kind: "dark",
+    group: "JetBrains",
+  },
+  { id: "obsidian", label: "Obsidian", kind: "dark", group: "Obsidian" },
 ] as const satisfies readonly ThemeDefinition[];
 
 /** 所有主题 id 的字面量联合类型。 */
