@@ -10,10 +10,25 @@ export interface ThemeDefinition {
 }
 
 const THEMES = [
-  { id: "latte", label: "Latte", kind: "light", group: "Catppuccin" },
-  { id: "frappe", label: "Frappé", kind: "dark", group: "Catppuccin" },
-  { id: "macchiato", label: "Macchiato", kind: "dark", group: "Catppuccin" },
-  { id: "mocha", label: "Mocha", kind: "dark", group: "Catppuccin" },
+  {
+    id: "latte",
+    label: "Catppuccin Latte",
+    kind: "light",
+    group: "Catppuccin",
+  },
+  {
+    id: "frappe",
+    label: "Catppuccin Frappé",
+    kind: "dark",
+    group: "Catppuccin",
+  },
+  {
+    id: "macchiato",
+    label: "Catppuccin Macchiato",
+    kind: "dark",
+    group: "Catppuccin",
+  },
+  { id: "mocha", label: "Catppuccin Mocha", kind: "dark", group: "Catppuccin" },
   { id: "nord", label: "Nord", kind: "dark", group: "Nord" },
   { id: "nord-light", label: "Nord Light", kind: "light", group: "Nord" },
   { id: "dracula", label: "Dracula", kind: "dark", group: "Dracula" },
