@@ -1,6 +1,6 @@
 import { create } from "zustand";
+import { THEME_IDS, type ThemeFlavor } from "@/themes/registry";
 
-export type ThemeFlavor = "latte" | "frappe" | "macchiato" | "mocha";
 export type ThemeMode = "auto" | "light" | "dark";
 export type PdfDarkInvert = "off" | "invert" | "themed";
 
@@ -31,6 +31,10 @@ const DEFAULT_CONFIG: ThemeConfig = {
 
 function persist(config: ThemeConfig) {
   void window.siltflow.vaultConfigSet({ [STORAGE_KEY]: config });
+}
+
+function isThemeFlavor(v: unknown): v is ThemeFlavor {
+  return typeof v === "string" && (THEME_IDS as readonly string[]).includes(v);
 }
 
 export const useThemeStore = create<ThemeStoreState>((set, get) => ({
@@ -94,8 +98,19 @@ export async function loadThemeFromVault(cfg?: Record<string, unknown>) {
       if (typeof migrated.pdfDarkInvert === "boolean") {
         migrated.pdfDarkInvert = migrated.pdfDarkInvert ? "invert" : "off";
       }
+      // 兜底：持久化里若出现已移除/未知的主题 id，回落到默认值，
+      // 避免 <html> 挂上无 CSS 的 class 后静默退化成 latte 默认。
       useThemeStore.setState({
-        config: { ...DEFAULT_CONFIG, ...migrated },
+        config: {
+          ...DEFAULT_CONFIG,
+          ...migrated,
+          lightTheme: isThemeFlavor(migrated.lightTheme)
+            ? migrated.lightTheme
+            : DEFAULT_CONFIG.lightTheme,
+          darkTheme: isThemeFlavor(migrated.darkTheme)
+            ? migrated.darkTheme
+            : DEFAULT_CONFIG.darkTheme,
+        },
       });
     }
   } catch {

@@ -1,0 +1,81 @@
+/* Nord —— 冷冽北极风。深色: polar night; 浅色: snow storm。 */
+
+.nord {
+  /* 中性色（表面/前景） */
+  --catppuccin-color-base: #2e3440;
+  --catppuccin-color-mantle: #3b4252;
+  --catppuccin-color-crust: #434c5e;
+  --catppuccin-color-surface0: #434c5e;
+  --catppuccin-color-surface1: #4c566a;
+  --catppuccin-color-surface2: #4c566a;
+  --catppuccin-color-overlay0: #4c566a;
+  --catppuccin-color-overlay1: #d8dee9;
+  --catppuccin-color-overlay2: #e5e9f0;
+  --catppuccin-color-text: #eceff4;
+  --catppuccin-color-subtext0: #d8dee9;
+  --catppuccin-color-subtext1: #e5e9f0;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #d08770;
+  --catppuccin-color-flamingo: #bf616a;
+  --catppuccin-color-pink: #b48ead;
+  --catppuccin-color-mauve: #b48ead;
+  --catppuccin-color-red: #bf616a;
+  --catppuccin-color-maroon: #bf616a;
+  --catppuccin-color-peach: #d08770;
+  --catppuccin-color-yellow: #ebcb8b;
+  --catppuccin-color-green: #a3be8c;
+  --catppuccin-color-teal: #8fbcbb;
+  --catppuccin-color-sky: #88c0d0;
+  --catppuccin-color-sapphire: #81a1c1;
+  --catppuccin-color-blue: #81a1c1;
+  --catppuccin-color-lavender: #b48ead;
+
+  /* toast 用 scale 色值（-600/-950 = 同色相更暗档） */
+  --catppuccin-color-red-600: #a9444a;
+  --catppuccin-color-red-950: #5c282b;
+  --catppuccin-color-green-600: #7b9c62;
+  --catppuccin-color-green-950: #3a4b2f;
+  --catppuccin-color-blue-600: #5a7fa8;
+  --catppuccin-color-blue-950: #2a3b52;
+}
+
+.nord-light {
+  /* 中性色 */
+  --catppuccin-color-base: #eceff4;
+  --catppuccin-color-mantle: #e5e9f0;
+  --catppuccin-color-crust: #d8dee9;
+  --catppuccin-color-surface0: #d8dee9;
+  --catppuccin-color-surface1: #d8dee9;
+  --catppuccin-color-surface2: #d8dee9;
+  --catppuccin-color-overlay0: #4c566a;
+  --catppuccin-color-overlay1: #3b4252;
+  --catppuccin-color-overlay2: #2e3440;
+  --catppuccin-color-text: #2e3440;
+  --catppuccin-color-subtext0: #4c566a;
+  --catppuccin-color-subtext1: #3b4252;
+
+  /* 强调色（浅色底上用加深的 frost 保证对比度） */
+  --catppuccin-color-rosewater: #d08770;
+  --catppuccin-color-flamingo: #c15555;
+  --catppuccin-color-pink: #8c6aa8;
+  --catppuccin-color-mauve: #8c6aa8;
+  --catppuccin-color-red: #c15555;
+  --catppuccin-color-maroon: #c15555;
+  --catppuccin-color-peach: #c26d3e;
+  --catppuccin-color-yellow: #b89a43;
+  --catppuccin-color-green: #76994f;
+  --catppuccin-color-teal: #5e9b97;
+  --catppuccin-color-sky: #5e96b4;
+  --catppuccin-color-sapphire: #4e7ea8;
+  --catppuccin-color-blue: #5e81ac;
+  --catppuccin-color-lavender: #8c6aa8;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #a9444a;
+  --catppuccin-color-red-950: #5c282b;
+  --catppuccin-color-green-600: #7b9c62;
+  --catppuccin-color-green-950: #3a4b2f;
+  --catppuccin-color-blue-600: #5a7fa8;
+  --catppuccin-color-blue-950: #2a3b52;
+}

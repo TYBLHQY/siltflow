@@ -82,8 +82,11 @@ git tag vX.Y.Z
 git push origin master
 git push origin vX.Y.Z
 
-# 4. 验证（可选）：确认 tag 触发的 CI 正常启动
-gh run list --repo TYBLHQY/siltflow --limit 3
+# 4. 验证（可选）：等 tag 触发的 CI 跑完（阻塞直到 run 完成，
+#    --exit-status 让失败时返回非零退出码）。run ID 用第一步里
+#    `gh run list` 查到的最新一条
+gh run list --repo TYBLHQY/siltflow --limit 1
+gh run watch <run-id> --repo TYBLHQY/siltflow --exit-status
 ```
 
 > 注意：CI 工作流（`.github/workflows/ci.yml`）只监听 `tags: ["v*"]` 和 PR 到 master 的事件。check/lint/unit 三个 job 并行（快检查与慢检查互不阻塞），release 依赖它们全绿。对 tag push 通过后 Linux/macOS/Windows 三平台并行构建并创建 GitHub Release（Linux job 负责建 release，其余平台等待其就绪后上传产物）。依赖安装通过 `.github/actions/install-deps` 复合 action 共享，`setup-node` 的 pnpm cache 让各 job 秒装。E2E 未接入 CI（xvfb 下文本选择存在环境差异），本地 `pnpm test:e2e` 跑。

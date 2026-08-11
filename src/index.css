@@ -1,5 +1,15 @@
 @import "tailwindcss";
 @import "@catppuccin/tailwindcss/mocha.css";
+
+/* 非 Catppuccin 配色主题（每套一个 flavor class，声明全套 --catppuccin-color-*）。 */
+@import "./themes/nord.css";
+@import "./themes/dracula.css";
+@import "./themes/tokyo-night.css";
+@import "./themes/rose-pine.css";
+@import "./themes/gruvbox.css";
+@import "./themes/kanagawa.css";
+@import "./themes/everforest.css";
+@import "./themes/solarized.css";
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
@@ -42,15 +52,15 @@
   --selection-tip-fg: #efece5;
 }
 
-.latte {
-  --tooltip-bg: white;
-  --card-bg: white;
+/* 应用专属变量按主题深浅区分，而非按 flavor 名单——这样新增主题无需改这里。
+   深浅由 App.tsx applyTheme 写入 <html data-theme-kind="light|dark">。 */
+:root[data-theme-kind="light"] {
+  --tooltip-bg: #ffffff;
+  --card-bg: #ffffff;
   --heatmap-0: #ebedf0;
 }
 
-.frappe,
-.macchiato,
-.mocha {
+:root[data-theme-kind="dark"] {
   --tooltip-bg: var(--catppuccin-color-mantle);
   --card-bg: var(--catppuccin-color-mantle);
   --heatmap-0: #161b22;

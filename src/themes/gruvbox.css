@@ -1,0 +1,81 @@
+/* Gruvbox —— 复古暖色。深色: #282828 系; 浅色: #fbf1c7 系。 */
+
+.gruvbox {
+  /* 中性色 */
+  --catppuccin-color-base: #282828;
+  --catppuccin-color-mantle: #1d2021;
+  --catppuccin-color-crust: #141617;
+  --catppuccin-color-surface0: #3c3836;
+  --catppuccin-color-surface1: #504945;
+  --catppuccin-color-surface2: #665c54;
+  --catppuccin-color-overlay0: #7c6f64;
+  --catppuccin-color-overlay1: #928374;
+  --catppuccin-color-overlay2: #a89984;
+  --catppuccin-color-text: #ebdbb2;
+  --catppuccin-color-subtext0: #bdae93;
+  --catppuccin-color-subtext1: #d5c4a1;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #f4a46a;
+  --catppuccin-color-flamingo: #d3869b;
+  --catppuccin-color-pink: #d3869b;
+  --catppuccin-color-mauve: #d3869b;
+  --catppuccin-color-red: #fb4934;
+  --catppuccin-color-maroon: #fb4934;
+  --catppuccin-color-peach: #fe8019;
+  --catppuccin-color-yellow: #fabd2f;
+  --catppuccin-color-green: #b8bb26;
+  --catppuccin-color-teal: #8ec07c;
+  --catppuccin-color-sky: #83a598;
+  --catppuccin-color-sapphire: #83a598;
+  --catppuccin-color-blue: #83a598;
+  --catppuccin-color-lavender: #d3869b;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #c83a2a;
+  --catppuccin-color-red-950: #7a2017;
+  --catppuccin-color-green-600: #8a8e1f;
+  --catppuccin-color-green-950: #4e510f;
+  --catppuccin-color-blue-600: #6a8294;
+  --catppuccin-color-blue-950: #36454e;
+}
+
+.gruvbox-light {
+  /* 中性色 */
+  --catppuccin-color-base: #fbf1c7;
+  --catppuccin-color-mantle: #f9f5d7;
+  --catppuccin-color-crust: #ebdbb2;
+  --catppuccin-color-surface0: #ebdbb2;
+  --catppuccin-color-surface1: #d5c4a1;
+  --catppuccin-color-surface2: #bdae93;
+  --catppuccin-color-overlay0: #a89984;
+  --catppuccin-color-overlay1: #928374;
+  --catppuccin-color-overlay2: #7c6f64;
+  --catppuccin-color-text: #3c3836;
+  --catppuccin-color-subtext0: #665c54;
+  --catppuccin-color-subtext1: #504945;
+
+  /* 强调色（gruvbox 官方 light 组，比 dark 组更深） */
+  --catppuccin-color-rosewater: #d65d0e;
+  --catppuccin-color-flamingo: #cc241d;
+  --catppuccin-color-pink: #b16286;
+  --catppuccin-color-mauve: #b16286;
+  --catppuccin-color-red: #cc241d;
+  --catppuccin-color-maroon: #cc241d;
+  --catppuccin-color-peach: #d65d0e;
+  --catppuccin-color-yellow: #d79921;
+  --catppuccin-color-green: #98971a;
+  --catppuccin-color-teal: #689d6a;
+  --catppuccin-color-sky: #458588;
+  --catppuccin-color-sapphire: #458588;
+  --catppuccin-color-blue: #458588;
+  --catppuccin-color-lavender: #b16286;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #9e1a16;
+  --catppuccin-color-red-950: #5c0e0c;
+  --catppuccin-color-green-600: #6f7312;
+  --catppuccin-color-green-950: #3a3d09;
+  --catppuccin-color-blue-600: #346c6c;
+  --catppuccin-color-blue-950: #1a3a3a;
+}

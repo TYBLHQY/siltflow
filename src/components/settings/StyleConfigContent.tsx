@@ -5,6 +5,7 @@ import { useStyleStore } from "@/stores/style.store";
 import { useThemeStore } from "@/stores/theme.store";
 import { useSystemFonts } from "@/hooks/useSystemFonts";
 import { AVAILABLE_COLORS, getHighlightCSSVar } from "@/lib/colors";
+import { DARK_THEMES, LIGHT_THEMES, type ThemeFlavor } from "@/themes/registry";
 
 export function StyleConfigContent() {
   const style = useStyleStore((s) => s.style);
@@ -456,35 +457,35 @@ export function StyleConfigContent() {
           </div>
         </div>
 
-        {/* Light flavor */}
+        {/* Light theme — 只列 light 类型主题 */}
         <div className="mb-3">
           <label className="block text-xs font-medium mb-1">Light theme</label>
           <select
             className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
             value={themeConfig.lightTheme}
-            onChange={(e) =>
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              setLightTheme(e.target.value as any)
-            }
+            onChange={(e) => setLightTheme(e.target.value as ThemeFlavor)}
           >
-            <option value="latte">Latte</option>
+            {LIGHT_THEMES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
 
-        {/* Dark flavor */}
+        {/* Dark theme — 只列 dark 类型主题 */}
         <div className="mb-3">
           <label className="block text-xs font-medium mb-1">Dark theme</label>
           <select
             className="w-full rounded-md border bg-ctp-base px-3 py-1.5 text-xs"
             value={themeConfig.darkTheme}
-            onChange={(e) =>
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              setDarkTheme(e.target.value as any)
-            }
+            onChange={(e) => setDarkTheme(e.target.value as ThemeFlavor)}
           >
-            <option value="frappe">Frappé</option>
-            <option value="macchiato">Macchiato</option>
-            <option value="mocha">Mocha</option>
+            {DARK_THEMES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
 

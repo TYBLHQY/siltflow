@@ -1,0 +1,41 @@
+/* Dracula —— 紫系高对比。无官方 light 变体，只提供深色。 */
+
+.dracula {
+  /* 中性色 */
+  --catppuccin-color-base: #282a36;
+  --catppuccin-color-mantle: #242530;
+  --catppuccin-color-crust: #21222c;
+  --catppuccin-color-surface0: #343746;
+  --catppuccin-color-surface1: #3b3e4d;
+  --catppuccin-color-surface2: #44475a;
+  --catppuccin-color-overlay0: #6272a4;
+  --catppuccin-color-overlay1: #7a7f8a;
+  --catppuccin-color-overlay2: #8a8f98;
+  --catppuccin-color-text: #f8f8f2;
+  --catppuccin-color-subtext0: #c0c0bc;
+  --catppuccin-color-subtext1: #e0e0dc;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #ffb86c;
+  --catppuccin-color-flamingo: #ff79c6;
+  --catppuccin-color-pink: #ff79c6;
+  --catppuccin-color-mauve: #bd93f9;
+  --catppuccin-color-red: #ff5555;
+  --catppuccin-color-maroon: #ff5555;
+  --catppuccin-color-peach: #ffb86c;
+  --catppuccin-color-yellow: #f1fa8c;
+  --catppuccin-color-green: #50fa7b;
+  --catppuccin-color-teal: #50fa7b;
+  --catppuccin-color-sky: #8be9fd;
+  --catppuccin-color-sapphire: #8be9fd;
+  --catppuccin-color-blue: #8be9fd;
+  --catppuccin-color-lavender: #bd93f9;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #e04e4e;
+  --catppuccin-color-red-950: #8f2e2e;
+  --catppuccin-color-green-600: #2e9e4c;
+  --catppuccin-color-green-950: #17602b;
+  --catppuccin-color-blue-600: #4e8ff0;
+  --catppuccin-color-blue-950: #2a4e8f;
+}

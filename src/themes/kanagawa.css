@@ -1,0 +1,81 @@
+/* Kanagawa —— 葛饰北斋神奈川冲浪里。深色: Wave; 浅色: Lotus。 */
+
+.kanagawa {
+  /* 中性色 */
+  --catppuccin-color-base: #1f1f28;
+  --catppuccin-color-mantle: #16161d;
+  --catppuccin-color-crust: #141418;
+  --catppuccin-color-surface0: #2a2a37;
+  --catppuccin-color-surface1: #363646;
+  --catppuccin-color-surface2: #3a3a4c;
+  --catppuccin-color-overlay0: #54546d;
+  --catppuccin-color-overlay1: #727169;
+  --catppuccin-color-overlay2: #8a8980;
+  --catppuccin-color-text: #dcd7ba;
+  --catppuccin-color-subtext0: #a6a08e;
+  --catppuccin-color-subtext1: #c8c093;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #e46876;
+  --catppuccin-color-flamingo: #e46876;
+  --catppuccin-color-pink: #d27e99;
+  --catppuccin-color-mauve: #957fb8;
+  --catppuccin-color-red: #e82424;
+  --catppuccin-color-maroon: #c34043;
+  --catppuccin-color-peach: #ffa066;
+  --catppuccin-color-yellow: #e6c384;
+  --catppuccin-color-green: #98bb6c;
+  --catppuccin-color-teal: #6a9589;
+  --catppuccin-color-sky: #7fb4ca;
+  --catppuccin-color-sapphire: #7e9cd8;
+  --catppuccin-color-blue: #7e9cd8;
+  --catppuccin-color-lavender: #9cabca;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #b02626;
+  --catppuccin-color-red-950: #661414;
+  --catppuccin-color-green-600: #76946a;
+  --catppuccin-color-green-950: #3f5240;
+  --catppuccin-color-blue-600: #5a78a8;
+  --catppuccin-color-blue-950: #2e3a58;
+}
+
+.kanagawa-lotus {
+  /* 中性色 */
+  --catppuccin-color-base: #f2ecbc;
+  --catppuccin-color-mantle: #e5ddb0;
+  --catppuccin-color-crust: #d5cea3;
+  --catppuccin-color-surface0: #e5ddb0;
+  --catppuccin-color-surface1: #dcd5ac;
+  --catppuccin-color-surface2: #d5cea3;
+  --catppuccin-color-overlay0: #a09cac;
+  --catppuccin-color-overlay1: #716e61;
+  --catppuccin-color-overlay2: #545464;
+  --catppuccin-color-text: #545464;
+  --catppuccin-color-subtext0: #8a8980;
+  --catppuccin-color-subtext1: #716e61;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #d7474b;
+  --catppuccin-color-flamingo: #c84053;
+  --catppuccin-color-pink: #b35b79;
+  --catppuccin-color-mauve: #624c83;
+  --catppuccin-color-red: #c84053;
+  --catppuccin-color-maroon: #c84053;
+  --catppuccin-color-peach: #cc6d00;
+  --catppuccin-color-yellow: #77713f;
+  --catppuccin-color-green: #6f894e;
+  --catppuccin-color-teal: #597b75;
+  --catppuccin-color-sky: #6693bf;
+  --catppuccin-color-sapphire: #6693bf;
+  --catppuccin-color-blue: #4d699b;
+  --catppuccin-color-lavender: #766b90;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #a03040;
+  --catppuccin-color-red-950: #5c1e26;
+  --catppuccin-color-green-600: #567040;
+  --catppuccin-color-green-950: #2e3d22;
+  --catppuccin-color-blue-600: #3e5480;
+  --catppuccin-color-blue-950: #222e46;
+}

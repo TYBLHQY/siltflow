@@ -15,6 +15,7 @@ import { useToastStore } from "@/stores/toast.store";
 import { loadShortcutsFromVault } from "@/stores/shortcuts.store";
 import { loadLastPages } from "@/stores/pdf-viewer.store";
 import { loadThemeFromVault, useThemeStore } from "@/stores/theme.store";
+import { THEME_IDS } from "@/themes/registry";
 import { useSearchStore } from "@/stores/search.store";
 import { useShortcut } from "@/hooks/useShortcut";
 import {
@@ -196,16 +197,19 @@ function App() {
 
     // Add the new flavor first, then remove old ones.
     // Order matters: removing all then adding would leave a paint frame
-    // with NO Catppuccin class, causing a visible flash as CSS variables
+    // with NO flavor class, causing a visible flash as CSS variables
     // fall back to their defaults.
-    const flavors: string[] = ["latte", "frappe", "macchiato", "mocha"];
     html.classList.add(resolved.flavor);
-    for (const f of flavors) {
+    for (const f of THEME_IDS) {
       if (f !== resolved.flavor) html.classList.remove(f);
     }
 
     // Sync .dark class for shadcn compatibility
     html.classList.toggle("dark", resolved.isDark);
+
+    // Mark light/dark so app-specific tokens (--card-bg, --tooltip-bg,
+    // --heatmap-0) resolve via index.css [data-theme-kind].
+    html.dataset.themeKind = resolved.isDark ? "dark" : "light";
 
     // Apply PDF dark invert scheme
     html.dataset.pdfDarkInvert = themeConfig.pdfDarkInvert;
