@@ -10,6 +10,8 @@
 @import "./themes/kanagawa.css";
 @import "./themes/everforest.css";
 @import "./themes/solarized.css";
+@import "./themes/one-dark.css";
+@import "./themes/monokai.css";
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));

@@ -1,0 +1,41 @@
+/* One Dark —— Atom 编辑器经典深色。 */
+
+.onedark {
+  /* 中性色（base=编辑器主背景 #282c34；mantle=侧边栏层 #21252b） */
+  --catppuccin-color-base: #282c34;
+  --catppuccin-color-mantle: #21252b;
+  --catppuccin-color-crust: #1d2128;
+  --catppuccin-color-surface0: #2c313a;
+  --catppuccin-color-surface1: #3e4451;
+  --catppuccin-color-surface2: #454b57;
+  --catppuccin-color-overlay0: #5c6370;
+  --catppuccin-color-overlay1: #6b7280;
+  --catppuccin-color-overlay2: #7d8491;
+  --catppuccin-color-text: #abb2bf;
+  --catppuccin-color-subtext0: #8a919e;
+  --catppuccin-color-subtext1: #9aa1ad;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #e06c75;
+  --catppuccin-color-flamingo: #e06c75;
+  --catppuccin-color-pink: #c678dd;
+  --catppuccin-color-mauve: #c678dd;
+  --catppuccin-color-red: #e06c75;
+  --catppuccin-color-maroon: #e06c75;
+  --catppuccin-color-peach: #d19a66;
+  --catppuccin-color-yellow: #e5c07b;
+  --catppuccin-color-green: #98c379;
+  --catppuccin-color-teal: #56b6c2;
+  --catppuccin-color-sky: #56b6c2;
+  --catppuccin-color-sapphire: #61afef;
+  --catppuccin-color-blue: #61afef;
+  --catppuccin-color-lavender: #c678dd;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #c9575f;
+  --catppuccin-color-red-950: #7a3238;
+  --catppuccin-color-green-600: #72a15d;
+  --catppuccin-color-green-950: #3c5a31;
+  --catppuccin-color-blue-600: #478fd4;
+  --catppuccin-color-blue-950: #27537c;
+}

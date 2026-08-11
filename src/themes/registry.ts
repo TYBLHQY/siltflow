@@ -64,6 +64,8 @@ const THEMES = [
     kind: "light",
     group: "Solarized",
   },
+  { id: "onedark", label: "One Dark", kind: "dark", group: "One Dark" },
+  { id: "monokai", label: "Monokai", kind: "dark", group: "Monokai" },
 ] as const satisfies readonly ThemeDefinition[];
 
 /** 19 个主题 id 的字面量联合类型。 */

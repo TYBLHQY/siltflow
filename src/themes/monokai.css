@@ -1,0 +1,41 @@
+/* Monokai —— TextMate 经典深色。 */
+
+.monokai {
+  /* 中性色 */
+  --catppuccin-color-base: #272822;
+  --catppuccin-color-mantle: #211f1a;
+  --catppuccin-color-crust: #1b1a16;
+  --catppuccin-color-surface0: #2f2e27;
+  --catppuccin-color-surface1: #3e3d32;
+  --catppuccin-color-surface2: #49483e;
+  --catppuccin-color-overlay0: #75715e;
+  --catppuccin-color-overlay1: #6e7066;
+  --catppuccin-color-overlay2: #7e7f74;
+  --catppuccin-color-text: #f8f8f2;
+  --catppuccin-color-subtext0: #a7a89b;
+  --catppuccin-color-subtext1: #d0d0c4;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #f92672;
+  --catppuccin-color-flamingo: #f92672;
+  --catppuccin-color-pink: #ae81ff;
+  --catppuccin-color-mauve: #ae81ff;
+  --catppuccin-color-red: #f92672;
+  --catppuccin-color-maroon: #f92672;
+  --catppuccin-color-peach: #fd971f;
+  --catppuccin-color-yellow: #e6db74;
+  --catppuccin-color-green: #a6e22e;
+  --catppuccin-color-teal: #a1efe4;
+  --catppuccin-color-sky: #66d9ef;
+  --catppuccin-color-sapphire: #66d9ef;
+  --catppuccin-color-blue: #66d9ef;
+  --catppuccin-color-lavender: #ae81ff;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #d21a5c;
+  --catppuccin-color-red-950: #7a1036;
+  --catppuccin-color-green-600: #7fa820;
+  --catppuccin-color-green-950: #425a10;
+  --catppuccin-color-blue-600: #4aa6cc;
+  --catppuccin-color-blue-950: #276070;
+}
