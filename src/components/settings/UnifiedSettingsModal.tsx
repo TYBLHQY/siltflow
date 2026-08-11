@@ -66,7 +66,7 @@ export function UnifiedSettingsModal({
         onEscapeKeyDown={(e) => {
           if (isCapturingShortcut) e.preventDefault();
         }}
-        className="flex w-full max-w-3xl h-[calc(100vh-80px)] max-h-[720px] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"
+        className="flex w-full max-w-3xl h-[calc(100vh-80px)] max-h-[1000px] rounded-lg border bg-ctp-base shadow-xl p-0 gap-0"
       >
         {/* ── Left sidebar ── */}
         <div className="flex w-48 shrink-0 flex-col border-r p-2">
