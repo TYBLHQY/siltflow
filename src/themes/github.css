@@ -1,0 +1,81 @@
+/* GitHub —— 官方 Primer 配色。深色: Dark Default; 浅色: Light Default。 */
+
+.github-dark {
+  /* 中性色（GitHub Dark canvas 层级） */
+  --catppuccin-color-base: #0d1117;
+  --catppuccin-color-mantle: #161b22;
+  --catppuccin-color-crust: #010409;
+  --catppuccin-color-surface0: #21262d;
+  --catppuccin-color-surface1: #30363d;
+  --catppuccin-color-surface2: #484f58;
+  --catppuccin-color-overlay0: #6e7681;
+  --catppuccin-color-overlay1: #7d8590;
+  --catppuccin-color-overlay2: #8b949e;
+  --catppuccin-color-text: #e6edf3;
+  --catppuccin-color-subtext0: #8b949e;
+  --catppuccin-color-subtext1: #b1bac4;
+
+  /* 强调色 */
+  --catppuccin-color-rosewater: #ff7b72;
+  --catppuccin-color-flamingo: #ff7b72;
+  --catppuccin-color-pink: #bc8cff;
+  --catppuccin-color-mauve: #bc8cff;
+  --catppuccin-color-red: #ff7b72;
+  --catppuccin-color-maroon: #ff7b72;
+  --catppuccin-color-peach: #f0883e;
+  --catppuccin-color-yellow: #d29922;
+  --catppuccin-color-green: #3fb950;
+  --catppuccin-color-teal: #39c5cf;
+  --catppuccin-color-sky: #39c5cf;
+  --catppuccin-color-sapphire: #58a6ff;
+  --catppuccin-color-blue: #58a6ff;
+  --catppuccin-color-lavender: #bc8cff;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #d6645f;
+  --catppuccin-color-red-950: #7a3230;
+  --catppuccin-color-green-600: #2d8f3a;
+  --catppuccin-color-green-950: #16491d;
+  --catppuccin-color-blue-600: #3d8fd0;
+  --catppuccin-color-blue-950: #1d4a70;
+}
+
+.github-light {
+  /* 中性色（GitHub Light canvas 层级） */
+  --catppuccin-color-base: #ffffff;
+  --catppuccin-color-mantle: #f6f8fa;
+  --catppuccin-color-crust: #eaeef2;
+  --catppuccin-color-surface0: #eaeef2;
+  --catppuccin-color-surface1: #d0d7de;
+  --catppuccin-color-surface2: #afb8c1;
+  --catppuccin-color-overlay0: #6e7781;
+  --catppuccin-color-overlay1: #57606a;
+  --catppuccin-color-overlay2: #424a53;
+  --catppuccin-color-text: #1f2328;
+  --catppuccin-color-subtext0: #57606a;
+  --catppuccin-color-subtext1: #424a53;
+
+  /* 强调色（GitHub Light UI accent 组） */
+  --catppuccin-color-rosewater: #cf222e;
+  --catppuccin-color-flamingo: #cf222e;
+  --catppuccin-color-pink: #8250df;
+  --catppuccin-color-mauve: #8250df;
+  --catppuccin-color-red: #cf222e;
+  --catppuccin-color-maroon: #cf222e;
+  --catppuccin-color-peach: #bc4c00;
+  --catppuccin-color-yellow: #9a6700;
+  --catppuccin-color-green: #1a7f37;
+  --catppuccin-color-teal: #3192aa;
+  --catppuccin-color-sky: #3192aa;
+  --catppuccin-color-sapphire: #0969da;
+  --catppuccin-color-blue: #0969da;
+  --catppuccin-color-lavender: #8250df;
+
+  /* toast 用 scale 色值 */
+  --catppuccin-color-red-600: #a72e36;
+  --catppuccin-color-red-950: #5c1a1f;
+  --catppuccin-color-green-600: #155d28;
+  --catppuccin-color-green-950: #0c3316;
+  --catppuccin-color-blue-600: #0757a8;
+  --catppuccin-color-blue-950: #04305c;
+}

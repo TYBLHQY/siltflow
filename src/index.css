@@ -12,6 +12,7 @@
 @import "./themes/solarized.css";
 @import "./themes/one-dark.css";
 @import "./themes/monokai.css";
+@import "./themes/github.css";
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));

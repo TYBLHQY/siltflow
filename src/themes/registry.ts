@@ -66,6 +66,18 @@ const THEMES = [
   },
   { id: "onedark", label: "One Dark", kind: "dark", group: "One Dark" },
   { id: "monokai", label: "Monokai", kind: "dark", group: "Monokai" },
+  {
+    id: "github-dark",
+    label: "GitHub Dark",
+    kind: "dark",
+    group: "GitHub",
+  },
+  {
+    id: "github-light",
+    label: "GitHub Light",
+    kind: "light",
+    group: "GitHub",
+  },
 ] as const satisfies readonly ThemeDefinition[];
 
 /** 19 个主题 id 的字面量联合类型。 */
