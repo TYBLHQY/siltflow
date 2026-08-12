@@ -52,7 +52,9 @@
     category: "Utility",
     maintainer: "MYQ <myq@localhost>",
     syncDesktopName: true,
-    target: ["deb", "AppImage"],
+    // deb only — AppImage dropped (avoids maintaining latest-linux.yml
+    // auto-update metadata and the cross-platform builder-debug.yml upload race)
+    target: ["deb"],
     artifactName: "${productName}-Linux-${version}.${ext}",
   },
   publish: {
