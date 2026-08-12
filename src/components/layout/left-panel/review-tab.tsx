@@ -107,6 +107,9 @@ export const ReviewTab = memo(function ReviewTab({
   const virtualizer = useVirtualizer({
     count: sortedMetrics.length,
     getScrollElement: () => parentRef.current,
+    // Key measurements by stable documentId (see annotations-tab.tsx): sorting
+    // reorders the list and the default index-keyed size cache would go stale.
+    getItemKey: (index) => sortedMetrics[index]?.documentId ?? index,
     estimateSize: () => 56, // fallback; measureElement overrides after first render
     measureElement: (el) => el.getBoundingClientRect().height,
     overscan: 10,

@@ -119,10 +119,20 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
   const virtualizer = useVirtualizer({
     count: sortedItems.length,
     getScrollElement: () => listViewportRef.current,
+    // Key measurements by stable card id, not index. TanStack Virtual caches
+    // sizes by getItemKey(index) and defaults to the index itself — so
+    // deleting/adding a card shifts every later index and the stale size gets
+    // applied to the wrong (variable-height) card, the occasional overlap.
+    // With id keys a card keeps its measured size wherever it lands.
+    getItemKey: (index) => sortedItems[index]?.id ?? index,
     // Collapsed-card fallback; measureElement corrects per card. Expanded V2
     // cards are far taller but ResizeObserver keeps the measurement fresh.
     estimateSize: () => 80,
     overscan: 5,
+    // The old `p-3` gave the first card a 12px top margin; expressing it as a
+    // per-index paddingTop would bake an index-dependent size into the card,
+    // so keep it as list geometry instead (the first card's start is 12).
+    paddingStart: 12,
     // flushSync inside measureElement's ref callback throws under React 19 —
     // same opt-out as the Review virtual list (review-tab.tsx).
     useFlushSync: false,
@@ -441,10 +451,10 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
                       width: "100%",
                       transform: `translateY(${vi.start}px)`,
                       // Old layout was `p-3 space-y-2`: the 12px horizontal
-                      // padding now lives on the container, the 8px inter-card
-                      // gap is paddingBottom, and only the very first card
-                      // keeps the 12px top margin the old p-3 provided.
-                      paddingTop: vi.index === 0 ? 12 : 0,
+                      // padding now lives on the container, and the 8px
+                      // inter-card gap is paddingBottom. The old p-3 top
+                      // margin became the virtualizer's paddingStart, so no
+                      // card carries an index-dependent size here.
                       paddingBottom: 8,
                     }}
                   >
