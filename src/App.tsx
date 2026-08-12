@@ -36,6 +36,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import type { DeepLinkPayload } from "@/types/ipc";
 
 // Rec. 709 luminance weights — used by the themed-PDF filter to map a PDF
 // pixel's luminance onto the resolved theme's text color.
@@ -236,6 +237,9 @@ function App() {
 
     const openDocumentById = async (id: string) => {
       const st = useDocumentStore.getState();
+      // Deep-linking the document that's already open is a no-op — don't reset
+      // the viewer scale or re-reveal it in the left panel.
+      if (st.currentDocument?.id === id) return;
       let doc = st.documents.find((d) => d.id === id);
       if (!doc) {
         try {
@@ -259,15 +263,26 @@ function App() {
       // setCurrentDocument is the only entry point — it resets pdfScale before
       // the viewer remounts (see document.store.ts).
       st.setCurrentDocument(doc);
+      // Surface the document in the left panel without switching tabs:
+      // DocsTree expands the target's folder path (collapsing others), or the
+      // Review list scrolls to the target row. Only fired for external deep
+      // links, not manual opens.
+      window.dispatchEvent(
+        new CustomEvent("siltflow:reveal-document", { detail: doc.id }),
+      );
     };
 
-    const drain = () =>
-      void window.siltflow.deeplink.consumePending().then((payload) => {
-        if (payload) void openDocumentById(payload.documentId);
-      });
+    // preload's onAvailable already consumes the single-shot stash and hands
+    // the payload to this callback — use it directly, don't re-pull (a second
+    // consumePending returns null and silently drops the link).
+    const drain = (payload: DeepLinkPayload | null) => {
+      if (payload) void openDocumentById(payload.documentId);
+    };
 
     const unsub = window.siltflow.deeplink.onAvailable(drain);
-    drain(); // cold-start links stashed before this effect ran
+    // Cold-start links were stashed before this effect ran and never fired the
+    // "deep-link:available" ping (the window didn't exist yet) — pull once here.
+    void window.siltflow.deeplink.consumePending().then(drain);
     return unsub;
   }, [vaultReady, showToast]);
 

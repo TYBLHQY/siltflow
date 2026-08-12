@@ -389,6 +389,27 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   };
 
   const docsTreeRef = useRef<DocsTreeHandle>(null);
+
+  // Deep links (siltflow:reveal-document) surface the target doc in whichever
+  // left tab is already open — no tab switching. Docs: reveal the tree node
+  // (expand its folder path, collapse others). Review: scroll the virtual list
+  // to the target row via the same scrollToDocId channel used when switching
+  // to the Review tab.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (!id) return;
+      if (activeTabRef.current === "documents") {
+        docsTreeRef.current?.revealDocument(id);
+      } else if (activeTabRef.current === "review") {
+        setScrollToDocId(id);
+      }
+    };
+    window.addEventListener("siltflow:reveal-document", handler);
+    return () =>
+      window.removeEventListener("siltflow:reveal-document", handler);
+  }, []);
+
   const prevTabRef = useRef(activeTab);
   // Force Tree to re-mount when switching to the Documents tab so initialOpenState
   // takes effect on first render (no expanded → collapsed → expanded flicker).

@@ -5,6 +5,7 @@ import { Highlighter, FileText } from "lucide-react";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
+import { useAnnotationStore } from "@/stores/annotation.store";
 import { AnnotationsTab } from "@/components/layout/right-panel/annotations-tab";
 import { SummaryTab } from "@/components/layout/right-panel/summary-tab";
 import { extractPageTexts } from "@/lib/summarize";
@@ -21,85 +22,17 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const setPageTexts = useSummaryStore((s) => s.setPageTexts);
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages);
 
-  const annotationsScrollRef = useRef<HTMLDivElement | null>(null);
-
-  // When a highlight is clicked in the PDF, scroll the matching annotation card
+  // When a highlight is clicked in the PDF, switch to the Annotations tab and
+  // hand the target id to AnnotationsTab via the store. The tab may be
+  // unmounted right now (e.g. on Summary), so the reveal must survive the tab
+  // switch — the store is the single slot; AnnotationsTab drains it on mount
+  // and scrolls the (virtualized) card into view itself.
   useEffect(() => {
     const handler = (e: Event) => {
-      const { id } = (e as CustomEvent).detail;
+      const { id } = (e as CustomEvent<{ id: string }>).detail;
       if (!id) return;
       onTabChange?.("annotations");
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const el = annotationsScrollRef.current?.querySelector(
-            `[data-annotation-id="${id}"]`,
-          );
-          if (!el) return;
-          el.setAttribute("data-annotation-highlight", "true");
-          setTimeout(
-            () => el.removeAttribute("data-annotation-highlight"),
-            2000,
-          );
-
-          // The card starts a 200ms grid-template-rows expand/collapse in the
-          // same tick (annotations-tab expands it via annotation-click). scrollIntoView
-          // computes its target from the geometry at call time, so scrolling mid-animation
-          // lands off-center. Wait for the transition to settle, then scroll based on the
-          // final geometry. A timeout backstops lost transitionend events (reduced motion,
-          // display:none, property reset).
-          const scrollWhenStable = () =>
-            el.scrollIntoView({ block: "center", behavior: "smooth" });
-
-          // The height animation is not limited to the target card. Reassigning
-          // expandedCardId collapses the previously-expanded card in the same
-          // tick that the target (if V2) expands — and an UNTRANSLATED target
-          // has no collapsible grid of its own at all, yet the collapsing card
-          // above it still shifts the whole list. So the stability check must
-          // scan every collapsible grid in the list, not just the target's.
-          const runningGrids = [
-            ...(annotationsScrollRef.current?.querySelectorAll<HTMLElement>(
-              "[data-collapsible-grid]",
-            ) ?? []),
-          ].filter((g) =>
-            g
-              .getAnimations()
-              .some(
-                (a) => a instanceof CSSTransition && a.playState === "running",
-              ),
-          );
-          // Reading the computed gridTemplateRows mid-transition returns an
-          // interpolation (neither "0px" nor the final px), so it can't tell a
-          // running transition from a settled one — getAnimations() can. A card
-          // already in its target state (e.g. annotation-click re-selecting the
-          // same id) has no running transition either.
-          if (runningGrids.length === 0) {
-            // No list card is mid-animation — geometry is already stable.
-            scrollWhenStable();
-            return;
-          }
-
-          let settled = false;
-          let remaining = runningGrids.length;
-          const finish = () => {
-            if (settled) return;
-            settled = true;
-            window.clearTimeout(timer);
-            for (const g of runningGrids)
-              g.removeEventListener("transitionend", onEnd);
-            scrollWhenStable();
-          };
-          const onEnd = (te: TransitionEvent) => {
-            // Only height transitions matter. Collapse (0fr) and expand (1fr)
-            // endings are both stable-geometry points. Count every running grid
-            // down; when the slowest settles, the whole list is stable.
-            if (te.propertyName !== "grid-template-rows") return;
-            if (--remaining === 0) finish();
-          };
-          const timer = window.setTimeout(finish, 350); // duration-200 + margin
-          for (const g of runningGrids)
-            g.addEventListener("transitionend", onEnd);
-        });
-      });
+      useAnnotationStore.getState().setPendingAnnotationReveal(id);
     };
     window.addEventListener("siltflow:annotation-click", handler);
     return () =>
@@ -175,10 +108,7 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           value="annotations"
           className="flex-1 min-h-0 mt-0 flex flex-col"
         >
-          <AnnotationsTab
-            onTabChange={onTabChange}
-            annotationsScrollRef={annotationsScrollRef}
-          />
+          <AnnotationsTab onTabChange={onTabChange} />
         </TabsContent>
 
         <TabsContent

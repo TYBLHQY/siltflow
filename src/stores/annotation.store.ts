@@ -86,6 +86,14 @@ interface AnnotationState {
   manualDialogOpen: boolean;
   openManualDialog: () => void;
   closeManualDialog: () => void;
+  /**
+   * Transient "scroll this annotation card into view" target set by the
+   * PDF-highlight click handler. Store-owned so it survives a tab switch: the
+   * Annotations tab may be unmounted when the click lands and must drain the
+   * id on mount. Single slot, last link wins.
+   */
+  pendingAnnotationReveal: string | null;
+  setPendingAnnotationReveal: (id: string | null) => void;
 }
 
 /** Persist the full annotation to the Electron backend. */
@@ -116,6 +124,9 @@ export const useAnnotationStore = create<AnnotationState>((set) => ({
   manualDialogOpen: false,
   openManualDialog: () => set({ manualDialogOpen: true }),
   closeManualDialog: () => set({ manualDialogOpen: false }),
+
+  pendingAnnotationReveal: null,
+  setPendingAnnotationReveal: (id) => set({ pendingAnnotationReveal: id }),
 
   setItems: (items) => {
     invalidateAllAnnotationsCache();

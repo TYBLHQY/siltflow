@@ -143,7 +143,10 @@ function buildTree(
 
 export interface DocsTreeHandle {
   createFolder: () => void;
-  /** Open parent folders and scroll/scroll to the document with the given id. */
+  /**
+   * Focus the tree on a document: collapse every folder, open only the
+   * document's ancestor path, then select and scroll it into view.
+   */
   revealDocument: (docId: string) => void;
 }
 
@@ -264,7 +267,9 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
           // Find the doc in the documents list to learn its folderId
           const doc = documents.find((d) => d.id === docId);
           if (!doc) return;
-          // Open all parent folders
+          // Collapse every folder so only the target's path stays open.
+          tree.closeAll();
+          // Open the doc's ancestor folders (root doc → no folders to open).
           if (doc.folderId) {
             const openParents = (folderId: string) => {
               const folder = folders.find((f) => f.id === folderId);

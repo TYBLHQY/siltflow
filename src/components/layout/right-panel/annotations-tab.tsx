@@ -6,7 +6,8 @@ import {
   Plus,
   ArrowRight,
 } from "lucide-react";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
@@ -34,7 +35,6 @@ import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
 
 interface AnnotationsTabProps {
   onTabChange?: (tab: string) => void;
-  annotationsScrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // ── V2 shared translation helper ──────────────────────────────────────
@@ -89,10 +89,7 @@ async function translateItemV2(
   }
 }
 
-export function AnnotationsTab({
-  onTabChange,
-  annotationsScrollRef,
-}: AnnotationsTabProps) {
+export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
   // ── Store reads ────────────────────────────────────────────────────
   const allItems = useAnnotationStore((s) => s.items);
   // Only show annotation-kind items in this panel; plain highlights are visual only.
@@ -100,6 +97,36 @@ export function AnnotationsTab({
     () => allItems.filter((i) => i.kind !== "highlight"),
     [allItems],
   );
+  // Stable sort for the virtualized list: manual annotations first, then by
+  // page, then by vertical position within the page.
+  const sortedItems = useMemo(
+    () =>
+      [...items].sort((a, b) => {
+        if (a.kind === "manual" && b.kind !== "manual") return -1;
+        if (a.kind !== "manual" && b.kind === "manual") return 1;
+        if (a.pageNumber !== b.pageNumber) return a.pageNumber - b.pageNumber;
+        return (
+          (a.embedData?.position?.boundingRect?.y1 ?? 0) -
+          (b.embedData?.position?.boundingRect?.y1 ?? 0)
+        );
+      }),
+    [items],
+  );
+
+  // ── Virtualized list (variable-height cards via measureElement) ─────────
+  const listViewportRef = useRef<HTMLDivElement | null>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: sortedItems.length,
+    getScrollElement: () => listViewportRef.current,
+    // Collapsed-card fallback; measureElement corrects per card. Expanded V2
+    // cards are far taller but ResizeObserver keeps the measurement fresh.
+    estimateSize: () => 80,
+    overscan: 5,
+    // flushSync inside measureElement's ref callback throws under React 19 —
+    // same opt-out as the Review virtual list (review-tab.tsx).
+    useFlushSync: false,
+  });
   const updateItem = useAnnotationStore((s) => s.updateItem);
   const removeItem = useAnnotationStore((s) => s.removeItem);
   const addItem = useAnnotationStore((s) => s.addItem);
@@ -175,16 +202,46 @@ export function AnnotationsTab({
     enabled: hasPdf && !studyPanelOpen,
   });
 
-  // ── Expand V2 card when PDF highlight is clicked ──────────────────────
+  // ── Scroll-to-annotation from PDF highlight clicks ───────────────────
+  // RightPanel stores the target in pendingAnnotationReveal so it survives a
+  // tab switch — the annotations tab may be unmounted when the click lands.
+  const pendingReveal = useAnnotationStore((s) => s.pendingAnnotationReveal);
+  const setPendingAnnotationReveal = useAnnotationStore(
+    (s) => s.setPendingAnnotationReveal,
+  );
+
   useEffect(() => {
-    const handler = (e: Event) => {
-      const { id } = (e as CustomEvent<{ id: string }>).detail;
-      if (id) setExpandedCardId(id);
-    };
-    window.addEventListener("siltflow:annotation-click", handler);
-    return () =>
-      window.removeEventListener("siltflow:annotation-click", handler);
-  }, []);
+    if (!pendingReveal) return;
+    const id = pendingReveal;
+    setPendingAnnotationReveal(null);
+    setExpandedCardId(id);
+    const index = sortedItems.findIndex((a) => a.id === id);
+    if (index < 0) return;
+    const doScroll = () =>
+      virtualizer.scrollToIndex(index, {
+        align: "center",
+        behavior: "smooth",
+      });
+    // The card (and any previously-expanded card above it) runs a 200ms
+    // grid-template-rows animation; scrollToIndex must target the FINAL
+    // geometry. Cards virtualized out re-measure when they render, so the
+    // corrective scroll at 800ms catches late drift (a no-op when stable).
+    window.setTimeout(doScroll, 350);
+    window.setTimeout(() => {
+      doScroll();
+      // Flash the card (index.css annotation-flash) like the old flow.
+      const row = listViewportRef.current?.querySelector<HTMLElement>(
+        `[data-annotation-id="${id}"]`,
+      );
+      if (row) {
+        row.setAttribute("data-annotation-highlight", "true");
+        window.setTimeout(
+          () => row.removeAttribute("data-annotation-highlight"),
+          2500,
+        );
+      }
+    }, 800);
+  }, [pendingReveal, setPendingAnnotationReveal, sortedItems, virtualizer]);
 
   // ── Batch translate ────────────────────────────────────────────────
   const handleBatchTranslate = useCallback(async () => {
@@ -360,67 +417,81 @@ export function AnnotationsTab({
           </p>
         </div>
       ) : (
-        <ScrollArea className="flex-1">
-          <div
-            className="space-y-2 p-3"
-            ref={annotationsScrollRef}
-            style={{ width: 0, minWidth: "100%" }}
-          >
-            {[...items]
-              .sort((a, b) => {
-                // Manual annotations always sort to the top
-                if (a.kind === "manual" && b.kind !== "manual") return -1;
-                if (a.kind !== "manual" && b.kind === "manual") return 1;
-                if (a.pageNumber !== b.pageNumber)
-                  return a.pageNumber - b.pageNumber;
-                const topA = a.embedData?.position?.boundingRect?.y1 ?? 0;
-                const topB = b.embedData?.position?.boundingRect?.y1 ?? 0;
-                return topA - topB;
-              })
-              .map((ann) => (
-                <div key={ann.id} data-annotation-id={ann.id}>
-                  <AITranslateCard
-                    id={ann.id}
-                    item={ann}
-                    scrolled={false}
-                    expanded={expandedCardId === ann.id}
-                    collapsible
-                    showFSRS={false}
-                    sourceLang={sourceLang}
-                    onGoToHighlight={
-                      ann.kind !== "manual"
-                        ? () => pdfScrollToHighlight(ann.id)
-                        : undefined
-                    }
-                    onToggleExpand={(id) =>
-                      setExpandedCardId((prev) => (prev === id ? null : id))
-                    }
-                    onDelete={(id) => {
-                      removeItem(id);
+        <ScrollArea className="flex-1" viewportRef={listViewportRef}>
+          <div className="px-3" style={{ width: 0, minWidth: "100%" }}>
+            <div
+              style={{
+                height: virtualizer.getTotalSize(),
+                position: "relative",
+                width: "100%",
+              }}
+            >
+              {virtualizer.getVirtualItems().map((vi) => {
+                const ann = sortedItems[vi.index];
+                return (
+                  <div
+                    key={ann.id}
+                    data-annotation-id={ann.id}
+                    data-index={vi.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${vi.start}px)`,
+                      // Old layout was `p-3 space-y-2`: the 12px horizontal
+                      // padding now lives on the container, the 8px inter-card
+                      // gap is paddingBottom, and only the very first card
+                      // keeps the 12px top margin the old p-3 provided.
+                      paddingTop: vi.index === 0 ? 12 : 0,
+                      paddingBottom: 8,
                     }}
-                    onTranslate={async (id) => {
-                      const item = items.find((i) => i.id === id);
-                      if (!item || item.aiResult === null) return;
-
-                      if (!summary || !summary.text?.trim()) {
-                        showToast("Please generate a summary first", "info");
-                        onTabChange?.("summary");
-                        return;
+                  >
+                    <AITranslateCard
+                      id={ann.id}
+                      item={ann}
+                      scrolled={false}
+                      expanded={expandedCardId === ann.id}
+                      collapsible
+                      showFSRS={false}
+                      sourceLang={sourceLang}
+                      onGoToHighlight={
+                        ann.kind !== "manual"
+                          ? () => pdfScrollToHighlight(ann.id)
+                          : undefined
                       }
+                      onToggleExpand={(id) =>
+                        setExpandedCardId((prev) => (prev === id ? null : id))
+                      }
+                      onDelete={(id) => {
+                        removeItem(id);
+                      }}
+                      onTranslate={async (id) => {
+                        const item = items.find((i) => i.id === id);
+                        if (!item || item.aiResult === null) return;
 
-                      await translateItemV2(
-                        item,
-                        sourceLang,
-                        effectiveTargetLang,
-                        summary.text,
-                        texts,
-                        updateItem,
-                        showToast,
-                      );
-                    }}
-                  />
-                </div>
-              ))}
+                        if (!summary || !summary.text?.trim()) {
+                          showToast("Please generate a summary first", "info");
+                          onTabChange?.("summary");
+                          return;
+                        }
+
+                        await translateItemV2(
+                          item,
+                          sourceLang,
+                          effectiveTargetLang,
+                          summary.text,
+                          texts,
+                          updateItem,
+                          showToast,
+                        );
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </ScrollArea>
       )}

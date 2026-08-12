@@ -177,9 +177,9 @@ export function MemoryStateExplorer() {
               {search ? "No matching cards" : "No cards reviewed yet"}
             </div>
           ) : (
-            <div
-              ref={listRef}
-              className="h-full overflow-auto rounded-md border"
+            <ScrollArea
+              className="h-full rounded-md border"
+              viewportRef={listRef}
             >
               <div
                 className="relative w-full"
@@ -209,7 +209,7 @@ export function MemoryStateExplorer() {
                   );
                 })}
               </div>
-            </div>
+            </ScrollArea>
           )}
         </div>
       </div>

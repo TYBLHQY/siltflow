@@ -3,6 +3,7 @@ import {
   expect,
   type ElectronApplication,
 } from "@playwright/test";
+import { spawn } from "node:child_process";
 import {
   mkdtempSync,
   writeFileSync,
@@ -43,6 +44,14 @@ function openVaultDb(vault: string): Database.Database {
   const dbPath = path.join(vault, ".siltflow", "data.db");
   const db = new Database(dbPath);
   db.exec(`
+    CREATE TABLE IF NOT EXISTS folders (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      parent_id TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS documents (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -88,14 +97,36 @@ function openVaultDb(vault: string): Database.Database {
 }
 
 /**
+ * Seed a folder row so the Docs tree can nest documents under it.
+ * `parentId` (optional) makes it a subfolder.
+ */
+export function seedFolder(
+  vault: string,
+  name: string,
+  parentId?: string,
+): string {
+  const id = randomUUID();
+  const db = openVaultDb(vault);
+  const now = new Date().toISOString();
+  db.prepare(
+    `INSERT OR REPLACE INTO folders (id, name, parent_id, sort_order, created_at, updated_at)
+     VALUES (?, ?, ?, 0, ?, ?)`,
+  ).run(id, name, parentId ?? null, now, now);
+  db.close();
+  return id;
+}
+
+/**
  * Seed a document into the vault: copy `pdfPath` to `<vault>/documents/<id>.pdf`
  * and insert a `documents` row (matching the app's schema) so the doc shows up
  * in the tree and opens in the viewer via `siltflow://documents/<id>.pdf`.
+ * `folderId` (optional) nests it under a folder seeded with `seedFolder`.
  */
 export function seedDocument(
   vault: string,
   pdfPath: string,
   title = "E2E Test PDF",
+  folderId?: string,
 ) {
   const id = randomUUID();
   const docsDir = path.join(vault, "documents");
@@ -105,9 +136,9 @@ export function seedDocument(
   const db = openVaultDb(vault);
   const now = new Date().toISOString();
   db.prepare(
-    `INSERT OR REPLACE INTO documents (id, title, original_name, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(id, title, path.basename(pdfPath), now, now);
+    `INSERT OR REPLACE INTO documents (id, title, original_name, folder_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(id, title, path.basename(pdfPath), folderId ?? null, now, now);
   db.close();
   return id;
 }
@@ -432,6 +463,26 @@ export async function launchApp(
   app.once("close", cleanup);
 
   return { app, window, vault, profile, cleanup };
+}
+
+/**
+ * Spawn a second app instance against the SAME `--user-data-dir` profile as a
+ * running primary (launched via `launchApp`). The primary already holds the
+ * single-instance lock on that profile, so this process loses the lock and
+ * exits after Electron forwards its argv to the primary through the
+ * `second-instance` event — the warm-start path for external `siltflow://`
+ * links. Stdout/stderr are piped and echoed with a `[2nd-instance]` prefix so
+ * a failing spawn is visible in the test output.
+ */
+export function launchSecondInstance(profile: string, args: string[]) {
+  const child = spawn(
+    ELECTRON_BINARY,
+    [MAIN_SCRIPT, `--user-data-dir=${profile}`, ...args],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+  child.stdout?.on("data", (d) => process.stdout.write(`[2nd-instance] ${d}`));
+  child.stderr?.on("data", (d) => process.stderr.write(`[2nd-instance] ${d}`));
+  return child;
 }
 
 /**

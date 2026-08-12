@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Loader2, BrainCircuit } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef, memo, useEffect } from "react";
 import type { DocReviewMetrics, SortField } from "@/lib/doc-review";
 import { retrievabilityLabel } from "@/lib/fsrs-utils";
@@ -61,34 +62,28 @@ const ReviewTabRow = memo(function ReviewTabRow({
           {metric.documentTitle}
         </span>
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-1 mt-0.5">
-        {hasTags ? (
-          <>
-            {metric.newCardsCount > 0 && (
-              <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
-                {metric.newCardsCount} new
-              </span>
-            )}
-            {metric.dueNowCount > 0 && (
-              <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
-                {metric.dueNowCount} due
-              </span>
-            )}
-            {metric.dueSoonCount > 0 && (
-              <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
-                {metric.dueSoonCount} soon
-              </span>
-            )}
-            <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
-              {retrievabilityLabel(metric.avgRetrievability)}
+      {hasTags && (
+        <div className="flex flex-wrap items-center justify-end gap-1 mt-0.5">
+          {metric.newCardsCount > 0 && (
+            <span className="rounded bg-ctp-blue/10 px-1 py-0.5 font-medium text-ctp-blue">
+              {metric.newCardsCount} new
             </span>
-          </>
-        ) : (
-          <span className="rounded bg-ctp-surface1/60 px-1 py-0.5 font-medium text-ctp-overlay0">
-            unstudied
+          )}
+          {metric.dueNowCount > 0 && (
+            <span className="rounded bg-ctp-red/10 px-1 py-0.5 font-medium text-ctp-red">
+              {metric.dueNowCount} due
+            </span>
+          )}
+          {metric.dueSoonCount > 0 && (
+            <span className="rounded bg-ctp-peach/10 px-1 py-0.5 font-medium text-ctp-peach">
+              {metric.dueSoonCount} soon
+            </span>
+          )}
+          <span className="rounded bg-ctp-mauve/15 px-1 py-0.5 font-medium text-ctp-mauve">
+            {retrievabilityLabel(metric.avgRetrievability)}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -115,6 +110,11 @@ export const ReviewTab = memo(function ReviewTab({
     estimateSize: () => 56, // fallback; measureElement overrides after first render
     measureElement: (el) => el.getBoundingClientRect().height,
     overscan: 10,
+    // flushSync is called inside a ref callback (measureElement runs during a
+    // React commit) — under React 19 that throws "flushSync was called from
+    // inside a lifecycle method". Let the virtualizer schedule the re-render
+    // normally instead of forcing a synchronous flush.
+    useFlushSync: false,
   });
 
   // Auto-scroll to the current document when switching to review tab
@@ -173,11 +173,7 @@ export const ReviewTab = memo(function ReviewTab({
           </p>
         </div>
       ) : (
-        <div
-          ref={parentRef}
-          className="flex-1 overflow-y-auto"
-          style={{ contain: "strict" }}
-        >
+        <ScrollArea className="flex-1" viewportRef={parentRef}>
           <div
             style={{
               height: virtualizer.getTotalSize(),
@@ -209,7 +205,7 @@ export const ReviewTab = memo(function ReviewTab({
               );
             })}
           </div>
-        </div>
+        </ScrollArea>
       )}
     </>
   );
