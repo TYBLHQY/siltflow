@@ -196,6 +196,10 @@ jobs:
           # ── Upload artifacts ────────────────────────────────────────
           for f in release/*/*; do
             if [ -f "$f" ]; then
+              # builder-debug.yml is a per-platform electron-builder debug log.
+              # All three release jobs upload the same name concurrently, and
+              # racing --clobber (delete+upload) on it intermittently 422s.
+              [ "$(basename "$f")" = "builder-debug.yml" ] && continue
               echo "Uploading: $f"
               gh release upload "$TAG" "$f" --clobber
             fi
