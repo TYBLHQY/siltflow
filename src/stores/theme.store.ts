@@ -26,7 +26,7 @@ const DEFAULT_CONFIG: ThemeConfig = {
   lightTheme: "latte",
   darkTheme: "mocha",
   themeMode: "auto",
-  pdfDarkInvert: "invert",
+  pdfDarkInvert: "themed",
 };
 
 function persist(config: ThemeConfig) {
