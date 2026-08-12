@@ -36,6 +36,57 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+// Rec. 709 luminance weights — used by the themed-PDF filter to map a PDF
+// pixel's luminance onto the resolved theme's text color.
+const LUM_R = 0.2126;
+const LUM_G = 0.7152;
+const LUM_B = 0.0722;
+
+/** Parse a hex / rgb() CSS color into normalized [0,1] RGB components. */
+function parseCssColor(css: string): [number, number, number] | null {
+  const s = css.trim();
+  const hex = /^#([0-9a-fA-F]{6})$/.exec(s);
+  if (hex) {
+    const n = Number.parseInt(hex[1], 16);
+    return [
+      ((n >> 16) & 0xff) / 255,
+      ((n >> 8) & 0xff) / 255,
+      (n & 0xff) / 255,
+    ];
+  }
+  const rgb = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/.exec(s);
+  if (rgb) {
+    return [+rgb[1] / 255, +rgb[2] / 255, +rgb[3] / 255];
+  }
+  return null;
+}
+
+/**
+ * Point the #pdf-theme-invert filter at the currently resolved theme's text
+ * color. The matrix maps black → text color and white → black, so that in
+ * themed PDF dark mode the page background reveals the theme base (screen
+ * blend) while the text renders in a soft theme-text tone instead of white.
+ */
+function syncPdfThemeTextColor(html: HTMLElement): void {
+  const matrix = document.getElementById("pdf-theme-invert-matrix");
+  if (!matrix) return;
+  const raw = getComputedStyle(html).getPropertyValue(
+    "--catppuccin-color-text",
+  );
+  const c = parseCssColor(raw);
+  if (!c) return;
+  const [r, g, b] = c;
+  matrix.setAttribute(
+    "values",
+    [
+      `-${LUM_R} -${LUM_G} -${LUM_B} 0 ${r}`,
+      `-${LUM_R} -${LUM_G} -${LUM_B} 0 ${g}`,
+      `-${LUM_R} -${LUM_G} -${LUM_B} 0 ${b}`,
+      `0 0 0 1 0`,
+    ].join(" "),
+  );
+}
+
 function App() {
   const [vaultReady, setVaultReady] = useState(false);
   const aiLoaded = useAIStore((s) => s.loaded);
@@ -213,6 +264,10 @@ function App() {
 
     // Apply PDF dark invert scheme
     html.dataset.pdfDarkInvert = themeConfig.pdfDarkInvert;
+
+    // Themed PDF mode: keep the #pdf-theme-invert filter's matrix in sync with
+    // the resolved theme's text color (read AFTER the flavor class is applied).
+    syncPdfThemeTextColor(html);
   }, [resolveTheme, themeConfig.pdfDarkInvert]);
 
   // Apply on config change

@@ -170,14 +170,17 @@ html[data-pdf-dark-invert="invert"].dark
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* PDF dark mode scheme: themed — invert + screen blend
-   White bg → invert to black → screen blend → transparent (reveals base)
-   Black text → invert to white → screen blend → stays white */
+/* PDF dark mode scheme: themed — theme-text + screen blend
+   The canvas is luminance-mapped by the SVG filter #pdf-theme-invert
+   (matrix updated in App.tsx to the resolved theme's text color):
+   white page → black, black text → theme text color.
+   Screen blend then reveals the theme base for the page background while
+   keeping the text at a soft theme-text tone (not glare-y pure white). */
 
 html[data-pdf-dark-invert="themed"].dark
   .PdfHighlighter
   :is(canvas, .textLayer) {
-  filter: invert(1) hue-rotate(180deg);
+  filter: url(#pdf-theme-invert);
   mix-blend-mode: screen;
 }
 

@@ -12,6 +12,29 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- PDF 夜间主题模式用：按亮度把 PDF 内容映射到当前主题文字色
+         （黑→主题文字色，白→黑，配合 screen 混合透出主题底色）。
+         matrix 值由 App.tsx applyTheme 依 --catppuccin-color-text 动态更新。 -->
+    <svg
+      width="0"
+      height="0"
+      style="position: absolute"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <filter id="pdf-theme-invert" color-interpolation-filters="sRGB">
+        <feColorMatrix
+          id="pdf-theme-invert-matrix"
+          type="matrix"
+          values="
+            -0.2126 -0.7152 -0.0722 0 0.804
+            -0.2126 -0.7152 -0.0722 0 0.839
+            -0.2126 -0.7152 -0.0722 0 0.957
+            0 0 0 1 0
+          "
+        />
+      </filter>
+    </svg>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
