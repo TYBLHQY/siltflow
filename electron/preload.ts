@@ -1,5 +1,6 @@
 import { ipcRenderer, contextBridge } from "electron";
 import type { DocReviewMetrics } from "../src/lib/doc-review";
+import type { DeepLinkPayload } from "../src/types/ipc";
 
 export interface SiltflowAPI {
   vaultGetPath: () => Promise<string>;
@@ -16,6 +17,7 @@ export interface SiltflowAPI {
   loadFile: (filePath: string) => Promise<ArrayBuffer>;
   dbSchemaVersion: () => Promise<number | null>;
   clipboardReadText: () => Promise<string>;
+  clipboardWriteText: (text: string) => Promise<void>;
 
   // Updates
   update: {
@@ -34,6 +36,12 @@ export interface SiltflowAPI {
     ) => () => void;
     onDownloaded: (fn: () => void) => () => void;
     onError: (fn: (message: string) => void) => () => void;
+  };
+
+  // Deep links
+  deeplink: {
+    onAvailable: (fn: (payload: DeepLinkPayload | null) => void) => () => void;
+    consumePending: () => Promise<DeepLinkPayload | null>;
   };
 
   // Database
@@ -174,6 +182,8 @@ const api: SiltflowAPI = {
   loadFile: (filePath: string) => ipcRenderer.invoke("file:load", filePath),
   dbSchemaVersion: () => ipcRenderer.invoke("db:schemaVersion"),
   clipboardReadText: () => ipcRenderer.invoke("clipboard:readText"),
+  clipboardWriteText: (text: string) =>
+    ipcRenderer.invoke("clipboard:writeText", text),
 
   // Updates
   update: {
@@ -213,6 +223,18 @@ const api: SiltflowAPI = {
       ipcRenderer.on("update:error", cb);
       return () => ipcRenderer.removeListener("update:error", cb);
     },
+  },
+  deeplink: {
+    onAvailable: (fn) => {
+      // Ping only (no payload) — pull the actual deep link with consumePending
+      // so a link arriving before this listener registered isn't lost.
+      const cb = () => {
+        void ipcRenderer.invoke("deep-link:consume-pending").then(fn);
+      };
+      ipcRenderer.on("deep-link:available", cb);
+      return () => ipcRenderer.removeListener("deep-link:available", cb);
+    },
+    consumePending: () => ipcRenderer.invoke("deep-link:consume-pending"),
   },
   documents: {
     list: () => ipcRenderer.invoke("documents:list"),

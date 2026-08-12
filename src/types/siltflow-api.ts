@@ -13,6 +13,7 @@ import type {
   FolderRowIPC,
   FolderCreateParams,
   UpdateProgress,
+  DeepLinkPayload,
 } from "@/types/ipc";
 import type { ReviewLogSaveRequest } from "@/types/review";
 import type { DocReviewMetrics } from "@/lib/doc-review";
@@ -32,6 +33,7 @@ export interface SiltflowAPI {
   loadFile: (filePath: string) => Promise<ArrayBuffer>;
   dbSchemaVersion: () => Promise<number | null>;
   clipboardReadText: () => Promise<string>;
+  clipboardWriteText: (text: string) => Promise<void>;
 
   update: {
     check: () => Promise<void>;
@@ -50,6 +52,10 @@ export interface SiltflowAPI {
     onDownloadProgress: (fn: (progress: UpdateProgress) => void) => () => void;
     onDownloaded: (fn: () => void) => () => void;
     onError: (fn: (message: string) => void) => () => void;
+  };
+  deeplink: {
+    onAvailable: (fn: (payload: DeepLinkPayload | null) => void) => () => void;
+    consumePending: () => Promise<DeepLinkPayload | null>;
   };
   documents: {
     list: () => Promise<DocumentIPCItem[]>;

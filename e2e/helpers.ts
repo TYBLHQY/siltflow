@@ -366,6 +366,7 @@ export function seedAIV2Annotation(
  */
 export async function launchApp(
   seed?: (vault: string) => void,
+  extraArgs?: (vault: string) => string[],
 ): Promise<LaunchedApp> {
   const vault = mkdtempSync(path.join(tmpdir(), "siltflow-vault-"));
   mkdirSync(path.join(vault, "documents"), { recursive: true });
@@ -401,7 +402,11 @@ export async function launchApp(
 
   const app = await electron.launch({
     executablePath: ELECTRON_BINARY,
-    args: [MAIN_SCRIPT, `--user-data-dir=${profile}`],
+    args: [
+      MAIN_SCRIPT,
+      `--user-data-dir=${profile}`,
+      ...(extraArgs?.(vault) ?? []),
+    ],
     env: { ...process.env, NODE_ENV: "production" },
     timeout: 45_000,
   });

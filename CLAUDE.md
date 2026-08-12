@@ -41,7 +41,8 @@ pnpm exec vite build && pnpm test:e2e
 # E2E 前提：需要显示环境（X11/Wayland），无 headless。headless 机器用
 # xvfb-run pnpm test:e2e。默认 1 worker（串行，e2e/playwright.config.ts）——并发
 # Electron 实例会争抢 CPU 导致文本选择测试偶发失败。测试每次启动独立 Electron 实例
-# （隔离 vault + profile），结束后自动清理临时目录。
+# （隔离 vault + profile），结束后自动清理临时目录。应用已加单实例锁，但锁按
+# --user-data-dir 隔离，各测试实例互不冲突。
 
 # 架构检查
 pnpm check:deps           # dependency-cruiser

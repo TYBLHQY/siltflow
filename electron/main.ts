@@ -33,6 +33,7 @@ import {
 } from "./ipc/folders.ipc";
 import { registerReviewLogHandlers } from "./ipc/review-logs.ipc";
 import { registerReviewHandlers } from "./ipc/review.ipc";
+import { parseDeepLinkUrl } from "./deep-link";
 
 // Register siltflow:// as a privileged scheme BEFORE app.whenReady
 protocol.registerSchemesAsPrivileged([
@@ -47,6 +48,32 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
+
+// ── Deep links (siltflow://open/<documentId>) ─────────────────────
+// External links launch a second app instance carrying the URL in argv
+// (Windows/Linux) or fire `open-url` (macOS). Enforce single-instance and
+// forward the URL to the running window. The lock keys on the userData dir,
+// so E2E instances with isolated --user-data-dir profiles don't collide.
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) app.quit();
+
+app.on("second-instance", (_event, argv) => {
+  for (const arg of argv) {
+    if (arg.startsWith("siltflow://")) {
+      handleDeepLink(arg);
+      break;
+    }
+  }
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  }
+});
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  handleDeepLink(url);
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -132,6 +159,11 @@ function ensureVaultStructure(vaultPath: string) {
 
 // ── Window Management ─────────────────────────────────────────────
 let win: BrowserWindow | null;
+
+// Single-slot stash for deep links that arrive before the renderer is ready
+// to receive them (cold start, or a link landing between createWindow and the
+// renderer subscribing). The renderer drains it via `deep-link:consume-pending`.
+let pendingDeepLink: { documentId: string } | null = null;
 
 async function installDevTools() {
   try {
@@ -260,6 +292,13 @@ function registerAllHandlers(vaultPath: string) {
   setVaultPathForFolders(vaultPath);
   setTtsCacheDir(path.join(vaultPath, ".siltflow", "tts-cache"));
 }
+
+// Deep links: drain the stashed payload (single slot, last link wins)
+ipcMain.handle("deep-link:consume-pending", () => {
+  const pending = pendingDeepLink;
+  pendingDeepLink = null;
+  return pending;
+});
 
 // Vault operations
 ipcMain.handle("vault:getPath", () => {
@@ -523,6 +562,24 @@ function sendUpdateEvent(channel: string, data: unknown) {
   win?.webContents.send(channel, data);
 }
 
+// Route a siltflow:// deep link to the renderer. Always stash first, then ping
+// if the window is live — the renderer pulls the payload with
+// `deep-link:consume-pending`, which makes this exactly-once (no lost update if
+// the renderer hasn't subscribed yet) and coalesces rapid links to the latest.
+function handleDeepLink(url: string): void {
+  const parsed = parseDeepLinkUrl(url);
+  if (!parsed) return;
+  pendingDeepLink = { documentId: parsed.documentId };
+  if (
+    win &&
+    !win.isDestroyed() &&
+    win.webContents &&
+    !win.webContents.isDestroyed()
+  ) {
+    win.webContents.send("deep-link:available");
+  }
+}
+
 autoUpdater.on("update-available", (info) => {
   sendUpdateEvent("update:available", {
     version: info.version,
@@ -576,6 +633,11 @@ ipcMain.handle("shell:showItemInFolder", (_event, docId: string) => {
 // Read text from the system clipboard (used by the context-note paste button)
 ipcMain.handle("clipboard:readText", () => clipboard.readText());
 
+// Write text to the system clipboard (share button copies the deep-link URL)
+ipcMain.handle("clipboard:writeText", (_event, text: string) => {
+  clipboard.writeText(text);
+});
+
 // Expose the DB schema version to the renderer so About can display it
 ipcMain.handle("db:schemaVersion", () => {
   const sql = getSqlite();
@@ -585,10 +647,28 @@ ipcMain.handle("db:schemaVersion", () => {
 
 // ── App Bootstrap ─────────────────────────────────────────────────
 void app.whenReady().then(async () => {
+  // Losing instance of the single-instance lock: app.quit() is async, so bail
+  // here before any window/DB work runs in the process that's about to exit.
+  if (!gotTheLock) return;
+
   // Initialize database and register IPC handlers if vault is set
   const vaultPath = getVaultPath();
   if (vaultPath) {
     registerAllHandlers(vaultPath);
+  }
+
+  // Register siltflow:// as the OS default protocol client so external
+  // deep links (siltflow://open/<documentId>) launch the app. Dev and E2E run
+  // the Electron binary directly (process.defaultApp), so pass the app path
+  // explicitly; packaged builds register by scheme only.
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient("siltflow", process.execPath, [
+        path.resolve(process.argv[1]),
+      ]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient("siltflow");
   }
 
   // Register siltflow:// protocol → vault path
@@ -694,5 +774,13 @@ void app.whenReady().then(async () => {
 
     await installDevTools();
   }
+
+  // Cold start via a deep link: Windows/Linux put the URL in argv before we
+  // reach here (macOS delivers it through `open-url` instead). Stash it now —
+  // the renderer drains it once it mounts. Safe before createWindow because
+  // handleDeepLink only writes the stash when the window isn't live yet.
+  const deepLinkArg = process.argv.find((arg) => arg.startsWith("siltflow://"));
+  if (deepLinkArg) handleDeepLink(deepLinkArg);
+
   createWindow();
 });

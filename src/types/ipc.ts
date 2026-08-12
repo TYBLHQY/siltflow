@@ -4,6 +4,12 @@
  * store / component code gets precise types instead of `any`.
  */
 
+// ── Deep links ─────────────────────────────────────────────────────────
+
+export interface DeepLinkPayload {
+  documentId: string;
+}
+
 // ── Documents ──────────────────────────────────────────────────────────
 
 export interface DocumentIPCItem {

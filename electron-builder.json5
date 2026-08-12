@@ -2,6 +2,12 @@
 {
   $schema: "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   appId: "com.myq.siltflow",
+  // Register siltflow:// as an OS protocol handler at install time: Windows
+  // NSIS registry, Linux .desktop MimeType=x-scheme-handler/siltflow, macOS
+  // Info.plist CFBundleURLTypes. Coexists with the runtime
+  // app.setAsDefaultProtocolClient() call in main.ts (required on macOS for
+  // setAsDefaultProtocolClient to succeed).
+  protocols: [{ name: "Siltflow", schemes: ["siltflow"] }],
   asar: true,
   asarUnpack: [
     "**/better-sqlite3/**",

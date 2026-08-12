@@ -15,6 +15,7 @@ import {
   FolderOpen,
   BarChart3,
   Loader2,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -29,6 +30,7 @@ import {
   type AnnotationEmbedData,
 } from "@/stores/annotation.store";
 import { useDocumentStore } from "@/stores/document.store";
+import { useToastStore } from "@/stores/toast.store";
 import { useStyleStore } from "@/stores/style.store";
 import { useSearchStore } from "@/stores/search.store";
 import { resolveHighlightCSSVar } from "@/lib/colors";
@@ -238,6 +240,35 @@ function ShowInFolderButton() {
 }
 
 // ---------------------------------------------------------------------------
+// Share button — copies the current document's deep-link URL
+// (siltflow://open/<documentId>) to the system clipboard so it can be pasted
+// into a browser, chat, or launcher to reopen the exact document.
+// ---------------------------------------------------------------------------
+function ShareButton() {
+  const currentDocument = useDocumentStore((s) => s.currentDocument);
+  const showToast = useToastStore((s) => s.show);
+
+  const handleClick = () => {
+    if (!currentDocument?.id) return;
+    void window.siltflow
+      .clipboardWriteText(`siltflow://open/${currentDocument.id}`)
+      .then(() => showToast("Document link copied", "success"));
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-6 w-6"
+      onClick={handleClick}
+      title="Copy document link"
+    >
+      <Share2 className="h-4 w-4" />
+    </Button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Settings button — opens unified settings dialog
 // ---------------------------------------------------------------------------
 function SettingsButton() {
@@ -370,6 +401,7 @@ export function CenterPanel({
           {docTitle && <QuickAddToggle />}
           {docTitle && <FitWidthButton />}
           {docTitle && <ShowInFolderButton />}
+          {docTitle && <ShareButton />}
           <SettingsButton />
           <Button
             variant="ghost"

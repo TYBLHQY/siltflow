@@ -17,6 +17,7 @@ import { loadLastPages } from "@/stores/pdf-viewer.store";
 import { loadThemeFromVault, useThemeStore } from "@/stores/theme.store";
 import { THEME_IDS } from "@/themes/registry";
 import { useSearchStore } from "@/stores/search.store";
+import { useDocumentStore } from "@/stores/document.store";
 import { useShortcut } from "@/hooks/useShortcut";
 import {
   loadAppSettingsFromVault,
@@ -226,6 +227,49 @@ function App() {
       );
     }
   }, [aiLoaded, showToast]);
+
+  // External deep links (siltflow://open/<documentId>) open the target document.
+  // Gate on vaultReady: a link arriving before the vault is set up stays in the
+  // main-process stash and is drained here once this effect re-runs.
+  useEffect(() => {
+    if (!vaultReady) return;
+
+    const openDocumentById = async (id: string) => {
+      const st = useDocumentStore.getState();
+      let doc = st.documents.find((d) => d.id === id);
+      if (!doc) {
+        try {
+          const row = await window.siltflow.documents.get(id);
+          if (!row) {
+            showToast("文档不存在或已被删除", "error");
+            return;
+          }
+          doc = {
+            id: row.id,
+            title: row.title,
+            totalPages: row.totalPages,
+            folderId: row.folderId,
+          };
+          if (!st.documents.some((d) => d.id === row.id)) st.addDocument(doc);
+        } catch {
+          showToast("文档不存在或已被删除", "error");
+          return;
+        }
+      }
+      // setCurrentDocument is the only entry point — it resets pdfScale before
+      // the viewer remounts (see document.store.ts).
+      st.setCurrentDocument(doc);
+    };
+
+    const drain = () =>
+      void window.siltflow.deeplink.consumePending().then((payload) => {
+        if (payload) void openDocumentById(payload.documentId);
+      });
+
+    const unsub = window.siltflow.deeplink.onAvailable(drain);
+    drain(); // cold-start links stashed before this effect ran
+    return unsub;
+  }, [vaultReady, showToast]);
 
   // Apply global font size and system font to <html> element
   const globalFontSize = useStyleStore((s) => s.style.globalFontSize);
