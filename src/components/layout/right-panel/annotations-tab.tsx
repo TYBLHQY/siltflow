@@ -1,11 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Highlighter,
-  CheckSquare,
-  Sparkles,
-  Plus,
-  ArrowRight,
-} from "lucide-react";
+import { PenLine, CheckSquare, Sparkles, Plus, ArrowRight } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -428,9 +422,13 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
           </select>
         </div>
       )}
-      {items.length === 0 ? (
+      {!docId ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
+          <PenLine className="h-8 w-8" />
+        </div>
+      ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center text-ctp-overlay0 px-4">
-          <Highlighter className="h-8 w-8 mb-2" />
+          <PenLine className="h-8 w-8 mb-2" />
           <p className="text-xs text-center">
             Highlight text in the document to add annotations
           </p>

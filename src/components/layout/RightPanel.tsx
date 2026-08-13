@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { IconText } from "@/components/ui/icon-text";
-import { Highlighter, FileText } from "lucide-react";
+import { PenLine, FileText } from "lucide-react";
 import { usePdfViewerStore } from "@/stores/pdf-viewer.store";
 import { useSummaryStore } from "@/stores/summary.store";
 import { useDocumentStore } from "@/stores/document.store";
@@ -9,6 +9,9 @@ import { useAnnotationStore } from "@/stores/annotation.store";
 import { AnnotationsTab } from "@/components/layout/right-panel/annotations-tab";
 import { SummaryTab } from "@/components/layout/right-panel/summary-tab";
 import { extractPageTexts } from "@/lib/summarize";
+import { useTabWheelSwitch } from "@/hooks/useTabWheelSwitch";
+
+const RIGHT_TABS = ["annotations", "summary"] as const;
 
 interface RightPanelProps {
   activeTab?: string;
@@ -18,6 +21,15 @@ interface RightPanelProps {
 export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
   const currentDocument = useDocumentStore((s) => s.currentDocument);
+
+  // ── Wheel over the tab bar cycles through the tabs ───────────────────
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  useTabWheelSwitch({
+    containerRef: tabBarRef,
+    tabs: RIGHT_TABS,
+    activeTab,
+    onChange: onTabChange,
+  });
   const pageTexts = useSummaryStore((s) => s.pageTexts);
   const setPageTexts = useSummaryStore((s) => s.setPageTexts);
   const setSelectedPages = useSummaryStore((s) => s.setSelectedPages);
@@ -82,20 +94,19 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
         onValueChange={onTabChange}
         className="flex flex-col flex-1 min-h-0"
       >
-        <div className="flex h-10 items-center border-b px-3">
+        <div ref={tabBarRef} className="flex h-10 items-center border-b px-3">
           <TabsList className="w-full h-7 text-ctp-text">
             <TabsTrigger
               value="annotations"
               className="flex-1 text-xs px-2 py-0.5 h-6"
             >
-              <IconText icon={Highlighter} size="xs">
+              <IconText icon={PenLine} size="xs">
                 Annotations
               </IconText>
             </TabsTrigger>
             <TabsTrigger
               value="summary"
               className="flex-1 text-xs px-2 py-0.5 h-6"
-              disabled={!docId}
             >
               <IconText icon={FileText} size="xs">
                 Summary
@@ -115,7 +126,13 @@ export function RightPanel({ activeTab, onTabChange }: RightPanelProps) {
           value="summary"
           className="flex-1 min-h-0 mt-0 flex flex-col"
         >
-          <SummaryTab />
+          {docId ? (
+            <SummaryTab />
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 h-full text-ctp-overlay0 px-4">
+              <FileText className="h-8 w-8" />
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

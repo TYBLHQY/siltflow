@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Search, Highlighter, SearchX } from "lucide-react";
+import { Loader2, Search, PenLine, SearchX } from "lucide-react";
 import { useSearchStore, type SearchEntry } from "@/stores/search.store";
 import { useDocumentStore } from "@/stores/document.store";
 import {
@@ -219,7 +219,7 @@ export function SearchAnnotations() {
             {/* empty annotations — only after index is confirmed built and empty */}
             {indexBuilt && !hasAnnotations && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-ctp-overlay0 px-4">
-                <Highlighter className="h-8 w-8" />
+                <PenLine className="h-8 w-8" />
                 <p className="text-sm text-center">No annotations yet</p>
                 <p className="text-xs text-center text-ctp-overlay0/70">
                   Highlight text in a document to create annotations

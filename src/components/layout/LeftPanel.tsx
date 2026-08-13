@@ -37,6 +37,7 @@ import {
   type SortField,
 } from "@/lib/doc-review";
 import { useNow } from "@/hooks/useNow";
+import { useTabWheelSwitch } from "@/hooks/useTabWheelSwitch";
 import type { Card } from "ts-fsrs";
 import { DocsTree, type DocsTreeHandle } from "./DocsTree";
 import { ReviewTab } from "@/components/layout/left-panel/review-tab";
@@ -45,6 +46,8 @@ import {
   useDocumentOutline,
   DocumentOutline,
 } from "react-pdf-highlighter-plus";
+
+const LEFT_TABS = ["documents", "review", "outline"] as const;
 
 function DocumentOutlinePanel() {
   const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
@@ -199,13 +202,21 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
   const addDocument = useDocumentStore((s) => s.addDocument);
   const loadFromDb = useDocumentStore((s) => s.loadFromDb);
 
-  const pdfDocument = usePdfViewerStore((s) => s.pdfDocument);
   const annotationItems = useAnnotationStore((s) => s.items);
   const [docMetrics, setDocMetrics] = useState<DocReviewMetrics[]>([]);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>("urgency");
   const activeTabRef = useRef(activeTab);
   activeTabRef.current = activeTab;
+
+  // ── Wheel over the tab bar cycles through the tabs ───────────────────
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  useTabWheelSwitch({
+    containerRef: tabBarRef,
+    tabs: LEFT_TABS,
+    activeTab,
+    onChange: onTabChange,
+  });
 
   // ── Scroll-to-doc state for virtual list ─────────────────────────────
   const [scrollToDocId, setScrollToDocId] = useState<string | null>(null);
@@ -448,7 +459,7 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
         onValueChange={onTabChange}
         className="flex flex-col flex-1 min-h-0"
       >
-        <div className="flex h-10 items-center border-b px-3">
+        <div ref={tabBarRef} className="flex h-10 items-center border-b px-3">
           <TabsList className="w-full h-7 text-ctp-text">
             <TabsTrigger
               value="documents"
@@ -469,7 +480,6 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
             <TabsTrigger
               value="outline"
               className="flex-1 text-xs px-2 py-0.5 h-6"
-              disabled={!currentDocument || !pdfDocument}
             >
               <IconText icon={BookMarked} size="xs">
                 Outlines
@@ -538,11 +548,11 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
           value="outline"
           className="flex-1 min-h-0 mt-0 flex flex-col"
         >
-          {pdfDocument ? (
+          {currentDocument ? (
             <DocumentOutlinePanel />
           ) : (
-            <div className="flex items-center justify-center h-full text-ctp-overlay0 px-4">
-              <p className="text-xs text-center">No document selected</p>
+            <div className="flex flex-col items-center justify-center gap-2 h-full text-ctp-overlay0 px-4">
+              <BookMarked className="h-8 w-8" />
             </div>
           )}
         </TabsContent>

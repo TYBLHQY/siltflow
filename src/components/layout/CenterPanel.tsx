@@ -454,7 +454,6 @@ export function CenterPanel({
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-2 text-ctp-overlay0">
             <BookOpen className="h-12 w-12" />
-            <p className="text-sm">Select a document to start reading</p>
           </div>
         </div>
       )}
