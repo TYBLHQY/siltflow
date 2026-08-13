@@ -21,7 +21,7 @@ Electron 43 + React 19 + TypeScript 6 桌面应用（语言学习工具），pnp
 
 > E2E AI 测试（`e2e/ai.spec.ts`）通过本地 mock OpenAI-compatible server（`e2e/mock-ai-server.ts`）运行：测试把 vault 里 AI profile 的 `baseUrl` 指向 mock（`seedAIConfig`，走 CSP 允许的 `http://localhost:*`），完整走通「点按钮 → fetch → 解析 → 渲染 → 持久化」链路，无需真实 API 密钥。mock 绑定双栈 `::`（`localhost` 可能解析为 IPv6 `::1`，单绑 IPv4 会导致请求落空）。
 
-> 虚拟列表增删对齐回归测试（`e2e/annotations-alignment.spec.ts`）：seed 100 张交错高度的 V2 卡，交错执行「展开/收起 + 增删 + 顶部插入」，然后断言所有已渲染卡片的 boundingBox 无重叠/无缝隙（`|next.top − prev.bottom| ≤ 2`）。守卫的是 TanStack Virtual 的测量缓存必须按稳定 id 做 key（`getItemKey`，不能按索引）——按索引时增删会让存活卡片套上陈旧高度，错位只靠滚动重挂载自愈。旧代码在此测试的 delete 阶段必挂。
+> 虚拟列表增删对齐回归测试（`e2e/annotations-alignment.spec.ts`）：seed 100 张交错高度的 V2 卡，交错执行「展开/收起 + 增删 + 顶部插入」，然后断言所有已渲染卡片的 boundingBox 无重叠/无缝隙（`|next.top − prev.bottom| ≤ 2`）。守卫的是 TanStack Virtual 的测量缓存必须按稳定 id 做 key（`getItemKey`，不能按索引）——按索引时增删会让存活卡片套上陈旧高度，错位只靠滚动重挂载自愈。旧代码在此测试的 delete 阶段必挂。UNTRANSLATED 状态单独守卫（`e2e/annotations-untranslated.spec.ts`，走 mock AI server）：交错 seed V2 + UNTRANSLATED 卡，穿插「展开/收起 + 增删 + 顶部插入」，再单卡 + 批量翻译（含视口外卡），断言全程对齐——覆盖 alignment spec 不涉及的空白卡状态与 UNTRANSLATED→V2 高度转场。两个 spec 共用 `e2e/annotations-helpers.ts`（卡片 fixture + `expectCardsAligned`）。
 
 ## 常用命令
 

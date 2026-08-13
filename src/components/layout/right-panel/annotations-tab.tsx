@@ -125,9 +125,18 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
     // applied to the wrong (variable-height) card, the occasional overlap.
     // With id keys a card keeps its measured size wherever it lands.
     getItemKey: (index) => sortedItems[index]?.id ?? index,
-    // Collapsed-card fallback; measureElement corrects per card. Expanded V2
-    // cards are far taller but ResizeObserver keeps the measurement fresh.
-    estimateSize: () => 80,
+    // State-aware fallback. estimateSize only positions cards that haven't
+    // rendered yet (measureElement reads offsetHeight on mount, then keeps the
+    // measurement fresh via ResizeObserver), so it should track the resting
+    // height of each card state rather than one collapsed-V2 number.
+    // UNTRANSLATED (no aiResult), V1, and collapsed V2 all render the same
+    // ~p-3 core box (header + source + context + action bar ≈ 120px); an
+    // expanded V2 card additionally shows the details block and is far taller.
+    // Underestimating overlaps rows until they measure, so err slightly high.
+    estimateSize: (index) => {
+      const ann = sortedItems[index];
+      return ann?.aiVersion === 2 && expandedCardId === ann.id ? 400 : 120;
+    },
     overscan: 5,
     // The old `p-3` gave the first card a 12px top margin; expressing it as a
     // per-index paddingTop would bake an index-dependent size into the card,
