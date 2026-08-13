@@ -85,11 +85,33 @@ git tag vX.Y.Z
 git push origin master
 git push origin vX.Y.Z
 
-# 4. 验证（可选）：等 tag 触发的 CI 跑完（阻塞直到 run 完成，
-#    --exit-status 让失败时返回非零退出码）。run ID 用第一步里
-#    `gh run list` 查到的最新一条
+# 4. 验证（可选）：用 Monitor 后台监听 tag 触发的 CI，状态变化即通知，
+#    跑完（success/failure/cancelled）自动结束。run ID 用 `gh run list`
+#    查到的最新一条（历史单次 run 约 5 分钟）。
 gh run list --repo TYBLHQY/siltflow --limit 1
-gh run watch <run-id> --repo TYBLHQY/siltflow --exit-status
+
+# 然后启动 Monitor（Claude Code 的 Monitor 工具，不是 shell 命令）。
+# 不用 `gh run watch`——本机偶发内部错误，且阻塞时不能干别的；Monitor
+# 非阻塞，监听期间可继续干活。参数：
+#   description: CI run <run-id>（vX.Y.Z release）
+#   command:
+#     prev=""
+#     while true; do
+#       s=$(gh run view <run-id> --repo TYBLHQY/siltflow \
+#           --json status,conclusion -q '.status + " " + (.conclusion // "none")' \
+#           2>/dev/null || true)
+#       if [ -n "$s" ] && [ "$s" != "$prev" ]; then
+#         echo "CI: $s"
+#         prev="$s"
+#       fi
+#       case "$s" in
+#         "completed "*) c=${s#completed }; echo "CI DONE ($c)"; exit 0 ;;
+#       esac
+#       sleep 20
+#     done
+#   timeout_ms: 900000
+# 结论只在 terminal 状态（success/failure/cancelled）输出，中途 queued/in_progress
+# 抖动是各 job 启动时序，忽略即可。
 ```
 
 > 注意：CI 工作流（`.github/workflows/ci.yml`）只监听 `tags: ["v*"]` 和 PR 到 master 的事件。check/lint/unit 三个 job 并行（快检查与慢检查互不阻塞），release 依赖它们全绿。对 tag push 通过后 Linux/macOS/Windows 三平台并行构建并创建 GitHub Release（Linux job 负责建 release，其余平台等待其就绪后上传产物）。依赖安装通过 `.github/actions/install-deps` 复合 action 共享，`setup-node` 的 pnpm cache 让各 job 秒装。E2E 未接入 CI（xvfb 下文本选择存在环境差异），本地 `pnpm test:e2e` 跑。
