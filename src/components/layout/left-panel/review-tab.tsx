@@ -36,6 +36,11 @@ const ReviewTabRow = memo(function ReviewTabRow({
   const hasTags = metric.totalCards > 0;
 
   const handleOpen = () => {
+    // Dedup: re-opening the already-open doc resets the PDF zoom and re-syncs
+    // the viewer — clicking the active row is a no-op.
+    if (useDocumentStore.getState().currentDocument?.id === metric.documentId) {
+      return;
+    }
     const doc = documents.find((d) => d.id === metric.documentId);
     if (doc) {
       setCurrentDocument(doc);

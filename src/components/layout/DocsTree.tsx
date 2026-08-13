@@ -5,7 +5,6 @@ import {
   useCallback,
   forwardRef,
   useImperativeHandle,
-  useRef,
 } from "react";
 import { Tree, type NodeRendererProps, type TreeApi } from "react-arborist";
 import { Plus, Trash2, Pencil } from "lucide-react";
@@ -217,17 +216,60 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
       return state;
     }, [currentDocument?.folderId, folders]);
 
-    // Select current doc after initial mount (or remount).
-    const treeMountRef = useRef(false);
-    useEffect(() => {
-      if (!tree) return;
-      if (!treeMountRef.current) {
-        treeMountRef.current = true;
-        if (currentDocument?.id) {
-          tree.select(`doc:${currentDocument.id}`, { align: "center" });
+    // ── Reactive highlight of the current document ─────────────────────
+    // The currently-open doc stays highlighted in the tree. When its folder path
+    // is collapsed, walk up the ancestor chain and highlight the deepest *visible*
+    // folder instead — so exactly one row is always marked, doc or folder.
+    const computeHighlightId = useCallback((): string | null => {
+      const doc = useDocumentStore.getState().currentDocument;
+      if (!doc?.id) return null;
+      // Doc's folder chain: direct parent first, root-level last.
+      const folderChain: string[] = [];
+      const seen = new Set<string>();
+      let parentId = doc.folderId ?? null;
+      while (parentId && !seen.has(parentId)) {
+        seen.add(parentId);
+        folderChain.push(parentId);
+        const folder = useFolderStore
+          .getState()
+          .folders.find((f) => f.id === parentId);
+        parentId = folder?.parentId ?? null;
+      }
+      const folderOpen = (folderId: string) =>
+        tree?.isOpen(`folder:${folderId}`) ?? false;
+      // Doc is visible iff every folder on its chain is open.
+      if (folderChain.every(folderOpen)) return `doc:${doc.id}`;
+      // Otherwise walk up: a folder row is visible iff its *ancestors* are open
+      // (its own open state only governs its children). Pick the deepest folder
+      // whose ancestors are all open — the nearest visible node.
+      for (let i = 0; i < folderChain.length; i++) {
+        if (folderChain.slice(i + 1).every(folderOpen)) {
+          return `folder:${folderChain[i]}`;
         }
       }
-    }, [tree, currentDocument?.id]);
+      return null; // unreachable: the root-level folder is always visible
+    }, [tree]);
+
+    // Apply the highlight on mount and whenever the current doc (or the tree
+    // data) changes. folders/documents are deps too: on the first mount the
+    // folder tree may not have loaded yet, so this re-runs once it arrives.
+    // select() scrolls the row into view; the target is always already visible,
+    // so its scrollTo never force-expands collapsed folders. Default "smart"
+    // align only scrolls when the row is out of view — clicking a doc that's
+    // already on screen must not yank it to the viewport center.
+    useEffect(() => {
+      if (!tree) return;
+      const id = computeHighlightId();
+      if (!id) {
+        if (tree.selectedIds.size > 0) tree.deselectAll();
+        return;
+      }
+      // Skip when the highlight is already exactly right — folders/docs change
+      // for unrelated reasons (first load, renames, drag-reorder), and
+      // re-selecting then would re-scroll the list for no reason.
+      if (tree.selectedIds.size === 1 && tree.selectedIds.has(id)) return;
+      tree.select(id, { focus: false });
+    }, [tree, currentDocument?.id, computeHighlightId, folders, documents]);
 
     // Refresh both folders and docs
     const refreshAll = useCallback(async () => {
@@ -444,10 +486,28 @@ export const DocsTree = forwardRef<DocsTreeHandle, DocsTreeProps>(
             onActivate={(node) => {
               if (node.id.startsWith("doc:")) {
                 const found = documents.find((d) => d.id === node.id.slice(4));
-                if (found) {
+                // Dedup: activating the already-open doc must not re-open it.
+                if (
+                  found &&
+                  found.id !== useDocumentStore.getState().currentDocument?.id
+                ) {
                   setCurrentDocument(found);
                 }
               }
+            }}
+            onToggle={() => {
+              // Folders opening/closing can hide or reveal the current doc —
+              // re-pick the deepest visible ancestor (or the doc itself) so a
+              // visible row always stays highlighted.
+              if (!tree) return;
+              const id = computeHighlightId();
+              if (!id) {
+                tree.deselectAll();
+                return;
+              }
+              // Set selection by id: select()'s get()/idToIndex check is stale
+              // mid-toggle, and setSelection skips scrollTo's auto-open too.
+              tree.setSelection({ ids: [id], anchor: id, mostRecent: id });
             }}
             rowHeight={32}
             indent={16}

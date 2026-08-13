@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ChevronRight, FileText, Folder, FolderOpen } from "lucide-react";
 import type { NodeRendererProps } from "react-arborist";
 import { useDocumentStore } from "@/stores/document.store";
@@ -23,8 +23,20 @@ export function DocTreeNode({
     [],
   );
 
+  // Auto-focus (and select the name) when entering inline rename mode.
+  // Declared before the early return so the hook order is stable across renders.
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (node.isEditing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [node.isEditing]);
+
   const data = node.data;
   if (!data) return null;
+
+  const isSelected = node.isSelected;
 
   return (
     <div
@@ -36,7 +48,9 @@ export function DocTreeNode({
         gap: "6px",
       }}
       ref={dragHandle}
-      className="w-full cursor-pointer hover:bg-ctp-surface0/50"
+      className={`w-full cursor-pointer ${
+        isSelected ? "bg-ctp-surface0" : "hover:bg-ctp-surface0/50"
+      }`}
       onPointerDown={(e) => {
         // Prevent react-arborist's native selection on click
         e.stopPropagation();
@@ -50,6 +64,11 @@ export function DocTreeNode({
         if (data.type === "folder") {
           node.toggle();
         } else if (data.type === "document" && data.doc) {
+          // Dedup: re-clicking the already-open doc is a no-op — skip the viewer
+          // scale reset / re-sync (same guard as the Review list and deep links).
+          if (useDocumentStore.getState().currentDocument?.id === data.doc.id) {
+            return;
+          }
           setCurrentDocument(data.doc);
         }
       }}
@@ -83,8 +102,13 @@ export function DocTreeNode({
 
       {node.isEditing ? (
         <input
+          ref={inputRef}
           className="flex-1 min-w-0 rounded border border-ctp-mauve bg-ctp-base px-1 py-0 text-xs outline-none"
           defaultValue={data.name}
+          // Clicks on the rename input must not bubble to the row's open/toggle
+          // handler — otherwise editing a doc row would open the document.
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
 
           onBlur={(e) => {
             const val = e.target.value.trim();
@@ -116,7 +140,9 @@ export function DocTreeNode({
         />
       ) : (
         <span
-          className="truncate min-w-0 flex-1 text-sm"
+          className={`truncate min-w-0 flex-1 text-sm ${
+            isSelected ? "text-ctp-mauve" : ""
+          }`}
           style={{ width: 0 }}
           title={data.name}
         >

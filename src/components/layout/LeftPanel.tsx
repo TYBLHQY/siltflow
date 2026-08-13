@@ -358,6 +358,14 @@ export function LeftPanel({ activeTab, onTabChange }: LeftPanelProps) {
     void loadFromDb();
   }, [loadFromDb]);
 
+  // Load folders at startup (alongside documents). DocsTree's reveal logic —
+  // initialOpenState opening the current doc's folder path — needs folders to be
+  // present on the first render; if they only loaded when DocsTree mounts, the
+  // first switch to the Docs tab would show no expansion/highlight.
+  useEffect(() => {
+    void useFolderStore.getState().loadFolders();
+  }, []);
+
   const handleImport = async () => {
     try {
       const results = await window.siltflow.selectPdf();
