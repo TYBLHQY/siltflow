@@ -243,13 +243,18 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
     window.setTimeout(() => {
       doScroll();
       // Flash the card (index.css annotation-flash) like the old flow.
+      // Target the card, not the row wrapper: the row carries the 8px
+      // inter-card gap as paddingBottom, and a CSS outline around it would
+      // extend 8px past the card's bottom edge.
       const row = listViewportRef.current?.querySelector<HTMLElement>(
         `[data-annotation-id="${id}"]`,
       );
-      if (row) {
-        row.setAttribute("data-annotation-highlight", "true");
+      const card =
+        row?.querySelector<HTMLElement>("[data-annotation-card]") ?? row;
+      if (card) {
+        card.setAttribute("data-annotation-highlight", "true");
         window.setTimeout(
-          () => row.removeAttribute("data-annotation-highlight"),
+          () => card.removeAttribute("data-annotation-highlight"),
           2500,
         );
       }

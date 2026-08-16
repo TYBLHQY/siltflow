@@ -247,6 +247,7 @@ export function AITranslateCard({
   if (collapsible) {
     return (
       <div
+        data-annotation-card
         className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-3 transition-colors ${
           scrolled ? "bg-ctp-surface0/40 border-accent" : "hover:border-accent"
         } ${className}`}
@@ -327,6 +328,7 @@ export function AITranslateCard({
   // ── Non-collapsible (expanded detail card, e.g. search panel) ──
   return (
     <div
+      data-annotation-card
       className={`w-full min-w-0 rounded-lg border border-ctp-overlay0/80 bg-card shadow-sm p-3 transition-colors ${
         scrolled ? "bg-ctp-surface0/40 border-accent" : "hover:border-accent"
       } ${className}`}
