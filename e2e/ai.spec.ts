@@ -172,8 +172,10 @@ test("translate uses the V2 two-stage pipeline and persists ai_results", async (
     // AITranslateCard renders the translate button with title="Translate".
     await card.getByTitle("Translate").click();
 
-    // The V2 pipeline makes two mock calls (input → output). The card shows
-    // the "v2" badge (core header, always visible) once translation lands.
+    // "This is content" is a phrase with a known source language, so the V2
+    // pipeline short-circuits the input AI and fires a single output call
+    // (mock returns the phrase output for any non-summary request). The card
+    // shows the "v2" badge (core header, always visible) once translation lands.
     await expect(card.getByText("v2", { exact: true })).toBeVisible({
       timeout: 20_000,
     });

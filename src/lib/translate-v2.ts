@@ -3,6 +3,9 @@
  * V2 AI Translation — Two-stage pipeline
  *
  * 1. input AI: normalize text, detect source_lang, infer type
+ *    — SKIPPED for phrase/sentence with a concrete source-language hint:
+ *      every field is derivable in code, so the record is built locally
+ *    (only word-lemma and unknown-language input need the AI round-trip)
  * 2. output AI: generate type-specific analysis (word/phrase/sentence)
  *
  * Static-first prompt design for Prompt Caching Optimization.
@@ -293,6 +296,28 @@ async function callOutputAI(
 // Public API
 // ===========================================================================
 
+/**
+ * Build the input record programmatically — no AI round-trip — for phrase and
+ * sentence selections with a concrete source-language hint. Every field is
+ * derivable in code: `normalized` is a plain string op (trim + collapse
+ * whitespace + NFC), `type` comes from `inferGranularity`, and `lemma` is null
+ * for non-words. Only the word path (lemma = inflection → base form) and
+ * unknown-language input ("und") need the input AI.
+ */
+function buildInputRecord(
+  text: string,
+  sourceLangHint: string,
+  typeHint: AIAnnotationInputV2["type"],
+): AIAnnotationInputV2 {
+  return {
+    text,
+    normalized: text.trim().replace(/\s+/g, " ").normalize("NFC"),
+    source_lang: sourceLangHint,
+    type: typeHint,
+    lemma: null,
+  };
+}
+
 export interface TranslateV2Options {
   /** Profile for the input AI stage (normalization, language detection). */
   inputProfile: AIProfile;
@@ -317,7 +342,8 @@ export interface TranslateV2Options {
  * Main V2 translation pipeline.
  *
  * 1. Program infers a type hint from the text.
- * 2. input AI normalizes input, detects source_lang, validates type.
+ * 2. Input record — via the input AI for words (lemma) or unknown-language
+ *    input; built in code for phrase/sentence with a known language hint.
  * 3. output AI produces type-specific analysis.
  *
  * Returns the full AIAnnotationDataV2 result.
@@ -332,15 +358,19 @@ export async function translateAnnotationV2(
   // inferGranularity returns "word"|"phrase"|"sentence"
   const typeHint = inferGranularity(options.text);
 
-  // Step 2: Input AI (using inputProfile)
-  const input = await callInputAI(
-    options.inputProfile,
-    options.text,
-    sourceLangHint,
-    targetLang,
-    typeHint,
-    options.signal,
-  );
+  // Step 2: Input record — from the input AI (word-lemma and unknown-language
+  // input need a linguistic round-trip) or built in code when it adds nothing.
+  const needsInputAI = typeHint === "word" || sourceLangHint === "und";
+  const input = needsInputAI
+    ? await callInputAI(
+        options.inputProfile,
+        options.text,
+        sourceLangHint,
+        targetLang,
+        typeHint,
+        options.signal,
+      )
+    : buildInputRecord(options.text, sourceLangHint, typeHint);
 
   // Step 3: Output AI (using outputProfile)
   const output = await callOutputAI(

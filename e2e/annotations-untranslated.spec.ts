@@ -144,12 +144,19 @@ test("untranslated cards stay aligned through translate + interleaved mutations"
     // Translate a VISIBLE UNTRANSLATED card (long text → mock returns a short
     // phrase, so the card SHRINKS) — the height transition must not break
     // contiguity.
+    //
+    // ann-3 is a long-text card → inferGranularity returns "sentence", and the
+    // document's source language is known, so the input AI round-trip is
+    // short-circuited: translating it must fire EXACTLY ONE completion request
+    // (the output stage only). Guards the translate-v2 short-circuit end-to-end.
+    const requestsBefore = mock.requestCount;
     const untranslatedCard = window.locator('[data-annotation-id="ann-3"]');
     await expect(untranslatedCard).toBeVisible();
     await untranslatedCard.getByTitle("Translate").click();
     await expect(untranslatedCard.getByText("v2", { exact: true })).toBeVisible(
       { timeout: 20_000 },
     );
+    expect(mock.requestCount).toBe(requestsBefore + 1);
     await window.waitForTimeout(350);
     await expectCardsAligned(window);
 

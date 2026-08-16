@@ -89,6 +89,10 @@ function pickContent(messages: ChatMessage[]): string {
 export interface MockAIServer {
   port: number;
   baseUrl: string;
+  /** Total /chat/completions requests served since startup. Lets tests assert
+   *  the short-circuit path (sentence/word counts differ by whether the input
+   *  AI round-trip was skipped). */
+  requestCount: number;
   close: () => Promise<void>;
 }
 
@@ -98,6 +102,7 @@ export interface MockAIServer {
  * test can seed it into the vault config BEFORE the app launches.
  */
 export function startMockAIServer(): Promise<MockAIServer> {
+  const state = { requestCount: 0 };
   const server: Server = createServer((req, res) => {
     // Preflight — the renderer is a browser, the SDK may send CORS preflight.
     if (req.method === "OPTIONS") {
@@ -110,6 +115,7 @@ export function startMockAIServer(): Promise<MockAIServer> {
       res.end(JSON.stringify({ error: "not found" }));
       return;
     }
+    state.requestCount++;
 
     let body = "";
     req.on("data", (chunk) => (body += chunk));
@@ -143,6 +149,9 @@ export function startMockAIServer(): Promise<MockAIServer> {
       resolve({
         port,
         baseUrl: `http://localhost:${port}/v1`,
+        get requestCount() {
+          return state.requestCount;
+        },
         close: () =>
           new Promise<void>((res, rej) => {
             server.close((err) => {
