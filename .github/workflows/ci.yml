@@ -89,10 +89,11 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: linux
-          - os: macos-15
-            target: mac
-          - os: windows-2022
-            target: win
+          # TEMPORARY: mac/win packaging disabled. Re-enable by uncommenting:
+          # - os: macos-15
+          #   target: mac
+          # - os: windows-2022
+          #   target: win
 
     steps:
       - uses: actions/checkout@v6
