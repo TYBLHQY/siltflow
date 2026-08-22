@@ -32,6 +32,7 @@ import { useShortcut } from "@/hooks/useShortcut";
 import { useNow } from "@/hooks/useNow";
 import { reviewAnnotation } from "@/stores/fsrs.store";
 import { cardDueDate } from "@/lib/fsrs-utils";
+import { annotationToPlainText } from "@/lib/annotation-list-text";
 import { LANGUAGES, LANGUAGES_WITH_AUTO } from "@/lib/languages";
 
 interface AnnotationsTabProps {
@@ -88,30 +89,6 @@ async function translateItemV2(
     updateItem(item.id, { aiResult: undefined });
     return false;
   }
-}
-
-/**
- * Render one annotation as a single plain-text block for the "copy list as
- * text" action. Keeps the source text, its translation (V2 output), the
- * user context note, and the page — enough to be useful outside the app
- * without any structure.
- */
-function annotationToPlainText(item: AnnotationItem): string {
-  const page = item.pageNumber > 0 ? `p.${item.pageNumber}` : "—";
-  const kind =
-    item.kind === "manual" ? "manual" : (item.aiResult?.input.type ?? "note");
-  const lines: string[] = [`${page}  [${kind}]`, item.text];
-
-  const out = item.aiResult?.output;
-  if (out) {
-    if ("meanings" in out) {
-      lines.push(`→ ${out.meanings.map((m) => m.translation).join("；")}`);
-    } else if ("translation" in out) {
-      lines.push(`→ ${out.translation}`);
-    }
-  }
-  if (item.context) lines.push(`note: ${item.context}`);
-  return lines.join("\n");
 }
 
 export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
