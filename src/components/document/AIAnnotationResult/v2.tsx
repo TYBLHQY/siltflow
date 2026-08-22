@@ -16,7 +16,7 @@ import {
   Loader2,
   Sparkles,
   Trash2,
-  ExternalLink,
+  MapPin,
 } from "lucide-react";
 import type {
   AIAnnotationDataV2,
@@ -487,7 +487,7 @@ export function AIAnnotationResultV2({
                 }}
                 title="Go to highlight in PDF"
               >
-                <ExternalLink className="h-3 w-3" />
+                <MapPin className="h-3 w-3" />
               </button>
               <span className="font-medium text-ctp-maroon uppercase tracking-wider">
                 {granularity}

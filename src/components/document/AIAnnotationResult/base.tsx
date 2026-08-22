@@ -9,7 +9,7 @@ import {
   Loader2,
   Sparkles,
   Trash2,
-  ExternalLink,
+  MapPin,
 } from "lucide-react";
 
 interface AIAnnotationResultBaseProps {
@@ -110,7 +110,7 @@ export function AIAnnotationResultBase({
             }}
             title="Go to highlight in PDF"
           >
-            <ExternalLink className="h-3 w-3" />
+            <MapPin className="h-3 w-3" />
           </button>
           <span className="font-medium text-ctp-overlay0 uppercase tracking-wider">
             UNTRANSLATED

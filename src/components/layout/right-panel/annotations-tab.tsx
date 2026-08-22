@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { PenLine, CheckSquare, Sparkles, Plus, ArrowRight } from "lucide-react";
+import {
+  PenLine,
+  CheckSquare,
+  Sparkles,
+  Plus,
+  ArrowRight,
+  ClipboardCopy,
+} from "lucide-react";
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -81,6 +88,30 @@ async function translateItemV2(
     updateItem(item.id, { aiResult: undefined });
     return false;
   }
+}
+
+/**
+ * Render one annotation as a single plain-text block for the "copy list as
+ * text" action. Keeps the source text, its translation (V2 output), the
+ * user context note, and the page — enough to be useful outside the app
+ * without any structure.
+ */
+function annotationToPlainText(item: AnnotationItem): string {
+  const page = item.pageNumber > 0 ? `p.${item.pageNumber}` : "—";
+  const kind =
+    item.kind === "manual" ? "manual" : (item.aiResult?.input.type ?? "note");
+  const lines: string[] = [`${page}  [${kind}]`, item.text];
+
+  const out = item.aiResult?.output;
+  if (out) {
+    if ("meanings" in out) {
+      lines.push(`→ ${out.meanings.map((m) => m.translation).join("；")}`);
+    } else if ("translation" in out) {
+      lines.push(`→ ${out.translation}`);
+    }
+  }
+  if (item.context) lines.push(`note: ${item.context}`);
+  return lines.join("\n");
 }
 
 export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
@@ -306,6 +337,26 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
     sourceLang,
   ]);
 
+  // ── Copy annotations as text ─────────────────────────────────────
+  const handleExportAnnotations = useCallback(async () => {
+    if (sortedItems.length === 0) {
+      showToast("No annotations to export", "info");
+      return;
+    }
+    const text = sortedItems.map(annotationToPlainText).join("\n\n");
+    try {
+      await window.siltflow.clipboardWriteText(text);
+      showToast(
+        `Copied ${sortedItems.length} annotation${
+          sortedItems.length > 1 ? "s" : ""
+        } to clipboard`,
+        "success",
+      );
+    } catch {
+      showToast("Failed to copy to clipboard", "error");
+    }
+  }, [sortedItems, showToast]);
+
   // ── Manual annotation creation ────────────────────────────────────
   // Clear the draft text each time the dialog opens (covers both the `+`
   // button and the global ctrl+T shortcut; when opened via shortcut the
@@ -373,15 +424,26 @@ export function AnnotationsTab({ onTabChange }: AnnotationsTabProps) {
               </Button>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="h-5 gap-0.5 ml-auto"
-            title="Add manual annotation"
-            onClick={openManualDialog}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          <div className="flex items-center gap-1 ml-auto">
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 gap-0.5 text-[10px]"
+              onClick={handleExportAnnotations}
+              title="Copy annotations as text"
+            >
+              <ClipboardCopy className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 gap-0.5"
+              title="Add manual annotation"
+              onClick={openManualDialog}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
       )}
       {docId && (

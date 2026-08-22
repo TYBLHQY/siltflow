@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import type { AnnotationItem } from "@/stores/annotation.store";
 import { Button } from "@/components/ui/button";
 import { IconText } from "@/components/ui/icon-text";
-import { ArrowLeft, CheckSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, CheckSquare, MapPin } from "lucide-react";
 import { useShortcut } from "@/hooks/useShortcut";
 import { pdfScrollToHighlight } from "@/stores/pdf-viewer.store";
 import { AIAnnotationResult } from "@/components/document/AIAnnotationResult";
@@ -128,7 +128,7 @@ export function StudyPanel({
           onClick={handleGoToHighlight}
           title="Go to highlight in PDF"
         >
-          <ExternalLink className="h-3.5 w-3.5" />
+          <MapPin className="h-3.5 w-3.5" />
         </Button>
       </div>
 
